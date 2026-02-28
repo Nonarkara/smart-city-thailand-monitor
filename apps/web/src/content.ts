@@ -276,6 +276,56 @@ export const toolkitLinks: ToolkitLink[] = [
       th: "ฟีดข่าวฟรีจาก Google และสามารถเสริมด้วย Google Alerts RSS",
       en: "Free Google news feeds with optional Google Alerts RSS input."
     }
+  },
+  {
+    id: "tool-gdelt",
+    name: "GDELT DOC API",
+    href: "https://api.gdeltproject.org/api/v2/doc/doc",
+    kind: "API",
+    description: {
+      th: "สัญญาณข่าวโลก ปริมาณข่าว และโทนการกล่าวถึง",
+      en: "Global media volume, source spread, and tone monitoring."
+    }
+  },
+  {
+    id: "tool-talkwalker",
+    name: "Talkwalker Alerts",
+    href: "https://www.talkwalker.com/alerts",
+    kind: "RSS",
+    description: {
+      th: "ระบบ social listening แบบเบาๆ ผ่าน RSS alerts",
+      en: "Lightweight social listening through configurable alert feeds."
+    }
+  },
+  {
+    id: "tool-youtube",
+    name: "YouTube Signals",
+    href: "https://developers.google.com/youtube/v3",
+    kind: "API",
+    description: {
+      th: "วิดีโอและไลฟ์สตรีมเพื่อแสดงหลักฐานเชิงสาธารณะ",
+      en: "Video and livestream monitoring for public-facing proof."
+    }
+  },
+  {
+    id: "tool-eonet",
+    name: "NASA EONET",
+    href: "https://eonet.gsfc.nasa.gov/api/v3/events",
+    kind: "API",
+    description: {
+      th: "เหตุการณ์ธรรมชาติแบบใกล้เวลาจริงสำหรับชั้นความยืดหยุ่น",
+      en: "Near-real-time natural event monitoring for resilience layers."
+    }
+  },
+  {
+    id: "tool-openaq",
+    name: "OpenAQ",
+    href: "https://api.openaq.org",
+    kind: "API",
+    description: {
+      th: "สถานีคุณภาพอากาศระดับจุดเมื่อตั้งค่า key แล้ว",
+      en: "Station-level air-quality network when an API key is configured."
+    }
   }
 ];
 
@@ -296,9 +346,9 @@ export function createDashboardSkeletonExport() {
       mode: "public-dashboard",
       locales: ["th", "en"],
       layout: {
-        desktopColumns: 16,
-        tabletColumns: 12,
-        mobileColumns: 4,
+        desktopColumns: 5,
+        tabletColumns: 3,
+        mobileColumns: 1,
         topBar: true,
         leftRail: true,
         bottomBar: true
@@ -319,6 +369,10 @@ export function createDashboardSkeletonExport() {
       "city_compare",
       "source_health",
       "time_zones",
+      "what_changed",
+      "social_listening",
+      "official_impact",
+      "activity_log",
       "trend_watch",
       "api_directory"
     ],
@@ -329,6 +383,10 @@ export function createDashboardSkeletonExport() {
       "/api/news",
       "/api/map/layers",
       "/api/resilience",
+      "/api/changes",
+      "/api/activity",
+      "/api/social-listening",
+      "/api/impact",
       "/api/sources",
       "/api/briefings/latest",
       "/api/time"

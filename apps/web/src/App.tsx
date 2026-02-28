@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  activityLog as activityLogSeed,
+  changePulse as changePulseSeed,
   cloneSeed,
   createOverviewSnapshot,
   createTimeSnapshot,
@@ -8,20 +10,26 @@ import {
   mapLayers as layerSeed,
   mediaFeeds as mediaFeedSeed,
   news as newsSeed,
+  officialImpact as officialImpactSeed,
   projects as projectSeed,
   resilience as resilienceSeed,
+  socialListening as socialListeningSeed,
   sources as sourceSeed
 } from "@smart-city/shared";
 import type {
+  ActivityLogItem,
+  ChangePulse,
   DashboardView,
   GeoFeatureRecord,
   Locale,
   MapFeatureCollection,
   MediaFeedItem,
   NewsItem,
+  OfficialImpactSnapshot,
   OverviewSnapshot,
   ProjectRecord,
   ResilienceSnapshot,
+  SocialListeningSnapshot,
   SourceRecord,
   TimeRange,
   TimeSnapshot
@@ -89,7 +97,7 @@ const copyDeck = {
     toolkit: "Build It Yourself",
     exportJson: "คัดลอก JSON โครงร่าง",
     exported: "คัดลอก JSON แล้ว",
-    apiDirectory: "8 APIs / Data Ports",
+    apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "ข้อกำหนดและคำชี้แจง",
     privacy: "แดชบอร์ดสาธารณะนี้ไม่ตั้งใจเก็บข้อมูลส่วนบุคคลของผู้ใช้งานทั่วไป และแสดงผลจากข้อมูลสาธารณะ ข้อมูลทดลอง และข้อมูลที่จัดการภายในตามบริบทของต้นแบบ",
@@ -105,6 +113,16 @@ const copyDeck = {
     trendAverage: "เฉลี่ย",
     sourceResearch:
       "แหล่งอ้างอิงภายนอกใช้เพื่ออธิบายวิธีคิดของเมืองต่อ dashboards, livability, และ city-as-a-platform",
+    changes: "สิ่งที่เปลี่ยน",
+    activity: "บันทึกการทำงานสด",
+    social: "Social Listening",
+    impact: "Official Impact",
+    recenter: "จัดกึ่งกลางแผนที่",
+    thresholdWatch: "เกณฑ์เฝ้าระวัง",
+    thisWeek: "ใหม่ในรอบนี้",
+    mentions: "การกล่าวถึง",
+    sentiment: "โทน",
+    sourceMix: "แหล่งอ้างอิง",
     copyright:
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
@@ -141,7 +159,7 @@ const copyDeck = {
     toolkit: "Build It Yourself",
     exportJson: "Copy JSON Skeleton",
     exported: "JSON copied",
-    apiDirectory: "8 APIs / Data Ports",
+    apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "Fine Print",
     privacy:
@@ -158,6 +176,16 @@ const copyDeck = {
     trendAverage: "Avg",
     sourceResearch:
       "External references are included to show how cities use dashboards for operations, livability, and city-as-a-platform thinking.",
+    changes: "What Changed",
+    activity: "Live Activity",
+    social: "Social Listening",
+    impact: "Official Impact",
+    recenter: "Recenter Map",
+    thresholdWatch: "Threshold Watch",
+    thisWeek: "New This Cycle",
+    mentions: "Mentions",
+    sentiment: "Tone",
+    sourceMix: "Source Mix",
     copyright:
       "Copyright, trademarks, and external datasets remain with their respective owners. This prototype is shared as an open learning resource and should be independently validated before operational use."
   }
@@ -324,6 +352,38 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const changesQuery = useQuery({
+    queryKey: ["changes"],
+    queryFn: () => fetchFromApi<ChangePulse>("/api/changes", cloneSeed(changePulseSeed)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
+  const activityQuery = useQuery({
+    queryKey: ["activity"],
+    queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", cloneSeed(activityLogSeed).slice(0, 6)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
+  const socialListeningQuery = useQuery({
+    queryKey: ["social-listening"],
+    queryFn: () => fetchFromApi<SocialListeningSnapshot>("/api/social-listening", cloneSeed(socialListeningSeed)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
+  const impactQuery = useQuery({
+    queryKey: ["impact"],
+    queryFn: () => fetchFromApi<OfficialImpactSnapshot>("/api/impact", cloneSeed(officialImpactSeed)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const sourcesQuery = useQuery({
     queryKey: ["sources"],
     queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed)),
@@ -371,6 +431,10 @@ function useDashboardData(searchParams: URLSearchParams) {
     projects: projectsQuery.data ?? cloneSeed(projectSeed),
     news: newsQuery.data ?? cloneSeed(newsSeed),
     resilience: resilienceQuery.data ?? cloneSeed(resilienceSeed),
+    changes: changesQuery.data ?? cloneSeed(changePulseSeed),
+    activity: activityQuery.data ?? cloneSeed(activityLogSeed),
+    socialListening: socialListeningQuery.data ?? cloneSeed(socialListeningSeed),
+    impact: impactQuery.data ?? cloneSeed(officialImpactSeed),
     sources: sourcesQuery.data ?? cloneSeed(sourceSeed),
     mapFeatures:
       mapFeaturesQuery.data ??
@@ -385,6 +449,7 @@ function DashboardPage() {
   const [searchText, setSearchText] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSkeleton, setCopiedSkeleton] = useState(false);
+  const [recenterSignal, setRecenterSignal] = useState(0);
   const deferredSearchText = useDeferredValue(searchText);
 
   const {
@@ -398,6 +463,10 @@ function DashboardPage() {
     projects,
     news,
     resilience,
+    changes,
+    activity,
+    socialListening,
+    impact,
     sources,
     mapFeatures,
     mediaFeeds,
@@ -438,6 +507,7 @@ function DashboardPage() {
   const compactCities = overview.cities.slice(0, 4);
   const visibleTrends = trendWatchItems.slice(0, 3);
   const compactMedia = mediaFeeds.slice(0, 3);
+  const activityItems = activity.slice(0, 6);
   const timeZones = time.zones.slice(0, 3);
   const liveNewsSource =
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
@@ -467,6 +537,7 @@ function DashboardPage() {
   })();
 
   const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
+  const thisCycleItems = changes.items.slice(0, 3);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -624,6 +695,8 @@ function DashboardPage() {
         <nav className="side-nav side-anchor-nav">
           <a href="#pulse">{copy.topLine}</a>
           <a href="#news">{copy.news}</a>
+          <a href="#changes">{copy.changes}</a>
+          <a href="#social">{copy.social}</a>
           <a href="#projects">{copy.projects}</a>
           <a href="#trends">{copy.trendWatch}</a>
           <a href="#toolkit">{copy.toolkit}</a>
@@ -650,6 +723,7 @@ function DashboardPage() {
               projects={projects}
               news={news}
               featureCollections={mapFeatures}
+              recenterSignal={recenterSignal}
             />
             <div className="map-overlay">
               <div className="map-caption">
@@ -662,6 +736,9 @@ function DashboardPage() {
 
           <div className="hero-toolbar">
             <div className="hero-toolbar-group">
+              <button className="chip" onClick={() => setRecenterSignal((value) => value + 1)}>
+                {copy.recenter}
+              </button>
               <div className="map-city-list">
                 {overview.cities.map((item) => (
                   <button
@@ -687,7 +764,7 @@ function DashboardPage() {
                 </label>
               ) : null}
             </div>
-            <span className="hero-note">CityData + Google My Maps + live overlays</span>
+            <span className="hero-note">CityData + GDELT + EONET + live overlays</span>
           </div>
         </section>
 
@@ -779,6 +856,17 @@ function DashboardPage() {
             </div>
             <h2>{localize(lang, overview.briefing.headline)}</h2>
             <p>{localize(lang, overview.briefing.body)}</p>
+            <div className="briefing-cycle">
+              <span className="eyebrow">{copy.thisWeek}</span>
+              <div className="briefing-list">
+                {thisCycleItems.map((item) => (
+                  <div key={item.id} className="briefing-line">
+                    <strong>{localize(lang, item.label)}</strong>
+                    <span>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
 
           <section className="card resilience-card" id="resilience">
@@ -943,9 +1031,121 @@ function DashboardPage() {
               ))}
             </div>
           </section>
+
+          <section className="card changes-card" id="changes">
+            <div className="card-header">
+              <span className="eyebrow">{copy.changes}</span>
+              <span className="status-pill">{changes.updatedAt.slice(11, 16)} UTC</span>
+            </div>
+            <div className="change-grid">
+              {changes.items.map((item) => (
+                <article key={item.id} className={`change-item tone-${item.tone}`}>
+                  <span className="eyebrow">{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                  <small>{localize(lang, item.detail)}</small>
+                </article>
+              ))}
+            </div>
+            <div className="threshold-strip">
+              <span className="eyebrow">{copy.thresholdWatch}</span>
+              <div className="threshold-list">
+                {changes.thresholds.map((threshold) => (
+                  <div key={threshold.id} className={`threshold-item ${threshold.state}`}>
+                    <strong>{localize(lang, threshold.label)}</strong>
+                    <small>{localize(lang, threshold.detail)}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card social-card" id="social">
+            <div className="card-header">
+              <span className="eyebrow">{copy.social}</span>
+              <span className="status-pill">{socialListening.source.freshnessStatus}</span>
+            </div>
+            <div className="social-stats">
+              <div className="social-stat">
+                <span className="eyebrow">{copy.mentions}</span>
+                <strong>{socialListening.mentionCount}</strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">{copy.sentiment}</span>
+                <strong className={socialListening.sentimentScore >= 0 ? "trend-positive" : "trend-negative"}>
+                  {socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}
+                </strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">{copy.sourceMix}</span>
+                <strong>{socialListening.sourceCount}</strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">Positive</span>
+                <strong>{Math.round(socialListening.positiveShare * 100)}%</strong>
+              </div>
+            </div>
+            <div className="social-meta">
+              <span>{socialListening.dominantSource}</span>
+              <div className="pill-list compact">
+                {socialListening.topTerms.slice(0, 5).map((term) => (
+                  <span key={term} className="stack-pill">
+                    {term}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card impact-card" id="impact">
+            <div className="card-header">
+              <span className="eyebrow">{copy.impact}</span>
+              <span className="status-pill">{impact.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
+              <div className="impact-row">
+                <span>{copy.official}</span>
+                <strong>{impact.officialUpdates}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Live</span>
+                <strong>{impact.liveSources}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Cities</span>
+                <strong>{impact.trackedCities}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Signals</span>
+                <strong>{impact.publicSignals}</strong>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Latest</span>
+              <strong>{localize(lang, impact.latestHeadline)}</strong>
+            </div>
+          </section>
         </section>
 
         <section className="support-grid">
+          <section className="card activity-card" id="activity">
+            <div className="card-header">
+              <span className="eyebrow">{copy.activity}</span>
+              <span className="status-pill">{activityItems.length}</span>
+            </div>
+            <div className="activity-list tile-scroll">
+              {activityItems.map((item) => (
+                <article key={item.id} className="activity-item">
+                  <div className="stack-title">
+                    <strong>{item.label}</strong>
+                    <span className={`status-tag ${item.status}`}>{item.status}</span>
+                  </div>
+                  <small>{formatUtcClock(item.timestamp)} UTC</small>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <section className="card research-card">
           <div className="card-header">
             <span className="eyebrow">{copy.research}</span>
@@ -968,14 +1168,14 @@ function DashboardPage() {
           <section className="card toolkit-card" id="toolkit">
           <div className="card-header">
             <span className="eyebrow">{copy.toolkit}</span>
-            <span className="status-pill">{copy.apiDirectory}</span>
+            <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
           </div>
 
           <div className="toolkit-shell tile-scroll">
             <div className="toolkit-block">
               <h3>{copy.apiDirectory}</h3>
               <div className="tool-link-grid">
-                {toolkitLinks.slice(0, 6).map((tool) => (
+                {toolkitLinks.map((tool) => (
                   <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
                     <strong>{tool.name}</strong>
                     <span>{tool.kind}</span>

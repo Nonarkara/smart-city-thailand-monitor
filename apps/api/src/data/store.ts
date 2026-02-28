@@ -1,6 +1,8 @@
 import {
+  activityLog as activityLogSeed,
   briefing as briefingSeed,
   cities as citySeed,
+  changePulse as changePulseSeed,
   cloneSeed,
   createTimeSnapshot,
   domains as domainSeed,
@@ -8,21 +10,27 @@ import {
   mapLayers as layerSeed,
   mediaFeeds as mediaFeedSeed,
   news as newsSeed,
+  officialImpact as officialImpactSeed,
   overviewMetrics,
   projects as projectSeed,
   resilience as resilienceSeed,
+  socialListening as socialListeningSeed,
   sources as sourceSeed
 } from "@smart-city/shared";
 import type {
+  ActivityLogItem,
   BriefingNote,
+  ChangePulse,
   DashboardView,
   MapFeatureCollection,
   MapLayerConfig,
   MediaFeedItem,
   NewsItem,
+  OfficialImpactSnapshot,
   OverviewSnapshot,
   ProjectRecord,
   ResilienceSnapshot,
+  SocialListeningSnapshot,
   SourceRecord,
   SyncHealthRecord,
   TimeRange,
@@ -36,6 +44,10 @@ interface StoreState {
   sources: SourceRecord[];
   briefing: BriefingNote;
   resilience: ResilienceSnapshot;
+  changePulse: ChangePulse;
+  activityLog: ActivityLogItem[];
+  socialListening: SocialListeningSnapshot;
+  officialImpact: OfficialImpactSnapshot;
   layers: MapLayerConfig[];
   mapFeaturesByLayer: Record<string, MapFeatureCollection>;
   mediaFeeds: MediaFeedItem[];
@@ -52,6 +64,48 @@ function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
 
+function uniqueTopTerms(values: string[]) {
+  const counts = new Map<string, number>();
+  values
+    .flatMap((value) => value.toLowerCase().split(/\s+/))
+    .filter(Boolean)
+    .forEach((term) => {
+      counts.set(term, (counts.get(term) ?? 0) + 1);
+    });
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 5)
+    .map(([term]) => term);
+}
+
+const COMMON_TERMS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "this",
+  "that",
+  "into",
+  "city",
+  "smart",
+  "thailand",
+  "depa"
+]);
+
+function topTermsFromNews(items: NewsItem[]) {
+  const tokens = items.flatMap((item) =>
+    `${item.title.en} ${item.excerpt.en}`
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/\s+/)
+      .filter((token) => token.length > 2 && !COMMON_TERMS.has(token))
+  );
+
+  return uniqueTopTerms(tokens).slice(0, 5);
+}
+
 function createState(): StoreState {
   const mapFeaturesByLayer = Object.fromEntries(
     cloneSeed(mapFeatureSeed).map((collection) => [collection.layerId, collection])
@@ -63,6 +117,10 @@ function createState(): StoreState {
     sources: cloneSeed(sourceSeed),
     briefing: cloneSeed(briefingSeed),
     resilience: cloneSeed(resilienceSeed),
+    changePulse: cloneSeed(changePulseSeed),
+    activityLog: cloneSeed(activityLogSeed),
+    socialListening: cloneSeed(socialListeningSeed),
+    officialImpact: cloneSeed(officialImpactSeed),
     layers: cloneSeed(layerSeed),
     mapFeaturesByLayer,
     mediaFeeds: cloneSeed(mediaFeedSeed),
@@ -85,6 +143,9 @@ export const store = {
     const filteredProjects = filters.city
       ? state.projects.filter((project) => project.citySlug === filters.city)
       : state.projects;
+    const coverageCount = state.mapFeaturesByLayer["smart-city-thailand"]?.features.length ?? citySeed.length;
+    const liveSourceCount = state.sources.filter((source) => source.freshnessStatus === "live").length;
+    const warningCount = state.resilience.warnings.length;
 
     const metrics = overviewMetrics.map((metric) => {
       if (metric.id === "active-projects") {
@@ -92,6 +153,33 @@ export const store = {
           ...metric,
           value: filteredProjects.length,
           displayValue: String(filteredProjects.length).padStart(2, "0"),
+          meta: { ...metric.meta, fetchedAt: new Date().toISOString() }
+        };
+      }
+
+      if (metric.id === "cities-tracked") {
+        return {
+          ...metric,
+          value: coverageCount,
+          displayValue: String(coverageCount).padStart(2, "0"),
+          meta: { ...metric.meta, fetchedAt: new Date().toISOString() }
+        };
+      }
+
+      if (metric.id === "resilience-watch") {
+        return {
+          ...metric,
+          value: warningCount,
+          displayValue: String(warningCount).padStart(2, "0"),
+          meta: { ...metric.meta, fetchedAt: new Date().toISOString() }
+        };
+      }
+
+      if (metric.id === "data-sources") {
+        return {
+          ...metric,
+          value: liveSourceCount,
+          displayValue: String(liveSourceCount).padStart(2, "0"),
           meta: { ...metric.meta, fetchedAt: new Date().toISOString() }
         };
       }
@@ -175,6 +263,22 @@ export const store = {
 
   getResilience() {
     return cloneSeed(state.resilience);
+  },
+
+  getChangePulse() {
+    return cloneSeed(state.changePulse);
+  },
+
+  getActivityLog(limit?: number) {
+    return cloneSeed(state.activityLog.slice(0, limit ?? state.activityLog.length));
+  },
+
+  getSocialListening() {
+    return cloneSeed(state.socialListening);
+  },
+
+  getOfficialImpact() {
+    return cloneSeed(state.officialImpact);
   },
 
   getSources() {
@@ -309,7 +413,8 @@ export const store = {
   },
 
   applySyncResults(results: AdapterSyncResult[]) {
-    state.lastSyncAt = new Date().toISOString();
+    const syncTimestamp = new Date().toISOString();
+    state.lastSyncAt = syncTimestamp;
     state.syncHealth = results.map((result) => ({
       sourceId: result.sourceId,
       status: result.status,
@@ -336,6 +441,22 @@ export const store = {
             fetchedAt: result.fetchedAt,
             freshnessStatus: result.status
           }
+        };
+      }
+
+      if (result.socialListeningPatch) {
+        state.socialListening = {
+          ...state.socialListening,
+          ...result.socialListeningPatch,
+          updatedAt: result.fetchedAt
+        };
+      }
+
+      if (result.officialImpactPatch) {
+        state.officialImpact = {
+          ...state.officialImpact,
+          ...result.officialImpactPatch,
+          updatedAt: result.fetchedAt
         };
       }
 
@@ -377,8 +498,202 @@ export const store = {
 
     const mediaFeedUpdates = results.flatMap((result) => result.mediaFeeds ?? []);
     if (mediaFeedUpdates.length > 0) {
-      state.mediaFeeds = cloneSeed(mediaFeedUpdates);
+      const mergedMedia = [...mediaFeedUpdates, ...state.mediaFeeds];
+      state.mediaFeeds = cloneSeed(
+        mergedMedia.filter((item, index, array) => {
+          const key = item.id || item.externalUrl || item.label;
+          return (
+            array.findIndex((candidate) => (candidate.id || candidate.externalUrl || candidate.label) === key) === index
+          );
+        })
+      );
     }
+
+    const socialSignals = results
+      .map((result) => result.socialSignal)
+      .filter((signal): signal is NonNullable<AdapterSyncResult["socialSignal"]> => Boolean(signal));
+
+    if (socialSignals.length > 0) {
+      const mentionCount = socialSignals.reduce((sum, signal) => sum + signal.mentionCount, 0);
+      const weightedSentiment = socialSignals.reduce(
+        (sum, signal) => sum + signal.sentimentScore * Math.max(signal.mentionCount, 1),
+        0
+      );
+      const weightedPositiveShare = socialSignals.reduce(
+        (sum, signal) => sum + signal.positiveShare * Math.max(signal.mentionCount, 1),
+        0
+      );
+      const weight = socialSignals.reduce((sum, signal) => sum + Math.max(signal.mentionCount, 1), 0);
+      const dominantSignal =
+        [...socialSignals].sort((left, right) => right.mentionCount - left.mentionCount)[0] ?? socialSignals[0];
+
+      state.socialListening = {
+        ...state.socialListening,
+        updatedAt: syncTimestamp,
+        mentionCount,
+        sentimentScore: Math.round(weightedSentiment / Math.max(weight, 1)),
+        sourceCount: socialSignals.reduce((sum, signal) => sum + signal.sourceCount, 0),
+        positiveShare: Number((weightedPositiveShare / Math.max(weight, 1)).toFixed(2)),
+        dominantSource: dominantSignal.dominantSource,
+        topTerms: uniqueTopTerms(socialSignals.flatMap((signal) => signal.topTerms)),
+        source: {
+          sourceName: dominantSignal.sourceName,
+          sourceUrl: state.socialListening.source.sourceUrl,
+          fetchedAt: syncTimestamp,
+          publishedAt: syncTimestamp,
+          freshnessStatus: "live",
+          confidence: 0.78,
+          fallbackMode: "live"
+        }
+      };
+    } else {
+      const externalNarrative = state.news.filter((item) => item.kind === "external");
+      const liveMediaCount = state.mediaFeeds.filter((item) => item.status === "live").length;
+      const derivedMentionCount = externalNarrative.length + liveMediaCount;
+      const toneBase = Math.min(85, 32 + derivedMentionCount * 4);
+      const dominantSource =
+        externalNarrative[0]?.source.sourceName ??
+        state.mediaFeeds[0]?.source.sourceName ??
+        "Live External Signals";
+
+      state.socialListening = {
+        ...state.socialListening,
+        updatedAt: syncTimestamp,
+        mentionCount: derivedMentionCount,
+        sentimentScore: toneBase,
+        sourceCount: new Set(
+          externalNarrative.map((item) => item.source.sourceName).concat(state.mediaFeeds.map((item) => item.source.sourceName))
+        ).size,
+        positiveShare: Number(Math.min(0.85, 0.42 + derivedMentionCount * 0.02).toFixed(2)),
+        dominantSource,
+        topTerms: topTermsFromNews(externalNarrative),
+        source: {
+          sourceName: dominantSource,
+          sourceUrl: externalNarrative[0]?.source.sourceUrl ?? state.socialListening.source.sourceUrl,
+          fetchedAt: syncTimestamp,
+          publishedAt: syncTimestamp,
+          freshnessStatus: derivedMentionCount > 0 ? "live" : "manual",
+          confidence: derivedMentionCount > 0 ? 0.61 : 0.42,
+          fallbackMode: derivedMentionCount > 0 ? "cached" : "manual"
+        }
+      };
+    }
+
+    const liveSourceCount = state.sources.filter((source) => source.freshnessStatus === "live").length;
+    const staleSourceCount = state.sources.filter((source) => source.freshnessStatus === "stale").length;
+    const delayedSourceCount = state.sources.filter((source) => source.freshnessStatus === "delayed").length;
+    const newSignalCount = externalNews.length + incomingProjects.length + mapCollections.length + mediaFeedUpdates.length;
+    const warningCount = state.resilience.warnings.length;
+
+    state.changePulse = {
+      updatedAt: syncTimestamp,
+      items: [
+        {
+          id: "change-new-signals",
+          label: { th: "สัญญาณใหม่", en: "New Signals" },
+          value: newSignalCount,
+          tone: newSignalCount > 0 ? "positive" : "neutral",
+          detail: {
+            th: `ข่าว ${externalNews.length} | แผนที่ ${mapCollections.length} | โครงการ ${incomingProjects.length}`,
+            en: `${externalNews.length} news | ${mapCollections.length} map updates | ${incomingProjects.length} project changes`
+          }
+        },
+        {
+          id: "change-live-sources",
+          label: { th: "แหล่งข้อมูลสด", en: "Live Sources" },
+          value: liveSourceCount,
+          tone: staleSourceCount > 0 ? "warning" : "neutral",
+          detail: {
+            th: `${staleSourceCount + delayedSourceCount} แหล่งข้อมูลต้องติดตาม`,
+            en: `${staleSourceCount + delayedSourceCount} source(s) need attention`
+          }
+        },
+        {
+          id: "change-social",
+          label: { th: "การกล่าวถึง", en: "Mentions" },
+          value: state.socialListening.mentionCount,
+          tone: state.socialListening.mentionCount >= 12 ? "positive" : "neutral",
+          detail: {
+            th: `แหล่งหลัก: ${state.socialListening.dominantSource}`,
+            en: `Lead source: ${state.socialListening.dominantSource}`
+          }
+        },
+        {
+          id: "change-alerts",
+          label: { th: "จุดเฝ้าระวัง", en: "Watchpoints" },
+          value: warningCount,
+          tone: warningCount > 0 ? "warning" : "neutral",
+          detail: {
+            th: state.resilience.warnings[0]?.th ?? "ไม่มีการเตือนเพิ่มเติม",
+            en: state.resilience.warnings[0]?.en ?? "No active warnings"
+          }
+        }
+      ],
+      thresholds: [
+        {
+          id: "threshold-media",
+          label: { th: "สัญญาณสื่อ", en: "Media Spike" },
+          state: state.socialListening.mentionCount >= 20 ? "alert" : state.socialListening.mentionCount >= 10 ? "watch" : "ok",
+          detail: {
+            th: "ติดตามเมื่อจำนวนการกล่าวถึงเพิ่มขึ้นเร็ว",
+            en: "Escalate when mentions rise sharply"
+          }
+        },
+        {
+          id: "threshold-stale",
+          label: { th: "ข้อมูลล่าช้า", en: "Stale Sources" },
+          state: staleSourceCount > 1 ? "alert" : staleSourceCount > 0 || delayedSourceCount > 0 ? "watch" : "ok",
+          detail: {
+            th: `${staleSourceCount + delayedSourceCount} แหล่งข้อมูลนอกกรอบสด`,
+            en: `${staleSourceCount + delayedSourceCount} sources outside the fresh window`
+          }
+        },
+        {
+          id: "threshold-air",
+          label: { th: "คุณภาพอากาศ", en: "Air Quality" },
+          state: state.resilience.aqi >= 90 ? "alert" : state.resilience.aqi >= 60 ? "watch" : "ok",
+          detail: {
+            th: `AQI ปัจจุบัน ${state.resilience.aqi}`,
+            en: `Current AQI ${state.resilience.aqi}`
+          }
+        }
+      ]
+    };
+
+    const newActivityEntries: ActivityLogItem[] = results.map((result, index) => {
+      const source = sourceMap.get(result.sourceId);
+      return {
+        id: `activity-${result.sourceId}-${result.fetchedAt}-${index}`,
+        timestamp: result.fetchedAt,
+        sourceId: result.sourceId,
+        label: source?.name ?? result.sourceId,
+        detail: result.message,
+        status: result.status
+      };
+    });
+
+    state.activityLog = [...newActivityEntries, ...state.activityLog].slice(0, 24);
+
+    const trackedCities = state.mapFeaturesByLayer["smart-city-thailand"]?.features.length ?? citySeed.length;
+    const officialUpdates =
+      state.news.filter((item) => item.kind === "official").length +
+      state.projects.filter((project) => project.source.sourceName === "Smart City Thailand Office").length;
+
+    state.officialImpact = {
+      ...state.officialImpact,
+      updatedAt: syncTimestamp,
+      officialUpdates,
+      liveSources: liveSourceCount,
+      trackedCities,
+      publicSignals: state.news.filter((item) => item.kind === "external").length + state.mediaFeeds.length,
+      latestHeadline: cloneSeed(state.briefing.headline),
+      source: {
+        ...state.officialImpact.source,
+        fetchedAt: syncTimestamp,
+        publishedAt: syncTimestamp,
+        freshnessStatus: staleSourceCount > 0 ? "delayed" : "live"
+      }
+    };
 
     return this.getSyncHealth();
   }

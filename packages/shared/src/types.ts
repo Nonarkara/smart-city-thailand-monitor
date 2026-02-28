@@ -136,6 +136,57 @@ export interface ResilienceSnapshot {
   source: SourceMeta;
 }
 
+export interface ChangePulseItem {
+  id: string;
+  label: LocalizedText;
+  value: number;
+  tone: "positive" | "neutral" | "warning";
+  detail: LocalizedText;
+}
+
+export interface ChangePulseThreshold {
+  id: string;
+  label: LocalizedText;
+  state: "ok" | "watch" | "alert";
+  detail: LocalizedText;
+}
+
+export interface ChangePulse {
+  updatedAt: string;
+  items: ChangePulseItem[];
+  thresholds: ChangePulseThreshold[];
+}
+
+export interface ActivityLogItem {
+  id: string;
+  timestamp: string;
+  sourceId: string;
+  label: string;
+  detail: string;
+  status: FreshnessStatus;
+}
+
+export interface SocialListeningSnapshot {
+  updatedAt: string;
+  mentionCount: number;
+  sentimentScore: number;
+  sourceCount: number;
+  positiveShare: number;
+  dominantSource: string;
+  topTerms: string[];
+  source: SourceMeta;
+}
+
+export interface OfficialImpactSnapshot {
+  updatedAt: string;
+  officialUpdates: number;
+  liveSources: number;
+  trackedCities: number;
+  publicSignals: number;
+  latestHeadline: LocalizedText;
+  source: SourceMeta;
+}
+
 export interface SourceRecord {
   id: string;
   name: string;

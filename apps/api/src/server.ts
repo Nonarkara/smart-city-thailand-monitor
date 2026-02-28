@@ -144,6 +144,13 @@ export async function createServer() {
   });
 
   app.get("/api/resilience", async () => store.getResilience());
+  app.get("/api/changes", async () => store.getChangePulse());
+  app.get("/api/activity", async (request) => {
+    const query = request.query as { limit?: string };
+    return store.getActivityLog(query.limit ? Number(query.limit) : undefined);
+  });
+  app.get("/api/social-listening", async () => store.getSocialListening());
+  app.get("/api/impact", async () => store.getOfficialImpact());
   app.get("/api/sources", async () => store.getSources());
   app.get("/api/briefings/latest", async () => store.getBriefing());
   app.get("/api/time", async () => store.getTime());

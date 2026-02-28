@@ -302,6 +302,7 @@ interface InteractiveMapProps {
   projects: ProjectRecord[];
   news: NewsItem[];
   featureCollections: MapFeatureCollection[];
+  recenterSignal: number;
 }
 
 export default function InteractiveMap({
@@ -312,7 +313,8 @@ export default function InteractiveMap({
   layers,
   projects,
   news,
-  featureCollections
+  featureCollections,
+  recenterSignal
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -354,6 +356,12 @@ export default function InteractiveMap({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (recenterSignal > 0) {
+      lastViewportKeyRef.current = "";
+    }
+  }, [recenterSignal]);
 
   useEffect(() => {
     const map = mapRef.current;

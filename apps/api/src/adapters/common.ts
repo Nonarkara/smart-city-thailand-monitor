@@ -3,12 +3,24 @@ import type {
   MapFeatureCollection,
   MediaFeedItem,
   NewsItem,
+  OfficialImpactSnapshot,
   ProjectRecord,
   ResilienceSnapshot,
+  SocialListeningSnapshot,
   SyncHealthRecord,
   TimeSnapshot
 } from "@smart-city/shared";
 import { config } from "../config.js";
+
+export interface AdapterSocialSignal {
+  mentionCount: number;
+  sentimentScore: number;
+  sourceCount: number;
+  positiveShare: number;
+  dominantSource: string;
+  topTerms: string[];
+  sourceName: string;
+}
 
 export interface AdapterSyncResult {
   sourceId: string;
@@ -21,18 +33,23 @@ export interface AdapterSyncResult {
   mapFeatureCollections?: MapFeatureCollection[];
   mediaFeeds?: MediaFeedItem[];
   resiliencePatch?: Partial<ResilienceSnapshot>;
+  socialListeningPatch?: Partial<SocialListeningSnapshot>;
+  officialImpactPatch?: Partial<OfficialImpactSnapshot>;
+  socialSignal?: AdapterSocialSignal;
   timeSnapshot?: TimeSnapshot;
 }
 
-export async function fetchJsonOrNull<T>(url: string): Promise<T | null> {
+export async function fetchJsonOrNull<T>(url: string, init?: RequestInit): Promise<T | null> {
   if (!config.allowLiveFetch || !url) {
     return null;
   }
 
   try {
     const response = await fetch(url, {
+      ...init,
       headers: {
-        Accept: "application/json"
+        Accept: "application/json",
+        ...(init?.headers ?? {})
       }
     });
 
@@ -41,6 +58,23 @@ export async function fetchJsonOrNull<T>(url: string): Promise<T | null> {
     }
 
     return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchTextOrNull(url: string, init?: RequestInit): Promise<string | null> {
+  if (!config.allowLiveFetch || !url) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(url, init);
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.text();
   } catch {
     return null;
   }
@@ -65,6 +99,9 @@ export function buildResult(input: {
   mapFeatureCollections?: MapFeatureCollection[];
   mediaFeeds?: MediaFeedItem[];
   resiliencePatch?: Partial<ResilienceSnapshot>;
+  socialListeningPatch?: Partial<SocialListeningSnapshot>;
+  officialImpactPatch?: Partial<OfficialImpactSnapshot>;
+  socialSignal?: AdapterSocialSignal;
   timeSnapshot?: TimeSnapshot;
 }): AdapterSyncResult {
   return {
@@ -78,6 +115,9 @@ export function buildResult(input: {
     mapFeatureCollections: input.mapFeatureCollections,
     mediaFeeds: input.mediaFeeds,
     resiliencePatch: input.resiliencePatch,
+    socialListeningPatch: input.socialListeningPatch,
+    officialImpactPatch: input.officialImpactPatch,
+    socialSignal: input.socialSignal,
     timeSnapshot: input.timeSnapshot
   };
 }

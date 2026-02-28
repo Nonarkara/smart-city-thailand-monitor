@@ -1,6 +1,8 @@
 import type {
+  ActivityLogItem,
   BriefingNote,
   CityProfile,
+  ChangePulse,
   DashboardView,
   DomainScorecard,
   GeoFeatureRecord,
@@ -9,9 +11,11 @@ import type {
   MapFeatureCollection,
   MediaFeedItem,
   NewsItem,
+  OfficialImpactSnapshot,
   OverviewSnapshot,
   ProjectRecord,
   ResilienceSnapshot,
+  SocialListeningSnapshot,
   SourceMeta,
   SourceRecord,
   TimeRange,
@@ -341,6 +345,24 @@ export const sources: SourceRecord[] = [
     message: "Default free external news feed. Server sync can refresh every 5 minutes."
   },
   {
+    id: "gdelt-signals",
+    name: "GDELT Signals",
+    category: "news",
+    url: "https://api.gdeltproject.org/api/v2/doc/doc",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Global media monitoring can add volume, source spread, and tone signals."
+  },
+  {
+    id: "talkwalker-alerts",
+    name: "Talkwalker Alerts",
+    category: "news",
+    url: "https://www.talkwalker.com/alerts",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Optional RSS-based web mention alerts for lightweight social listening."
+  },
+  {
     id: "bangkok-passages",
     name: "Bangkok Shared Places Map",
     category: "geospatial",
@@ -359,6 +381,15 @@ export const sources: SourceRecord[] = [
     message: "Optional secondary news source. Key required only if you want more coverage."
   },
   {
+    id: "youtube-signals",
+    name: "YouTube Signals",
+    category: "news",
+    url: "https://developers.google.com/youtube/v3",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Optional video and livestream monitoring for public-facing proof of activity."
+  },
+  {
     id: "open-meteo-weather",
     name: "Open-Meteo Forecast",
     category: "environment",
@@ -375,6 +406,24 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "live",
     lastCheckedAt: seededAt,
     message: "Default air-quality source for v1."
+  },
+  {
+    id: "openaq",
+    name: "OpenAQ",
+    category: "environment",
+    url: "https://api.openaq.org",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Optional station-level air-quality network feed when an API key is configured."
+  },
+  {
+    id: "nasa-eonet",
+    name: "NASA EONET",
+    category: "geospatial",
+    url: "https://eonet.gsfc.nasa.gov/api/v3/events",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Global natural-event monitoring can enrich the resilience layer."
   },
   {
     id: "time-sync",
@@ -1176,6 +1225,137 @@ export const overviewMetrics = [
     meta: seedMeta("Source Registry", "https://www.citydata.in.th")
   }
 ];
+
+export const changePulse: ChangePulse = {
+  updatedAt: seededAt,
+  items: [
+    {
+      id: "change-new-signals",
+      label: { th: "สัญญาณใหม่", en: "New Signals" },
+      value: 9,
+      tone: "positive",
+      detail: {
+        th: "ข่าว 5 | แผนที่ 2 | โครงการ 2",
+        en: "5 news | 2 map updates | 2 project changes"
+      }
+    },
+    {
+      id: "change-live-sources",
+      label: { th: "แหล่งข้อมูลพร้อมใช้", en: "Live Sources" },
+      value: 9,
+      tone: "neutral",
+      detail: {
+        th: "มี 2 แหล่งข้อมูลยังอยู่โหมด manual",
+        en: "2 sources are still manual"
+      }
+    },
+    {
+      id: "change-media-mentions",
+      label: { th: "การกล่าวถึงภายนอก", en: "External Mentions" },
+      value: 17,
+      tone: "positive",
+      detail: {
+        th: "GDELT และข่าวเปิดให้ภาพรวมการกล่าวถึง",
+        en: "GDELT and open news feeds drive the mention baseline"
+      }
+    },
+    {
+      id: "change-alerts",
+      label: { th: "จุดเฝ้าระวัง", en: "Watchpoints" },
+      value: 3,
+      tone: "warning",
+      detail: {
+        th: "คุณภาพอากาศและน้ำยังเป็นจุดที่ต้องเฝ้าระวัง",
+        en: "Air quality and water response remain active watchpoints"
+      }
+    }
+  ],
+  thresholds: [
+    {
+      id: "threshold-media",
+      label: { th: "สัญญาณสื่อ", en: "Media Spike" },
+      state: "watch",
+      detail: {
+        th: "ถ้าการกล่าวถึงเกิน 20 รายการให้ยกระดับการติดตาม",
+        en: "Escalate if mentions rise above 20"
+      }
+    },
+    {
+      id: "threshold-stale",
+      label: { th: "ข้อมูลล่าช้า", en: "Stale Sources" },
+      state: "ok",
+      detail: {
+        th: "ไม่มี feed สดค้างเกินรอบซิงก์",
+        en: "No live feed is stale past the sync window"
+      }
+    },
+    {
+      id: "threshold-air",
+      label: { th: "คุณภาพอากาศ", en: "Air Quality" },
+      state: "watch",
+      detail: {
+        th: "AQI เกิน 60 ให้คงการสื่อสารรายวัน",
+        en: "Keep daily messaging when AQI exceeds 60"
+      }
+    }
+  ]
+};
+
+export const activityLog: ActivityLogItem[] = [
+  {
+    id: "activity-1",
+    timestamp: seededAt,
+    sourceId: "google-news-rss",
+    label: "Google News RSS",
+    detail: "Imported 10 external headlines.",
+    status: "live"
+  },
+  {
+    id: "activity-2",
+    timestamp: seededAt,
+    sourceId: "citydata",
+    label: "CityData Thailand",
+    detail: "Refreshed the Smart City Thailand coverage footprint.",
+    status: "live"
+  },
+  {
+    id: "activity-3",
+    timestamp: seededAt,
+    sourceId: "open-meteo-air",
+    label: "Open-Meteo Air Quality",
+    detail: "Air-quality feed refreshed for Bangkok and northern watch zones.",
+    status: "live"
+  },
+  {
+    id: "activity-4",
+    timestamp: seededAt,
+    sourceId: "nasa-eonet",
+    label: "NASA EONET",
+    detail: "Regional natural-event watch refreshed for the resilience layer.",
+    status: "live"
+  }
+];
+
+export const socialListening: SocialListeningSnapshot = {
+  updatedAt: seededAt,
+  mentionCount: 17,
+  sentimentScore: 18,
+  sourceCount: 6,
+  positiveShare: 0.59,
+  dominantSource: "GDELT Signals",
+  topTerms: ["smart city", "thailand", "mobility", "resilience", "depa"],
+  source: seedMeta("GDELT Signals", "https://api.gdeltproject.org/api/v2/doc/doc", "live")
+};
+
+export const officialImpact: OfficialImpactSnapshot = {
+  updatedAt: seededAt,
+  officialUpdates: 4,
+  liveSources: 9,
+  trackedCities: 50,
+  publicSignals: 23,
+  latestHeadline: briefing.headline,
+  source: seedMeta("Smart City Thailand Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
+};
 
 export function createOverviewSnapshot(options?: {
   view?: DashboardView;
