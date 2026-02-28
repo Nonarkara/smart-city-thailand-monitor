@@ -1,0 +1,358 @@
+import type { Locale } from "@smart-city/shared";
+
+type Localized = {
+  th: string;
+  en: string;
+};
+
+export interface TrendWatchItem {
+  id: string;
+  term: Localized;
+  query: string;
+  category: Localized;
+  values: number[];
+  note: Localized;
+}
+
+export interface ResearchInsight {
+  id: string;
+  title: Localized;
+  summary: Localized;
+  href: string;
+  sourceLabel: string;
+}
+
+export interface ToolkitLink {
+  id: string;
+  name: string;
+  href: string;
+  kind: string;
+  description: Localized;
+}
+
+export const trendWatchItems: TrendWatchItem[] = [
+  {
+    id: "smart-city",
+    term: { th: "Smart City", en: "Smart City" },
+    query: "smart city",
+    category: { th: "คำหลักหลัก", en: "Core term" },
+    values: [24, 32, 39, 48, 54, 61, 67, 64],
+    note: {
+      th: "ใช้เป็นคำหลักอ้างอิงสำหรับวัดความสนใจสาธารณะ",
+      en: "Baseline public-interest reference term."
+    }
+  },
+  {
+    id: "city-data-platform",
+    term: { th: "City Data Platform", en: "City Data Platform" },
+    query: "city data platform",
+    category: { th: "โครงสร้างข้อมูล", en: "Data infrastructure" },
+    values: [10, 12, 18, 28, 35, 44, 53, 58],
+    note: {
+      th: "สะท้อนแนวคิด CDP และ data governance ที่เพิ่มขึ้น",
+      en: "Tracks growing attention to CDP and data-governance thinking."
+    }
+  },
+  {
+    id: "smart-environment",
+    term: { th: "Smart Environment", en: "Smart Environment" },
+    query: "smart environment",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [18, 24, 30, 37, 42, 46, 55, 61],
+    note: {
+      th: "มักเชื่อมกับอากาศ น้ำ และความยืดหยุ่น",
+      en: "Often tied to air, water, and resilience questions."
+    }
+  },
+  {
+    id: "smart-economy",
+    term: { th: "Smart Economy", en: "Smart Economy" },
+    query: "smart economy",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [15, 19, 23, 29, 34, 38, 42, 47],
+    note: {
+      th: "ใช้จับการลงทุน นวัตกรรม และแรงงาน",
+      en: "Used to frame investment, innovation, and workforce shifts."
+    }
+  },
+  {
+    id: "smart-mobility",
+    term: { th: "Smart Mobility", en: "Smart Mobility" },
+    query: "smart mobility",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [29, 34, 40, 47, 54, 58, 61, 65],
+    note: {
+      th: "โดยมากสัมพันธ์กับ EV การขนส่ง และ last-mile",
+      en: "Usually linked to EVs, transit, and last-mile service."
+    }
+  },
+  {
+    id: "smart-energy",
+    term: { th: "Smart Energy", en: "Smart Energy" },
+    query: "smart energy",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [20, 27, 31, 36, 43, 49, 54, 59],
+    note: {
+      th: "ผูกกับประสิทธิภาพพลังงานและทางเลือกสะอาด",
+      en: "Tracks interest in efficiency and cleaner alternatives."
+    }
+  },
+  {
+    id: "smart-people",
+    term: { th: "Smart People", en: "Smart People" },
+    query: "smart people",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [12, 15, 18, 20, 24, 27, 29, 33],
+    note: {
+      th: "สะท้อนกำลังคน ทักษะ และ civic participation",
+      en: "Reflects talent, skills, and civic-participation themes."
+    }
+  },
+  {
+    id: "smart-living",
+    term: { th: "Smart Living", en: "Smart Living" },
+    query: "smart living",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [30, 33, 39, 43, 49, 55, 61, 66],
+    note: {
+      th: "มีแนวโน้มเชื่อมกับคุณภาพชีวิตและบริการเมือง",
+      en: "Often maps to livability and service quality."
+    }
+  },
+  {
+    id: "smart-governance",
+    term: { th: "Smart Governance", en: "Smart Governance" },
+    query: "smart governance",
+    category: { th: "7 Smarts", en: "7 Smarts" },
+    values: [11, 15, 19, 24, 31, 38, 44, 50],
+    note: {
+      th: "โยงกับ open data ความโปร่งใส และบริการภาครัฐ",
+      en: "Connected to open data, transparency, and service design."
+    }
+  },
+  {
+    id: "smart-city-thailand-office",
+    term: { th: "Smart City Thailand Office", en: "Smart City Thailand Office" },
+    query: "\"Smart City Thailand Office\"",
+    category: { th: "องค์กร", en: "Organization" },
+    values: [6, 8, 11, 14, 18, 22, 26, 30],
+    note: {
+      th: "เฝ้าดูการรับรู้ต่อหน่วยงานเฉพาะในไทย",
+      en: "Tracks awareness of the Thailand-specific office."
+    }
+  },
+  {
+    id: "digital-economy-promotion-agency",
+    term: { th: "Digital Economy Promotion Agency", en: "Digital Economy Promotion Agency" },
+    query: "\"Digital Economy Promotion Agency\"",
+    category: { th: "องค์กร", en: "Organization" },
+    values: [16, 18, 21, 24, 28, 33, 37, 41],
+    note: {
+      th: "สะท้อนความสนใจต่อ depa ในฐานะผู้ขับเคลื่อน",
+      en: "Captures attention to depa as an implementation actor."
+    }
+  }
+];
+
+export const researchInsights: ResearchInsight[] = [
+  {
+    id: "operating-room",
+    title: {
+      th: "แดชบอร์ดเมืองถูกใช้เป็นห้องควบคุมการตัดสินใจ",
+      en: "Smart city dashboards are used as decision-support operating rooms."
+    },
+    summary: {
+      th: "ทีมเมืองใช้แดชบอร์ดเพื่อรวมข้อมูลจากหลายหน่วยงานให้เห็นสถานการณ์เดียวกันก่อนตัดสินใจ",
+      en: "Teams use them to combine signals from multiple agencies into one shared operating picture before acting."
+    },
+    href: "https://www.cities.google/",
+    sourceLabel: "Google for Cities"
+  },
+  {
+    id: "city-as-platform",
+    title: {
+      th: "แนวโน้มสำคัญคือคิดแบบ city as a platform",
+      en: "A major trend is treating the city as a platform."
+    },
+    summary: {
+      th: "เมืองจำนวนมากมองแดชบอร์ดไม่ใช่แค่รายงาน แต่เป็นชั้นเชื่อมข้อมูล บริการ และการตอบสนอง",
+      en: "Cities increasingly treat dashboards not as reports, but as a layer connecting data, services, and response."
+    },
+    href: "https://www.city-platform.com/",
+    sourceLabel: "City as a Platform"
+  },
+  {
+    id: "livability",
+    title: {
+      th: "สิ่งที่ผู้ใช้คาดหวังคือผลลัพธ์ด้านคุณภาพชีวิต ไม่ใช่แค่เทคโนโลยี",
+      en: "Users increasingly care about livability outcomes, not technology for its own sake."
+    },
+    summary: {
+      th: "การเล่าเรื่องที่ดีที่สุดผูกข้อมูลเข้ากับคุณภาพชีวิต ความยืดหยุ่น และการบริการที่ดีขึ้น",
+      en: "The strongest dashboards tie data to livability, resilience, and better service delivery."
+    },
+    href: "https://www.mckinsey.com/industries/public-sector/our-insights/smart-cities-digital-solutions-for-a-more-livable-future",
+    sourceLabel: "McKinsey"
+  }
+];
+
+export const toolkitLinks: ToolkitLink[] = [
+  {
+    id: "tool-citydata",
+    name: "CityData Thailand",
+    href: "https://www.citydata.in.th",
+    kind: "Directory",
+    description: {
+      th: "ศูนย์รวมแดชบอร์ดและข้อมูลเมืองของไทย",
+      en: "Thailand city dashboard and dataset directory."
+    }
+  },
+  {
+    id: "tool-citydata-catalog",
+    name: "CityData Catalog",
+    href: "https://catalog.citydata.in.th/en",
+    kind: "Catalog",
+    description: {
+      th: "ดูชุดข้อมูลและเมทาดาทา",
+      en: "Browse datasets and metadata."
+    }
+  },
+  {
+    id: "tool-data-go-th",
+    name: "data.go.th",
+    href: "https://data.go.th",
+    kind: "Catalog",
+    description: {
+      th: "พอร์ทัลข้อมูลเปิดภาครัฐ",
+      en: "Thailand’s open government data portal."
+    }
+  },
+  {
+    id: "tool-open-data-api",
+    name: "Open Government Data API",
+    href: "https://opend.data.go.th/en",
+    kind: "API",
+    description: {
+      th: "เอกสารและการเข้าถึง API ข้อมูลเปิด",
+      en: "API documentation and access for government data."
+    }
+  },
+  {
+    id: "tool-urbanis",
+    name: "The Urbanis Urban Data",
+    href: "https://urbandata.theurbanis.com",
+    kind: "Reference",
+    description: {
+      th: "ชุดข้อมูลเมืองเพื่อใช้เป็นแหล่งเสริม",
+      en: "Urban data enrichment source."
+    }
+  },
+  {
+    id: "tool-gistda",
+    name: "GISTDA Disaster Open API",
+    href: "https://disaster.gistda.or.th/services/open-api",
+    kind: "API",
+    description: {
+      th: "ข้อมูลเหตุภัยพิบัติและแผนที่ความเสี่ยง",
+      en: "Disaster and hazard data for map overlays."
+    }
+  },
+  {
+    id: "tool-open-meteo",
+    name: "Open-Meteo Weather + Air",
+    href: "https://open-meteo.com/en/docs",
+    kind: "API",
+    description: {
+      th: "ข้อมูลอากาศและคุณภาพอากาศสำหรับ v1",
+      en: "Weather and air-quality feeds for v1."
+    }
+  },
+  {
+    id: "tool-newsapi",
+    name: "Google News RSS + Alerts",
+    href: "https://news.google.com",
+    kind: "API",
+    description: {
+      th: "ฟีดข่าวฟรีจาก Google และสามารถเสริมด้วย Google Alerts RSS",
+      en: "Free Google news feeds with optional Google Alerts RSS input."
+    }
+  }
+];
+
+export function createGoogleTrendsUrl(query: string) {
+  const params = new URLSearchParams({
+    date: "today 5-y",
+    geo: "TH",
+    q: query
+  });
+
+  return `https://trends.google.com/trends/explore?${params.toString()}`;
+}
+
+export function createDashboardSkeletonExport() {
+  return {
+    app: {
+      name: "Smart City Thailand Monitor",
+      mode: "public-dashboard",
+      locales: ["th", "en"],
+      layout: {
+        desktopColumns: 16,
+        tabletColumns: 12,
+        mobileColumns: 4,
+        topBar: true,
+        leftRail: true,
+        bottomBar: true
+      }
+    },
+    routes: [
+      "/",
+      "/admin"
+    ],
+    widgets: [
+      "pulse_hero",
+      "map_layers",
+      "briefing_note",
+      "project_progress",
+      "official_news",
+      "external_news",
+      "resilience_strip",
+      "city_compare",
+      "source_health",
+      "time_zones",
+      "trend_watch",
+      "api_directory"
+    ],
+    apiEndpoints: [
+      "/api/overview",
+      "/api/pulse",
+      "/api/projects",
+      "/api/news",
+      "/api/map/layers",
+      "/api/resilience",
+      "/api/sources",
+      "/api/briefings/latest",
+      "/api/time"
+    ],
+    adminEndpoints: [
+      "/api/admin/news",
+      "/api/admin/projects",
+      "/api/admin/briefings",
+      "/api/admin/sources/sync",
+      "/api/admin/sources/health"
+    ],
+    sourceDirectory: toolkitLinks.map((tool) => ({
+      name: tool.name,
+      kind: tool.kind,
+      href: tool.href
+    })),
+    trendWatchlist: trendWatchItems.map((item) => ({
+      term: item.query,
+      geo: "TH",
+      source: "Google Trends"
+    }))
+  };
+}
+
+export function pickLocalized(locale: Locale, value: Localized) {
+  return value[locale];
+}

@@ -1,0 +1,52 @@
+databases:
+  - name: smart-city-monitor-db
+    databaseName: smart_city_monitor
+    user: smart_city_monitor
+
+services:
+  - type: web
+    name: smart-city-monitor-web
+    runtime: static
+    buildCommand: npm ci && npm run build -w packages/shared && npm run build -w apps/web
+    staticPublishPath: ./apps/web/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://smart-city-monitor-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: smart-city-monitor-api
+    runtime: node
+    buildCommand: npm ci && npm run build -w packages/shared && npm run build -w apps/api
+    startCommand: npm run start -w apps/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: ALLOW_LIVE_FETCH
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-city-monitor-db
+          property: connectionString
+
+  - type: cron
+    name: smart-city-monitor-sync
+    runtime: node
+    schedule: "*/15 * * * *"
+    buildCommand: npm ci && npm run build -w packages/shared && npm run build -w apps/worker
+    startCommand: npm run start -w apps/worker
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: API_BASE_URL
+        value: https://smart-city-monitor-api.onrender.com
+      - key: ADMIN_TOKEN
+        sync: false
