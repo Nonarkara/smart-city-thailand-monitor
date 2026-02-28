@@ -14,6 +14,7 @@ import {
 } from "@smart-city/shared";
 import type {
   DashboardView,
+  GeoFeatureRecord,
   Locale,
   MapFeatureCollection,
   MediaFeedItem,
@@ -44,6 +45,15 @@ import InteractiveMap from "./InteractiveMap";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:4000";
 const LIVE_POLL_INTERVAL_MS = 300000;
+const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
+  environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
+  economy: ["economy", "industrial", "trade", "tourism", "innovation", "growth", "logistics"],
+  mobility: ["mobility", "transport", "transit", "corridor", "gateway", "connectivity", "traffic"],
+  energy: ["energy", "power", "utility", "grid"],
+  people: ["people", "community", "education", "campus", "university", "civic"],
+  living: ["living", "livability", "health", "safety", "public-space", "tourism", "services"],
+  governance: ["governance", "administration", "service", "management", "municipal", "public", "policy"]
+};
 
 const copyDeck = {
   th: {
@@ -209,6 +219,27 @@ function formatUtcClock(value?: string) {
   }
 
   return date.toISOString().slice(11, 16);
+}
+
+function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
+  if (!domainSlug) {
+    return true;
+  }
+
+  const keywords = COVERAGE_DOMAIN_KEYWORDS[domainSlug];
+  if (!keywords) {
+    return true;
+  }
+
+  const haystack = [
+    feature.title,
+    feature.description ?? "",
+    ...Object.values(feature.properties).map((value) => String(value ?? ""))
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return keywords.some((keyword) => haystack.includes(keyword));
 }
 
 function useDashboardData(searchParams: URLSearchParams) {
@@ -411,6 +442,16 @@ function DashboardPage() {
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
     sources.find((source) => source.category === "news") ??
     null;
+  const nationalCoverageCollection = mapFeatures.find((collection) => collection.layerId === "smart-city-thailand");
+  const coverageFeatureCount = nationalCoverageCollection?.features.length ?? 0;
+  const coverageCountsByDomain = useMemo(() => {
+    const entries: Array<[string, number]> = overview.domains.map((item) => [
+      item.slug,
+      nationalCoverageCollection?.features.filter((feature) => matchesCoverageDomain(feature, item.slug)).length ?? 0
+    ]);
+
+    return new Map<string, number>(entries);
+  }, [nationalCoverageCollection, overview.domains]);
   const nextNewsCheckAt = (() => {
     if (!liveNewsSource) {
       return "";
@@ -635,10 +676,10 @@ function DashboardPage() {
                 <label className="coverage-filter">
                   <span className="eyebrow">Coverage Domain</span>
                   <select value={domain} onChange={(event) => updateParam("domain", event.target.value)}>
-                    <option value="">All</option>
+                    <option value="">{`All (${coverageFeatureCount})`}</option>
                     {overview.domains.map((item) => (
                       <option key={item.slug} value={item.slug}>
-                        {localize(lang, item.title)}
+                        {`${localize(lang, item.title)} (${coverageCountsByDomain.get(item.slug) ?? 0})`}
                       </option>
                     ))}
                   </select>
