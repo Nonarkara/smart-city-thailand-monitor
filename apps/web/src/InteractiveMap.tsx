@@ -317,6 +317,15 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const lastViewportKeyRef = useRef<string>("");
+
+  const layerKey = layers.join(",");
+  const bangkokFeatureBounds =
+    featureCollections.find((collection) => collection.layerId === "bangkok-passages")?.bounds ?? null;
+  const nationalCoverageBounds =
+    featureCollections.find((collection) => collection.layerId === "smart-city-thailand")?.bounds ?? null;
+  const bangkokBoundsKey = bangkokFeatureBounds ? bangkokFeatureBounds.join(":") : "default";
+  const nationalBoundsKey = nationalCoverageBounds ? nationalCoverageBounds.join(":") : "default";
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -352,16 +361,26 @@ export default function InteractiveMap({
       return;
     }
 
-    const nationalCoverageCollection = featureCollections.find(
-      (collection) => collection.layerId === "smart-city-thailand"
-    );
+    const hasNationalCoverageLayer = layers.includes("smart-city-thailand");
+    const nextViewportKey =
+      view === "national"
+        ? `national:${hasNationalCoverageLayer}:${nationalBoundsKey}`
+        : citySlug === "bangkok"
+          ? `city:${citySlug}:${bangkokBoundsKey}`
+          : `city:${citySlug}`;
+
+    if (lastViewportKeyRef.current === nextViewportKey) {
+      return;
+    }
+
+    lastViewportKeyRef.current = nextViewportKey;
 
     if (view === "national") {
-      if (layers.includes("smart-city-thailand") && nationalCoverageCollection?.bounds) {
+      if (hasNationalCoverageLayer && nationalCoverageBounds) {
         map.fitBounds(
           [
-            [nationalCoverageCollection.bounds[0], nationalCoverageCollection.bounds[1]],
-            [nationalCoverageCollection.bounds[2], nationalCoverageCollection.bounds[3]]
+            [nationalCoverageBounds[0], nationalCoverageBounds[1]],
+            [nationalCoverageBounds[2], nationalCoverageBounds[3]]
           ],
           {
             padding: [18, 18]
@@ -376,12 +395,11 @@ export default function InteractiveMap({
       return;
     }
 
-    const bangkokCollection = featureCollections.find((collection) => collection.layerId === "bangkok-passages");
-    if (citySlug === "bangkok" && bangkokCollection?.bounds) {
+    if (citySlug === "bangkok" && bangkokFeatureBounds) {
       map.fitBounds(
         [
-          [bangkokCollection.bounds[0], bangkokCollection.bounds[1]],
-          [bangkokCollection.bounds[2], bangkokCollection.bounds[3]]
+          [bangkokFeatureBounds[0], bangkokFeatureBounds[1]],
+          [bangkokFeatureBounds[2], bangkokFeatureBounds[3]]
         ],
         {
           padding: [18, 18]
@@ -399,7 +417,7 @@ export default function InteractiveMap({
 
     const city = cityCenters[citySlug] ?? cityCenters.bangkok;
     map.setView([city.lat, city.lon], view === "city" ? 10 : 8);
-  }, [view, citySlug, featureCollections, layers]);
+  }, [view, citySlug, layers, bangkokBoundsKey, nationalBoundsKey]);
 
   useEffect(() => {
     const overlay = overlayRef.current;
@@ -433,7 +451,7 @@ export default function InteractiveMap({
     if (activeLayers.has("disaster")) {
       renderDisaster(overlay, locale);
     }
-  }, [domainSlug, featureCollections, layers, locale, news, projects]);
+  }, [domainSlug, featureCollections, layerKey, locale, news, projects]);
 
   return <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />;
 }

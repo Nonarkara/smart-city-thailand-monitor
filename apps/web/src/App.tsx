@@ -248,7 +248,8 @@ function useDashboardData(searchParams: URLSearchParams) {
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? "bangkok";
   const domain = searchParams.get("domain") ?? "";
-  const layers = parseLayerSet(searchParams.get("layers"));
+  const rawLayers = searchParams.get("layers");
+  const layers = useMemo(() => parseLayerSet(rawLayers), [rawLayers]);
   const cityFilter = view === "national" ? "" : city;
   const queryString = new URLSearchParams(searchParams);
 
