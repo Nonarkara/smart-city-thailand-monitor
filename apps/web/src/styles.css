@@ -369,8 +369,29 @@ textarea {
 
 .support-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.6rem;
+  align-items: start;
+}
+
+.market-card {
+  grid-column: 1;
+  min-height: 0;
+}
+
+.activity-card {
+  grid-column: 2 / span 2;
+  min-height: 220px;
+}
+
+.research-card {
+  grid-column: 4 / span 2;
+  min-height: 220px;
+}
+
+.toolkit-card {
+  grid-column: 1 / -1;
+  min-height: 0;
 }
 
 .market-card,
@@ -379,7 +400,6 @@ textarea {
 .toolkit-card,
 .footnote-card {
   height: auto;
-  min-height: 220px;
 }
 
 .card-header,
@@ -1047,6 +1067,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
+  align-items: start;
 }
 
 .toolkit-block {
@@ -1061,7 +1082,7 @@ textarea {
 
 .tool-link-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.55rem;
 }
 
