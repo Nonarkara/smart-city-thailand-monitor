@@ -369,10 +369,11 @@ textarea {
 
 .support-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
 }
 
+.market-card,
 .activity-card,
 .research-card,
 .toolkit-card,
@@ -647,6 +648,35 @@ textarea {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.72rem;
   white-space: nowrap;
+}
+
+.city-intel {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(20, 20, 20, 0.06);
+}
+
+.city-intel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.city-intel-stat,
+.city-intel-focus {
+  padding: 0.55rem 0.6rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.58);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.city-intel-focus p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
 }
 
 .coverage-filter {
@@ -1157,6 +1187,10 @@ textarea {
 }
 
 @media (max-width: 1180px) {
+  .city-intel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-board,
   .support-grid {
     grid-template-columns: 1fr;
@@ -1168,11 +1202,16 @@ textarea {
   .projects-card,
   .news-card,
   .media-card,
+  .changes-card,
+  .social-card,
+  .impact-card,
   .resilience-card,
   .compare-card,
   .sources-card,
   .time-card,
   .trends-card,
+  .market-card,
+  .activity-card,
   .research-card,
   .toolkit-card,
   .footnote-card {
@@ -1233,11 +1272,16 @@ textarea {
   .projects-card,
   .news-card,
   .media-card,
+  .changes-card,
+  .social-card,
+  .impact-card,
   .resilience-card,
   .compare-card,
   .sources-card,
   .time-card,
   .trends-card,
+  .market-card,
+  .activity-card,
   .research-card,
   .toolkit-card,
   .footnote-card {
@@ -1249,6 +1293,7 @@ textarea {
 
   .metric-grid,
   .selection-strip,
+  .city-intel-grid,
   .news-columns,
   .time-zones,
   .support-grid,

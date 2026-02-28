@@ -9,6 +9,7 @@ import type {
   Locale,
   MapLayerConfig,
   MapFeatureCollection,
+  MarketSnapshot,
   MediaFeedItem,
   NewsItem,
   OfficialImpactSnapshot,
@@ -417,6 +418,15 @@ export const sources: SourceRecord[] = [
     message: "Optional station-level air-quality network feed when an API key is configured."
   },
   {
+    id: "market-context",
+    name: "Market Context",
+    category: "finance",
+    url: "https://api.coingecko.com",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Free macro context signals for BTC, gold, and USD/THB."
+  },
+  {
     id: "nasa-eonet",
     name: "NASA EONET",
     category: "geospatial",
@@ -573,7 +583,12 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [100.5018, 13.7563],
         title: "Bangkok Metropolitan Smart City",
         description: "National capital operating zone within the Smart City Thailand network.",
-        properties: { city: "Bangkok", region: "Central" },
+        properties: {
+          city: "Bangkok",
+          region: "Central",
+          population: 10539000,
+          smartFocus: "Flood response, mobility, and city-scale digital services."
+        },
         source: smartCityThailandMeta
       },
       {
@@ -663,7 +678,12 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.9853, 18.7883],
         title: "Chiang Mai",
         description: "Livability, environment, and innovation city cluster.",
-        properties: { city: "Chiang Mai", region: "North" },
+        properties: {
+          city: "Chiang Mai",
+          region: "North",
+          population: 1270000,
+          smartFocus: "Air quality, livability, and cultural innovation."
+        },
         source: smartCityThailandMeta
       },
       {
@@ -703,7 +723,12 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [102.8236, 16.4322],
         title: "Khon Kaen",
         description: "Flagship regional smart mobility and civic innovation city.",
-        properties: { city: "Khon Kaen", region: "Northeast" },
+        properties: {
+          city: "Khon Kaen",
+          region: "Northeast",
+          population: 412000,
+          smartFocus: "Regional mobility, public services, and civic innovation."
+        },
         source: smartCityThailandMeta
       },
       {
@@ -743,7 +768,12 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.3923, 7.8804],
         title: "Phuket",
         description: "Smart tourism and island-scale city systems pilot.",
-        properties: { city: "Phuket", region: "South" },
+        properties: {
+          city: "Phuket",
+          region: "South",
+          population: 417000,
+          smartFocus: "Tourism, mobility, and resilient island infrastructure."
+        },
         source: smartCityThailandMeta
       },
       {
@@ -1114,6 +1144,102 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: bangkokPlaceMeta
       }
     ]
+  },
+  {
+    layerId: "weather",
+    updatedAt: seededAt,
+    bounds: [7.0, 98.2, 18.9, 102.9],
+    source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live"),
+    features: [
+      {
+        id: "weather-bangkok",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [100.5018, 13.7563],
+        title: "Bangkok",
+        description: "City weather watchpoint",
+        properties: { city: "Bangkok", temperatureC: 32, humidity: 60, windKmH: 10, region: "Central" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-chiang-mai",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [98.9853, 18.7883],
+        title: "Chiang Mai",
+        description: "City weather watchpoint",
+        properties: { city: "Chiang Mai", temperatureC: 29, humidity: 52, windKmH: 8, region: "North" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-khon-kaen",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [102.8236, 16.4322],
+        title: "Khon Kaen",
+        description: "City weather watchpoint",
+        properties: { city: "Khon Kaen", temperatureC: 31, humidity: 48, windKmH: 12, region: "Northeast" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-phuket",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [98.3923, 7.8804],
+        title: "Phuket",
+        description: "City weather watchpoint",
+        properties: { city: "Phuket", temperatureC: 30, humidity: 74, windKmH: 15, region: "South" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      }
+    ]
+  },
+  {
+    layerId: "pollution",
+    updatedAt: seededAt,
+    bounds: [7.0, 98.2, 18.9, 102.9],
+    source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live"),
+    features: [
+      {
+        id: "pollution-bangkok",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [100.5018, 13.7563],
+        title: "Bangkok",
+        description: "City AQI watchpoint",
+        properties: { city: "Bangkok", aqi: 57, pm25: 11, pm10: 12, region: "Central" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-chiang-mai",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [98.9853, 18.7883],
+        title: "Chiang Mai",
+        description: "City AQI watchpoint",
+        properties: { city: "Chiang Mai", aqi: 88, pm25: 29, pm10: 40, region: "North" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-khon-kaen",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [102.8236, 16.4322],
+        title: "Khon Kaen",
+        description: "City AQI watchpoint",
+        properties: { city: "Khon Kaen", aqi: 49, pm25: 9, pm10: 14, region: "Northeast" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-phuket",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [98.3923, 7.8804],
+        title: "Phuket",
+        description: "City AQI watchpoint",
+        properties: { city: "Phuket", aqi: 34, pm25: 6, pm10: 9, region: "South" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      }
+    ]
   }
 ];
 
@@ -1355,6 +1481,34 @@ export const officialImpact: OfficialImpactSnapshot = {
   publicSignals: 23,
   latestHeadline: briefing.headline,
   source: seedMeta("Smart City Thailand Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
+};
+
+export const marketSnapshot: MarketSnapshot = {
+  updatedAt: seededAt,
+  items: [
+    {
+      id: "usd-thb",
+      label: { th: "ดอลลาร์ / บาท", en: "USD / THB" },
+      value: "35.6",
+      changeText: { th: "เงินดอลลาร์ทรงตัว", en: "FX baseline" },
+      tone: "neutral"
+    },
+    {
+      id: "btc-usd",
+      label: { th: "บิตคอยน์", en: "Bitcoin" },
+      value: "$63.4k",
+      changeText: { th: "ตัวชี้วัดความเสี่ยง", en: "Risk appetite proxy" },
+      tone: "positive"
+    },
+    {
+      id: "gold-usd",
+      label: { th: "ทองคำ / ออนซ์", en: "Gold / oz" },
+      value: "$2,020",
+      changeText: { th: "สินทรัพย์ป้องกันความเสี่ยง", en: "Defensive signal" },
+      tone: "warning"
+    }
+  ],
+  source: seedMeta("Market Context", "https://api.coingecko.com", "live")
 };
 
 export function createOverviewSnapshot(options?: {

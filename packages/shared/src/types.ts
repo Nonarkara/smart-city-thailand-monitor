@@ -187,10 +187,24 @@ export interface OfficialImpactSnapshot {
   source: SourceMeta;
 }
 
+export interface MarketSignalItem {
+  id: string;
+  label: LocalizedText;
+  value: string;
+  changeText: LocalizedText;
+  tone: "positive" | "neutral" | "warning";
+}
+
+export interface MarketSnapshot {
+  updatedAt: string;
+  items: MarketSignalItem[];
+  source: SourceMeta;
+}
+
 export interface SourceRecord {
   id: string;
   name: string;
-  category: "catalog" | "news" | "environment" | "time" | "geospatial";
+  category: "catalog" | "news" | "environment" | "time" | "geospatial" | "finance";
   url: string;
   freshnessStatus: FreshnessStatus;
   lastCheckedAt: string;

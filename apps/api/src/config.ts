@@ -50,5 +50,12 @@ export const config = {
   openaqEndpoint:
     process.env.OPENAQ_ENDPOINT ??
     "https://api.openaq.org/v3/locations?country=TH&limit=6",
-  openaqApiKey: process.env.OPENAQ_API_KEY ?? ""
+  openaqApiKey: process.env.OPENAQ_API_KEY ?? "",
+  marketBtcEndpoint:
+    process.env.MARKET_BTC_ENDPOINT ??
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true",
+  marketUsdThbEndpoint:
+    process.env.MARKET_USD_THB_ENDPOINT ??
+    "https://api.frankfurter.app/latest?from=USD&to=THB",
+  marketGoldEndpoint: process.env.MARKET_GOLD_ENDPOINT ?? "https://api.gold-api.com/price/XAU"
 };

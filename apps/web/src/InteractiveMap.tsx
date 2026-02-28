@@ -152,58 +152,17 @@ function renderResilience(target: L.LayerGroup, locale: Locale) {
 }
 
 function renderEconomy(target: L.LayerGroup, locale: Locale) {
-  const route = [
-    [cityCenters.phuket.lat, cityCenters.phuket.lon],
-    [cityCenters.bangkok.lat, cityCenters.bangkok.lon],
-    [cityCenters["khon-kaen"].lat, cityCenters["khon-kaen"].lon],
-    [cityCenters["chiang-mai"].lat, cityCenters["chiang-mai"].lon]
-  ] as L.LatLngExpression[];
-
-  const line = L.polyline(route, {
-    color: layerColors.economy,
-    weight: 3,
-    opacity: 0.7,
-    dashArray: "8 6"
-  });
-  line.bindTooltip(locale === "th" ? "แนวเชื่อมโยงเศรษฐกิจเมือง" : "City economic linkage corridor");
-  line.addTo(target);
-}
-
-function renderWeather(target: L.LayerGroup, locale: Locale) {
   [
-    { citySlug: "bangkok", value: "31C" },
-    { citySlug: "phuket", value: "29C" },
-    { citySlug: "khon-kaen", value: "30C" },
-    { citySlug: "chiang-mai", value: "27C" }
+    { citySlug: "bangkok", value: 82 },
+    { citySlug: "phuket", value: 76 },
+    { citySlug: "khon-kaen", value: 71 },
+    { citySlug: "chiang-mai", value: 74 }
   ].forEach((item) => {
-    const city = cityCenters[item.citySlug];
-    const circle = L.circleMarker([city.lat, city.lon], {
-      radius: 5,
-      color: layerColors.weather,
-      fillColor: layerColors.weather,
-      fillOpacity: 0.35,
-      weight: 2
+    const label = `${localize(locale, cityCenters[item.citySlug].label)}: ${item.value}`;
+    addCitySignal(target, item.citySlug, layerColors.economy, 6 + Math.round(item.value / 20), label, {
+      fillOpacity: 0.18,
+      strokeWidth: 2
     });
-    circle.bindTooltip(`${localize(locale, city.label)}: ${item.value}`);
-    circle.addTo(target);
-  });
-}
-
-function renderPollution(target: L.LayerGroup, locale: Locale) {
-  [
-    { citySlug: "chiang-mai", value: "AQI 88" },
-    { citySlug: "bangkok", value: "AQI 68" }
-  ].forEach((item) => {
-    const city = cityCenters[item.citySlug];
-    const circle = L.circle([city.lat, city.lon], {
-      radius: 30000,
-      color: layerColors.pollution,
-      weight: 2,
-      fillColor: layerColors.pollution,
-      fillOpacity: 0.07
-    });
-    circle.bindTooltip(`${localize(locale, city.label)}: ${item.value}`);
-    circle.addTo(target);
   });
 }
 
@@ -248,6 +207,21 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
   return keywords.some((keyword) => haystack.includes(keyword));
 }
 
+function humanizePropertyKey(key: string) {
+  return key
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (value) => value.toUpperCase());
+}
+
+function formatPropertyValue(key: string, value: string | number | boolean | null) {
+  if (typeof value === "number" && key.toLowerCase().includes("population")) {
+    return value.toLocaleString("en-US");
+  }
+
+  return String(value ?? "");
+}
+
 function renderFeatureCollections(
   target: L.LayerGroup,
   activeLayers: Set<LayerId>,
@@ -271,18 +245,42 @@ function renderFeatureCollections(
       const [lon, lat] = feature.coordinates as [number, number];
       const isBangkokPlaces = collection.layerId === "bangkok-passages";
       const isNationalFootprint = collection.layerId === "smart-city-thailand";
+      const intensity =
+        collection.layerId === "pollution"
+          ? Number(feature.properties.aqi ?? 0)
+          : collection.layerId === "weather"
+            ? Number(feature.properties.temperatureC ?? 0)
+            : 0;
       const marker = L.circleMarker([lat, lon], {
-        radius: isNationalFootprint ? 7 : isBangkokPlaces ? 6 : 4,
+        radius: isNationalFootprint
+          ? 7
+          : isBangkokPlaces
+            ? 6
+            : collection.layerId === "pollution"
+              ? Math.max(5, Math.min(10, 4 + intensity / 20))
+              : collection.layerId === "weather"
+                ? 6
+                : 4,
         color: layerColors[collection.layerId as LayerId] ?? "#22c55e",
         fillColor: layerColors[collection.layerId as LayerId] ?? "#22c55e",
-        fillOpacity: isNationalFootprint ? 0.5 : 0.35,
+        fillOpacity: isNationalFootprint ? 0.5 : collection.layerId === "pollution" ? 0.24 : 0.35,
         weight: 2
       });
+
+      const propertyRows = Object.entries(feature.properties)
+        .filter(([, value]) => value !== null && value !== "")
+        .slice(0, 4)
+        .map(
+          ([key, value]) =>
+            `<small><strong>${humanizePropertyKey(key)}:</strong> ${formatPropertyValue(key, value)}</small>`
+        )
+        .join("");
 
       const popupContent = `
         <div style="display:grid;gap:4px;min-width:180px;">
           <strong>${feature.title}</strong>
           ${feature.description ? `<span>${feature.description}</span>` : ""}
+          ${propertyRows}
           <small>${feature.source.sourceName}</small>
         </div>
       `;
@@ -449,12 +447,6 @@ export default function InteractiveMap({
     }
     if (activeLayers.has("economy")) {
       renderEconomy(overlay, locale);
-    }
-    if (activeLayers.has("weather")) {
-      renderWeather(overlay, locale);
-    }
-    if (activeLayers.has("pollution")) {
-      renderPollution(overlay, locale);
     }
     if (activeLayers.has("disaster")) {
       renderDisaster(overlay, locale);

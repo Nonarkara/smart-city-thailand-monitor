@@ -326,6 +326,26 @@ export const toolkitLinks: ToolkitLink[] = [
       th: "สถานีคุณภาพอากาศระดับจุดเมื่อตั้งค่า key แล้ว",
       en: "Station-level air-quality network when an API key is configured."
     }
+  },
+  {
+    id: "tool-coingecko",
+    name: "CoinGecko Simple Price",
+    href: "https://www.coingecko.com/en/api/documentation",
+    kind: "API",
+    description: {
+      th: "ราคา Bitcoin และสินทรัพย์คริปโตแบบไม่ต้องใช้ key",
+      en: "Free crypto price snapshots such as Bitcoin."
+    }
+  },
+  {
+    id: "tool-frankfurter",
+    name: "Frankfurter FX API",
+    href: "https://www.frankfurter.app/docs/",
+    kind: "API",
+    description: {
+      th: "อัตราแลกเปลี่ยนสำหรับบริบทค่าเงิน เช่น USD/THB",
+      en: "Foreign-exchange context such as USD/THB."
+    }
   }
 ];
 
@@ -372,6 +392,7 @@ export function createDashboardSkeletonExport() {
       "what_changed",
       "social_listening",
       "official_impact",
+      "market_context",
       "activity_log",
       "trend_watch",
       "api_directory"
@@ -387,6 +408,7 @@ export function createDashboardSkeletonExport() {
       "/api/activity",
       "/api/social-listening",
       "/api/impact",
+      "/api/markets",
       "/api/sources",
       "/api/briefings/latest",
       "/api/time"

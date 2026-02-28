@@ -151,6 +151,7 @@ export async function createServer() {
   });
   app.get("/api/social-listening", async () => store.getSocialListening());
   app.get("/api/impact", async () => store.getOfficialImpact());
+  app.get("/api/markets", async () => store.getMarketSnapshot());
   app.get("/api/sources", async () => store.getSources());
   app.get("/api/briefings/latest", async () => store.getBriefing());
   app.get("/api/time", async () => store.getTime());

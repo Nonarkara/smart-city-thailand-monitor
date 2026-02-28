@@ -25,10 +25,11 @@ const parser = new XMLParser({
 
 const defaultQueries = [
   "\"smart city\" Thailand",
+  "\"เมืองอัจฉริยะ\" Thailand",
   "\"smart mobility\" Thailand",
   "\"smart environment\" Thailand",
   "\"smart living\" Thailand",
-  "\"Smart City Thailand Office\" OR \"Digital Economy Promotion Agency\""
+  "\"Smart City Thailand Office\" OR \"Digital Economy Promotion Agency\" OR depa OR \"สำนักงานส่งเสริมเศรษฐกิจดิจิทัล\""
 ];
 
 function inferDomain(text: string) {

@@ -4,6 +4,7 @@ import { syncEonetEvents } from "../adapters/eonetAdapter.js";
 import { syncGdeltSignals } from "../adapters/gdeltAdapter.js";
 import { syncGistdaDisaster } from "../adapters/gistdaDisasterAdapter.js";
 import { syncGoogleNewsRss } from "../adapters/googleNewsRssAdapter.js";
+import { syncMarketSignals } from "../adapters/marketSignalsAdapter.js";
 import { syncNewsApi } from "../adapters/newsApiAdapter.js";
 import { syncOpenAq } from "../adapters/openaqAdapter.js";
 import { syncOpenMeteoAirQuality } from "../adapters/openMeteoAirQualityAdapter.js";
@@ -26,6 +27,7 @@ export async function runSourceSync() {
     syncTalkwalkerAlerts(),
     syncNewsApi(),
     syncYouTubeSignals(),
+    syncMarketSignals(),
     syncEonetEvents(),
     syncOpenMeteoWeather(),
     syncOpenMeteoAirQuality(),
@@ -48,6 +50,7 @@ export async function runSourceSync() {
       "talkwalker-alerts",
       "news-api",
       "youtube-signals",
+      "market-context",
       "nasa-eonet",
       "open-meteo-weather",
       "open-meteo-air",

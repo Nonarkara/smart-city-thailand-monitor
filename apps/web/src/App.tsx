@@ -8,6 +8,7 @@ import {
   localize,
   mapFeatureCollections as mapFeatureSeed,
   mapLayers as layerSeed,
+  marketSnapshot as marketSnapshotSeed,
   mediaFeeds as mediaFeedSeed,
   news as newsSeed,
   officialImpact as officialImpactSeed,
@@ -23,6 +24,7 @@ import type {
   GeoFeatureRecord,
   Locale,
   MapFeatureCollection,
+  MarketSnapshot,
   MediaFeedItem,
   NewsItem,
   OfficialImpactSnapshot,
@@ -123,6 +125,12 @@ const copyDeck = {
     mentions: "การกล่าวถึง",
     sentiment: "โทน",
     sourceMix: "แหล่งอ้างอิง",
+    markets: "บริบทตลาด",
+    placeLookup: "ข้อมูลเมือง",
+    population: "ประชากร",
+    region: "ภูมิภาค",
+    smartFocus: "ประเด็นเมืองอัจฉริยะ",
+    leadingDomains: "มิติเด่น",
     copyright:
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
@@ -186,6 +194,12 @@ const copyDeck = {
     mentions: "Mentions",
     sentiment: "Tone",
     sourceMix: "Source Mix",
+    markets: "Market Context",
+    placeLookup: "City Lookup",
+    population: "Population",
+    region: "Region",
+    smartFocus: "Smart City Focus",
+    leadingDomains: "Leading Domains",
     copyright:
       "Copyright, trademarks, and external datasets remain with their respective owners. This prototype is shared as an open learning resource and should be independently validated before operational use."
   }
@@ -247,6 +261,10 @@ function formatUtcClock(value?: string) {
   }
 
   return date.toISOString().slice(11, 16);
+}
+
+function formatPopulation(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
@@ -384,6 +402,14 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const marketQuery = useQuery({
+    queryKey: ["markets"],
+    queryFn: () => fetchFromApi<MarketSnapshot>("/api/markets", cloneSeed(marketSnapshotSeed)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const sourcesQuery = useQuery({
     queryKey: ["sources"],
     queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed)),
@@ -435,6 +461,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     activity: activityQuery.data ?? cloneSeed(activityLogSeed),
     socialListening: socialListeningQuery.data ?? cloneSeed(socialListeningSeed),
     impact: impactQuery.data ?? cloneSeed(officialImpactSeed),
+    markets: marketQuery.data ?? cloneSeed(marketSnapshotSeed),
     sources: sourcesQuery.data ?? cloneSeed(sourceSeed),
     mapFeatures:
       mapFeaturesQuery.data ??
@@ -467,6 +494,7 @@ function DashboardPage() {
     activity,
     socialListening,
     impact,
+    markets,
     sources,
     mapFeatures,
     mediaFeeds,
@@ -509,6 +537,13 @@ function DashboardPage() {
   const compactMedia = mediaFeeds.slice(0, 3);
   const activityItems = activity.slice(0, 6);
   const timeZones = time.zones.slice(0, 3);
+  const topCityScores = [...selectedCity.scores]
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3)
+    .map((score) => ({
+      ...score,
+      domain: overview.domains.find((item) => item.slug === score.domainSlug)
+    }));
   const liveNewsSource =
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
     sources.find((source) => source.category === "news") ??
@@ -765,6 +800,37 @@ function DashboardPage() {
               ) : null}
             </div>
             <span className="hero-note">CityData + GDELT + EONET + live overlays</span>
+          </div>
+
+          <div className="city-intel">
+            <div className="card-header">
+              <span className="eyebrow">{copy.placeLookup}</span>
+              <span className="status-pill">{localize(lang, selectedCity.name)}</span>
+            </div>
+            <div className="city-intel-grid">
+              <div className="city-intel-stat">
+                <span className="eyebrow">{copy.population}</span>
+                <strong>{formatPopulation(selectedCity.population)}</strong>
+              </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{copy.region}</span>
+                <strong>{localize(lang, selectedCity.region)}</strong>
+              </div>
+              <div className="city-intel-focus">
+                <span className="eyebrow">{copy.smartFocus}</span>
+                <p>{localize(lang, selectedCity.focus)}</p>
+              </div>
+              <div className="city-intel-focus">
+                <span className="eyebrow">{copy.leadingDomains}</span>
+                <div className="pill-list compact">
+                  {topCityScores.map((item) => (
+                    <span key={item.domainSlug} className="stack-pill">
+                      {item.domain ? `${localize(lang, item.domain.title)} ${item.score}` : `${item.domainSlug} ${item.score}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1127,6 +1193,25 @@ function DashboardPage() {
         </section>
 
         <section className="support-grid">
+          <section className="card market-card" id="markets">
+            <div className="card-header">
+              <span className="eyebrow">{copy.markets}</span>
+              <span className="status-pill">{markets.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
+              {markets.items.map((item) => (
+                <div key={item.id} className={`impact-row tone-${item.tone}`}>
+                  <span>{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Signal</span>
+              <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
+            </div>
+          </section>
+
           <section className="card activity-card" id="activity">
             <div className="card-header">
               <span className="eyebrow">{copy.activity}</span>

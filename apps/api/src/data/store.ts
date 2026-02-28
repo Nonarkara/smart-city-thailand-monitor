@@ -8,6 +8,7 @@ import {
   domains as domainSeed,
   mapFeatureCollections as mapFeatureSeed,
   mapLayers as layerSeed,
+  marketSnapshot as marketSnapshotSeed,
   mediaFeeds as mediaFeedSeed,
   news as newsSeed,
   officialImpact as officialImpactSeed,
@@ -24,6 +25,7 @@ import type {
   DashboardView,
   MapFeatureCollection,
   MapLayerConfig,
+  MarketSnapshot,
   MediaFeedItem,
   NewsItem,
   OfficialImpactSnapshot,
@@ -48,6 +50,7 @@ interface StoreState {
   activityLog: ActivityLogItem[];
   socialListening: SocialListeningSnapshot;
   officialImpact: OfficialImpactSnapshot;
+  marketSnapshot: MarketSnapshot;
   layers: MapLayerConfig[];
   mapFeaturesByLayer: Record<string, MapFeatureCollection>;
   mediaFeeds: MediaFeedItem[];
@@ -121,6 +124,7 @@ function createState(): StoreState {
     activityLog: cloneSeed(activityLogSeed),
     socialListening: cloneSeed(socialListeningSeed),
     officialImpact: cloneSeed(officialImpactSeed),
+    marketSnapshot: cloneSeed(marketSnapshotSeed),
     layers: cloneSeed(layerSeed),
     mapFeaturesByLayer,
     mediaFeeds: cloneSeed(mediaFeedSeed),
@@ -279,6 +283,10 @@ export const store = {
 
   getOfficialImpact() {
     return cloneSeed(state.officialImpact);
+  },
+
+  getMarketSnapshot() {
+    return cloneSeed(state.marketSnapshot);
   },
 
   getSources() {
@@ -456,6 +464,14 @@ export const store = {
         state.officialImpact = {
           ...state.officialImpact,
           ...result.officialImpactPatch,
+          updatedAt: result.fetchedAt
+        };
+      }
+
+      if (result.marketSnapshotPatch) {
+        state.marketSnapshot = {
+          ...state.marketSnapshot,
+          ...result.marketSnapshotPatch,
           updatedAt: result.fetchedAt
         };
       }
