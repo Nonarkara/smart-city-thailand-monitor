@@ -131,6 +131,11 @@ const copyDeck = {
     region: "ภูมิภาค",
     smartFocus: "ประเด็นเมืองอัจฉริยะ",
     leadingDomains: "มิติเด่น",
+    liveWatch: "เฝ้าระวังสด",
+    airHotspot: "จุด AQI สูง",
+    weatherHotspot: "อากาศร้อนสุด",
+    latestSignal: "สัญญาณล่าสุด",
+    syncWindow: "รอบซิงก์",
     copyright:
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
@@ -200,6 +205,11 @@ const copyDeck = {
     region: "Region",
     smartFocus: "Smart City Focus",
     leadingDomains: "Leading Domains",
+    liveWatch: "Live Watch",
+    airHotspot: "AQI Hotspot",
+    weatherHotspot: "Heat Watch",
+    latestSignal: "Latest Signal",
+    syncWindow: "Sync Window",
     copyright:
       "Copyright, trademarks, and external datasets remain with their respective owners. This prototype is shared as an open learning resource and should be independently validated before operational use."
   }
@@ -265,6 +275,11 @@ function formatUtcClock(value?: string) {
 
 function formatPopulation(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
+}
+
+function numericProperty(feature: GeoFeatureRecord, key: string) {
+  const raw = feature.properties[key];
+  return typeof raw === "number" ? raw : Number(raw ?? 0);
 }
 
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
@@ -504,6 +519,7 @@ function DashboardPage() {
   const copy = copyDeck[lang];
   const selectedCity = overview.cities.find((item) => item.slug === city) ?? overview.cities[0];
   const selectedDomain = overview.domains.find((item) => item.slug === domain);
+  const knownCitySlugs = new Set(overview.cities.map((item) => item.slug));
   const normalizedSearch = deferredSearchText.trim().toLowerCase();
 
   const filteredProjects = normalizedSearch
@@ -548,6 +564,17 @@ function DashboardPage() {
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
     sources.find((source) => source.category === "news") ??
     null;
+  const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
+  const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
+  const topAqiFeature =
+    pollutionCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
+      return !best || numericProperty(feature, "aqi") > numericProperty(best, "aqi") ? feature : best;
+    }, null) ?? null;
+  const hottestWeatherFeature =
+    weatherCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
+      return !best || numericProperty(feature, "temperatureC") > numericProperty(best, "temperatureC") ? feature : best;
+    }, null) ?? null;
+  const latestExternalSignal = news.find((item) => item.kind === "external") ?? null;
   const nationalCoverageCollection = mapFeatures.find((collection) => collection.layerId === "smart-city-thailand");
   const coverageFeatureCount = nationalCoverageCollection?.features.length ?? 0;
   const coverageCountsByDomain = useMemo(() => {
@@ -570,6 +597,13 @@ function DashboardPage() {
 
     return new Date(lastCheckMs + 300000).toISOString();
   })();
+  const latestSyncSource =
+    [...sources].sort(
+      (left, right) => new Date(right.lastCheckedAt).getTime() - new Date(left.lastCheckedAt).getTime()
+    )[0] ?? null;
+  const nextGlobalSyncAt = latestSyncSource
+    ? new Date(new Date(latestSyncSource.lastCheckedAt).getTime() + LIVE_POLL_INTERVAL_MS).toISOString()
+    : "";
 
   const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
   const thisCycleItems = changes.items.slice(0, 3);
@@ -604,6 +638,24 @@ function DashboardPage() {
 
     startTransition(() => {
       setSearchParams(next);
+    });
+  }
+
+  function focusCityWithLayer(citySlug: string, layerId: string) {
+    const next = new URLSearchParams(searchParams);
+    const nextLayers = new Set(layers);
+    nextLayers.add(layerId);
+    next.set("layers", Array.from(nextLayers).join(","));
+    if (knownCitySlugs.has(citySlug)) {
+      next.set("city", citySlug);
+      next.set("view", "city");
+    } else {
+      next.set("view", "national");
+    }
+
+    startTransition(() => {
+      setSearchParams(next);
+      setRecenterSignal((value) => value + 1);
     });
   }
 
@@ -727,16 +779,66 @@ function DashboardPage() {
           </label>
         </div>
 
-        <nav className="side-nav side-anchor-nav">
-          <a href="#pulse">{copy.topLine}</a>
-          <a href="#news">{copy.news}</a>
-          <a href="#changes">{copy.changes}</a>
-          <a href="#social">{copy.social}</a>
-          <a href="#projects">{copy.projects}</a>
-          <a href="#trends">{copy.trendWatch}</a>
-          <a href="#toolkit">{copy.toolkit}</a>
-          <a href="#fine-print">{copy.finePrint}</a>
-        </nav>
+        <div className="side-section side-live-rail">
+          <span className="eyebrow">{copy.liveWatch}</span>
+
+          {topAqiFeature ? (
+            <button
+              type="button"
+              className="side-watch"
+              onClick={() =>
+                focusCityWithLayer(String(topAqiFeature.properties.city).toLowerCase().replace(/\s+/g, "-"), "pollution")
+              }
+            >
+              <span className="eyebrow">{copy.airHotspot}</span>
+              <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+              <small>{`${numericProperty(topAqiFeature, "pm25")} PM2.5 | ${numericProperty(topAqiFeature, "pm10")} PM10`}</small>
+            </button>
+          ) : null}
+
+          {hottestWeatherFeature ? (
+            <button
+              type="button"
+              className="side-watch"
+              onClick={() =>
+                focusCityWithLayer(String(hottestWeatherFeature.properties.city).toLowerCase().replace(/\s+/g, "-"), "weather")
+              }
+            >
+              <span className="eyebrow">{copy.weatherHotspot}</span>
+              <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+              <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
+            </button>
+          ) : null}
+
+          {latestExternalSignal ? (
+            <a
+              className="side-watch linked"
+              href={latestExternalSignal.source.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="eyebrow">{copy.latestSignal}</span>
+              <strong>{localize(lang, latestExternalSignal.title)}</strong>
+              <small>{latestExternalSignal.source.sourceName}</small>
+            </a>
+          ) : null}
+
+          <div className="side-watch">
+            <span className="eyebrow">{copy.syncWindow}</span>
+            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+            <small>{`Next ${formatUtcClock(nextGlobalSyncAt)} UTC`}</small>
+          </div>
+
+          <div className="side-watch compact-watch">
+            <span className="eyebrow">{copy.markets}</span>
+            {markets.items.slice(0, 2).map((item) => (
+              <div key={item.id} className="side-watch-row">
+                <span>{localize(lang, item.label)}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
       </aside>
 
       <main className="dashboard-shell">

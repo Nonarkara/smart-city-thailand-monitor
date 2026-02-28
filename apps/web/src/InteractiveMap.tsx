@@ -222,6 +222,13 @@ function formatPropertyValue(key: string, value: string | number | boolean | nul
   return String(value ?? "");
 }
 
+function getPollutionSeverityColor(aqi: number) {
+  if (aqi >= 100) return "#b91c1c";
+  if (aqi >= 70) return "#dc2626";
+  if (aqi >= 50) return "#f59e0b";
+  return "#16a34a";
+}
+
 function renderFeatureCollections(
   target: L.LayerGroup,
   activeLayers: Set<LayerId>,
@@ -245,27 +252,42 @@ function renderFeatureCollections(
       const [lon, lat] = feature.coordinates as [number, number];
       const isBangkokPlaces = collection.layerId === "bangkok-passages";
       const isNationalFootprint = collection.layerId === "smart-city-thailand";
+      const isPollutionLayer = collection.layerId === "pollution";
       const intensity =
-        collection.layerId === "pollution"
+        isPollutionLayer
           ? Number(feature.properties.aqi ?? 0)
           : collection.layerId === "weather"
             ? Number(feature.properties.temperatureC ?? 0)
             : 0;
+      const pointColor = isPollutionLayer
+        ? getPollutionSeverityColor(intensity)
+        : layerColors[collection.layerId as LayerId] ?? "#22c55e";
       const marker = L.circleMarker([lat, lon], {
         radius: isNationalFootprint
           ? 7
           : isBangkokPlaces
             ? 6
-            : collection.layerId === "pollution"
+            : isPollutionLayer
               ? Math.max(5, Math.min(10, 4 + intensity / 20))
               : collection.layerId === "weather"
                 ? 6
                 : 4,
-        color: layerColors[collection.layerId as LayerId] ?? "#22c55e",
-        fillColor: layerColors[collection.layerId as LayerId] ?? "#22c55e",
-        fillOpacity: isNationalFootprint ? 0.5 : collection.layerId === "pollution" ? 0.24 : 0.35,
+        color: pointColor,
+        fillColor: pointColor,
+        fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
         weight: 2
       });
+
+      if (isPollutionLayer && intensity >= 55) {
+        const glow = L.circle([lat, lon], {
+          radius: 22000 + intensity * 220,
+          color: pointColor,
+          weight: 1,
+          fillColor: pointColor,
+          fillOpacity: intensity >= 80 ? 0.1 : 0.06
+        });
+        glow.addTo(target);
+      }
 
       const propertyRows = Object.entries(feature.properties)
         .filter(([, value]) => value !== null && value !== "")

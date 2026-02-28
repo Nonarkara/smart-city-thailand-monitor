@@ -191,6 +191,8 @@ p {
   position: sticky;
   top: 64px;
   height: calc(100vh - 108px);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .side-section {
@@ -240,8 +242,53 @@ p {
   margin-top: 0.25rem;
 }
 
-.side-anchor-nav {
+.side-live-rail {
   margin-top: auto;
+}
+
+.side-watch {
+  padding: 0.55rem 0.6rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.52);
+  display: grid;
+  gap: 0.22rem;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.side-watch.linked {
+  color: inherit;
+}
+
+.side-watch strong {
+  font-size: 0.88rem;
+  line-height: 1.18;
+}
+
+.side-watch small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.compact-watch {
+  gap: 0.35rem;
+}
+
+.side-watch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.76rem;
+}
+
+.side-watch-row span {
+  color: var(--muted);
 }
 
 .stack-list,
