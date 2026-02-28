@@ -359,7 +359,8 @@ export const store = {
 
     const incomingProjects = results.flatMap((result) => result.projectRecords ?? []);
     if (incomingProjects.length > 0) {
-      const mergedProjects = [...state.projects, ...incomingProjects];
+      // Put freshly synced projects first so repeated syncs can update existing rows.
+      const mergedProjects = [...incomingProjects, ...state.projects];
       state.projects = cloneSeed(
         mergedProjects.filter(
           (project, index, array) => array.findIndex((candidate) => candidate.slug === project.slug) === index

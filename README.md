@@ -7,9 +7,9 @@ Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a pr
 - `apps/web`: React + Vite public dashboard with bilingual `th/en` UI, strict grid layout, URL-driven filters, a public home view, and a minimal private admin console route.
 - `apps/api`: Fastify API with the required public endpoints, header-protected admin endpoints, in-memory state, source-health tracking, and adapter-based sync services.
 - The API now supports free Google-driven news refresh via Google News RSS (and optional Google Alerts RSS feeds) with a 5-minute sync loop when `ALLOW_LIVE_FETCH=true`.
-- `apps/worker`: lightweight sync trigger that calls the API admin sync endpoint and is ready for a Render cron service.
+- `apps/worker`: lightweight sync trigger that calls the API admin sync endpoint and is available for future cron-based deployments, but it is not used in the recommended first Render launch.
 - `packages/shared`: canonical TypeScript contracts plus seeded mock data used by the API and the frontend fallback path.
-- `render.yaml`: Render Blueprint for a split deployment (`static web`, `api web`, `cron`, `postgres`).
+- `render.yaml`: minimal Render Blueprint for a split deployment (`static web` + `api web`) with API-side sync every 5 minutes.
 
 ## Recommended v1 API stack
 
@@ -52,6 +52,12 @@ npm run dev:web
 ADMIN_TOKEN=your-token npm run dev:worker
 ```
 
+5. Or build everything once to verify the monorepo:
+
+```bash
+npm run build
+```
+
 ## Environment
 
 Copy `.env.example` to `.env` and set:
@@ -61,6 +67,7 @@ Copy `.env.example` to `.env` and set:
 - `NEWS_API_QUERIES` to override the default curated NewsAPI search set (pipe-separated)
 - `NEWS_API_PAGE_SIZE` to control per-query article count
 - `ALLOW_LIVE_FETCH=true` when you want the adapters to hit live sources
+- `SYNC_INTERVAL_MS=300000` to keep the API-side live refresh on a 5-minute cadence
 - source-specific endpoints only when you have confirmed stable machine-readable URLs
 
 ## Security note
@@ -69,11 +76,45 @@ The NewsAPI key previously shared in chat should be rotated before any real depl
 
 ## Render
 
-The included `render.yaml` expects:
+The included `render.yaml` is intentionally minimal for the first public launch:
 
-- a public static frontend
-- a public API service
-- a cron-driven sync worker
-- a managed Render Postgres database
+- `smart-city-monitor-web`: public static frontend
+- `smart-city-monitor-api`: public API service
 
-After pushing to GitHub, connect the repo in Render and deploy via Blueprint.
+The app does not use Postgres yet, so the first deploy does not provision a database.
+The app already runs its own in-process sync loop in the API service, so the first deploy does not provision a cron job either.
+
+### Render deploy flow
+
+1. Push the repo to GitHub.
+2. In Render, create a new Blueprint and connect this repo.
+3. Use the repository root `render.yaml`.
+4. Set the required API secrets:
+   - `ADMIN_TOKEN`
+5. Keep these runtime values enabled:
+   - `ALLOW_LIVE_FETCH=true`
+   - `SYNC_INTERVAL_MS=300000`
+6. Optionally set:
+   - `NEWS_API_KEY`
+   - `GOOGLE_NEWS_RSS_QUERIES`
+   - `GOOGLE_ALERTS_FEEDS`
+   - `CITYDATA_CATALOG_ENDPOINT`
+   - `DATAGOTH_ENDPOINT`
+   - `GISTDA_ENDPOINT`
+7. Deploy and verify:
+   - API health at `/health`
+   - live source status at `/api/sources`
+   - the public dashboard renders and continues updating every 5 minutes
+
+### Why the first launch is minimal
+
+- The API uses an in-memory store today.
+- `DATABASE_URL` is not used by the application code yet.
+- The API already performs live sync internally every 5 minutes when `ALLOW_LIVE_FETCH=true`.
+- Adding a separate cron worker on day one would duplicate sync traffic and complicate operations.
+
+### Secret handling
+
+- Keep `ADMIN_TOKEN` and any paid API keys only in Render environment variables.
+- Do not commit secrets to GitHub.
+- Rotate the NewsAPI key that was previously shared in chat before using it in production.
