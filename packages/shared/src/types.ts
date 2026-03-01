@@ -237,6 +237,51 @@ export interface TimeSnapshot {
   }>;
 }
 
+export interface AssistantViewContext {
+  view: DashboardView;
+  citySlug?: string;
+  cityName?: string;
+  domainSlug?: string;
+  domainLabel?: string;
+  activeLayers: string[];
+  executiveSignal?: string;
+  watchpoints?: string[];
+}
+
+export interface AssistantQueryRequest {
+  question: string;
+  locale?: Locale;
+  context: AssistantViewContext;
+}
+
+export interface KnowledgeCitation {
+  id: string;
+  documentTitle: string;
+  fileName: string;
+  excerpt: string;
+  pageLabel?: string;
+  score: number;
+}
+
+export interface AssistantResponse {
+  answer: LocalizedText;
+  contextSummary: LocalizedText;
+  citations: KnowledgeCitation[];
+  provider: "local-rag";
+  generatedAt: string;
+  knowledgeAvailable: boolean;
+  documentCount: number;
+  geminiReady: boolean;
+}
+
+export interface AssistantStatus {
+  available: boolean;
+  documentCount: number;
+  indexedAt?: string;
+  knowledgeDir?: string;
+  geminiReady: boolean;
+}
+
 export interface OverviewSnapshot {
   updatedAt: string;
   view: DashboardView;

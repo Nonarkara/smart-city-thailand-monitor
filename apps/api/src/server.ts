@@ -1,8 +1,9 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
-import type { DashboardView, TimeRange } from "@smart-city/shared";
+import type { AssistantQueryRequest, DashboardView, TimeRange } from "@smart-city/shared";
 import { requireAdmin } from "./lib/adminAuth.js";
 import { store } from "./data/store.js";
+import { getAssistantStatus, queryAssistant } from "./services/knowledgeAssistant.js";
 import { runSourceSync } from "./services/sync.js";
 
 function parseList(value: unknown) {
@@ -162,6 +163,27 @@ export async function createServer() {
     });
   });
   app.get("/api/media/channels", async () => store.getMediaChannels());
+  app.get("/api/assistant/status", async () => getAssistantStatus());
+  app.post("/api/assistant/query", async (request, reply) => {
+    const body = request.body as AssistantQueryRequest;
+
+    if (!body?.question || typeof body.question !== "string" || body.question.trim() === "") {
+      reply.code(400);
+      return { message: "Question is required" };
+    }
+
+    return queryAssistant({
+      ...body,
+      question: body.question.trim(),
+      context:
+        body.context && typeof body.context === "object"
+          ? body.context
+          : {
+              view: "city",
+              activeLayers: []
+            }
+    });
+  });
 
   app.post("/api/admin/news", async (request, reply) => {
     if (!requireAdmin(request, reply)) return;

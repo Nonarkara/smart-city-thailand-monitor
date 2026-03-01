@@ -3,6 +3,9 @@ export const config = {
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
   allowLiveFetch: process.env.ALLOW_LIVE_FETCH === "true",
   syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 300000),
+  knowledgeDir: process.env.KNOWLEDGE_DIR ?? "",
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
   newsApiKey: process.env.NEWS_API_KEY ?? "",
   newsApiPageSize: Number(process.env.NEWS_API_PAGE_SIZE ?? 4),
   newsApiQueries: (process.env.NEWS_API_QUERIES ?? "")

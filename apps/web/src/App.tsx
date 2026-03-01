@@ -19,6 +19,8 @@ import {
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
+  AssistantQueryRequest,
+  AssistantResponse,
   ChangePulse,
   DashboardView,
   GeoFeatureRecord,
@@ -127,6 +129,16 @@ const copyDeck = {
     sourceMix: "แหล่งอ้างอิง",
     markets: "บริบทตลาด",
     placeLookup: "ข้อมูลเมือง",
+    askAssistant: "ถาม Smart City",
+    askPlaceholder: "ถามจากเอกสารใน Knowledge โดยอิงจากเมืองและเลเยอร์ที่กำลังดูอยู่",
+    askSubmit: "ถาม",
+    askClose: "ปิด",
+    askContext: "บริบทที่ส่งให้ผู้ช่วย",
+    askGrounding: "อ้างอิงจาก Knowledge + มุมมองปัจจุบัน",
+    askNoAnswer: "ยังไม่มีคำตอบ",
+    askSources: "เอกสารอ้างอิง",
+    askLocalOnly: "Local RAG",
+    askGeminiReady: "Gemini พร้อมเชื่อม",
     population: "ประชากร",
     region: "ภูมิภาค",
     smartFocus: "ประเด็นเมืองอัจฉริยะ",
@@ -207,6 +219,16 @@ const copyDeck = {
     sourceMix: "Source Mix",
     markets: "Market Context",
     placeLookup: "City Lookup",
+    askAssistant: "Ask Smart City",
+    askPlaceholder: "Ask the local Knowledge folder using the city, domain, and layers you are currently viewing",
+    askSubmit: "Ask",
+    askClose: "Close",
+    askContext: "Current context",
+    askGrounding: "Grounded in the local Knowledge folder + the current dashboard view",
+    askNoAnswer: "No answer yet",
+    askSources: "Citations",
+    askLocalOnly: "Local RAG",
+    askGeminiReady: "Gemini hook ready",
     population: "Population",
     region: "Region",
     smartFocus: "Smart City Focus",
@@ -237,6 +259,23 @@ async function fetchFromApi<T>(path: string, fallback: T): Promise<T> {
   } catch {
     return fallback;
   }
+}
+
+async function postToApi<TResponse>(path: string, body: unknown): Promise<TResponse> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(payload.message ?? "Request failed");
+  }
+
+  return (await response.json()) as TResponse;
 }
 
 function parseLayerSet(raw: string | null) {
@@ -504,6 +543,11 @@ function DashboardPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSkeleton, setCopiedSkeleton] = useState(false);
   const [recenterSignal, setRecenterSignal] = useState(0);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantQuestion, setAssistantQuestion] = useState("");
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
+  const [assistantResponse, setAssistantResponse] = useState<AssistantResponse | null>(null);
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
 
@@ -649,6 +693,25 @@ function DashboardPage() {
 
   const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
   const thisCycleItems = changes.items.slice(0, 3);
+  const assistantContext = useMemo<AssistantQueryRequest["context"]>(
+    () => ({
+      view,
+      citySlug: selectedCity.slug,
+      cityName: selectedCity.name.en,
+      domainSlug: selectedDomain?.slug,
+      domainLabel: selectedDomain?.title.en,
+      activeLayers: layers,
+      executiveSignal,
+      watchpoints: [topAqiFeature?.title, hottestWeatherFeature?.title].filter(Boolean) as string[]
+    }),
+    [view, selectedCity, selectedDomain, layers, executiveSignal, topAqiFeature, hottestWeatherFeature]
+  );
+  const assistantContextTags = [
+    view,
+    localize(lang, selectedCity.name),
+    selectedDomain ? localize(lang, selectedDomain.title) : "",
+    ...layers.slice(0, 3)
+  ].filter(Boolean) as string[];
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -711,6 +774,30 @@ function DashboardPage() {
     await navigator.clipboard.writeText(skeletonJson);
     setCopiedSkeleton(true);
     window.setTimeout(() => setCopiedSkeleton(false), 1400);
+  }
+
+  async function askAssistant() {
+    if (!assistantQuestion.trim()) {
+      return;
+    }
+
+    setAssistantLoading(true);
+    setAssistantError("");
+
+    try {
+      const payload: AssistantQueryRequest = {
+        question: assistantQuestion.trim(),
+        locale: lang,
+        context: assistantContext
+      };
+      const response = await postToApi<AssistantResponse>("/api/assistant/query", payload);
+
+      setAssistantResponse(response);
+    } catch (error) {
+      setAssistantError(error instanceof Error ? error.message : "Assistant unavailable");
+    } finally {
+      setAssistantLoading(false);
+    }
   }
 
   return (
@@ -872,8 +959,101 @@ function DashboardPage() {
             <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
             <small>{`Next ${formatUtcClock(nextGlobalSyncAt)} UTC`}</small>
           </div>
+
+          <button type="button" className="side-watch side-assistant-trigger" onClick={() => setAssistantOpen(true)}>
+            <span className="eyebrow">{copy.askAssistant}</span>
+            <strong>{assistantResponse ? copy.askSources : copy.askGrounding}</strong>
+            <small>{assistantResponse ? `${assistantResponse.documentCount} docs indexed` : copy.askLocalOnly}</small>
+          </button>
         </div>
       </aside>
+
+      {assistantOpen ? (
+        <>
+          <button
+            type="button"
+            className="assistant-scrim"
+            aria-label={copy.askClose}
+            onClick={() => setAssistantOpen(false)}
+          />
+          <aside className="assistant-drawer" aria-label={copy.askAssistant}>
+            <div className="assistant-header">
+              <div>
+                <span className="eyebrow">{copy.askAssistant}</span>
+                <strong>{copy.askGrounding}</strong>
+              </div>
+              <button type="button" className="chip" onClick={() => setAssistantOpen(false)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="assistant-context">
+              <span className="eyebrow">{copy.askContext}</span>
+              <div className="pill-list compact">
+                {assistantContextTags.map((item) => (
+                  <span key={item} className="stack-pill">
+                    {item}
+                  </span>
+                ))}
+                <span className="stack-pill subdued">
+                  {assistantResponse?.geminiReady ? copy.askGeminiReady : copy.askLocalOnly}
+                </span>
+              </div>
+            </div>
+
+            <div className="assistant-form">
+              <textarea
+                value={assistantQuestion}
+                onChange={(event) => setAssistantQuestion(event.target.value)}
+                placeholder={copy.askPlaceholder}
+                rows={4}
+              />
+              <button
+                type="button"
+                className="share-button"
+                onClick={() => void askAssistant()}
+                disabled={assistantLoading || assistantQuestion.trim() === ""}
+              >
+                {assistantLoading ? "…" : copy.askSubmit}
+              </button>
+            </div>
+
+            <div className="assistant-panel tile-scroll">
+              {assistantError ? <p className="assistant-error">{assistantError}</p> : null}
+
+              {assistantResponse ? (
+                <>
+                  <div className="assistant-answer">
+                    <p className="eyebrow">{assistantResponse.provider}</p>
+                    <p>{localize(lang, assistantResponse.contextSummary)}</p>
+                    <strong>{localize(lang, assistantResponse.answer)}</strong>
+                  </div>
+
+                  <div className="assistant-citations">
+                    <span className="eyebrow">{copy.askSources}</span>
+                    {assistantResponse.citations.length > 0 ? (
+                      assistantResponse.citations.map((citation) => (
+                        <article key={citation.id} className="assistant-citation">
+                          <div className="stack-title">
+                            <strong>{citation.documentTitle}</strong>
+                            <span className="status-pill">{citation.pageLabel ?? "doc"}</span>
+                          </div>
+                          <p>{citation.excerpt}</p>
+                          <small>{citation.fileName}</small>
+                        </article>
+                      ))
+                    ) : (
+                      <p className="assistant-empty">{copy.askNoAnswer}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="assistant-empty">{copy.askNoAnswer}</p>
+              )}
+            </div>
+          </aside>
+        </>
+      ) : null}
 
       <main className="dashboard-shell">
         <section className="card map-hero" id="map">
