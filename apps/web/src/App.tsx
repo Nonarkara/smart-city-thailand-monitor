@@ -604,6 +604,19 @@ function DashboardPage() {
   const nextGlobalSyncAt = latestSyncSource
     ? new Date(new Date(latestSyncSource.lastCheckedAt).getTime() + LIVE_POLL_INTERVAL_MS).toISOString()
     : "";
+  const executiveSignal = (() => {
+    if (topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
+      if (topAqiFeature.title === "Chiang Mai") {
+        return lang === "th" ? "ความเสี่ยงด้านอากาศเพิ่มขึ้นในเชียงใหม่" : "Air risk rising in Chiang Mai";
+      }
+
+      return lang === "th"
+        ? `ความเสี่ยงด้านอากาศเพิ่มขึ้นใน${topAqiFeature.title}`
+        : `Air risk rising in ${topAqiFeature.title}`;
+    }
+
+    return localize(lang, overview.briefing.headline);
+  })();
 
   const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
   const thisCycleItems = changes.items.slice(0, 3);
@@ -1404,7 +1417,7 @@ function DashboardPage() {
       <footer className="bottombar">
         <div className="ticker">
           <span className="eyebrow">Alert</span>
-          <strong>{localize(lang, overview.briefing.headline)}</strong>
+          <strong>{executiveSignal}</strong>
         </div>
         <div className="ticker-meta">
           <span>{localize(lang, selectedCity.name)}</span>
