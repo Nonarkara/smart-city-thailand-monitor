@@ -46,8 +46,8 @@ import { NavLink, Route, Routes, useSearchParams } from "react-router-dom";
 import {
   createDashboardSkeletonExport,
   createGoogleTrendsUrl,
+  globalReferenceCities,
   pickLocalized,
-  researchInsights,
   toolkitLinks,
   trendWatchItems
 } from "./content";
@@ -136,6 +136,12 @@ const copyDeck = {
     weatherHotspot: "อากาศร้อนสุด",
     latestSignal: "สัญญาณล่าสุด",
     syncWindow: "รอบซิงก์",
+    candidateCompare: "เทียบเมืองผู้สมัคร",
+    modelCity: "เมืองต้นแบบ",
+    fitSignal: "เหตุผลที่เหมาะ",
+    transferIdeas: "แนวทางที่ย้ายมาใช้ได้",
+    livabilityLens: "กรอบ Livability",
+    eiuRank: "อันดับ EIU 2025",
     copyright:
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
@@ -210,6 +216,12 @@ const copyDeck = {
     weatherHotspot: "Heat Watch",
     latestSignal: "Latest Signal",
     syncWindow: "Sync Window",
+    candidateCompare: "Candidate Compare",
+    modelCity: "Model City",
+    fitSignal: "Why It Fits",
+    transferIdeas: "Transferable Ideas",
+    livabilityLens: "Livability Lens",
+    eiuRank: "EIU 2025 Rank",
     copyright:
       "Copyright, trademarks, and external datasets remain with their respective owners. This prototype is shared as an open learning resource and should be independently validated before operational use."
   }
@@ -493,6 +505,7 @@ function DashboardPage() {
   const [copiedSkeleton, setCopiedSkeleton] = useState(false);
   const [recenterSignal, setRecenterSignal] = useState(0);
   const deferredSearchText = useDeferredValue(searchText);
+  const modelCityParam = searchParams.get("modelCity") ?? "";
 
   const {
     lang,
@@ -521,6 +534,18 @@ function DashboardPage() {
   const selectedDomain = overview.domains.find((item) => item.slug === domain);
   const knownCitySlugs = new Set(overview.cities.map((item) => item.slug));
   const normalizedSearch = deferredSearchText.trim().toLowerCase();
+  const suggestedModelCityId =
+    selectedCity.slug === "phuket"
+      ? "vancouver"
+      : selectedCity.slug === "khon-kaen"
+        ? "osaka"
+        : selectedCity.slug === "chiang-mai"
+          ? "vienna"
+          : "copenhagen";
+  const selectedModelCity =
+    globalReferenceCities.find((item) => item.id === modelCityParam) ??
+    globalReferenceCities.find((item) => item.id === suggestedModelCityId) ??
+    globalReferenceCities[0];
 
   const filteredProjects = normalizedSearch
     ? projects.filter((project) => {
@@ -560,6 +585,10 @@ function DashboardPage() {
       ...score,
       domain: overview.domains.find((item) => item.slug === score.domainSlug)
     }));
+  const selectedModelStrengths = new Set(selectedModelCity.strengths);
+  const fitDomains = topCityScores.flatMap((item) =>
+    item.domain && selectedModelStrengths.has(item.domain.slug) ? [item.domain] : []
+  );
   const liveNewsSource =
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
     sources.find((source) => source.category === "news") ??
@@ -1338,23 +1367,62 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card research-card">
-          <div className="card-header">
-            <span className="eyebrow">{copy.research}</span>
-            <span className="status-pill">3</span>
-          </div>
-          <p className="card-note">{copy.sourceResearch}</p>
-          <div className="stack-list tile-scroll">
-            {researchInsights.slice(0, 3).map((item) => (
-              <a key={item.id} className="stack-item linked" href={item.href} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{pickLocalized(lang, item.title)}</strong>
-                  <span className="status-pill">{item.sourceLabel}</span>
+          <section className="card research-card" id="candidate-compare">
+            <div className="card-header">
+              <span className="eyebrow">{copy.candidateCompare}</span>
+              <span className="status-pill">{selectedModelCity.name}</span>
+            </div>
+            <label className="stack-field">
+              <span className="eyebrow">{copy.modelCity}</span>
+              <select value={selectedModelCity.id} onChange={(event) => updateParam("modelCity", event.target.value)}>
+                {globalReferenceCities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {`${item.name}, ${item.country}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="candidate-grid">
+              <div className="candidate-panel">
+                <span className="eyebrow">{localize(lang, selectedCity.name)}</span>
+                <strong>{formatPopulation(selectedCity.population)}</strong>
+                <small>{localize(lang, selectedCity.region)}</small>
+                <p>{localize(lang, selectedCity.focus)}</p>
+              </div>
+              <div className="candidate-panel">
+                <span className="eyebrow">{`${selectedModelCity.name}, ${selectedModelCity.country}`}</span>
+                <strong>{selectedModelCity.approxPopulation}</strong>
+                <small>{`${copy.eiuRank}: ${selectedModelCity.eiuRank2025}`}</small>
+                <p>{pickLocalized(lang, selectedModelCity.modelLens)}</p>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.fitSignal}</span>
+              <strong>
+                {fitDomains.length > 0
+                  ? fitDomains.map((item) => localize(lang, item.title)).join(" • ")
+                  : pickLocalized(lang, selectedModelCity.modelLens)}
+              </strong>
+            </div>
+            <div className="stack-list">
+              <span className="eyebrow">{copy.transferIdeas}</span>
+              {selectedModelCity.innovationIdeas.map((item, index) => (
+                <div key={`${selectedModelCity.id}-${index}`} className="stack-item">
+                  <p>{pickLocalized(lang, item)}</p>
                 </div>
-                <p>{pickLocalized(lang, item.summary)}</p>
-              </a>
-            ))}
-          </div>
+              ))}
+            </div>
+            <a className="stack-item linked" href={selectedModelCity.href} target="_blank" rel="noreferrer">
+              <div className="stack-title">
+                <strong>{copy.livabilityLens}</strong>
+                <span className="status-pill">{copy.eiuRank}</span>
+              </div>
+              <p>
+                {lang === "th"
+                  ? "ใช้เมืองอันดับสูงของ EIU เป็นเมืองอ้างอิงเพื่อชี้ให้เห็นแนวทางที่ถ่ายโอนได้"
+                  : "Uses high-ranking EIU cities as reference models for transferable planning ideas."}
+              </p>
+            </a>
           </section>
 
           <section className="card toolkit-card" id="toolkit">

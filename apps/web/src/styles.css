@@ -1093,6 +1093,32 @@ textarea {
   gap: 0.25rem;
 }
 
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.candidate-panel {
+  padding: 0.6rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.candidate-panel small {
+  color: var(--muted);
+}
+
+.candidate-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
 .toolkit-shell,
 .footnote-grid {
   display: grid;
@@ -1350,6 +1376,7 @@ textarea {
   .metric-grid,
   .selection-strip,
   .city-intel-grid,
+  .candidate-grid,
   .news-columns,
   .time-zones,
   .support-grid,

@@ -22,6 +22,18 @@ export interface ResearchInsight {
   sourceLabel: string;
 }
 
+export interface GlobalReferenceCity {
+  id: string;
+  name: string;
+  country: string;
+  approxPopulation: string;
+  eiuRank2025: string;
+  modelLens: Localized;
+  strengths: string[];
+  innovationIdeas: Localized[];
+  href: string;
+}
+
 export interface ToolkitLink {
   id: string;
   name: string;
@@ -193,6 +205,147 @@ export const researchInsights: ResearchInsight[] = [
     },
     href: "https://www.mckinsey.com/industries/public-sector/our-insights/smart-cities-digital-solutions-for-a-more-livable-future",
     sourceLabel: "McKinsey"
+  }
+];
+
+export const globalReferenceCities: GlobalReferenceCity[] = [
+  {
+    id: "copenhagen",
+    name: "Copenhagen",
+    country: "Denmark",
+    approxPopulation: "~1.4M metro",
+    eiuRank2025: "#1",
+    modelLens: {
+      th: "เหมาะเป็นต้นแบบสำหรับเมืองที่ต้องการสมดุลด้านการเดินทาง คุณภาพชีวิต และโครงสร้างพื้นฐาน",
+      en: "Best fit for cities that need a balanced model of mobility, livability, and infrastructure."
+    },
+    strengths: ["stability", "education", "infrastructure"],
+    innovationIdeas: [
+      {
+        th: "ออกแบบถนนและพื้นที่สาธารณะให้เดิน-จักรยานได้จริง ไม่ใช่แค่เส้นสัญลักษณ์",
+        en: "Design streets and public space for real walking and cycling, not symbolic lanes."
+      },
+      {
+        th: "วางระบบข้อมูลเมืองให้เชื่อมกับ climate adaptation และการระบายน้ำ",
+        en: "Tie city data systems directly to climate adaptation and water management."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
+  },
+  {
+    id: "vienna",
+    name: "Vienna",
+    country: "Austria",
+    approxPopulation: "~2.0M metro",
+    eiuRank2025: "#2 (tie)",
+    modelLens: {
+      th: "เหมาะสำหรับเมืองที่ต้องการยกระดับ livability การบริการสาธารณะ และวัฒนธรรมเมือง",
+      en: "Strong model for cities improving livability, public service quality, and civic culture."
+    },
+    strengths: ["healthcare", "education", "infrastructure"],
+    innovationIdeas: [
+      {
+        th: "ใช้ที่อยู่อาศัยและระบบขนส่งเป็นแกนของคุณภาพชีวิต ไม่ใช่แยกกันทำ",
+        en: "Treat housing and transport as one livability system, not separate projects."
+      },
+      {
+        th: "ยกระดับบริการเมืองให้เชื่อถือได้และเข้าถึงง่ายทุกย่าน",
+        en: "Make city services reliable and accessible across every district."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
+  },
+  {
+    id: "zurich",
+    name: "Zurich",
+    country: "Switzerland",
+    approxPopulation: "~1.6M metro",
+    eiuRank2025: "#2 (tie)",
+    modelLens: {
+      th: "เหมาะกับเมืองที่ต้องการมาตรฐานสูงด้าน governance สุขภาพ และความแม่นยำของโครงสร้างพื้นฐาน",
+      en: "Useful for cities targeting high-trust governance, healthcare, and precision infrastructure."
+    },
+    strengths: ["healthcare", "education", "stability"],
+    innovationIdeas: [
+      {
+        th: "ใช้ข้อมูลเพื่อบริหารคุณภาพบริการ ไม่ใช่แค่รายงานผล",
+        en: "Use data to manage service quality, not just to report outcomes."
+      },
+      {
+        th: "เน้นความน่าเชื่อถือของระบบสาธารณูปโภคและเวลาเดินทาง",
+        en: "Prioritize utility reliability and travel-time predictability."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
+  },
+  {
+    id: "melbourne",
+    name: "Melbourne",
+    country: "Australia",
+    approxPopulation: "~5.3M metro",
+    eiuRank2025: "#4",
+    modelLens: {
+      th: "เหมาะกับเมืองที่ต้องการสมดุลระหว่างเศรษฐกิจสร้างสรรค์ พื้นที่สาธารณะ และบริการเมืองขนาดใหญ่",
+      en: "Good model for balancing creative economy, public realm, and large-scale city services."
+    },
+    strengths: ["education", "culture", "infrastructure"],
+    innovationIdeas: [
+      {
+        th: "ออกแบบเมืองให้รองรับทั้งกิจกรรมเศรษฐกิจและพื้นที่ใช้ชีวิตในระดับย่าน",
+        en: "Design for both economic activity and neighborhood-scale livability."
+      },
+      {
+        th: "ทำ district dashboards ให้รองรับการตัดสินใจรายพื้นที่",
+        en: "Use district-level dashboards for area-by-area management."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
+  },
+  {
+    id: "osaka",
+    name: "Osaka",
+    country: "Japan",
+    approxPopulation: "~19M metro",
+    eiuRank2025: "#7 (tie)",
+    modelLens: {
+      th: "เหมาะกับเมืองไทยที่กำลังโตและต้องการต้นแบบการขนส่ง การบริหารความหนาแน่น และบริการเมือง",
+      en: "Strong reference for growing Thai cities managing transit, density, and reliable services."
+    },
+    strengths: ["stability", "infrastructure", "healthcare"],
+    innovationIdeas: [
+      {
+        th: "ยกระดับระบบเดินทางและป้ายข้อมูลให้เชื่อมต่อกันอย่างเป็นระบบ",
+        en: "Upgrade mobility and wayfinding as one coherent network."
+      },
+      {
+        th: "บริหารเมืองหนาแน่นด้วยระบบบริการที่ตรงเวลาและคาดการณ์ได้",
+        en: "Manage density through service systems that are punctual and predictable."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
+  },
+  {
+    id: "vancouver",
+    name: "Vancouver",
+    country: "Canada",
+    approxPopulation: "~2.7M metro",
+    eiuRank2025: "#10",
+    modelLens: {
+      th: "เหมาะกับเมืองที่ต้องการต้นแบบด้านธรรมชาติ เมืองน่าอยู่ และโครงสร้างพื้นฐานที่เชื่อมคุณภาพชีวิต",
+      en: "A useful model for nature-linked livability and infrastructure tied to quality of life."
+    },
+    strengths: ["healthcare", "culture", "environment"],
+    innovationIdeas: [
+      {
+        th: "เชื่อมพื้นที่สีเขียว น้ำ และคุณภาพชีวิตเข้ากับการวางผังเมือง",
+        en: "Integrate green-blue systems directly into urban planning."
+      },
+      {
+        th: "ใช้ resilience เป็นส่วนหนึ่งของเศรษฐกิจเมือง ไม่ใช่เฉพาะด้านภัยพิบัติ",
+        en: "Treat resilience as part of economic strategy, not only disaster planning."
+      }
+    ],
+    href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"
   }
 ];
 
