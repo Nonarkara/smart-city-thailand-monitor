@@ -130,6 +130,7 @@ const copyDeck = {
     markets: "บริบทตลาด",
     placeLookup: "ข้อมูลเมือง",
     askAssistant: "ถาม Smart City",
+    askLead: "AI ผู้ช่วยจาก Knowledge",
     askPlaceholder: "ถามจากเอกสารใน Knowledge โดยอิงจากเมืองและเลเยอร์ที่กำลังดูอยู่",
     askSubmit: "ถาม",
     askClose: "ปิด",
@@ -220,6 +221,7 @@ const copyDeck = {
     markets: "Market Context",
     placeLookup: "City Lookup",
     askAssistant: "Ask Smart City",
+    askLead: "AI assistant from Knowledge",
     askPlaceholder: "Ask the local Knowledge folder using the city, domain, and layers you are currently viewing",
     askSubmit: "Ask",
     askClose: "Close",
@@ -866,6 +868,14 @@ function DashboardPage() {
       </header>
 
       <aside className="sidebar">
+        <div className="side-section side-assistant-launch">
+          <button type="button" className="side-ai-launcher" onClick={() => setAssistantOpen(true)}>
+            <span className="eyebrow">{copy.askAssistant}</span>
+            <strong>{copy.askLead}</strong>
+            <small>{assistantResponse ? `${assistantResponse.documentCount} docs indexed` : copy.askGrounding}</small>
+          </button>
+        </div>
+
         <div className="side-section">
           <span className="eyebrow">Layers</span>
           <nav className="side-nav side-layer-nav">
@@ -959,14 +969,15 @@ function DashboardPage() {
             <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
             <small>{`Next ${formatUtcClock(nextGlobalSyncAt)} UTC`}</small>
           </div>
-
-          <button type="button" className="side-watch side-assistant-trigger" onClick={() => setAssistantOpen(true)}>
-            <span className="eyebrow">{copy.askAssistant}</span>
-            <strong>{assistantResponse ? copy.askSources : copy.askGrounding}</strong>
-            <small>{assistantResponse ? `${assistantResponse.documentCount} docs indexed` : copy.askLocalOnly}</small>
-          </button>
         </div>
       </aside>
+
+      {!assistantOpen ? (
+        <button type="button" className="assistant-edge-tab" onClick={() => setAssistantOpen(true)}>
+          <span>AI</span>
+          <small>{copy.askAssistant}</small>
+        </button>
+      ) : null}
 
       {assistantOpen ? (
         <>
