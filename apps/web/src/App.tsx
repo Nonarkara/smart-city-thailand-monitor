@@ -754,7 +754,7 @@ function DashboardPage() {
           </nav>
         </div>
 
-        <div className="side-section side-filters">
+        <div className="side-section side-filter-group">
           <label className="stack-field">
             <span className="eyebrow">City</span>
             <select value={city} onChange={(event) => updateParam("city", event.target.value)}>
@@ -765,7 +765,9 @@ function DashboardPage() {
               ))}
             </select>
           </label>
+        </div>
 
+        <div className="side-section side-filter-group">
           <label className="stack-field">
             <span className="eyebrow">Domain</span>
             <select value={domain} onChange={(event) => updateParam("domain", event.target.value)}>
@@ -827,16 +829,6 @@ function DashboardPage() {
             <span className="eyebrow">{copy.syncWindow}</span>
             <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
             <small>{`Next ${formatUtcClock(nextGlobalSyncAt)} UTC`}</small>
-          </div>
-
-          <div className="side-watch compact-watch">
-            <span className="eyebrow">{copy.markets}</span>
-            {markets.items.slice(0, 2).map((item) => (
-              <div key={item.id} className="side-watch-row">
-                <span>{localize(lang, item.label)}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
           </div>
         </div>
       </aside>
