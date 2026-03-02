@@ -689,13 +689,20 @@ export function createDashboardSkeletonExport() {
       "/admin"
     ],
     widgets: [
+      "assistant_drawer",
+      "map_hero",
+      "hotspot_strip",
+      "focus_presets",
+      "map_legend",
+      "city_lookup",
       "pulse_hero",
-      "map_layers",
       "briefing_note",
       "project_progress",
       "official_news",
       "external_news",
       "resilience_strip",
+      "global_signals",
+      "world_watch",
       "city_compare",
       "source_health",
       "time_zones",
@@ -704,15 +711,25 @@ export function createDashboardSkeletonExport() {
       "official_impact",
       "market_context",
       "activity_log",
+      "candidate_compare",
       "trend_watch",
-      "api_directory"
+      "api_directory",
+      "export_panel"
     ],
     apiEndpoints: [
       "/api/overview",
       "/api/pulse",
       "/api/projects",
+      "/api/projects/:id",
       "/api/news",
+      "/api/news/:id",
       "/api/map/layers",
+      "/api/map/features",
+      "/api/cities",
+      "/api/cities/:slug",
+      "/api/domains",
+      "/api/domains/:slug",
+      "/api/indicators",
       "/api/resilience",
       "/api/changes",
       "/api/activity",
@@ -721,14 +738,21 @@ export function createDashboardSkeletonExport() {
       "/api/markets",
       "/api/sources",
       "/api/briefings/latest",
-      "/api/time"
+      "/api/time",
+      "/api/media/feeds",
+      "/api/media/channels",
+      "/api/assistant/status",
+      "/api/assistant/query"
     ],
     adminEndpoints: [
       "/api/admin/news",
       "/api/admin/projects",
       "/api/admin/briefings",
       "/api/admin/sources/sync",
-      "/api/admin/sources/health"
+      "/api/admin/sources/health",
+      "/api/admin/map-sources/sync/:sourceId",
+      "/api/admin/map-sources/health",
+      "/api/admin/media/feeds"
     ],
     sourceDirectory: toolkitLinks.map((tool) => ({
       name: tool.name,
@@ -741,6 +765,22 @@ export function createDashboardSkeletonExport() {
       source: "Google Trends"
     }))
   };
+}
+
+export function createDashboardScaffoldSnippets() {
+  const skeleton = createDashboardSkeletonExport();
+  const json = JSON.stringify(skeleton, null, 2);
+  const typescript = `export const dashboardSkeleton = ${json} as const;\n`;
+  const python = `dashboard_skeleton = ${json
+    .replace(/\btrue\b/g, "True")
+    .replace(/\bfalse\b/g, "False")
+    .replace(/\bnull\b/g, "None")}\n`;
+
+  return {
+    json,
+    typescript,
+    python
+  } as const;
 }
 
 export function pickLocalized(locale: Locale, value: Localized) {

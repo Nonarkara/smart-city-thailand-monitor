@@ -47,7 +47,7 @@ import {
 import { NavLink, Route, Routes, useSearchParams } from "react-router-dom";
 import {
   assistantQuestionClusters,
-  createDashboardSkeletonExport,
+  createDashboardScaffoldSnippets,
   createGoogleTrendsUrl,
   globalReferenceCities,
   pickLocalized,
@@ -102,6 +102,8 @@ const copyDeck = {
     toolkit: "Build It Yourself",
     exportJson: "คัดลอก JSON โครงร่าง",
     exported: "คัดลอก JSON แล้ว",
+    exportCode: "คัดลอกโค้ด",
+    exportLanguage: "ภาษาโค้ด",
     apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "ข้อกำหนดและคำชี้แจง",
@@ -219,6 +221,8 @@ const copyDeck = {
     toolkit: "Build It Yourself",
     exportJson: "Copy JSON Skeleton",
     exported: "JSON copied",
+    exportCode: "Copy Code",
+    exportLanguage: "Code Language",
     apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "Fine Print",
@@ -626,6 +630,7 @@ function DashboardPage() {
   const [searchText, setSearchText] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSkeleton, setCopiedSkeleton] = useState(false);
+  const [exportLanguage, setExportLanguage] = useState<"json" | "typescript" | "python">("json");
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantQuestion, setAssistantQuestion] = useState("");
@@ -877,7 +882,10 @@ function DashboardPage() {
     }
   ];
 
-  const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
+  const exportSnippets = useMemo(() => createDashboardScaffoldSnippets(), []);
+  const activeExportSnippet = exportSnippets[exportLanguage];
+  const activeExportLabel =
+    exportLanguage === "json" ? "JSON" : exportLanguage === "typescript" ? "TypeScript" : "Python";
   const thisCycleItems = changes.items.slice(0, 3);
   const assistantContext = useMemo<AssistantQueryRequest["context"]>(
     () => ({
@@ -968,7 +976,7 @@ function DashboardPage() {
   }
 
   async function copySkeleton() {
-    await navigator.clipboard.writeText(skeletonJson);
+    await navigator.clipboard.writeText(activeExportSnippet);
     setCopiedSkeleton(true);
     window.setTimeout(() => setCopiedSkeleton(false), 1400);
   }
@@ -2034,12 +2042,28 @@ function DashboardPage() {
 
               <div className="export-panel">
                 <div className="stack-title">
-                  <strong>{copy.exportJson}</strong>
+                  <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
                   <button className="share-button" onClick={copySkeleton}>
-                    {copiedSkeleton ? copy.exported : copy.exportJson}
+                    {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
                   </button>
                 </div>
-                <pre>{skeletonJson}</pre>
+                <div className="export-tabs">
+                  {(["json", "typescript", "python"] as const).map((option) => {
+                    const label = option === "json" ? "JSON" : option === "typescript" ? "TypeScript" : "Python";
+
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={exportLanguage === option ? "chip active" : "chip"}
+                        onClick={() => setExportLanguage(option)}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <pre>{activeExportSnippet}</pre>
               </div>
             </div>
           </div>
