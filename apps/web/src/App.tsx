@@ -40,6 +40,7 @@ import type {
 } from "@smart-city/shared";
 import {
   startTransition,
+  useEffect,
   useDeferredValue,
   useMemo,
   useState
@@ -1052,8 +1053,36 @@ function DashboardPage() {
     )
   }));
 
+  function buildStableParams() {
+    const next = new URLSearchParams();
+    next.set("lang", lang);
+    next.set("view", view);
+    next.set("timeRange", timeRange);
+    next.set("city", city);
+    if (domain) {
+      next.set("domain", domain);
+    }
+    next.set("layers", layers.join(","));
+    if (modelCityParam) {
+      next.set("modelCity", modelCityParam);
+    }
+    return next;
+  }
+
+  const stableParamsString = buildStableParams().toString();
+
+  useEffect(() => {
+    if (searchParams.toString() === stableParamsString) {
+      return;
+    }
+
+    startTransition(() => {
+      setSearchParams(buildStableParams(), { replace: true });
+    });
+  }, [searchParams, stableParamsString, setSearchParams]);
+
   function updateParam(key: string, value: string) {
-    const next = new URLSearchParams(searchParams);
+    const next = buildStableParams();
     if (!value) {
       next.delete(key);
     } else {
@@ -1066,7 +1095,7 @@ function DashboardPage() {
   }
 
   function toggleLayer(id: string) {
-    const next = new URLSearchParams(searchParams);
+    const next = buildStableParams();
     const nextLayers = new Set(layers);
     const enabling = !nextLayers.has(id);
     if (nextLayers.has(id)) {
@@ -1086,7 +1115,7 @@ function DashboardPage() {
   }
 
   function focusCityWithLayer(citySlug: string, layerId: string) {
-    const next = new URLSearchParams(searchParams);
+    const next = buildStableParams();
     const nextLayers = new Set(layers);
     nextLayers.add(layerId);
     next.set("layers", Array.from(nextLayers).join(","));
@@ -1104,7 +1133,7 @@ function DashboardPage() {
   }
 
   function toggleEoOverlay() {
-    const next = new URLSearchParams(searchParams);
+    const next = buildStableParams();
     const nextLayers = new Set(layers);
 
     if (nextLayers.has("jaxa-rainfall")) {
