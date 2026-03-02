@@ -1,6 +1,6 @@
 import { localize } from "@smart-city/shared";
 import type { DashboardView, GeoFeatureRecord, Locale, MapFeatureCollection, NewsItem, ProjectRecord } from "@smart-city/shared";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -40,6 +40,8 @@ type LayerId =
   | "pollution"
   | "jaxa-rainfall"
   | "disaster";
+
+type EoRainState = "off" | "loading" | "live" | "fallback";
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
@@ -298,6 +300,53 @@ function loadJaxaEarthLibrary(): Promise<JaxaEarthGlobal | null> {
   return window.__jaxaEarthLoader;
 }
 
+function renderEoRainFallback(target: L.LayerGroup, locale: Locale, featureCollections: MapFeatureCollection[]) {
+  target.clearLayers();
+
+  const weatherCollection = featureCollections.find((collection) => collection.layerId === "weather");
+  const weatherPoints = weatherCollection?.features.filter(
+    (feature) => feature.geometryType === "Point" && Array.isArray(feature.coordinates) && feature.coordinates.length >= 2
+  );
+
+  if (!weatherPoints || weatherPoints.length === 0) {
+    L.rectangle(
+      [
+        [6.2, 98.2],
+        [19.8, 104.6]
+      ],
+      {
+        color: layerColors["jaxa-rainfall"],
+        weight: 1,
+        fillColor: layerColors["jaxa-rainfall"],
+        fillOpacity: 0.05
+      }
+    ).addTo(target);
+    return;
+  }
+
+  weatherPoints.forEach((feature) => {
+    const [lon, lat] = feature.coordinates as [number, number];
+    const humidity = Number(feature.properties.humidity ?? 0);
+    const wind = Number(feature.properties.windKph ?? 0);
+
+    const circle = L.circle([lat, lon], {
+      radius: 48000 + humidity * 520 + wind * 260,
+      color: layerColors["jaxa-rainfall"],
+      weight: 1,
+      fillColor: layerColors["jaxa-rainfall"],
+      fillOpacity: Math.min(0.18, 0.045 + humidity / 760)
+    });
+
+    circle.bindTooltip(
+      locale === "th"
+        ? `${feature.title}: โหมดสำรองจากบริบทอากาศ`
+        : `${feature.title}: fallback rain watch from local weather context`
+    );
+
+    circle.addTo(target);
+  });
+}
+
 function renderFeatureCollections(
   target: L.LayerGroup,
   activeLayers: Set<LayerId>,
@@ -409,7 +458,9 @@ export default function InteractiveMap({
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
   const jaxaLayerRef = useRef<L.Layer | null>(null);
+  const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
+  const [eoRainState, setEoRainState] = useState<EoRainState>("off");
 
   const layerKey = layers.join(",");
   const bangkokFeatureBounds =
@@ -437,6 +488,7 @@ export default function InteractiveMap({
     }).addTo(map);
 
     overlayRef.current = L.layerGroup().addTo(map);
+    jaxaFallbackRef.current = L.layerGroup();
     mapRef.current = map;
 
     return () => {
@@ -444,7 +496,14 @@ export default function InteractiveMap({
       if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
         map.removeLayer(jaxaLayerRef.current);
       }
+      if (jaxaFallbackRef.current) {
+        jaxaFallbackRef.current.clearLayers();
+        if (map.hasLayer(jaxaFallbackRef.current)) {
+          map.removeLayer(jaxaFallbackRef.current);
+        }
+      }
       jaxaLayerRef.current = null;
+      jaxaFallbackRef.current = null;
       overlayRef.current = null;
       map.remove();
       mapRef.current = null;
@@ -555,31 +614,61 @@ export default function InteractiveMap({
       return;
     }
 
-    const shouldShowJaxaRain = layers.includes("jaxa-rainfall");
-
-    if (!shouldShowJaxaRain) {
+    const clearEoRainVisuals = () => {
       if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
         map.removeLayer(jaxaLayerRef.current);
       }
       jaxaLayerRef.current = null;
+
+      if (jaxaFallbackRef.current) {
+        jaxaFallbackRef.current.clearLayers();
+        if (map.hasLayer(jaxaFallbackRef.current)) {
+          map.removeLayer(jaxaFallbackRef.current);
+        }
+      }
+    };
+
+    const showFallback = () => {
+      clearEoRainVisuals();
+
+      if (!jaxaFallbackRef.current) {
+        setEoRainState("fallback");
+        return;
+      }
+
+      renderEoRainFallback(jaxaFallbackRef.current, locale, featureCollections);
+
+      if (!map.hasLayer(jaxaFallbackRef.current)) {
+        jaxaFallbackRef.current.addTo(map);
+      }
+
+      setEoRainState("fallback");
+    };
+
+    const shouldShowJaxaRain = layers.includes("jaxa-rainfall");
+
+    if (!shouldShowJaxaRain) {
+      clearEoRainVisuals();
+      setEoRainState("off");
       return;
     }
 
     let cancelled = false;
+    setEoRainState("loading");
 
     void (async () => {
       const jaxa = await loadJaxaEarthLibrary();
       const createLayer = jaxa?.leaflet?.createLayer;
 
       if (!createLayer || cancelled) {
+        if (!cancelled) {
+          showFallback();
+        }
         return;
       }
 
-      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
-        map.removeLayer(jaxaLayerRef.current);
-      }
-
       try {
+        clearEoRainVisuals();
         const nextLayer = await Promise.resolve(
           createLayer({
             L,
@@ -597,20 +686,47 @@ export default function InteractiveMap({
           return;
         }
 
+        if (jaxaFallbackRef.current) {
+          jaxaFallbackRef.current.clearLayers();
+          if (map.hasLayer(jaxaFallbackRef.current)) {
+            map.removeLayer(jaxaFallbackRef.current);
+          }
+        }
+
         nextLayer.addTo(map);
         jaxaLayerRef.current = nextLayer;
+        setEoRainState("live");
       } catch {
-        if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
-          map.removeLayer(jaxaLayerRef.current);
+        if (!cancelled) {
+          showFallback();
         }
-        jaxaLayerRef.current = null;
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [layerKey, layers]);
+  }, [featureCollections, layerKey, layers, locale]);
 
-  return <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />;
+  const eoRainStatusLabel =
+    eoRainState === "loading"
+      ? locale === "th"
+        ? "กำลังโหลด EO rain"
+        : "EO rain loading"
+      : eoRainState === "live"
+        ? locale === "th"
+          ? "EO rain: JAXA สด"
+          : "EO rain: JAXA live"
+        : eoRainState === "fallback"
+          ? locale === "th"
+            ? "EO rain: โหมดสำรอง"
+            : "EO rain: fallback preview"
+          : "";
+
+  return (
+    <div className="leaflet-map-shell">
+      <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />
+      {eoRainState !== "off" ? <div className={`map-layer-status ${eoRainState}`}>{eoRainStatusLabel}</div> : null}
+    </div>
+  );
 }
