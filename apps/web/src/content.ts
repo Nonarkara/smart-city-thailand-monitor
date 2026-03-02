@@ -49,6 +49,13 @@ export interface AssistantQuestionCluster {
   prompts: Localized[];
 }
 
+export interface ResourceLink {
+  id: string;
+  title: Localized;
+  href: string;
+  note: Localized;
+}
+
 export const trendWatchItems: TrendWatchItem[] = [
   {
     id: "smart-city",
@@ -535,6 +542,45 @@ export const toolkitLinks: ToolkitLink[] = [
     description: {
       th: "อัตราแลกเปลี่ยนสำหรับบริบทค่าเงิน เช่น USD/THB",
       en: "Foreign-exchange context such as USD/THB."
+    }
+  }
+];
+
+export const undpQuickLinks: ResourceLink[] = [
+  {
+    id: "undp-electricity",
+    title: { th: "Electricity Access", en: "Electricity Access" },
+    href: "https://geohub.data.undp.org/dashboards/electricity",
+    note: {
+      th: "ดูการเข้าถึงไฟฟ้าและประชากรที่เสี่ยงถูกทิ้งไว้ข้างหลัง",
+      en: "Explore electrification access and populations at risk of being left behind."
+    }
+  },
+  {
+    id: "undp-hdi",
+    title: { th: "Subnational HDI", en: "Subnational HDI" },
+    href: "https://geohub.data.undp.org/maps/190",
+    note: {
+      th: "เปรียบเทียบบริบทการพัฒนามนุษย์เชิงพื้นที่",
+      en: "Compare spatial human-development context at subnational scale."
+    }
+  },
+  {
+    id: "undp-roads",
+    title: { th: "Road Access", en: "Road Access" },
+    href: "https://geohub.data.undp.org/data/300da70781b7a53808aab824543e6c2b",
+    note: {
+      th: "ใช้ชั้นถนนเพื่อดูความเชื่อมโยงด้านโลจิสติกส์และการเข้าถึง",
+      en: "Use a roads layer to assess logistics and access context."
+    }
+  },
+  {
+    id: "undp-terrain",
+    title: { th: "Terrain / Elevation", en: "Terrain / Elevation" },
+    href: "https://geohub.data.undp.org/data/14066342286e4dac65faf8da6abeb8b8",
+    note: {
+      th: "เพิ่มมุมมองระดับความสูงสำหรับน้ำท่วมและความเสี่ยงพื้นที่ต่ำ",
+      en: "Add elevation context for flood planning and low-lying area risk."
     }
   }
 ];

@@ -53,7 +53,8 @@ import {
   globalReferenceCities,
   pickLocalized,
   toolkitLinks,
-  trendWatchItems
+  trendWatchItems,
+  undpQuickLinks
 } from "./content";
 import InteractiveMap from "./InteractiveMap";
 
@@ -2132,6 +2133,14 @@ function DashboardPage() {
                 </small>
               </a>
             ) : null}
+            <div className="compact-list">
+              {undpQuickLinks.map((item) => (
+                <a key={item.id} className="headline-item" href={item.href} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.title)}</strong>
+                  <small>{localize(lang, item.note)}</small>
+                </a>
+              ))}
+            </div>
             {compactMedia.length > 0 ? (
               <div className="compact-list">
                 {compactMedia.slice(0, 2).map((item) => (
