@@ -157,6 +157,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "จัดกึ่งกลางแผนที่",
+    eoOverlay: "ภาพซ้อน EO",
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
     focusAirRisk: "ความเสี่ยงอากาศ",
@@ -278,6 +279,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "Recenter Map",
+    eoOverlay: "EO Overlay",
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
     focusAirRisk: "Air Risk",
@@ -1101,6 +1103,25 @@ function DashboardPage() {
     });
   }
 
+  function toggleEoOverlay() {
+    const next = new URLSearchParams(searchParams);
+    const nextLayers = new Set(layers);
+
+    if (nextLayers.has("jaxa-rainfall")) {
+      nextLayers.delete("jaxa-rainfall");
+    } else {
+      nextLayers.add("jaxa-rainfall");
+      next.set("view", "national");
+    }
+
+    next.set("layers", Array.from(nextLayers).join(","));
+
+    startTransition(() => {
+      setSearchParams(next);
+      setRecenterSignal((value) => value + 1);
+    });
+  }
+
   async function copyLink() {
     await navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
@@ -1522,6 +1543,13 @@ function DashboardPage() {
                   })}
                 </div>
               </div>
+              <button
+                type="button"
+                className={layers.includes("jaxa-rainfall") ? "chip active" : "chip"}
+                onClick={toggleEoOverlay}
+              >
+                {copy.eoOverlay}
+              </button>
               <button className="chip" onClick={() => setRecenterSignal((value) => value + 1)}>
                 {copy.recenter}
               </button>
