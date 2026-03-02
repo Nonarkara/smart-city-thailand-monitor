@@ -56,7 +56,39 @@ import {
 } from "./content";
 import InteractiveMap from "./InteractiveMap";
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:4000";
+function normalizeApiBase(baseUrl: string) {
+  return baseUrl.replace(/\/+$/, "");
+}
+
+function getApiBaseCandidates() {
+  const configuredBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  const candidates: string[] = [];
+
+  if (configuredBase) {
+    candidates.push(normalizeApiBase(configuredBase));
+  }
+
+  if (typeof window !== "undefined") {
+    const { protocol, hostname } = window.location;
+
+    if (hostname.endsWith(".onrender.com") && hostname.includes("-web")) {
+      candidates.push(`${protocol}//${hostname.replace("-web", "-api")}`);
+    }
+
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      candidates.push("http://localhost:4000");
+    }
+  }
+
+  if (candidates.length === 0) {
+    candidates.push("http://localhost:4000");
+  }
+
+  return [...new Set(candidates)];
+}
+
+const API_BASE_CANDIDATES = getApiBaseCandidates();
+const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "http://localhost:4000";
 const LIVE_POLL_INTERVAL_MS = 300000;
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -143,6 +175,7 @@ const copyDeck = {
     economyLegend: "สีม่วง = ศักยภาพเศรษฐกิจเมือง",
     disasterLegend: "สีส้มเข้ม = โซนเฝ้าระวังภัย",
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
+    jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
     bangkokPlacesLegend: "สีเขียว = จุดฐานข้อมูลกรุงเทพฯ",
     thresholdWatch: "เกณฑ์เฝ้าระวัง",
     thisWeek: "ใหม่ในรอบนี้",
@@ -158,7 +191,7 @@ const copyDeck = {
     worldContext: "บริบทโลก",
     placeLookup: "ข้อมูลเมือง",
     askAssistant: "ถาม Smart City",
-    askLead: "AI ผู้ช่วยจาก Knowledge",
+    askLead: "AI ผู้ช่วย",
     askQuestionMap: "แผนที่คำถาม",
     askQuestionMapNote: "คำถามเหล่านี้มาจากกรอบคิดที่ซ้ำกันใน Hitachi Review และ Smart City Primer",
     askPlaceholder: "ถามจากเอกสารใน Knowledge โดยอิงจากเมืองและเลเยอร์ที่กำลังดูอยู่",
@@ -263,6 +296,7 @@ const copyDeck = {
     economyLegend: "Purple = city economic strength",
     disasterLegend: "Deep orange = hazard watch zone",
     coverageLegend: "Red = nationwide smart city footprint",
+    jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
     bangkokPlacesLegend: "Green = Bangkok shared places",
     thresholdWatch: "Threshold Watch",
     thisWeek: "New This Cycle",
@@ -278,7 +312,7 @@ const copyDeck = {
     worldContext: "World Context",
     placeLookup: "City Lookup",
     askAssistant: "Ask Smart City",
-    askLead: "AI assistant from Knowledge",
+    askLead: "Knowledge AI",
     askQuestionMap: "Question Map",
     askQuestionMapNote: "These prompts come from the recurring frames in the Hitachi Review and the Smart City Primer",
     askPlaceholder: "Ask the local Knowledge folder using the city, domain, and layers you are currently viewing",
@@ -311,32 +345,48 @@ const copyDeck = {
 } as const;
 
 async function fetchFromApi<T>(path: string, fallback: T): Promise<T> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`);
-    if (!response.ok) {
-      return fallback;
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await fetch(`${baseUrl}${path}`);
+      if (!response.ok) {
+        continue;
+      }
+
+      return (await response.json()) as T;
+    } catch {
+      // Try the next configured API base before falling back to seed data.
     }
-    return (await response.json()) as T;
-  } catch {
-    return fallback;
   }
+
+  return fallback;
 }
 
 async function postToApi<TResponse>(path: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { message?: string };
-    throw new Error(payload.message ?? "Request failed");
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await fetch(`${baseUrl}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { message?: string };
+        lastError = new Error(payload.message ?? "Request failed");
+        continue;
+      }
+
+      return (await response.json()) as TResponse;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("Request failed");
+    }
   }
 
-  return (await response.json()) as TResponse;
+  throw lastError ?? new Error("Request failed");
 }
 
 function parseLayerSet(raw: string | null) {
@@ -809,10 +859,72 @@ function DashboardPage() {
                     ? copy.economyLegend
                     : item.id === "disaster"
                       ? copy.disasterLegend
+                      : item.id === "jaxa-rainfall"
+                        ? copy.jaxaLegend
                       : item.id === "smart-city-thailand"
                         ? copy.coverageLegend
                         : copy.bangkokPlacesLegend
     }));
+  const warningHaystack = resilience.warnings.map((item) => `${item.en} ${item.th}`.toLowerCase()).join(" ");
+  const hottestTemperature = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "temperatureC") : 0;
+  const hottestHumidity = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "humidity") : 0;
+  const floodTrigger = /flood|rain|low-lying|storm|น้ำท่วม|ฝน|ระบายน้ำ/.test(warningHaystack);
+  const waterTrigger =
+    /water|canal|drain|coastal|น้ำ|คลอง|ชลประทาน/.test(warningHaystack) ||
+    layers.includes("resilience") ||
+    layers.includes("bangkok-passages");
+  const landTrigger = view === "national" || layers.includes("smart-city-thailand");
+  const droughtTrigger = hottestTemperature >= 34 || (hottestTemperature >= 32 && hottestHumidity <= 55);
+  const eoWatchItems = [
+    {
+      id: "drought",
+      title: lang === "th" ? "ภัยแล้ง / ความร้อน" : "Drought / heat",
+      detail: droughtTrigger
+        ? lang === "th"
+          ? "ความร้อนสูงขึ้น ควรเปิดภาพรวมความชื้นและพื้นที่แห้ง"
+          : "Heat is elevated. Jump to EO moisture and dry-zone context."
+        : lang === "th"
+          ? "ใช้ดูแนวโน้มพื้นที่แห้งและผลกระทบอากาศ"
+          : "Use for dry-zone and climate-stress context.",
+      tone: droughtTrigger ? "jump" : "context"
+    },
+    {
+      id: "flood",
+      title: lang === "th" ? "น้ำท่วม / น้ำหลาก" : "Flood / runoff",
+      detail: floodTrigger
+        ? lang === "th"
+          ? "มีสัญญาณฝนหรือน้ำท่วม ควรดูภาพรวมเชิงพื้นที่เพิ่ม"
+          : "Flood or rainfall warnings are active. EO context is useful now."
+        : lang === "th"
+          ? "ใช้ดูพื้นที่ลุ่มต่ำและฝนสะสม"
+          : "Use for basin, rainfall, and flood-plain context.",
+      tone: floodTrigger ? "jump" : "watch"
+    },
+    {
+      id: "water",
+      title: lang === "th" ? "น้ำ / ลุ่มน้ำ" : "Water / basins",
+      detail: waterTrigger
+        ? lang === "th"
+          ? "กำลังดูชั้นข้อมูลน้ำ ควรเทียบกับภาพรวมดาวเทียม"
+          : "Water-sensitive layers are active. Pair them with EO context."
+        : lang === "th"
+          ? "ใช้ติดตามคลอง อ่างเก็บน้ำ และพื้นที่น้ำสัมพันธ์"
+          : "Use for canals, reservoirs, and water-linked land patterns.",
+      tone: waterTrigger ? "watch" : "context"
+    },
+    {
+      id: "land",
+      title: lang === "th" ? "การใช้ที่ดิน" : "Land-change",
+      detail: landTrigger
+        ? lang === "th"
+          ? "โหมดประเทศเหมาะกับการเทียบ footprint เมืองกับการใช้พื้นที่"
+          : "National mode is ideal for comparing city footprint with land use."
+        : lang === "th"
+          ? "ใช้ดูการขยายตัวเมืองและรูปแบบพื้นที่"
+          : "Use for urban expansion and land-use pattern context.",
+      tone: landTrigger ? "watch" : "context"
+    }
+  ];
   const focusPresets = [
     {
       id: "air-risk",
@@ -886,6 +998,26 @@ function DashboardPage() {
   const activeExportSnippet = exportSnippets[exportLanguage];
   const activeExportLabel =
     exportLanguage === "json" ? "JSON" : exportLanguage === "typescript" ? "TypeScript" : "Python";
+  const exportOptions = [
+    {
+      id: "json" as const,
+      label: "JSON",
+      mark: "{ }",
+      detail: lang === "th" ? "สคีมา / ข้อมูล" : "Schema / data"
+    },
+    {
+      id: "typescript" as const,
+      label: "TypeScript",
+      mark: "TS",
+      detail: lang === "th" ? "โครงร่างแบบมีชนิด" : "Typed scaffold"
+    },
+    {
+      id: "python" as const,
+      label: "Python",
+      mark: "Py",
+      detail: lang === "th" ? "ฝั่งหลังบ้าน / สคริปต์" : "Backend / scripting"
+    }
+  ];
   const thisCycleItems = changes.items.slice(0, 3);
   const assistantContext = useMemo<AssistantQueryRequest["context"]>(
     () => ({
@@ -1075,7 +1207,7 @@ function DashboardPage() {
           <button type="button" className="side-ai-launcher" onClick={() => setAssistantOpen(true)}>
             <span className="eyebrow">{copy.askAssistant}</span>
             <strong>{copy.askLead}</strong>
-            <small>{assistantResponse ? `${assistantResponse.documentCount} docs indexed` : copy.askGrounding}</small>
+            <small>{assistantResponse ? `${assistantResponse.documentCount} docs` : copy.askLocalOnly}</small>
           </button>
         </div>
 
@@ -1422,7 +1554,7 @@ function DashboardPage() {
           </div>
 
           <div className="map-legend">
-            <div className="map-legend-block">
+            <div className="legend-inline-group">
               <span className="eyebrow">{copy.aqiScale}</span>
               <div className="legend-scale">
                 {[
@@ -1438,16 +1570,13 @@ function DashboardPage() {
                 ))}
               </div>
             </div>
-            <div className="map-legend-block">
+            <div className="legend-inline-group">
               <span className="eyebrow">{copy.activeLayersLegend}</span>
-              <div className="active-layer-legend">
+              <div className="active-layer-pills">
                 {activeLegendItems.map((item) => (
-                  <div key={item.id} className="legend-row">
+                  <div key={item.id} className="active-layer-pill" title={item.detail}>
                     <span className="legend-swatch" style={{ background: item.color }} />
-                    <div>
-                      <strong>{item.label}</strong>
-                      <small>{item.detail}</small>
-                    </div>
+                    <small>{item.label}</small>
                   </div>
                 ))}
               </div>
@@ -1915,6 +2044,23 @@ function DashboardPage() {
               <span className="eyebrow">{copy.worldContext}</span>
               <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
             </div>
+            <div className="eo-watch-card">
+              <div className="stack-title">
+                <strong>{lang === "th" ? "Earth Observation Watch" : "Earth Observation Watch"}</strong>
+                <span className="status-pill">EO</span>
+              </div>
+              <div className="eo-watch-grid">
+                {eoWatchItems.map((item) => (
+                  <div key={item.id} className={`eo-watch-item ${item.tone}`}>
+                    <span className="eyebrow">{item.title}</span>
+                    <small>{item.detail}</small>
+                  </div>
+                ))}
+              </div>
+              <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
+                {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
+              </a>
+            </div>
             {compactMedia.length > 0 ? (
               <div className="compact-list">
                 {compactMedia.slice(0, 2).map((item) => (
@@ -2048,17 +2194,19 @@ function DashboardPage() {
                   </button>
                 </div>
                 <div className="export-tabs">
-                  {(["json", "typescript", "python"] as const).map((option) => {
-                    const label = option === "json" ? "JSON" : option === "typescript" ? "TypeScript" : "Python";
-
+                  {exportOptions.map((option) => {
                     return (
                       <button
-                        key={option}
+                        key={option.id}
                         type="button"
-                        className={exportLanguage === option ? "chip active" : "chip"}
-                        onClick={() => setExportLanguage(option)}
+                        className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
+                        onClick={() => setExportLanguage(option.id)}
                       >
-                        {label}
+                        <span className="export-tab-mark">{option.mark}</span>
+                        <span className="export-tab-copy">
+                          <strong>{option.label}</strong>
+                          <small>{option.detail}</small>
+                        </span>
                       </button>
                     );
                   })}
@@ -2110,21 +2258,33 @@ function AdminConsolePage() {
   const copy = copyDeck[lang];
 
   async function adminFetch(path: string, init?: RequestInit) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-token": token,
-        ...(init?.headers ?? {})
-      }
-    });
+    let lastError: Error | null = null;
 
-    const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload.message ?? "Admin request failed");
+    for (const baseUrl of API_BASE_CANDIDATES) {
+      try {
+        const response = await fetch(`${baseUrl}${path}`, {
+          ...init,
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-token": token,
+            ...(init?.headers ?? {})
+          }
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          lastError = new Error((payload as { message?: string }).message ?? "Admin request failed");
+          continue;
+        }
+
+        return payload;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Admin request failed");
+      }
     }
 
-    return payload;
+    throw lastError ?? new Error("Admin request failed");
   }
 
   async function runSync() {

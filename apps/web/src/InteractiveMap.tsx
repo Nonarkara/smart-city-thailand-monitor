@@ -4,6 +4,31 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+const JAXA_SCRIPT_URL = "https://data.earth.jaxa.jp/api/javascript/v1.2.3/jaxa.earth.umd.js";
+const JAXA_GSMAP_DAILY_COLLECTION =
+  "https://s3.ap-northeast-1.wasabisys.com/je-pds/cog/v1/JAXA.EORC_GSMaP_standard.Gauge.00Z-23Z.v6_daily/collection.json";
+
+interface JaxaLeafletLayerParams {
+  L: typeof L;
+  collection: string;
+  date?: Date;
+  opacity?: number;
+  projection?: string;
+}
+
+interface JaxaEarthGlobal {
+  leaflet?: {
+    createLayer: (params: JaxaLeafletLayerParams) => L.Layer | Promise<L.Layer>;
+  };
+}
+
+declare global {
+  interface Window {
+    je?: JaxaEarthGlobal;
+    __jaxaEarthLoader?: Promise<JaxaEarthGlobal | null>;
+  }
+}
+
 type LayerId =
   | "smart-city-thailand"
   | "bangkok-passages"
@@ -13,6 +38,7 @@ type LayerId =
   | "economy"
   | "weather"
   | "pollution"
+  | "jaxa-rainfall"
   | "disaster";
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
@@ -57,6 +83,7 @@ const layerColors: Record<LayerId, string> = {
   economy: "#6246ea",
   weather: "#119fb8",
   pollution: "#c0264f",
+  "jaxa-rainfall": "#0f8cff",
   disaster: "#cf5c00"
 };
 
@@ -229,6 +256,48 @@ function getPollutionSeverityColor(aqi: number) {
   return "#16a34a";
 }
 
+function getLatestJaxaRainDate() {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - 1);
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
+}
+
+function loadJaxaEarthLibrary(): Promise<JaxaEarthGlobal | null> {
+  if (typeof window === "undefined") {
+    return Promise.resolve(null);
+  }
+
+  if (window.je?.leaflet?.createLayer) {
+    return Promise.resolve(window.je);
+  }
+
+  if (window.__jaxaEarthLoader) {
+    return window.__jaxaEarthLoader;
+  }
+
+  window.__jaxaEarthLoader = new Promise((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-jaxa-earth="true"]');
+
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.je ?? null), { once: true });
+      existing.addEventListener("error", () => resolve(null), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = JAXA_SCRIPT_URL;
+    script.async = true;
+    script.defer = true;
+    script.dataset.jaxaEarth = "true";
+    script.onload = () => resolve(window.je ?? null);
+    script.onerror = () => resolve(null);
+    document.head.appendChild(script);
+  });
+
+  return window.__jaxaEarthLoader;
+}
+
 function renderFeatureCollections(
   target: L.LayerGroup,
   activeLayers: Set<LayerId>,
@@ -339,6 +408,7 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const jaxaLayerRef = useRef<L.Layer | null>(null);
   const lastViewportKeyRef = useRef<string>("");
 
   const layerKey = layers.join(",");
@@ -371,6 +441,10 @@ export default function InteractiveMap({
 
     return () => {
       overlayRef.current?.clearLayers();
+      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
+        map.removeLayer(jaxaLayerRef.current);
+      }
+      jaxaLayerRef.current = null;
       overlayRef.current = null;
       map.remove();
       mapRef.current = null;
@@ -474,6 +548,69 @@ export default function InteractiveMap({
       renderDisaster(overlay, locale);
     }
   }, [domainSlug, featureCollections, layerKey, locale, news, projects]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const shouldShowJaxaRain = layers.includes("jaxa-rainfall");
+
+    if (!shouldShowJaxaRain) {
+      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
+        map.removeLayer(jaxaLayerRef.current);
+      }
+      jaxaLayerRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const jaxa = await loadJaxaEarthLibrary();
+      const createLayer = jaxa?.leaflet?.createLayer;
+
+      if (!createLayer || cancelled) {
+        return;
+      }
+
+      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
+        map.removeLayer(jaxaLayerRef.current);
+      }
+
+      try {
+        const nextLayer = await Promise.resolve(
+          createLayer({
+            L,
+            collection: JAXA_GSMAP_DAILY_COLLECTION,
+            date: getLatestJaxaRainDate(),
+            opacity: 0.42,
+            projection: "EPSG:3857"
+          })
+        );
+
+        if (cancelled) {
+          if (nextLayer && map.hasLayer(nextLayer)) {
+            map.removeLayer(nextLayer);
+          }
+          return;
+        }
+
+        nextLayer.addTo(map);
+        jaxaLayerRef.current = nextLayer;
+      } catch {
+        if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
+          map.removeLayer(jaxaLayerRef.current);
+        }
+        jaxaLayerRef.current = null;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [layerKey, layers]);
 
   return <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />;
 }

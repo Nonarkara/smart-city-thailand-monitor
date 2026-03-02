@@ -478,6 +478,26 @@ export const toolkitLinks: ToolkitLink[] = [
     }
   },
   {
+    id: "tool-eodashboard",
+    name: "EO Dashboard",
+    href: "https://eodashboard.org",
+    kind: "Reference",
+    description: {
+      th: "แดชบอร์ดสำรวจโลกเชิงภาพจากข้อมูลดาวเทียมสำหรับสภาพภูมิอากาศ น้ำ และการเปลี่ยนแปลงพื้นที่",
+      en: "Satellite-driven Earth observation stories for climate, water, land, and global context."
+    }
+  },
+  {
+    id: "tool-jaxa-earth",
+    name: "JAXA Earth API",
+    href: "https://data.earth.jaxa.jp/en/",
+    kind: "Reference",
+    description: {
+      th: "พอร์ทัลข้อมูลโลกจาก JAXA สำหรับภาพถ่ายดาวเทียมและบริบทเชิงพื้นที่",
+      en: "JAXA Earth data portal for satellite imagery and spatial Earth-observation context."
+    }
+  },
+  {
     id: "tool-openaq",
     name: "OpenAQ",
     href: "https://api.openaq.org",
@@ -672,9 +692,11 @@ export function createGoogleTrendsUrl(query: string) {
 export function createDashboardSkeletonExport() {
   return {
     app: {
-      name: "Smart City Thailand Monitor",
+      name: "{{APP_NAME}}",
+      organization: "{{ORGANIZATION_NAME}}",
       mode: "public-dashboard",
       locales: ["th", "en"],
+      defaultCountry: "TH",
       layout: {
         desktopColumns: 5,
         tabletColumns: 3,
@@ -683,6 +705,19 @@ export function createDashboardSkeletonExport() {
         leftRail: true,
         bottomBar: true
       }
+    },
+    branding: {
+      primaryLogo: "{{PRIMARY_LOGO_URL}}",
+      secondaryLogos: ["{{SECONDARY_LOGO_URL_1}}", "{{SECONDARY_LOGO_URL_2}}"]
+    },
+    deployment: {
+      webUrl: "{{WEB_APP_URL}}",
+      apiBaseUrl: "{{API_BASE_URL}}"
+    },
+    legal: {
+      privacyStatement: "{{PRIVACY_STATEMENT}}",
+      attribution: "{{ATTRIBUTION_TEXT}}",
+      copyright: "{{COPYRIGHT_TEXT}}"
     },
     routes: [
       "/",
@@ -770,11 +805,74 @@ export function createDashboardSkeletonExport() {
 export function createDashboardScaffoldSnippets() {
   const skeleton = createDashboardSkeletonExport();
   const json = JSON.stringify(skeleton, null, 2);
-  const typescript = `export const dashboardSkeleton = ${json} as const;\n`;
+  const typescript = `export type DashboardConfig = {
+  app: {
+    name: string;
+    organization: string;
+    mode: "public-dashboard" | "internal-console";
+    locales: string[];
+    defaultCountry: string;
+    layout: {
+      desktopColumns: number;
+      tabletColumns: number;
+      mobileColumns: number;
+      topBar: boolean;
+      leftRail: boolean;
+      bottomBar: boolean;
+    };
+  };
+  branding: {
+    primaryLogo: string;
+    secondaryLogos: string[];
+  };
+  deployment: {
+    webUrl: string;
+    apiBaseUrl: string;
+  };
+  legal: {
+    privacyStatement: string;
+    attribution: string;
+    copyright: string;
+  };
+  routes: string[];
+  widgets: string[];
+  apiEndpoints: string[];
+  adminEndpoints: string[];
+  sourceDirectory: Array<{
+    name: string;
+    kind: string;
+    href: string;
+  }>;
+  trendWatchlist: Array<{
+    term: string;
+    geo: string;
+    source: string;
+  }>;
+};
+
+export const dashboardConfig: DashboardConfig = ${json};
+
+export function getApiBaseUrl(config: DashboardConfig) {
+  return config.deployment.apiBaseUrl.replace(/\\/+$/, "");
+}
+
+export function getEnabledWidgets(config: DashboardConfig) {
+  return [...config.widgets];
+}
+`;
   const python = `dashboard_skeleton = ${json
     .replace(/\btrue\b/g, "True")
     .replace(/\bfalse\b/g, "False")
-    .replace(/\bnull\b/g, "None")}\n`;
+    .replace(/\bnull\b/g, "None")}
+
+
+def get_api_base_url(config: dict) -> str:
+    return str(config["deployment"]["apiBaseUrl"]).rstrip("/")
+
+
+def get_enabled_widgets(config: dict) -> list[str]:
+    return list(config["widgets"])
+`;
 
   return {
     json,

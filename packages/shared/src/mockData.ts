@@ -418,6 +418,15 @@ export const sources: SourceRecord[] = [
     message: "Optional station-level air-quality network feed when an API key is configured."
   },
   {
+    id: "jaxa-earth",
+    name: "JAXA Earth API",
+    category: "geospatial",
+    url: "https://data.earth.jaxa.jp/en/",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Browser-side Earth observation overlay for rainfall and other satellite layers."
+  },
+  {
     id: "market-context",
     name: "Market Context",
     category: "finance",
@@ -532,6 +541,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "open-meteo-weather",
     legendLabel: "Weather",
     zIndex: 22
+  },
+  {
+    id: "jaxa-rainfall",
+    label: { th: "EO Rain", en: "EO Rain" },
+    active: false,
+    color: "#0f8cff",
+    kind: "external",
+    defaultViews: ["national"],
+    sourceId: "jaxa-earth",
+    legendLabel: "JAXA Rainfall",
+    zIndex: 14
   },
   {
     id: "pollution",

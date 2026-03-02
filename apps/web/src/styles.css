@@ -275,14 +275,14 @@ p {
 
 .side-ai-launcher {
   width: 100%;
-  padding: 0.7rem 0.7rem 0.75rem;
+  padding: 0.55rem 0.6rem 0.58rem;
   border-radius: 16px;
   border: 1px solid rgba(0, 87, 255, 0.18);
   background:
     linear-gradient(135deg, rgba(0, 87, 255, 0.08), rgba(21, 124, 88, 0.08)),
     rgba(255, 255, 255, 0.76);
   display: grid;
-  gap: 0.22rem;
+  gap: 0.12rem;
   text-align: left;
   color: var(--ink);
   font: inherit;
@@ -290,13 +290,14 @@ p {
 }
 
 .side-ai-launcher strong {
-  font-size: 0.92rem;
-  line-height: 1.2;
+  font-size: 0.84rem;
+  line-height: 1.05;
 }
 
 .side-ai-launcher small {
+  font-size: 0.7rem;
   color: var(--muted);
-  line-height: 1.25;
+  line-height: 1.05;
 }
 
 .assistant-edge-tab {
@@ -666,37 +667,44 @@ textarea {
 .support-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.6rem;
+  gap: 0.55rem;
   align-items: start;
+  grid-auto-flow: row dense;
 }
 
 .market-card {
   grid-column: 1;
+  grid-row: 1;
   min-height: 0;
 }
 
 .global-card {
-  grid-column: 2 / span 2;
-  min-height: 220px;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  min-height: 0;
 }
 
 .world-card {
-  grid-column: 4 / span 2;
-  min-height: 220px;
+  grid-column: 3 / -1;
+  grid-row: 2;
+  min-height: 0;
 }
 
 .activity-card {
   grid-column: 1 / span 2;
-  min-height: 220px;
+  grid-row: 2;
+  min-height: 0;
 }
 
 .research-card {
-  grid-column: 3 / span 3;
-  min-height: 220px;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-height: 0;
 }
 
 .toolkit-card {
   grid-column: 1 / -1;
+  grid-row: 4;
   min-height: 0;
 }
 
@@ -960,16 +968,16 @@ textarea {
 .hotspot-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .hotspot-chip {
-  padding: 0.58rem 0.65rem;
+  padding: 0.46rem 0.54rem;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.68);
   display: grid;
-  gap: 0.18rem;
+  gap: 0.12rem;
   text-align: left;
   color: inherit;
 }
@@ -979,32 +987,34 @@ textarea {
 }
 
 .hotspot-chip strong {
-  font-size: 0.92rem;
-  line-height: 1.2;
+  font-size: 0.86rem;
+  line-height: 1.1;
 }
 
 .hotspot-chip small {
+  font-size: 0.74rem;
   color: var(--muted);
-  line-height: 1.25;
+  line-height: 1.12;
 }
 
 .hero-toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
+  align-items: flex-end;
+  gap: 0.45rem;
 }
 
 .hero-toolbar-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.45rem;
   align-items: center;
+  min-width: 0;
 }
 
 .focus-preset-group {
   display: grid;
-  gap: 0.28rem;
+  gap: 0.18rem;
 }
 
 .hero-note {
@@ -1016,33 +1026,38 @@ textarea {
 
 .map-legend {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 0.55rem;
-}
-
-.map-legend-block {
-  padding: 0.58rem 0.62rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.52rem 0.58rem;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.56);
+}
+
+.legend-inline-group {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
 .legend-scale {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  align-items: center;
+  align-content: flex-start;
 }
 
 .legend-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.28rem 0.45rem;
+  padding: 0.24rem 0.42rem;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.74);
+  line-height: 1;
 }
 
 .legend-swatch {
@@ -1052,27 +1067,28 @@ textarea {
   flex: 0 0 auto;
 }
 
-.active-layer-legend {
-  display: grid;
+.active-layer-pills {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
 }
 
-.legend-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.45rem;
-  align-items: start;
+.active-layer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.24rem 0.44rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 0.76rem;
+  line-height: 1;
+  max-width: 100%;
 }
 
-.legend-row strong {
-  display: block;
-  font-size: 0.86rem;
-  line-height: 1.2;
-}
-
-.legend-row small {
-  color: var(--muted);
-  line-height: 1.3;
+.active-layer-pill small {
+  line-height: 1;
 }
 
 .city-intel {
@@ -1458,6 +1474,62 @@ textarea {
   overflow: hidden;
 }
 
+.eo-watch-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.eo-watch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.eo-watch-item {
+  display: grid;
+  gap: 0.14rem;
+  padding: 0.42rem 0.48rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.eo-watch-item.jump {
+  border-color: rgba(180, 35, 24, 0.2);
+}
+
+.eo-watch-item.watch {
+  border-color: rgba(168, 102, 0, 0.2);
+}
+
+.eo-watch-item.context {
+  border-color: rgba(20, 20, 20, 0.08);
+}
+
+.eo-watch-item small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.18;
+}
+
+.eo-watch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 0.22rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  line-height: 1;
+  text-decoration: none;
+}
+
 .activity-item {
   padding: 0.65rem;
   border-radius: 14px;
@@ -1560,9 +1632,80 @@ textarea {
 }
 
 .export-tabs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.4rem;
+}
+
+.export-tab {
+  padding: 0.46rem 0.52rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.64);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+  text-align: left;
+  color: var(--ink);
+  min-width: 0;
+  transition: 160ms ease;
+}
+
+.export-tab:hover {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.export-tab.active {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(20, 20, 20, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(20, 20, 20, 0.04);
+}
+
+.export-tab-mark {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1;
+  background: rgba(20, 20, 20, 0.06);
+  color: var(--ink);
+  flex: 0 0 auto;
+}
+
+.export-tab-json .export-tab-mark {
+  background: rgba(21, 124, 88, 0.1);
+  color: var(--green);
+}
+
+.export-tab-typescript .export-tab-mark {
+  background: rgba(0, 87, 255, 0.1);
+  color: var(--blue);
+}
+
+.export-tab-python .export-tab-mark {
+  background: rgba(168, 102, 0, 0.12);
+  color: var(--amber);
+}
+
+.export-tab-copy {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.export-tab-copy strong {
+  font-size: 0.82rem;
+  line-height: 1.05;
+}
+
+.export-tab-copy small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.12;
 }
 
 .export-panel pre {
@@ -1796,6 +1939,7 @@ textarea {
   .selection-strip,
   .hotspot-strip,
   .map-legend,
+  .eo-watch-grid,
   .city-intel-grid,
   .candidate-grid,
   .news-columns,
@@ -1805,6 +1949,10 @@ textarea {
   .tool-link-grid,
   .footnote-grid,
   .trend-row {
+    grid-template-columns: 1fr;
+  }
+
+  .export-tabs {
     grid-template-columns: 1fr;
   }
 
@@ -1826,7 +1974,7 @@ textarea {
 
   .focus-preset-group,
   .focus-preset-group .pill-list,
-  .active-layer-legend {
+  .active-layer-pills {
     width: 100%;
   }
 
