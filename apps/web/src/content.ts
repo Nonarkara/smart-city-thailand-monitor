@@ -498,6 +498,16 @@ export const toolkitLinks: ToolkitLink[] = [
     }
   },
   {
+    id: "tool-undp-data",
+    name: "UNDP Data Hub",
+    href: "https://data.undp.org/access-all-data",
+    kind: "Catalog",
+    description: {
+      th: "พอร์ทัลข้อมูลการพัฒนา ชุดข้อมูล แผนที่ และลิงก์ API/tiles สำหรับใช้ทำชั้นข้อมูลเชิงนโยบาย",
+      en: "Development-data portal with datasets, maps, and developer-facing API / tile links for policy layers."
+    }
+  },
+  {
     id: "tool-openaq",
     name: "OpenAQ",
     href: "https://api.openaq.org",

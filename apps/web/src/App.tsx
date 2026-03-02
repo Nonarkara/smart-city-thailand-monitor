@@ -782,8 +782,9 @@ function DashboardPage() {
     sources.find((source) => source.category === "news") ??
     null;
   const globalWatchSources = sources.filter((source) =>
-    ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals"].includes(source.id)
+    ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals", "undp-data"].includes(source.id)
   );
+  const undpDataSource = sources.find((source) => source.id === "undp-data") ?? null;
   const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
   const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
   const topAqiFeature =
@@ -2118,6 +2119,19 @@ function DashboardPage() {
                 {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
               </a>
             </div>
+            {undpDataSource ? (
+              <a className="stack-item linked compact-source" href={undpDataSource.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{undpDataSource.name}</strong>
+                  <span className={`status-tag ${undpDataSource.freshnessStatus}`}>{undpDataSource.freshnessStatus}</span>
+                </div>
+                <small>
+                  {lang === "th"
+                    ? "เปิด UNDP Data Hub เพื่อเข้าถึง development indicators, datasets, tiles, และ API URLs"
+                    : "Open UNDP Data Hub for development indicators, datasets, tiles, and dataset API URLs."}
+                </small>
+              </a>
+            ) : null}
             {compactMedia.length > 0 ? (
               <div className="compact-list">
                 {compactMedia.slice(0, 2).map((item) => (

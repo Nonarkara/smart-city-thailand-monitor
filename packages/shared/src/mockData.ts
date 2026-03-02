@@ -427,6 +427,15 @@ export const sources: SourceRecord[] = [
     message: "Browser-side Earth observation overlay for rainfall and other satellite layers."
   },
   {
+    id: "undp-data",
+    name: "UNDP Data Hub",
+    category: "catalog",
+    url: "https://data.undp.org/access-all-data",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Public development datasets, tiles, and dataset API URLs can be mapped into planning layers."
+  },
+  {
     id: "market-context",
     name: "Market Context",
     category: "finance",
