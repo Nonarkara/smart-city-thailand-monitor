@@ -675,13 +675,23 @@ textarea {
   min-height: 0;
 }
 
-.activity-card {
+.global-card {
   grid-column: 2 / span 2;
   min-height: 220px;
 }
 
-.research-card {
+.world-card {
   grid-column: 4 / span 2;
+  min-height: 220px;
+}
+
+.activity-card {
+  grid-column: 1 / span 2;
+  min-height: 220px;
+}
+
+.research-card {
+  grid-column: 3 / span 3;
   min-height: 220px;
 }
 
@@ -691,6 +701,8 @@ textarea {
 }
 
 .market-card,
+.global-card,
+.world-card,
 .activity-card,
 .research-card,
 .toolkit-card,
@@ -1672,6 +1684,8 @@ textarea {
   .time-card,
   .trends-card,
   .market-card,
+  .global-card,
+  .world-card,
   .activity-card,
   .research-card,
   .toolkit-card,
@@ -1760,6 +1774,8 @@ textarea {
   .time-card,
   .trends-card,
   .market-card,
+  .global-card,
+  .world-card,
   .activity-card,
   .research-card,
   .toolkit-card,

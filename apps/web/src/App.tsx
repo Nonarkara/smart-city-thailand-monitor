@@ -148,6 +148,12 @@ const copyDeck = {
     sentiment: "โทน",
     sourceMix: "แหล่งอ้างอิง",
     markets: "บริบทตลาด",
+    globalSignals: "สัญญาณโลก",
+    worldWatch: "จับตาโลก",
+    apiWatch: "สถานะ API",
+    noExternalSignals: "ยังไม่มีสัญญาณภายนอกเพิ่มเติม",
+    sourceStatus: "สถานะแหล่งข้อมูล",
+    worldContext: "บริบทโลก",
     placeLookup: "ข้อมูลเมือง",
     askAssistant: "ถาม Smart City",
     askLead: "AI ผู้ช่วยจาก Knowledge",
@@ -260,6 +266,12 @@ const copyDeck = {
     sentiment: "Tone",
     sourceMix: "Source Mix",
     markets: "Market Context",
+    globalSignals: "Global Signals",
+    worldWatch: "World Watch",
+    apiWatch: "API Watch",
+    noExternalSignals: "No additional external signals yet",
+    sourceStatus: "Source Status",
+    worldContext: "World Context",
     placeLookup: "City Lookup",
     askAssistant: "Ask Smart City",
     askLead: "AI assistant from Knowledge",
@@ -487,6 +499,18 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const globalNewsQuery = useQuery({
+    queryKey: ["news-global"],
+    queryFn: () =>
+      fetchFromApi<NewsItem[]>(
+        "/api/news?kind=external&limit=6",
+        cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6))
+      ),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const resilienceQuery = useQuery({
     queryKey: ["resilience"],
     queryFn: () => fetchFromApi<ResilienceSnapshot>("/api/resilience", cloneSeed(resilienceSeed)),
@@ -581,6 +605,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     overview: overviewQuery.data ?? overviewFallback,
     projects: projectsQuery.data ?? cloneSeed(projectSeed),
     news: newsQuery.data ?? cloneSeed(newsSeed),
+    globalNews: globalNewsQuery.data ?? cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6)),
     resilience: resilienceQuery.data ?? cloneSeed(resilienceSeed),
     changes: changesQuery.data ?? cloneSeed(changePulseSeed),
     activity: activityQuery.data ?? cloneSeed(activityLogSeed),
@@ -620,6 +645,7 @@ function DashboardPage() {
     overview,
     projects,
     news,
+    globalNews,
     resilience,
     changes,
     activity,
@@ -674,6 +700,7 @@ function DashboardPage() {
 
   const officialNews = filteredNews.filter((item) => item.kind === "official").slice(0, 2);
   const externalNews = filteredNews.filter((item) => item.kind === "external").slice(0, 3);
+  const globalSignalNews = globalNews.slice(0, 4);
   const compactProjects = filteredProjects.slice(0, 3);
   const compactSources = sources.slice(0, 4);
   const compactCities = overview.cities.slice(0, 4);
@@ -696,6 +723,9 @@ function DashboardPage() {
     sources.find((source) => source.category === "news" && source.freshnessStatus === "live") ??
     sources.find((source) => source.category === "news") ??
     null;
+  const globalWatchSources = sources.filter((source) =>
+    ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals"].includes(source.id)
+  );
   const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
   const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
   const topAqiFeature =
@@ -1824,6 +1854,75 @@ function DashboardPage() {
               <span className="eyebrow">Signal</span>
               <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
             </div>
+          </section>
+
+          <section className="card global-card" id="global-signals">
+            <div className="card-header">
+              <span className="eyebrow">{copy.globalSignals}</span>
+              <span className="status-pill">{globalSignalNews.length}</span>
+            </div>
+            <div className="stack-list tile-scroll">
+              {globalSignalNews.length > 0 ? (
+                globalSignalNews.map((item) => (
+                  <a
+                    key={item.id}
+                    className="stack-item linked"
+                    href={item.source.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className="status-pill">{formatUtcClock(item.publishedAt)} UTC</span>
+                    </div>
+                    <small>{item.source.sourceName}</small>
+                  </a>
+                ))
+              ) : (
+                <div className="stack-item">
+                  <p>{copy.noExternalSignals}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="card world-card" id="world-watch">
+            <div className="card-header">
+              <span className="eyebrow">{copy.worldWatch}</span>
+              <span className="status-pill">{globalWatchSources.length}</span>
+            </div>
+            <div className="stack-list">
+              <span className="eyebrow">{copy.sourceStatus}</span>
+              {globalWatchSources.map((source) => (
+                <div key={source.id} className="stack-item compact-source">
+                  <div className="stack-title">
+                    <strong>{source.name}</strong>
+                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                  </div>
+                  <small>{source.message}</small>
+                </div>
+              ))}
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.worldContext}</span>
+              <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
+            </div>
+            {compactMedia.length > 0 ? (
+              <div className="compact-list">
+                {compactMedia.slice(0, 2).map((item) => (
+                  <a
+                    key={item.id}
+                    className="headline-item"
+                    href={item.externalUrl ?? item.embedUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{item.region ?? item.kind}</small>
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="card activity-card" id="activity">
