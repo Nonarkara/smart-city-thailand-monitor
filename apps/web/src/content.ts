@@ -42,6 +42,13 @@ export interface ToolkitLink {
   description: Localized;
 }
 
+export interface AssistantQuestionCluster {
+  id: string;
+  title: Localized;
+  sourceNote: Localized;
+  prompts: Localized[];
+}
+
 export const trendWatchItems: TrendWatchItem[] = [
   {
     id: "smart-city",
@@ -499,6 +506,156 @@ export const toolkitLinks: ToolkitLink[] = [
       th: "อัตราแลกเปลี่ยนสำหรับบริบทค่าเงิน เช่น USD/THB",
       en: "Foreign-exchange context such as USD/THB."
     }
+  }
+];
+
+export const assistantQuestionClusters: AssistantQuestionCluster[] = [
+  {
+    id: "fundamentals",
+    title: {
+      th: "ความหมายและหลักคิด",
+      en: "Definition and First Principles"
+    },
+    sourceNote: {
+      th: "จาก Hitachi Review + Smart City Primer",
+      en: "From the Hitachi Review + Smart City Primer"
+    },
+    prompts: [
+      {
+        th: "ตามเอกสาร เมืองอัจฉริยะคืออะไร และทำไมจึงเป็น “กระบวนการ” มากกว่าผลลัพธ์",
+        en: "According to the source material, what is a smart city and why is it a process rather than a finished status?"
+      },
+      {
+        th: "สำหรับ {city} ความหมายของ citizen-centric smart city ควรแปลเป็นการตัดสินใจแบบไหน",
+        en: "For {city}, what does a citizen-centric smart city mean in practical decision-making terms?"
+      }
+    ]
+  },
+  {
+    id: "partnerships",
+    title: {
+      th: "4Ps / PPPP และการมีส่วนร่วม",
+      en: "4Ps / PPPP and Participation"
+    },
+    sourceNote: {
+      th: "คน-รัฐ-เอกชนต้องทำงานร่วมกัน",
+      en: "People, public, and private sectors must work together"
+    },
+    prompts: [
+      {
+        th: "เอกสารอธิบาย 4Ps / PPPP อย่างไร และบทบาทของประชาชนควรถูกออกแบบอย่างไร",
+        en: "How do the documents explain the 4Ps / PPPP model, and how should the citizen role be designed?"
+      },
+      {
+        th: "ถ้าจะประเมิน {city} ควรถามคำถามอะไรเพื่อดูว่าการมีส่วนร่วมของประชาชนจริงหรือไม่",
+        en: "If we evaluate {city}, what questions should we ask to test whether public participation is real?"
+      }
+    ]
+  },
+  {
+    id: "planning",
+    title: {
+      th: "ประเภทเมืองและความพร้อม",
+      en: "City Type and Readiness"
+    },
+    sourceNote: {
+      th: "โยงกับ Two-Five-Seven และ 5 criteria",
+      en: "Anchored in the Two-Five-Seven model and the five criteria"
+    },
+    prompts: [
+      {
+        th: "จากเอกสาร {city} ควรถูกมองเป็น Smart Livable City หรือ Smart New City เพราะอะไร",
+        en: "Based on the documents, should {city} be treated as a Smart Livable City or a Smart New City, and why?"
+      },
+      {
+        th: "ถ้าจะเสนอ {city} เข้าสู่กระบวนการ smart city เราควรตรวจสอบ 5 เกณฑ์อะไรเป็นลำดับแรก",
+        en: "If {city} is a smart-city candidate, which of the five readiness criteria should we check first?"
+      }
+    ]
+  },
+  {
+    id: "data",
+    title: {
+      th: "ข้อมูล เมือง และ CDP",
+      en: "Data, CDP, and City Operations"
+    },
+    sourceNote: {
+      th: "เน้น data-driven decision making",
+      en: "Focused on data-driven decision making"
+    },
+    prompts: [
+      {
+        th: "City Data Platform (CDP) สำหรับ {city} ควรทำอะไรบ้างตามแนวคิดในเอกสาร",
+        en: "What should a City Data Platform (CDP) do for {city} according to the source material?"
+      },
+      {
+        th: "ก่อนสร้าง CDP สำหรับ {city} เราควรคิดเรื่อง cybersecurity และ data governance อย่างไร",
+        en: "Before building a CDP for {city}, how should we think about cybersecurity and data governance?"
+      }
+    ]
+  },
+  {
+    id: "domains",
+    title: {
+      th: "7 มิติของ Smart City",
+      en: "The Seven Smart Domains"
+    },
+    sourceNote: {
+      th: "ใช้เพื่อกำกับทิศทางและ benchmark ความสำเร็จ",
+      en: "Used to guide action and benchmark success"
+    },
+    prompts: [
+      {
+        th: "จากเอกสาร 7 มิติใดควรถูกยกเป็นลำดับต้นสำหรับ {city} ในบริบทตอนนี้",
+        en: "From the source material, which of the seven smart domains should be prioritized first for {city} right now?"
+      },
+      {
+        th: "7 มิติช่วยให้เราติดตามและ benchmark ความก้าวหน้าของ {city} อย่างไร",
+        en: "How do the seven domains help us track and benchmark progress for {city}?"
+      }
+    ]
+  },
+  {
+    id: "design-thinking",
+    title: {
+      th: "Design Thinking และการตั้งโจทย์",
+      en: "Design Thinking and Problem Framing"
+    },
+    sourceNote: {
+      th: "ใช้กำหนด citizen needs ก่อนเลือกเทคโนโลยี",
+      en: "Use it to define citizen needs before choosing technology"
+    },
+    prompts: [
+      {
+        th: "เราควรใช้ design thinking อย่างไรเพื่อกำหนด citizen needs ของ {city} ก่อนทำโครงการ",
+        en: "How should we use design thinking to define citizen needs in {city} before launching projects?"
+      },
+      {
+        th: "ถ้าจะตั้ง problem statement สำหรับ {city} จากเอกสาร ควรเริ่มจากคำถามแบบไหน",
+        en: "If we draft a problem statement for {city}, what kind of question should we start with based on the documents?"
+      }
+    ]
+  },
+  {
+    id: "examples",
+    title: {
+      th: "กรณีศึกษาและต้นแบบ",
+      en: "Case Studies and Transferable Models"
+    },
+    sourceNote: {
+      th: "ใช้กรณีศึกษาเพื่อหาแนวทางที่ย้ายมาใช้ได้",
+      en: "Use case studies to identify transferable ideas"
+    },
+    prompts: [
+      {
+        th: "มีกรณีศึกษาใดจาก ASEAN หรือในเอกสารที่เหมาะเป็นต้นแบบให้ {city}",
+        en: "Which ASEAN or source-document case studies could be useful models for {city}?"
+      },
+      {
+        th: "จากกรณีอย่าง Iskandar, ONE BANGKOK หรือ District 2020 เราควรย้ายแนวคิดใดมาใช้กับ {city}",
+        en: "From examples like Iskandar, ONE BANGKOK, or District 2020, which ideas could be adapted for {city}?"
+      }
+    ]
   }
 ];
 

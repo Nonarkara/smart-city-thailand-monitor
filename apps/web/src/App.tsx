@@ -46,6 +46,7 @@ import {
 } from "react";
 import { NavLink, Route, Routes, useSearchParams } from "react-router-dom";
 import {
+  assistantQuestionClusters,
   createDashboardSkeletonExport,
   createGoogleTrendsUrl,
   globalReferenceCities,
@@ -122,6 +123,25 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "จัดกึ่งกลางแผนที่",
+    hotspots: "จุดเด่นตอนนี้",
+    focusPresets: "มุมมองด่วน",
+    focusAirRisk: "ความเสี่ยงอากาศ",
+    focusCandidates: "เมืองผู้สมัคร",
+    focusMediaWatch: "จับตาสื่อ",
+    focusEconomyContext: "บริบทเศรษฐกิจ",
+    mapLegend: "คำอธิบายแผนที่",
+    aqiScale: "ระดับ AQI",
+    activeLayersLegend: "เลเยอร์ที่เปิดอยู่",
+    clickToFocus: "กดเพื่อโฟกัสบนแผนที่",
+    mediaHotspot: "สัญญาณสื่อ",
+    weatherLegend: "วงกลมสีฟ้า = อุณหภูมิ / ความชื้น",
+    projectLegend: "สีน้ำเงิน = ความหนาแน่นของโครงการ",
+    newsLegend: "สีเขียว = จุดความเคลื่อนไหวข่าว",
+    resilienceLegend: "สีส้ม = พื้นที่เฝ้าระวัง",
+    economyLegend: "สีม่วง = ศักยภาพเศรษฐกิจเมือง",
+    disasterLegend: "สีส้มเข้ม = โซนเฝ้าระวังภัย",
+    coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
+    bangkokPlacesLegend: "สีเขียว = จุดฐานข้อมูลกรุงเทพฯ",
     thresholdWatch: "เกณฑ์เฝ้าระวัง",
     thisWeek: "ใหม่ในรอบนี้",
     mentions: "การกล่าวถึง",
@@ -131,6 +151,8 @@ const copyDeck = {
     placeLookup: "ข้อมูลเมือง",
     askAssistant: "ถาม Smart City",
     askLead: "AI ผู้ช่วยจาก Knowledge",
+    askQuestionMap: "แผนที่คำถาม",
+    askQuestionMapNote: "คำถามเหล่านี้มาจากกรอบคิดที่ซ้ำกันใน Hitachi Review และ Smart City Primer",
     askPlaceholder: "ถามจากเอกสารใน Knowledge โดยอิงจากเมืองและเลเยอร์ที่กำลังดูอยู่",
     askSubmit: "ถาม",
     askClose: "ปิด",
@@ -213,6 +235,25 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "Recenter Map",
+    hotspots: "Hotspots Now",
+    focusPresets: "Focus Presets",
+    focusAirRisk: "Air Risk",
+    focusCandidates: "Candidate Cities",
+    focusMediaWatch: "Media Watch",
+    focusEconomyContext: "Economic Context",
+    mapLegend: "Map Legend",
+    aqiScale: "AQI Scale",
+    activeLayersLegend: "Active Layers",
+    clickToFocus: "Click to focus on the map",
+    mediaHotspot: "Media Spike",
+    weatherLegend: "Teal circles = temperature / humidity",
+    projectLegend: "Blue = project density",
+    newsLegend: "Green = news signal points",
+    resilienceLegend: "Amber = watch areas",
+    economyLegend: "Purple = city economic strength",
+    disasterLegend: "Deep orange = hazard watch zone",
+    coverageLegend: "Red = nationwide smart city footprint",
+    bangkokPlacesLegend: "Green = Bangkok shared places",
     thresholdWatch: "Threshold Watch",
     thisWeek: "New This Cycle",
     mentions: "Mentions",
@@ -222,6 +263,8 @@ const copyDeck = {
     placeLookup: "City Lookup",
     askAssistant: "Ask Smart City",
     askLead: "AI assistant from Knowledge",
+    askQuestionMap: "Question Map",
+    askQuestionMapNote: "These prompts come from the recurring frames in the Hitachi Review and the Smart City Primer",
     askPlaceholder: "Ask the local Knowledge folder using the city, domain, and layers you are currently viewing",
     askSubmit: "Ask",
     askClose: "Close",
@@ -328,6 +371,20 @@ function formatUtcClock(value?: string) {
 
 function formatPopulation(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
+}
+
+function normalizeCitySlug(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return value.toLowerCase().replace(/\s+/g, "-");
+}
+
+function fillPromptTemplate(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce((result, [key, value]) => {
+    return result.replaceAll(`{${key}}`, value);
+  }, template);
 }
 
 function numericProperty(feature: GeoFeatureRecord, key: string) {
@@ -692,6 +749,103 @@ function DashboardPage() {
 
     return localize(lang, overview.briefing.headline);
   })();
+  const topAqiCitySlug = normalizeCitySlug(String(topAqiFeature?.properties.city ?? topAqiFeature?.title ?? ""));
+  const hottestCitySlug = normalizeCitySlug(
+    String(hottestWeatherFeature?.properties.city ?? hottestWeatherFeature?.title ?? "")
+  );
+  const activeLegendItems = layerSeed
+    .filter((item) => layers.includes(item.id))
+    .map((item) => ({
+      id: item.id,
+      color: item.color,
+      label: localize(lang, item.label),
+      detail:
+        item.id === "pollution"
+          ? copy.clickToFocus
+          : item.id === "weather"
+            ? copy.weatherLegend
+            : item.id === "projects"
+              ? copy.projectLegend
+              : item.id === "news"
+                ? copy.newsLegend
+                : item.id === "resilience"
+                  ? copy.resilienceLegend
+                  : item.id === "economy"
+                    ? copy.economyLegend
+                    : item.id === "disaster"
+                      ? copy.disasterLegend
+                      : item.id === "smart-city-thailand"
+                        ? copy.coverageLegend
+                        : copy.bangkokPlacesLegend
+    }));
+  const focusPresets = [
+    {
+      id: "air-risk",
+      label: copy.focusAirRisk,
+      layers: ["pollution", "weather", "resilience"],
+      run: () => {
+        const next = new URLSearchParams(searchParams);
+        next.set("layers", ["pollution", "weather", "resilience"].join(","));
+        if (topAqiCitySlug && knownCitySlugs.has(topAqiCitySlug)) {
+          next.set("city", topAqiCitySlug);
+          next.set("view", "city");
+        } else {
+          next.set("view", "national");
+        }
+        startTransition(() => {
+          setSearchParams(next);
+          setRecenterSignal((value) => value + 1);
+        });
+      }
+    },
+    {
+      id: "candidate-cities",
+      label: copy.focusCandidates,
+      layers: ["smart-city-thailand", "projects", "economy"],
+      run: () => {
+        const next = new URLSearchParams(searchParams);
+        next.set("layers", ["smart-city-thailand", "projects", "economy"].join(","));
+        next.set("view", "national");
+        startTransition(() => {
+          setSearchParams(next);
+          setRecenterSignal((value) => value + 1);
+        });
+      }
+    },
+    {
+      id: "media-watch",
+      label: copy.focusMediaWatch,
+      layers: ["smart-city-thailand", "news"],
+      run: () => {
+        const next = new URLSearchParams(searchParams);
+        next.set("layers", ["smart-city-thailand", "news"].join(","));
+        if (latestExternalSignal?.citySlug && knownCitySlugs.has(latestExternalSignal.citySlug)) {
+          next.set("city", latestExternalSignal.citySlug);
+          next.set("view", "city");
+        } else {
+          next.set("view", "national");
+        }
+        startTransition(() => {
+          setSearchParams(next);
+          setRecenterSignal((value) => value + 1);
+        });
+      }
+    },
+    {
+      id: "economic-context",
+      label: copy.focusEconomyContext,
+      layers: ["smart-city-thailand", "economy", "weather"],
+      run: () => {
+        const next = new URLSearchParams(searchParams);
+        next.set("layers", ["smart-city-thailand", "economy", "weather"].join(","));
+        next.set("view", "national");
+        startTransition(() => {
+          setSearchParams(next);
+          setRecenterSignal((value) => value + 1);
+        });
+      }
+    }
+  ];
 
   const skeletonJson = useMemo(() => JSON.stringify(createDashboardSkeletonExport(), null, 2), []);
   const thisCycleItems = changes.items.slice(0, 3);
@@ -714,6 +868,17 @@ function DashboardPage() {
     selectedDomain ? localize(lang, selectedDomain.title) : "",
     ...layers.slice(0, 3)
   ].filter(Boolean) as string[];
+  const localizedCityName = localize(lang, selectedCity.name);
+  const resolvedQuestionClusters = assistantQuestionClusters.map((cluster) => ({
+    ...cluster,
+    title: localize(lang, cluster.title),
+    sourceNote: localize(lang, cluster.sourceNote),
+    prompts: cluster.prompts.map((prompt) =>
+      fillPromptTemplate(localize(lang, prompt), {
+        city: localizedCityName
+      })
+    )
+  }));
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -1012,6 +1177,35 @@ function DashboardPage() {
               </div>
             </div>
 
+            <div className="assistant-question-map">
+              <div className="assistant-map-header">
+                <span className="eyebrow">{copy.askQuestionMap}</span>
+                <p>{copy.askQuestionMapNote}</p>
+              </div>
+              <div className="assistant-cluster-list tile-scroll">
+                {resolvedQuestionClusters.map((cluster) => (
+                  <section key={cluster.id} className="assistant-cluster">
+                    <div className="assistant-cluster-head">
+                      <strong>{cluster.title}</strong>
+                      <small>{cluster.sourceNote}</small>
+                    </div>
+                    <div className="assistant-prompt-list">
+                      {cluster.prompts.map((prompt) => (
+                        <button
+                          key={`${cluster.id}-${prompt}`}
+                          type="button"
+                          className="assistant-prompt-chip"
+                          onClick={() => setAssistantQuestion(prompt)}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+
             <div className="assistant-form">
               <textarea
                 value={assistantQuestion}
@@ -1096,8 +1290,68 @@ function DashboardPage() {
             </div>
           </div>
 
+          <div className="hotspot-strip">
+            {topAqiFeature ? (
+              <button
+                type="button"
+                className="hotspot-chip warning"
+                onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}
+              >
+                <span className="eyebrow">{copy.airHotspot}</span>
+                <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+                <small>{copy.clickToFocus}</small>
+              </button>
+            ) : null}
+
+            {hottestWeatherFeature ? (
+              <button
+                type="button"
+                className="hotspot-chip"
+                onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}
+              >
+                <span className="eyebrow">{copy.weatherHotspot}</span>
+                <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+                <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
+              </button>
+            ) : null}
+
+            {latestExternalSignal ? (
+              <button
+                type="button"
+                className="hotspot-chip"
+                onClick={() => {
+                  const preset = focusPresets.find((item) => item.id === "media-watch");
+                  preset?.run();
+                }}
+              >
+                <span className="eyebrow">{copy.mediaHotspot}</span>
+                <strong>{socialListening.mentionCount} mentions</strong>
+                <small>{socialListening.dominantSource}</small>
+              </button>
+            ) : null}
+          </div>
+
           <div className="hero-toolbar">
             <div className="hero-toolbar-group">
+              <div className="focus-preset-group">
+                <span className="eyebrow">{copy.focusPresets}</span>
+                <div className="pill-list compact">
+                  {focusPresets.map((preset) => {
+                    const presetActive = preset.layers.every((item) => layers.includes(item));
+
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={presetActive ? "chip active" : "chip"}
+                        onClick={preset.run}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <button className="chip" onClick={() => setRecenterSignal((value) => value + 1)}>
                 {copy.recenter}
               </button>
@@ -1127,6 +1381,39 @@ function DashboardPage() {
               ) : null}
             </div>
             <span className="hero-note">CityData + GDELT + EONET + live overlays</span>
+          </div>
+
+          <div className="map-legend">
+            <div className="map-legend-block">
+              <span className="eyebrow">{copy.aqiScale}</span>
+              <div className="legend-scale">
+                {[
+                  { label: "Good", color: "#16a34a" },
+                  { label: "Watch", color: "#f59e0b" },
+                  { label: "High", color: "#dc2626" },
+                  { label: "Severe", color: "#b91c1c" }
+                ].map((item) => (
+                  <div key={item.label} className="legend-chip">
+                    <span className="legend-swatch" style={{ background: item.color }} />
+                    <small>{item.label}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="map-legend-block">
+              <span className="eyebrow">{copy.activeLayersLegend}</span>
+              <div className="active-layer-legend">
+                {activeLegendItems.map((item) => (
+                  <div key={item.id} className="legend-row">
+                    <span className="legend-swatch" style={{ background: item.color }} />
+                    <div>
+                      <strong>{item.label}</strong>
+                      <small>{item.detail}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="city-intel">
