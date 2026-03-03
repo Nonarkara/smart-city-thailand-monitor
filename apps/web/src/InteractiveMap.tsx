@@ -627,16 +627,24 @@ export default function InteractiveMap({
     }
 
     const clearEoRainVisuals = () => {
-      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
-        map.removeLayer(jaxaLayerRef.current);
+      try {
+        if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
+          map.removeLayer(jaxaLayerRef.current);
+        }
+      } catch {
+        // JAXA library modifies Leaflet DOM directly; removeChild may fail
       }
       jaxaLayerRef.current = null;
 
-      if (jaxaFallbackRef.current) {
-        jaxaFallbackRef.current.clearLayers();
-        if (map.hasLayer(jaxaFallbackRef.current)) {
-          map.removeLayer(jaxaFallbackRef.current);
+      try {
+        if (jaxaFallbackRef.current) {
+          jaxaFallbackRef.current.clearLayers();
+          if (map.hasLayer(jaxaFallbackRef.current)) {
+            map.removeLayer(jaxaFallbackRef.current);
+          }
         }
+      } catch {
+        // Same DOM conflict safety
       }
     };
 
@@ -692,18 +700,22 @@ export default function InteractiveMap({
         );
 
         if (cancelled) {
-          if (nextLayer && map.hasLayer(nextLayer)) {
-            map.removeLayer(nextLayer);
-          }
+          try {
+            if (nextLayer && map.hasLayer(nextLayer)) {
+              map.removeLayer(nextLayer);
+            }
+          } catch { /* DOM conflict safety */ }
           return;
         }
 
-        if (jaxaFallbackRef.current) {
-          jaxaFallbackRef.current.clearLayers();
-          if (map.hasLayer(jaxaFallbackRef.current)) {
-            map.removeLayer(jaxaFallbackRef.current);
+        try {
+          if (jaxaFallbackRef.current) {
+            jaxaFallbackRef.current.clearLayers();
+            if (map.hasLayer(jaxaFallbackRef.current)) {
+              map.removeLayer(jaxaFallbackRef.current);
+            }
           }
-        }
+        } catch { /* DOM conflict safety */ }
 
         nextLayer.addTo(map);
         jaxaLayerRef.current = nextLayer;
