@@ -241,11 +241,11 @@ async function getKnowledgeIndex(forceRefresh = false) {
 
 function summarizeContext(input: AssistantQueryRequest["context"]) {
   const parts = [
-    input.view ? `view ${input.view}` : "",
-    input.cityName ? `city ${input.cityName}` : "",
-    input.domainLabel ? `domain ${input.domainLabel}` : "",
-    input.activeLayers.length > 0 ? `layers ${input.activeLayers.join(", ")}` : "",
-    input.executiveSignal ? `alert ${input.executiveSignal}` : ""
+    input?.view ? `view ${input.view}` : "",
+    input?.cityName ? `city ${input.cityName}` : "",
+    input?.domainLabel ? `domain ${input.domainLabel}` : "",
+    input?.activeLayers?.length ? `layers ${input.activeLayers.join(", ")}` : "",
+    input?.executiveSignal ? `alert ${input.executiveSignal}` : ""
   ].filter(Boolean);
 
   if (parts.length === 0) {
@@ -431,11 +431,11 @@ export async function queryAssistant(input: AssistantQueryRequest): Promise<Assi
   const index = await getKnowledgeIndex();
   const contextSummary = summarizeContext(input.context);
   const contextTokens = [
-    input.context.cityName,
-    input.context.domainLabel,
-    input.context.executiveSignal,
-    ...(input.context.watchpoints ?? []),
-    ...input.context.activeLayers
+    input.context?.cityName,
+    input.context?.domainLabel,
+    input.context?.executiveSignal,
+    ...(input.context?.watchpoints ?? []),
+    ...(input.context?.activeLayers ?? [])
   ]
     .filter(Boolean)
     .join(" ");
