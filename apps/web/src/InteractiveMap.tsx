@@ -73,6 +73,31 @@ const cityCenters: Record<
     label: { th: "เชียงใหม่", en: "Chiang Mai" },
     lat: 18.7883,
     lon: 98.9853
+  },
+  "chon-buri": {
+    label: { th: "ชลบุรี", en: "Chon Buri" },
+    lat: 13.3611,
+    lon: 100.9847
+  },
+  "hat-yai": {
+    label: { th: "หาดใหญ่", en: "Hat Yai" },
+    lat: 7.0084,
+    lon: 100.4747
+  },
+  phrae: {
+    label: { th: "แพร่", en: "Phrae" },
+    lat: 18.1459,
+    lon: 100.1408
+  },
+  lampang: {
+    label: { th: "ลำปาง", en: "Lampang" },
+    lat: 18.2888,
+    lon: 99.4908
+  },
+  "nakhon-ratchasima": {
+    label: { th: "นครราชสีมา", en: "Nakhon Ratchasima" },
+    lat: 14.9799,
+    lon: 102.0978
   }
 };
 
@@ -491,23 +516,10 @@ export default function InteractiveMap({
     jaxaFallbackRef.current = L.layerGroup();
     mapRef.current = map;
 
-    return () => {
-      overlayRef.current?.clearLayers();
-      if (jaxaLayerRef.current && map.hasLayer(jaxaLayerRef.current)) {
-        map.removeLayer(jaxaLayerRef.current);
-      }
-      if (jaxaFallbackRef.current) {
-        jaxaFallbackRef.current.clearLayers();
-        if (map.hasLayer(jaxaFallbackRef.current)) {
-          map.removeLayer(jaxaFallbackRef.current);
-        }
-      }
-      jaxaLayerRef.current = null;
-      jaxaFallbackRef.current = null;
-      overlayRef.current = null;
-      map.remove();
-      mapRef.current = null;
-    };
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

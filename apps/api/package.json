@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
+    "@google/genai": "^1.43.0",
     "@smart-city/shared": "file:../../packages/shared",
     "dotenv": "^17.3.1",
     "fast-xml-parser": "^5.4.1",

@@ -3,6 +3,7 @@ import { access, readdir, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 import { promisify } from "node:util";
+import { GoogleGenAI } from "@google/genai";
 import type {
   AssistantQueryRequest,
   AssistantResponse,
@@ -336,13 +337,13 @@ function buildAnswer(
   const supporting = citations.slice(1, 3);
   const supportTextEn = supporting.length
     ? ` Supporting references include ${supporting
-        .map((citation) => `${citation.documentTitle}${citation.pageLabel ? ` ${citation.pageLabel}` : ""}`)
-        .join(" and ")}.`
+      .map((citation) => `${citation.documentTitle}${citation.pageLabel ? ` ${citation.pageLabel}` : ""}`)
+      .join(" and ")}.`
     : "";
   const supportTextTh = supporting.length
     ? ` เอกสารสนับสนุนเพิ่มเติมคือ ${supporting
-        .map((citation) => `${citation.documentTitle}${citation.pageLabel ? ` ${citation.pageLabel}` : ""}`)
-        .join(" และ ")}`
+      .map((citation) => `${citation.documentTitle}${citation.pageLabel ? ` ${citation.pageLabel}` : ""}`)
+      .join(" และ ")}`
     : "";
 
   const answer = localized(
@@ -351,6 +352,66 @@ function buildAnswer(
   );
 
   return locale === "th" ? { th: answer.th, en: answer.en } : answer;
+}
+
+async function askGemini(
+  locale: Locale,
+  question: string,
+  contextSummary: LocalizedText,
+  citations: KnowledgeCitation[]
+): Promise<LocalizedText | null> {
+  if (!config.geminiApiKey) {
+    return null;
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    const citationContext = citations
+      .map((citation) => `[${citation.documentTitle}${citation.pageLabel ? ` ${citation.pageLabel}` : ""}]: ${citation.excerpt}`)
+      .join("\n");
+
+    const systemInstruction = [
+      "You are the AI assistant for the Smart City Thailand Monitor dashboard.",
+      "Answer concisely in the requested language. Use the provided local knowledge context and dashboard state to ground your answer.",
+      "If the context does not contain enough information, say so honestly but still try to provide useful insight.",
+      `Dashboard context: ${contextSummary.en}`,
+      citationContext ? `Local knowledge excerpts:\n${citationContext}` : "No local knowledge documents matched."
+    ].join("\n");
+
+    const languageHint = locale === "th"
+      ? "ตอบเป็นภาษาไทย แต่ให้คำตอบภาษาอังกฤษด้วย คั่นด้วย ---"
+      : "Answer in English first, then provide a Thai translation separated by ---";
+
+    const response = await ai.models.generateContent({
+      model: config.geminiModel,
+      contents: `${languageHint}\n\nQuestion: ${question}`,
+      config: {
+        systemInstruction,
+        maxOutputTokens: 600,
+        temperature: 0.5
+      }
+    });
+
+    const text = response.text?.trim();
+    if (!text) {
+      return null;
+    }
+
+    const parts = text.split(/\n---\n?/);
+    if (locale === "th") {
+      return localized(
+        parts[0]?.trim() ?? text,
+        parts[1]?.trim() ?? parts[0]?.trim() ?? text
+      );
+    }
+    return localized(
+      parts[1]?.trim() ?? parts[0]?.trim() ?? text,
+      parts[0]?.trim() ?? text
+    );
+  } catch (error) {
+    console.error("Gemini API error:", error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 export async function getAssistantStatus(forceRefresh = false): Promise<AssistantStatus> {
@@ -390,11 +451,13 @@ export async function queryAssistant(input: AssistantQueryRequest): Promise<Assi
     .map((item) => item.chunk);
   const citations = buildCitations(rankedChunks, terms);
 
+  const geminiAnswer = await askGemini(locale, input.question, contextSummary, citations);
+
   return {
-    answer: buildAnswer(locale, input.question, contextSummary, citations, index.available),
+    answer: geminiAnswer ?? buildAnswer(locale, input.question, contextSummary, citations, index.available),
     contextSummary,
     citations,
-    provider: "local-rag",
+    provider: geminiAnswer ? "gemini" : "local-rag",
     generatedAt: new Date().toISOString(),
     knowledgeAvailable: index.available,
     documentCount: index.documentCount,

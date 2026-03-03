@@ -29,3 +29,7 @@ services:
         value: "true"
       - key: SYNC_INTERVAL_MS
         value: "300000"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-2.5-flash"

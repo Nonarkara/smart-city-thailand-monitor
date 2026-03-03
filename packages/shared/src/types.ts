@@ -267,7 +267,7 @@ export interface AssistantResponse {
   answer: LocalizedText;
   contextSummary: LocalizedText;
   citations: KnowledgeCitation[];
-  provider: "local-rag";
+  provider: "local-rag" | "gemini";
   generatedAt: string;
   knowledgeAvailable: boolean;
   documentCount: number;

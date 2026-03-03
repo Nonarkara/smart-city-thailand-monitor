@@ -94,6 +94,36 @@ export const thailandMonitoringCities: MonitoringCity[] = [
     lat: 7.0084,
     lon: 100.4747,
     population: 415000
+  },
+  {
+    slug: "phrae",
+    labelTh: "แพร่",
+    labelEn: "Phrae",
+    regionTh: "ภาคเหนือ",
+    regionEn: "North",
+    lat: 18.1459,
+    lon: 100.1408,
+    population: 107000
+  },
+  {
+    slug: "lampang",
+    labelTh: "ลำปาง",
+    labelEn: "Lampang",
+    regionTh: "ภาคเหนือ",
+    regionEn: "North",
+    lat: 18.2888,
+    lon: 99.4908,
+    population: 120000
+  },
+  {
+    slug: "nakhon-ratchasima",
+    labelTh: "นครราชสีมา",
+    labelEn: "Nakhon Ratchasima",
+    regionTh: "ภาคตะวันออกเฉียงเหนือ",
+    regionEn: "Northeast",
+    lat: 14.9799,
+    lon: 102.0978,
+    population: 2630000
   }
 ];
 
