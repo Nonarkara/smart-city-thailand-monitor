@@ -1237,7 +1237,7 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.news-columns > div {
+.news-columns>div {
   display: grid;
   gap: 0.5rem;
 }
@@ -2036,5 +2036,103 @@ textarea {
   .bottombar {
     grid-template-columns: 1fr;
     padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding: 0.6rem 0.75rem;
+    gap: 0.4rem;
+  }
+
+  .brand-logo {
+    height: 24px;
+  }
+
+  .brand-copy h1 {
+    font-size: 0.92rem;
+  }
+
+  .brand-copy .eyebrow,
+  .brand-copy .brand-subline {
+    font-size: 0.58rem;
+  }
+
+  .compact-group {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .chip {
+    font-size: 0.68rem;
+    padding: 0.3rem 0.5rem;
+    min-height: 32px;
+  }
+
+  .side-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem;
+    padding: 0.5rem;
+  }
+
+  .side-button {
+    font-size: 0.68rem;
+    padding: 0.4rem 0.5rem;
+    min-height: 36px;
+  }
+
+  .assistant-drawer {
+    padding: 0.75rem;
+  }
+
+  .assistant-form textarea {
+    font-size: 0.85rem;
+    min-height: 60px;
+  }
+
+  .assistant-form .share-button {
+    min-height: 40px;
+    font-size: 0.85rem;
+  }
+
+  .assistant-answer {
+    font-size: 0.85rem;
+  }
+
+  .map-hero .thai-map {
+    min-height: 240px;
+    height: clamp(240px, 38vh, 340px);
+  }
+
+  .card {
+    padding: 0.75rem;
+  }
+
+  .metric-main {
+    font-size: 2rem;
+  }
+
+  .selection-strip {
+    gap: 0.3rem;
+  }
+
+  .selection-strip .chip {
+    font-size: 0.62rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .pill-list {
+    gap: 0.25rem;
+  }
+
+  .stack-pill {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .focus-preset-group .pill-list {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
 }
