@@ -1170,12 +1170,14 @@ function DashboardPage() {
       return;
     }
 
+    const question = assistantQuestion.trim();
     setAssistantLoading(true);
     setAssistantError("");
+    setAssistantQuestion("");
 
     try {
       const payload: AssistantQueryRequest = {
-        question: assistantQuestion.trim(),
+        question,
         locale: lang,
         context: assistantContext
       };
@@ -1183,18 +1185,15 @@ function DashboardPage() {
 
       setAssistantResponse(response);
 
-      requestAnimationFrame(() => {
-        const panel = document.querySelector(".assistant-panel");
-        if (panel) {
-          panel.scrollTop = 0;
-        }
+      setTimeout(() => {
         const answer = document.querySelector(".assistant-answer");
         if (answer) {
           answer.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-      });
+      }, 100);
     } catch (error) {
       setAssistantError(error instanceof Error ? error.message : "Assistant unavailable");
+      setAssistantQuestion(question);
     } finally {
       setAssistantLoading(false);
     }
