@@ -737,24 +737,24 @@ function DashboardPage() {
 
   const filteredProjects = normalizedSearch
     ? projects.filter((project) => {
-        return (
-          project.title.en.toLowerCase().includes(normalizedSearch) ||
-          project.title.th.includes(deferredSearchText) ||
-          project.summary.en.toLowerCase().includes(normalizedSearch) ||
-          project.summary.th.includes(deferredSearchText)
-        );
-      })
+      return (
+        project.title.en.toLowerCase().includes(normalizedSearch) ||
+        project.title.th.includes(deferredSearchText) ||
+        project.summary.en.toLowerCase().includes(normalizedSearch) ||
+        project.summary.th.includes(deferredSearchText)
+      );
+    })
     : projects;
 
   const filteredNews = normalizedSearch
     ? news.filter((item) => {
-        return (
-          item.title.en.toLowerCase().includes(normalizedSearch) ||
-          item.title.th.includes(deferredSearchText) ||
-          item.excerpt.en.toLowerCase().includes(normalizedSearch) ||
-          item.excerpt.th.includes(deferredSearchText)
-        );
-      })
+      return (
+        item.title.en.toLowerCase().includes(normalizedSearch) ||
+        item.title.th.includes(deferredSearchText) ||
+        item.excerpt.en.toLowerCase().includes(normalizedSearch) ||
+        item.excerpt.th.includes(deferredSearchText)
+      );
+    })
     : news;
 
   const officialNews = filteredNews.filter((item) => item.kind === "official").slice(0, 2);
@@ -866,9 +866,9 @@ function DashboardPage() {
                       ? copy.disasterLegend
                       : item.id === "jaxa-rainfall"
                         ? copy.jaxaLegend
-                      : item.id === "smart-city-thailand"
-                        ? copy.coverageLegend
-                        : copy.bangkokPlacesLegend
+                        : item.id === "smart-city-thailand"
+                          ? copy.coverageLegend
+                          : copy.bangkokPlacesLegend
     }));
   const warningHaystack = resilience.warnings.map((item) => `${item.en} ${item.th}`.toLowerCase()).join(" ");
   const hottestTemperature = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "temperatureC") : 0;
@@ -1182,6 +1182,17 @@ function DashboardPage() {
       const response = await postToApi<AssistantResponse>("/api/assistant/query", payload);
 
       setAssistantResponse(response);
+
+      requestAnimationFrame(() => {
+        const panel = document.querySelector(".assistant-panel");
+        if (panel) {
+          panel.scrollTop = 0;
+        }
+        const answer = document.querySelector(".assistant-answer");
+        if (answer) {
+          answer.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
     } catch (error) {
       setAssistantError(error instanceof Error ? error.message : "Assistant unavailable");
     } finally {
@@ -2237,64 +2248,64 @@ function DashboardPage() {
           </section>
 
           <section className="card toolkit-card" id="toolkit">
-          <div className="card-header">
-            <span className="eyebrow">{copy.toolkit}</span>
-            <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
-          </div>
-
-          <div className="toolkit-shell tile-scroll">
-            <div className="toolkit-block">
-              <h3>{copy.apiDirectory}</h3>
-              <div className="tool-link-grid">
-                {toolkitLinks.map((tool) => (
-                  <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
-                    <strong>{tool.name}</strong>
-                    <span>{tool.kind}</span>
-                    <p>{pickLocalized(lang, tool.description)}</p>
-                  </a>
-                ))}
-              </div>
+            <div className="card-header">
+              <span className="eyebrow">{copy.toolkit}</span>
+              <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
             </div>
 
-            <div className="toolkit-block">
-              <h3>{copy.stack}</h3>
-              <div className="pill-list">
-                {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
-                  <span key={item} className="stack-pill">
-                    {item}
-                  </span>
-                ))}
+            <div className="toolkit-shell tile-scroll">
+              <div className="toolkit-block">
+                <h3>{copy.apiDirectory}</h3>
+                <div className="tool-link-grid">
+                  {toolkitLinks.map((tool) => (
+                    <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
+                      <strong>{tool.name}</strong>
+                      <span>{tool.kind}</span>
+                      <p>{pickLocalized(lang, tool.description)}</p>
+                    </a>
+                  ))}
+                </div>
               </div>
 
-              <div className="export-panel">
-                <div className="stack-title">
-                  <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
-                  <button className="share-button" onClick={copySkeleton}>
-                    {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
-                  </button>
+              <div className="toolkit-block">
+                <h3>{copy.stack}</h3>
+                <div className="pill-list">
+                  {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
+                    <span key={item} className="stack-pill">
+                      {item}
+                    </span>
+                  ))}
                 </div>
-                <div className="export-tabs">
-                  {exportOptions.map((option) => {
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
-                        onClick={() => setExportLanguage(option.id)}
-                      >
-                        <span className="export-tab-mark">{option.mark}</span>
-                        <span className="export-tab-copy">
-                          <strong>{option.label}</strong>
-                          <small>{option.detail}</small>
-                        </span>
-                      </button>
-                    );
-                  })}
+
+                <div className="export-panel">
+                  <div className="stack-title">
+                    <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
+                    <button className="share-button" onClick={copySkeleton}>
+                      {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
+                    </button>
+                  </div>
+                  <div className="export-tabs">
+                    {exportOptions.map((option) => {
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
+                          onClick={() => setExportLanguage(option.id)}
+                        >
+                          <span className="export-tab-mark">{option.mark}</span>
+                          <span className="export-tab-copy">
+                            <strong>{option.label}</strong>
+                            <small>{option.detail}</small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <pre>{activeExportSnippet}</pre>
                 </div>
-                <pre>{activeExportSnippet}</pre>
               </div>
             </div>
-          </div>
           </section>
         </section>
 
