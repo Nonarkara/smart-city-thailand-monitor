@@ -424,7 +424,7 @@ export const sources: SourceRecord[] = [
     url: "https://data.earth.jaxa.jp/en/",
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
-    message: "Browser-side Earth observation overlay for rainfall and other satellite layers."
+    message: "Browser-side and Python Earth observation APIs for rainfall, land temperature, and other satellite layers."
   },
   {
     id: "undp-data",
@@ -434,6 +434,24 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
     message: "Public development datasets, tiles, and dataset API URLs can be mapped into planning layers."
+  },
+  {
+    id: "data-to-policy",
+    name: "Data to Policy",
+    category: "catalog",
+    url: "https://www.datatopolicy.org",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Policy playbooks and use-case templates help turn static map layers into operational workflows."
+  },
+  {
+    id: "esa-eodashboard",
+    name: "ESA EO Dashboard Catalog",
+    category: "geospatial",
+    url: "https://github.com/ESA-eodashboards/eodashboard-catalog/tree/main/collections",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Static EO collections can seed agriculture, land-cover, and atmospheric overlays."
   },
   {
     id: "market-context",
@@ -541,6 +559,39 @@ export const mapLayers: MapLayerConfig[] = [
     zIndex: 18
   },
   {
+    id: "agriculture",
+    label: { th: "เกษตร", en: "Agriculture" },
+    active: false,
+    color: "#7aa61b",
+    kind: "dataset",
+    defaultViews: ["national"],
+    sourceId: "esa-eodashboard",
+    legendLabel: "Agriculture",
+    zIndex: 17
+  },
+  {
+    id: "water",
+    label: { th: "น้ำ", en: "Water" },
+    active: false,
+    color: "#1479c9",
+    kind: "dataset",
+    defaultViews: ["national"],
+    sourceId: "jaxa-earth",
+    legendLabel: "Water",
+    zIndex: 19
+  },
+  {
+    id: "land-use",
+    label: { th: "การใช้ที่ดิน", en: "Land Use" },
+    active: false,
+    color: "#6b7280",
+    kind: "dataset",
+    defaultViews: ["national"],
+    sourceId: "undp-data",
+    legendLabel: "Land Use",
+    zIndex: 15
+  },
+  {
     id: "weather",
     label: { th: "อากาศ", en: "Weather" },
     active: true,
@@ -596,6 +647,19 @@ const smartCityThailandMeta = seedMeta(
   "CityData Smart City Thailand",
   "https://www.citydata.in.th/en/smart-city-thailand/",
   "live"
+);
+
+const undpDataMeta = seedMeta("UNDP Data Hub", "https://data.undp.org/access-all-data");
+const dataToPolicyMeta = seedMeta("Data to Policy", "https://www.datatopolicy.org");
+const esaEodashboardMeta = seedMeta(
+  "ESA EO Dashboard Catalog",
+  "https://github.com/ESA-eodashboards/eodashboard-catalog/tree/main/collections"
+);
+const gdeltSignalsMeta = seedMeta("GDELT Signals", "https://api.gdeltproject.org/api/v2/doc/doc", "live");
+const jaxaEarthMeta = seedMeta("JAXA Earth API", "https://data.earth.jaxa.jp/en/");
+const gistdaDisasterMeta = seedMeta(
+  "GISTDA Disaster API",
+  "https://disaster.gistda.or.th/services/open-api"
 );
 
 export const mapFeatureCollections: MapFeatureCollection[] = [
@@ -1171,6 +1235,659 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           dataset: "fallback"
         },
         source: bangkokPlaceMeta
+      },
+      {
+        id: "bangkok-place-4",
+        layerId: "bangkok-passages",
+        geometryType: "Point",
+        coordinates: [100.4931, 13.7526],
+        title: "Rattanakosin Civic Loop",
+        description: "Historic-core walking and public-space waypoint.",
+        properties: {
+          city: "Bangkok",
+          dataset: "curated"
+        },
+        source: bangkokPlaceMeta
+      },
+      {
+        id: "bangkok-place-5",
+        layerId: "bangkok-passages",
+        geometryType: "Point",
+        coordinates: [100.5134, 13.7367],
+        title: "Chao Phraya Riverfront",
+        description: "River-edge mobility and public-realm highlight.",
+        properties: {
+          city: "Bangkok",
+          dataset: "curated"
+        },
+        source: bangkokPlaceMeta
+      },
+      {
+        id: "bangkok-place-6",
+        layerId: "bangkok-passages",
+        geometryType: "Point",
+        coordinates: [100.5383, 13.7658],
+        title: "Phaya Thai Civic Spine",
+        description: "Transit-linked civic services cluster.",
+        properties: {
+          city: "Bangkok",
+          dataset: "curated"
+        },
+        source: bangkokPlaceMeta
+      },
+      {
+        id: "bangkok-place-7",
+        layerId: "bangkok-passages",
+        geometryType: "Point",
+        coordinates: [100.5814, 13.7219],
+        title: "Bang Na Learning Edge",
+        description: "Eastern Bangkok learning and innovation waypoint.",
+        properties: {
+          city: "Bangkok",
+          dataset: "curated"
+        },
+        source: bangkokPlaceMeta
+      },
+      {
+        id: "bangkok-place-8",
+        layerId: "bangkok-passages",
+        geometryType: "Point",
+        coordinates: [100.4662, 13.7421],
+        title: "Thonburi Canal Watch",
+        description: "Canal-side community signal and local access node.",
+        properties: {
+          city: "Bangkok",
+          dataset: "curated"
+        },
+        source: bangkokPlaceMeta
+      }
+    ]
+  },
+  {
+    layerId: "projects",
+    updatedAt: seededAt,
+    bounds: [7.2, 98.3, 18.9, 103.9],
+    source: dataToPolicyMeta,
+    features: [
+      {
+        id: "projects-bkk-service-grid",
+        layerId: "projects",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.43, 13.67],
+          [100.62, 13.67],
+          [100.62, 13.86],
+          [100.43, 13.86]
+        ],
+        title: "Bangkok service digitization grid",
+        description: "Dense public-service modernization footprint for integrated city services.",
+        properties: {
+          city: "Bangkok",
+          status: "active",
+          priority: "service-delivery"
+        },
+        source: dataToPolicyMeta
+      },
+      {
+        id: "projects-eec-agrologistics",
+        layerId: "projects",
+        geometryType: "LineString",
+        coordinates: [
+          [100.92, 13.22],
+          [101.18, 13.08],
+          [101.55, 12.89],
+          [101.88, 12.74]
+        ],
+        title: "Eastern agri-logistics modernization corridor",
+        description: "Ports, cold-chain nodes, and industrial estates aligned as one delivery corridor.",
+        properties: {
+          region: "East",
+          status: "watch",
+          focus: "logistics"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "projects-khonkaen-food-hub",
+        layerId: "projects",
+        geometryType: "Polygon",
+        coordinates: [
+          [102.63, 16.24],
+          [102.97, 16.24],
+          [102.97, 16.54],
+          [102.63, 16.54]
+        ],
+        title: "Khon Kaen agri-data service zone",
+        description: "Regional food systems and civic logistics pilot footprint.",
+        properties: {
+          city: "Khon Kaen",
+          status: "active",
+          focus: "agri-services"
+        },
+        source: dataToPolicyMeta
+      },
+      {
+        id: "projects-chiangmai-campus",
+        layerId: "projects",
+        geometryType: "Point",
+        coordinates: [98.9515, 18.8054],
+        title: "Northern civic innovation campus",
+        description: "University and city sandbox for livability and climate response pilots.",
+        properties: {
+          city: "Chiang Mai",
+          status: "watch",
+          focus: "living-lab"
+        },
+        source: dataToPolicyMeta
+      }
+    ]
+  },
+  {
+    layerId: "news",
+    updatedAt: seededAt,
+    bounds: [7.2, 98.3, 18.9, 104.2],
+    source: gdeltSignalsMeta,
+    features: [
+      {
+        id: "news-bangkok-cluster",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [100.5018, 13.7563],
+        title: "Bangkok media concentration",
+        description: "National policy, transport, and flood-management coverage remains concentrated here.",
+        properties: {
+          city: "Bangkok",
+          mentions: 18,
+          theme: "governance"
+        },
+        source: gdeltSignalsMeta
+      },
+      {
+        id: "news-chiangmai-air",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [98.9853, 18.7883],
+        title: "Chiang Mai air-quality watch",
+        description: "Recurring environmental coverage spike around haze and livability.",
+        properties: {
+          city: "Chiang Mai",
+          mentions: 11,
+          theme: "environment"
+        },
+        source: gdeltSignalsMeta
+      },
+      {
+        id: "news-eastern-freight",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [101.2816, 12.6814],
+        title: "Eastern logistics signal",
+        description: "Trade and logistics headlines cluster along the eastern corridor.",
+        properties: {
+          city: "Rayong",
+          mentions: 9,
+          theme: "economy"
+        },
+        source: gdeltSignalsMeta
+      },
+      {
+        id: "news-phuket-tourism",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [98.3923, 7.8804],
+        title: "Phuket tourism operations watch",
+        description: "Service-quality and visitor-flow stories remain active.",
+        properties: {
+          city: "Phuket",
+          mentions: 7,
+          theme: "living"
+        },
+        source: gdeltSignalsMeta
+      },
+      {
+        id: "news-mekong-border",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [104.7786, 17.392],
+        title: "Mekong border growth signal",
+        description: "Cross-border services and trade modernization references continue to rise.",
+        properties: {
+          city: "Nakhon Phanom",
+          mentions: 6,
+          theme: "mobility"
+        },
+        source: gdeltSignalsMeta
+      }
+    ]
+  },
+  {
+    layerId: "resilience",
+    updatedAt: seededAt,
+    bounds: [6.8, 98.0, 19.2, 104.6],
+    source: jaxaEarthMeta,
+    features: [
+      {
+        id: "resilience-chao-phraya",
+        layerId: "resilience",
+        geometryType: "Polygon",
+        coordinates: [
+          [99.75, 13.35],
+          [100.85, 13.35],
+          [100.95, 14.75],
+          [100.05, 14.95],
+          [99.7, 14.1]
+        ],
+        title: "Lower Chao Phraya flood-response basin",
+        description: "Rainfall, drainage, and low-lying settlements intersect in this watch zone.",
+        properties: {
+          risk: "flood",
+          sourceLayer: "rainfall"
+        },
+        source: jaxaEarthMeta
+      },
+      {
+        id: "resilience-northern-haze",
+        layerId: "resilience",
+        geometryType: "Polygon",
+        coordinates: [
+          [98.45, 18.05],
+          [99.45, 18.05],
+          [99.65, 19.35],
+          [98.65, 19.45]
+        ],
+        title: "Northern haze and watershed watch",
+        description: "Dry-season smoke, forests, and mountain watershed pressure overlap here.",
+        properties: {
+          risk: "air-and-fire",
+          sourceLayer: "atmosphere"
+        },
+        source: esaEodashboardMeta
+      },
+      {
+        id: "resilience-isan-heat-band",
+        layerId: "resilience",
+        geometryType: "LineString",
+        coordinates: [
+          [101.7, 17.2],
+          [102.6, 16.5],
+          [103.7, 15.8],
+          [104.6, 15.1]
+        ],
+        title: "Isan seasonal heat-stress band",
+        description: "Dryland agriculture and heat exposure escalate along this regional belt.",
+        properties: {
+          risk: "drought",
+          sourceLayer: "heat"
+        },
+        source: jaxaEarthMeta
+      }
+    ]
+  },
+  {
+    layerId: "economy",
+    updatedAt: seededAt,
+    bounds: [7.0, 98.1, 19.0, 104.7],
+    source: undpDataMeta,
+    features: [
+      {
+        id: "economy-central-rice-basin",
+        layerId: "economy",
+        geometryType: "Polygon",
+        coordinates: [
+          [99.55, 13.35],
+          [100.85, 13.35],
+          [100.95, 14.85],
+          [99.95, 15.05],
+          [99.45, 14.1]
+        ],
+        title: "Central agricultural production basin",
+        description: "Rice, irrigation, and food logistics density make this a high-value planning layer.",
+        properties: {
+          focus: "agriculture",
+          crop: "rice",
+          sourceCollection: "development-data"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "economy-isan-food-belt",
+        layerId: "economy",
+        geometryType: "Polygon",
+        coordinates: [
+          [101.85, 15.35],
+          [103.95, 15.35],
+          [104.15, 17.15],
+          [102.15, 17.45]
+        ],
+        title: "Isan food and field-crop belt",
+        description: "Broad crop belt suited for agriculture and drought-planning overlays.",
+        properties: {
+          focus: "agriculture",
+          crop: "mixed",
+          sourceCollection: "rice-planting"
+        },
+        source: esaEodashboardMeta
+      },
+      {
+        id: "economy-eastern-corridor",
+        layerId: "economy",
+        geometryType: "LineString",
+        coordinates: [
+          [100.88, 13.45],
+          [101.18, 13.2],
+          [101.55, 12.98],
+          [101.85, 12.72]
+        ],
+        title: "Eastern production and export corridor",
+        description: "Industrial estates, agro-logistics, and port access create a strong economic spine.",
+        properties: {
+          focus: "logistics",
+          sourceCollection: "corridor"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "economy-southern-tourism-food",
+        layerId: "economy",
+        geometryType: "Polygon",
+        coordinates: [
+          [98.15, 7.4],
+          [99.7, 7.4],
+          [100.15, 9.4],
+          [98.55, 9.6]
+        ],
+        title: "Southern tourism and coastal food system zone",
+        description: "Tourism services, fisheries, and coastal food logistics overlap across the south.",
+        properties: {
+          focus: "coastal-economy",
+          sourceCollection: "coastal"
+        },
+        source: undpDataMeta
+      }
+    ]
+  },
+  {
+    layerId: "agriculture",
+    updatedAt: seededAt,
+    bounds: [7.1, 98.2, 18.8, 104.5],
+    source: esaEodashboardMeta,
+    features: [
+      {
+        id: "agriculture-central-rice-plain",
+        layerId: "agriculture",
+        geometryType: "Polygon",
+        coordinates: [
+          [99.6, 13.4],
+          [100.9, 13.4],
+          [101.0, 14.9],
+          [100.0, 15.15],
+          [99.5, 14.2]
+        ],
+        title: "Central rice plain",
+        description: "Large irrigated rice area suited for food-security and water-management tracking.",
+        properties: {
+          crop: "rice",
+          intensity: "high",
+          sourceCollection: "development-data"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "agriculture-isan-planting-zone",
+        layerId: "agriculture",
+        geometryType: "Polygon",
+        coordinates: [
+          [101.8, 15.4],
+          [104.0, 15.4],
+          [104.2, 17.2],
+          [102.1, 17.45]
+        ],
+        title: "Isan rice planting zone",
+        description: "Broad seasonal field-crop area inspired by EO rice-planting collections.",
+        properties: {
+          crop: "rice",
+          intensity: "seasonal",
+          sourceCollection: "rice-planting"
+        },
+        source: esaEodashboardMeta
+      },
+      {
+        id: "agriculture-eastern-fruit-belt",
+        layerId: "agriculture",
+        geometryType: "Polygon",
+        coordinates: [
+          [101.0, 12.45],
+          [102.4, 12.45],
+          [102.55, 13.35],
+          [101.2, 13.55]
+        ],
+        title: "Eastern fruit belt",
+        description: "Orchard-heavy zone aligned with export packaging and cold-chain operations.",
+        properties: {
+          crop: "fruit",
+          intensity: "export",
+          sourceCollection: "horticulture"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "agriculture-southern-rubber-belt",
+        layerId: "agriculture",
+        geometryType: "LineString",
+        coordinates: [
+          [99.1, 9.4],
+          [99.5, 8.8],
+          [99.9, 8.1],
+          [100.2, 7.4],
+          [100.45, 6.9]
+        ],
+        title: "Southern rubber and palm belt",
+        description: "Long production band for plantation monitoring and transport planning.",
+        properties: {
+          crop: "rubber-and-palm",
+          intensity: "regional"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "agriculture-chiangmai-highland",
+        layerId: "agriculture",
+        geometryType: "Point",
+        coordinates: [98.935, 18.86],
+        title: "Northern highland farming node",
+        description: "Highland horticulture and watershed-dependent farming cluster.",
+        properties: {
+          crop: "highland-mixed",
+          intensity: "cluster"
+        },
+        source: esaEodashboardMeta
+      }
+    ]
+  },
+  {
+    layerId: "water",
+    updatedAt: seededAt,
+    bounds: [6.8, 98.0, 20.0, 105.0],
+    source: jaxaEarthMeta,
+    features: [
+      {
+        id: "water-chao-phraya-mainstem",
+        layerId: "water",
+        geometryType: "LineString",
+        coordinates: [
+          [100.45, 14.55],
+          [100.52, 14.1],
+          [100.55, 13.75],
+          [100.56, 13.45]
+        ],
+        title: "Chao Phraya mainstem",
+        description: "Primary central river spine for runoff, freight, and floodplain monitoring.",
+        properties: {
+          basin: "Chao Phraya",
+          type: "river"
+        },
+        source: jaxaEarthMeta
+      },
+      {
+        id: "water-mekong-edge",
+        layerId: "water",
+        geometryType: "LineString",
+        coordinates: [
+          [104.25, 18.2],
+          [104.65, 17.8],
+          [104.8, 17.35],
+          [105.0, 16.85],
+          [105.05, 15.4]
+        ],
+        title: "Mekong edge",
+        description: "Cross-border river edge used for basin and seasonal-flow context.",
+        properties: {
+          basin: "Mekong",
+          type: "river"
+        },
+        source: jaxaEarthMeta
+      },
+      {
+        id: "water-lower-gulf-estuary",
+        layerId: "water",
+        geometryType: "Polygon",
+        coordinates: [
+          [99.9, 13.0],
+          [100.9, 13.0],
+          [101.15, 13.85],
+          [100.15, 14.0]
+        ],
+        title: "Lower gulf estuary watch",
+        description: "Estuary and coastal outflow zone relevant to salinity and stormwater response.",
+        properties: {
+          basin: "Gulf estuary",
+          type: "estuary"
+        },
+        source: jaxaEarthMeta
+      },
+      {
+        id: "water-bangkok-canal-grid",
+        layerId: "water",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.39, 13.67],
+          [100.63, 13.67],
+          [100.63, 13.87],
+          [100.39, 13.87]
+        ],
+        title: "Bangkok canal grid",
+        description: "Urban drainage and canal-management footprint for the capital core.",
+        properties: {
+          basin: "Bangkok canals",
+          type: "urban-drainage"
+        },
+        source: dataToPolicyMeta
+      },
+      {
+        id: "water-sirikit-reservoir",
+        layerId: "water",
+        geometryType: "Point",
+        coordinates: [100.372, 17.826],
+        title: "Upper basin reservoir node",
+        description: "Reservoir watchpoint for upstream storage and release coordination.",
+        properties: {
+          basin: "Nan",
+          type: "reservoir"
+        },
+        source: jaxaEarthMeta
+      }
+    ]
+  },
+  {
+    layerId: "land-use",
+    updatedAt: seededAt,
+    bounds: [7.0, 98.1, 19.1, 104.7],
+    source: undpDataMeta,
+    features: [
+      {
+        id: "land-use-bangkok-urban-core",
+        layerId: "land-use",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.35, 13.6],
+          [100.7, 13.6],
+          [100.7, 13.95],
+          [100.35, 13.95]
+        ],
+        title: "Bangkok urban core",
+        description: "Dense built-up urban fabric for comparing growth against civic-service coverage.",
+        properties: {
+          classification: "dense-urban",
+          changeSignal: "expansion"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "land-use-eec-industrial",
+        layerId: "land-use",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.95, 12.8],
+          [101.8, 12.8],
+          [101.95, 13.45],
+          [101.1, 13.5]
+        ],
+        title: "Eastern industrial estates",
+        description: "Manufacturing and logistics land-use cluster along the eastern corridor.",
+        properties: {
+          classification: "industrial",
+          changeSignal: "intensifying"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "land-use-northern-forest-edge",
+        layerId: "land-use",
+        geometryType: "Polygon",
+        coordinates: [
+          [98.35, 18.0],
+          [99.7, 18.0],
+          [100.0, 19.45],
+          [98.65, 19.6]
+        ],
+        title: "Northern forest edge",
+        description: "Watershed, forest, and settlement edge useful for conservation-pressure comparisons.",
+        properties: {
+          classification: "forest-edge",
+          changeSignal: "sensitive"
+        },
+        source: esaEodashboardMeta
+      },
+      {
+        id: "land-use-phuket-tourism-strip",
+        layerId: "land-use",
+        geometryType: "LineString",
+        coordinates: [
+          [98.24, 8.05],
+          [98.32, 7.96],
+          [98.37, 7.88],
+          [98.42, 7.79]
+        ],
+        title: "Phuket tourism strip",
+        description: "Coastal service corridor where tourism intensity shapes land use.",
+        properties: {
+          classification: "tourism-coast",
+          changeSignal: "seasonal"
+        },
+        source: undpDataMeta
+      },
+      {
+        id: "land-use-khonkaen-civic-core",
+        layerId: "land-use",
+        geometryType: "Point",
+        coordinates: [102.824, 16.432],
+        title: "Khon Kaen mixed-use civic core",
+        description: "City-center mixed-use node for mobility, university, and service concentration.",
+        properties: {
+          classification: "mixed-use",
+          changeSignal: "active"
+        },
+        source: dataToPolicyMeta
       }
     ]
   },
@@ -1187,7 +1904,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [100.5018, 13.7563],
         title: "Bangkok",
         description: "City weather watchpoint",
-        properties: { city: "Bangkok", temperatureC: 32, humidity: 60, windKmH: 10, region: "Central" },
+        properties: { city: "Bangkok", temperatureC: 32, humidity: 60, windKph: 10, region: "Central" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -1197,7 +1914,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.9853, 18.7883],
         title: "Chiang Mai",
         description: "City weather watchpoint",
-        properties: { city: "Chiang Mai", temperatureC: 29, humidity: 52, windKmH: 8, region: "North" },
+        properties: { city: "Chiang Mai", temperatureC: 29, humidity: 52, windKph: 8, region: "North" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -1207,7 +1924,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [102.8236, 16.4322],
         title: "Khon Kaen",
         description: "City weather watchpoint",
-        properties: { city: "Khon Kaen", temperatureC: 31, humidity: 48, windKmH: 12, region: "Northeast" },
+        properties: { city: "Khon Kaen", temperatureC: 31, humidity: 48, windKph: 12, region: "Northeast" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -1217,7 +1934,47 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.3923, 7.8804],
         title: "Phuket",
         description: "City weather watchpoint",
-        properties: { city: "Phuket", temperatureC: 30, humidity: 74, windKmH: 15, region: "South" },
+        properties: { city: "Phuket", temperatureC: 30, humidity: 74, windKph: 15, region: "South" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-chon-buri",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [100.9847, 13.3611],
+        title: "Chon Buri",
+        description: "Industrial-coast weather watchpoint",
+        properties: { city: "Chon Buri", temperatureC: 33, humidity: 68, windKph: 14, region: "East" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-hat-yai",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [100.4747, 7.0084],
+        title: "Hat Yai",
+        description: "Southern urban weather watchpoint",
+        properties: { city: "Hat Yai", temperatureC: 31, humidity: 79, windKph: 11, region: "South" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-korat",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [102.0978, 14.9799],
+        title: "Nakhon Ratchasima",
+        description: "Plateau weather watchpoint",
+        properties: { city: "Nakhon Ratchasima", temperatureC: 34, humidity: 43, windKph: 16, region: "Northeast" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-lampang",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [99.4908, 18.2888],
+        title: "Lampang",
+        description: "Northern inland weather watchpoint",
+        properties: { city: "Lampang", temperatureC: 33, humidity: 46, windKph: 9, region: "North" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       }
     ]
@@ -1267,6 +2024,108 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "City AQI watchpoint",
         properties: { city: "Phuket", aqi: 34, pm25: 6, pm10: 9, region: "South" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-chon-buri",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [100.9847, 13.3611],
+        title: "Chon Buri",
+        description: "Industrial-coast AQI watchpoint",
+        properties: { city: "Chon Buri", aqi: 63, pm25: 18, pm10: 27, region: "East" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-hat-yai",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [100.4747, 7.0084],
+        title: "Hat Yai",
+        description: "Southern AQI watchpoint",
+        properties: { city: "Hat Yai", aqi: 42, pm25: 8, pm10: 13, region: "South" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-korat",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [102.0978, 14.9799],
+        title: "Nakhon Ratchasima",
+        description: "Plateau AQI watchpoint",
+        properties: { city: "Nakhon Ratchasima", aqi: 69, pm25: 22, pm10: 32, region: "Northeast" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-lampang",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [99.4908, 18.2888],
+        title: "Lampang",
+        description: "Northern AQI watchpoint",
+        properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      }
+    ]
+  },
+  {
+    layerId: "disaster",
+    updatedAt: seededAt,
+    bounds: [6.5, 98.0, 19.1, 104.7],
+    source: gistdaDisasterMeta,
+    features: [
+      {
+        id: "disaster-south-flood-watch",
+        layerId: "disaster",
+        geometryType: "Polygon",
+        coordinates: [
+          [97.9, 7.1],
+          [99.3, 7.1],
+          [99.1, 8.8],
+          [98.1, 8.9]
+        ],
+        title: "Southern flash-flood watch zone",
+        description: "Heavy-rain, runoff, and transport disruption monitoring zone.",
+        properties: {
+          hazard: "flood",
+          severity: "watch"
+        },
+        source: gistdaDisasterMeta
+      },
+      {
+        id: "disaster-north-landslide-band",
+        layerId: "disaster",
+        geometryType: "LineString",
+        coordinates: [
+          [98.45, 18.2],
+          [98.85, 18.7],
+          [99.15, 19.2],
+          [99.55, 19.6]
+        ],
+        title: "Northern landslide response band",
+        description: "Mountain roads and high-slope settlements under seasonal watch.",
+        properties: {
+          hazard: "landslide",
+          severity: "watch"
+        },
+        source: gistdaDisasterMeta
+      },
+      {
+        id: "disaster-isan-drought-core",
+        layerId: "disaster",
+        geometryType: "Polygon",
+        coordinates: [
+          [102.1, 15.0],
+          [104.3, 15.0],
+          [104.4, 16.9],
+          [102.4, 17.1]
+        ],
+        title: "Isan drought-pressure zone",
+        description: "High-temperature, low-rainfall pressure zone for seasonal response planning.",
+        properties: {
+          hazard: "drought",
+          severity: "alert"
+        },
+        source: gistdaDisasterMeta
       }
     ]
   }

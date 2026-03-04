@@ -58,7 +58,7 @@ export async function syncOpenMeteoWeather() {
       region: item.city.regionEn,
       temperatureC: item.temperature,
       humidity: item.humidity,
-      windKmH: item.wind,
+      windKph: item.wind,
       population: item.city.population ?? null
     },
     source: {

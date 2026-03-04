@@ -36,6 +36,9 @@ type LayerId =
   | "news"
   | "resilience"
   | "economy"
+  | "agriculture"
+  | "water"
+  | "land-use"
   | "weather"
   | "pollution"
   | "jaxa-rainfall"
@@ -108,6 +111,9 @@ const layerColors: Record<LayerId, string> = {
   news: "#0c9b63",
   resilience: "#f59a00",
   economy: "#6246ea",
+  agriculture: "#7aa61b",
+  water: "#1479c9",
+  "land-use": "#6b7280",
   weather: "#119fb8",
   pollution: "#c0264f",
   "jaxa-rainfall": "#0f8cff",
@@ -276,6 +282,51 @@ function formatPropertyValue(key: string, value: string | number | boolean | nul
   return String(value ?? "");
 }
 
+function normalizeCoordinatePair(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length < 2) {
+    return null;
+  }
+
+  const lon = Number(value[0]);
+  const lat = Number(value[1]);
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+    return null;
+  }
+
+  return [lon, lat];
+}
+
+function toLeafletLatLngs(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as Array<[number, number]>;
+  }
+
+  return value
+    .map((entry) => normalizeCoordinatePair(entry))
+    .filter((entry): entry is [number, number] => Boolean(entry))
+    .map(([lon, lat]) => [lat, lon] as [number, number]);
+}
+
+function buildPopupContent(feature: GeoFeatureRecord) {
+  const propertyRows = Object.entries(feature.properties)
+    .filter(([, value]) => value !== null && value !== "")
+    .slice(0, 5)
+    .map(
+      ([key, value]) =>
+        `<small><strong>${humanizePropertyKey(key)}:</strong> ${formatPropertyValue(key, value)}</small>`
+    )
+    .join("");
+
+  return `
+    <div style="display:grid;gap:4px;min-width:180px;">
+      <strong>${feature.title}</strong>
+      ${feature.description ? `<span>${feature.description}</span>` : ""}
+      ${propertyRows}
+      <small>${feature.source.sourceName}</small>
+    </div>
+  `;
+}
+
 function getPollutionSeverityColor(aqi: number) {
   if (aqi >= 100) return "#b91c1c";
   if (aqi >= 70) return "#dc2626";
@@ -388,11 +439,6 @@ function renderFeatureCollections(
         return;
       }
 
-      if (feature.geometryType !== "Point" || !Array.isArray(feature.coordinates) || feature.coordinates.length < 2) {
-        return;
-      }
-
-      const [lon, lat] = feature.coordinates as [number, number];
       const isBangkokPlaces = collection.layerId === "bangkok-passages";
       const isNationalFootprint = collection.layerId === "smart-city-thailand";
       const isPollutionLayer = collection.layerId === "pollution";
@@ -405,53 +451,103 @@ function renderFeatureCollections(
       const pointColor = isPollutionLayer
         ? getPollutionSeverityColor(intensity)
         : layerColors[collection.layerId as LayerId] ?? "#22c55e";
-      const marker = L.circleMarker([lat, lon], {
-        radius: isNationalFootprint
-          ? 7
-          : isBangkokPlaces
-            ? 6
-            : isPollutionLayer
-              ? Math.max(5, Math.min(10, 4 + intensity / 20))
-              : collection.layerId === "weather"
-                ? 6
-                : 4,
-        color: pointColor,
-        fillColor: pointColor,
-        fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
-        weight: 2
-      });
+      const popupContent = buildPopupContent(feature);
 
-      if (isPollutionLayer && intensity >= 55) {
-        const glow = L.circle([lat, lon], {
-          radius: 22000 + intensity * 220,
+      if (feature.geometryType === "Point") {
+        const point = normalizeCoordinatePair(feature.coordinates);
+        if (!point) {
+          return;
+        }
+
+        const [lon, lat] = point;
+        const marker = L.circleMarker([lat, lon], {
+          radius: isNationalFootprint
+            ? 7
+            : isBangkokPlaces
+              ? 6
+              : isPollutionLayer
+                ? Math.max(5, Math.min(10, 4 + intensity / 20))
+                : collection.layerId === "weather"
+                  ? 6
+                  : collection.layerId === "agriculture" || collection.layerId === "water" || collection.layerId === "land-use"
+                    ? 5
+                  : 4,
           color: pointColor,
-          weight: 1,
           fillColor: pointColor,
-          fillOpacity: intensity >= 80 ? 0.1 : 0.06
+          fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
+          weight: 2
         });
-        glow.addTo(target);
+
+        if (isPollutionLayer && intensity >= 55) {
+          const glow = L.circle([lat, lon], {
+            radius: 22000 + intensity * 220,
+            color: pointColor,
+            weight: 1,
+            fillColor: pointColor,
+            fillOpacity: intensity >= 80 ? 0.1 : 0.06
+          });
+          glow.addTo(target);
+        }
+
+        marker.bindPopup(popupContent);
+        marker.addTo(target);
+        return;
       }
 
-      const propertyRows = Object.entries(feature.properties)
-        .filter(([, value]) => value !== null && value !== "")
-        .slice(0, 4)
-        .map(
-          ([key, value]) =>
-            `<small><strong>${humanizePropertyKey(key)}:</strong> ${formatPropertyValue(key, value)}</small>`
-        )
-        .join("");
+      if (feature.geometryType === "LineString") {
+        const latLngs = toLeafletLatLngs(feature.coordinates);
+        if (latLngs.length < 2) {
+          return;
+        }
 
-      const popupContent = `
-        <div style="display:grid;gap:4px;min-width:180px;">
-          <strong>${feature.title}</strong>
-          ${feature.description ? `<span>${feature.description}</span>` : ""}
-          ${propertyRows}
-          <small>${feature.source.sourceName}</small>
-        </div>
-      `;
+        const line = L.polyline(latLngs, {
+          color: pointColor,
+          weight:
+            collection.layerId === "economy" || collection.layerId === "water"
+              ? 5
+              : collection.layerId === "agriculture"
+                ? 4.5
+                : 4,
+          opacity: 0.82,
+          dashArray: collection.layerId === "disaster" ? "10 6" : undefined
+        });
 
-      marker.bindPopup(popupContent);
-      marker.addTo(target);
+        line.bindPopup(popupContent);
+        line.addTo(target);
+        return;
+      }
+
+      if (feature.geometryType === "Polygon") {
+        const latLngs = toLeafletLatLngs(feature.coordinates);
+        if (latLngs.length < 3) {
+          return;
+        }
+
+        const polygon = L.polygon(latLngs, {
+          color: pointColor,
+          weight: collection.layerId === "smart-city-thailand" ? 2 : 1.5,
+          fillColor: pointColor,
+          fillOpacity:
+            collection.layerId === "economy"
+              ? 0.12
+              : collection.layerId === "agriculture"
+                ? 0.14
+                : collection.layerId === "water"
+                  ? 0.1
+                  : collection.layerId === "land-use"
+                    ? 0.11
+              : collection.layerId === "resilience"
+                ? 0.1
+                : collection.layerId === "projects"
+                  ? 0.08
+                  : collection.layerId === "disaster"
+                    ? 0.11
+                    : 0.09
+        });
+
+        polygon.bindPopup(popupContent);
+        polygon.addTo(target);
+      }
     });
   });
 }

@@ -21,6 +21,7 @@ import type {
   ActivityLogItem,
   AssistantQueryRequest,
   AssistantResponse,
+  AssistantStatus,
   ChangePulse,
   DashboardView,
   GeoFeatureRecord,
@@ -141,6 +142,11 @@ const copyDeck = {
     apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "ข้อกำหนดและคำชี้แจง",
+    contactTitle: "ติดต่อผู้จัดทำ",
+    contactLead: "ดร. นน อัครประเสริฐกุล | Senior Expert in Smart City Promotion, depa",
+    contactPrompt: "หากต้องการร่วมงาน วิจัย ออกแบบแดชบอร์ด หรือพัฒนาโครงการ สามารถติดต่อได้ผ่านช่องทางด้านล่าง",
+    contactEmailLabel: "อีเมล",
+    contactLinkedInLabel: "LinkedIn",
     privacy: "แดชบอร์ดสาธารณะนี้ไม่ตั้งใจเก็บข้อมูลส่วนบุคคลของผู้ใช้งานทั่วไป และแสดงผลจากข้อมูลสาธารณะ ข้อมูลทดลอง และข้อมูลที่จัดการภายในตามบริบทของต้นแบบ",
     experimental:
       "ต้นแบบนี้เป็นแดชบอร์ดเชิงทดลอง ออกแบบโดย ดร. นน อัครประเสริฐกุล Senior Expert in Smart City Promotion ที่ depa ในฐานะงานทดลองส่วนตัวเพื่อชวนให้คนอื่นสร้างแอปเมืองของตนเองได้",
@@ -176,6 +182,9 @@ const copyDeck = {
     newsLegend: "สีเขียว = จุดความเคลื่อนไหวข่าว",
     resilienceLegend: "สีส้ม = พื้นที่เฝ้าระวัง",
     economyLegend: "สีม่วง = ศักยภาพเศรษฐกิจเมือง",
+    agricultureLegend: "สีเขียวมะกอก = เขตเกษตรและแปลงเพาะปลูก",
+    waterLegend: "สีน้ำเงิน = ลุ่มน้ำ คลอง และแหล่งกักเก็บ",
+    landUseLegend: "สีเทา = รูปแบบการใช้ที่ดินและพื้นที่เมือง",
     disasterLegend: "สีส้มเข้ม = โซนเฝ้าระวังภัย",
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
     jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
@@ -262,6 +271,11 @@ const copyDeck = {
     apiDirectory: "Core APIs / Data Ports",
     stack: "Applications Used",
     finePrint: "Fine Print",
+    contactTitle: "Contact",
+    contactLead: "Dr. Non Arkaraprasertkul | Senior Expert in Smart City Promotion, depa",
+    contactPrompt: "For collaboration, research, dashboard design, or project work, use the contact channels below.",
+    contactEmailLabel: "Email",
+    contactLinkedInLabel: "LinkedIn",
     privacy:
       "This public dashboard is not intended to collect personal data from general visitors and is designed to surface public, experimental, and manually curated operational signals.",
     experimental:
@@ -298,6 +312,9 @@ const copyDeck = {
     newsLegend: "Green = news signal points",
     resilienceLegend: "Amber = watch areas",
     economyLegend: "Purple = city economic strength",
+    agricultureLegend: "Olive = crop belts and farming zones",
+    waterLegend: "Blue = basins, canals, and storage nodes",
+    landUseLegend: "Gray = land-use and urban pattern zones",
     disasterLegend: "Deep orange = hazard watch zone",
     coverageLegend: "Red = nationwide smart city footprint",
     jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
@@ -691,6 +708,12 @@ function DashboardPage() {
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantError, setAssistantError] = useState("");
   const [assistantResponse, setAssistantResponse] = useState<AssistantResponse | null>(null);
+  const assistantStatusQuery = useQuery({
+    queryKey: ["assistant-status"],
+    queryFn: () => fetchFromApi<AssistantStatus>("/api/assistant/status", { available: false, documentCount: 0, geminiReady: false }),
+    staleTime: 60000
+  });
+  const assistantStatus = assistantStatusQuery.data ?? null;
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
 
@@ -843,32 +866,28 @@ function DashboardPage() {
   const hottestCitySlug = normalizeCitySlug(
     String(hottestWeatherFeature?.properties.city ?? hottestWeatherFeature?.title ?? "")
   );
+  const layerLegendDetails: Record<string, string> = {
+    pollution: copy.clickToFocus,
+    weather: copy.weatherLegend,
+    projects: copy.projectLegend,
+    news: copy.newsLegend,
+    resilience: copy.resilienceLegend,
+    economy: copy.economyLegend,
+    agriculture: copy.agricultureLegend,
+    water: copy.waterLegend,
+    "land-use": copy.landUseLegend,
+    disaster: copy.disasterLegend,
+    "jaxa-rainfall": copy.jaxaLegend,
+    "smart-city-thailand": copy.coverageLegend,
+    "bangkok-passages": copy.bangkokPlacesLegend
+  };
   const activeLegendItems = layerSeed
     .filter((item) => layers.includes(item.id))
     .map((item) => ({
       id: item.id,
       color: item.color,
       label: localize(lang, item.label),
-      detail:
-        item.id === "pollution"
-          ? copy.clickToFocus
-          : item.id === "weather"
-            ? copy.weatherLegend
-            : item.id === "projects"
-              ? copy.projectLegend
-              : item.id === "news"
-                ? copy.newsLegend
-                : item.id === "resilience"
-                  ? copy.resilienceLegend
-                  : item.id === "economy"
-                    ? copy.economyLegend
-                    : item.id === "disaster"
-                      ? copy.disasterLegend
-                      : item.id === "jaxa-rainfall"
-                        ? copy.jaxaLegend
-                        : item.id === "smart-city-thailand"
-                          ? copy.coverageLegend
-                          : copy.bangkokPlacesLegend
+      detail: layerLegendDetails[item.id] ?? copy.bangkokPlacesLegend
     }));
   const warningHaystack = resilience.warnings.map((item) => `${item.en} ${item.th}`.toLowerCase()).join(" ");
   const hottestTemperature = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "temperatureC") : 0;
@@ -877,8 +896,13 @@ function DashboardPage() {
   const waterTrigger =
     /water|canal|drain|coastal|น้ำ|คลอง|ชลประทาน/.test(warningHaystack) ||
     layers.includes("resilience") ||
-    layers.includes("bangkok-passages");
-  const landTrigger = view === "national" || layers.includes("smart-city-thailand");
+    layers.includes("bangkok-passages") ||
+    layers.includes("water");
+  const landTrigger =
+    view === "national" ||
+    layers.includes("smart-city-thailand") ||
+    layers.includes("land-use") ||
+    layers.includes("agriculture");
   const droughtTrigger = hottestTemperature >= 34 || (hottestTemperature >= 32 && hottestHumidity <= 55);
   const eoWatchItems = [
     {
@@ -1269,7 +1293,7 @@ function DashboardPage() {
           <button type="button" className="side-ai-launcher" onClick={() => setAssistantOpen(true)}>
             <span className="eyebrow">{copy.askAssistant}</span>
             <strong>{copy.askLead}</strong>
-            <small>{assistantResponse ? `${assistantResponse.documentCount} docs` : copy.askLocalOnly}</small>
+            <small>{assistantResponse ? `${assistantResponse.documentCount} docs` : assistantStatus?.documentCount ? `${assistantStatus.documentCount} docs` : copy.askLocalOnly}</small>
           </button>
         </div>
 
@@ -1404,7 +1428,7 @@ function DashboardPage() {
                   </span>
                 ))}
                 <span className="stack-pill subdued">
-                  {assistantResponse?.geminiReady ? copy.askGeminiReady : copy.askLocalOnly}
+                  {(assistantResponse?.geminiReady || assistantStatus?.geminiReady) ? copy.askGeminiReady : copy.askLocalOnly}
                 </span>
               </div>
             </div>
@@ -2317,6 +2341,24 @@ function DashboardPage() {
             <p>{copy.privacy}</p>
             <p>{copy.experimental}</p>
             <p>{copy.copyright}</p>
+            <div className="contact-card">
+              <div className="stack-title">
+                <strong>{copy.contactTitle}</strong>
+                <span className="status-pill">public</span>
+              </div>
+              <p className="contact-copy">{copy.contactLead}</p>
+              <p className="contact-copy">{copy.contactPrompt}</p>
+              <div className="contact-links">
+                <a href="mailto:non.ar@depa.or.th">
+                  <span className="eyebrow">{copy.contactEmailLabel}</span>
+                  <strong>non.ar@depa.or.th</strong>
+                </a>
+                <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noreferrer">
+                  <span className="eyebrow">{copy.contactLinkedInLabel}</span>
+                  <strong>linkedin.com/in/drnon</strong>
+                </a>
+              </div>
+            </div>
           </div>
         </section>
       </main>
