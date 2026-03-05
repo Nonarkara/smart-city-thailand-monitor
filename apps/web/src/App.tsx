@@ -915,7 +915,8 @@ function DashboardPage() {
         : lang === "th"
           ? "ใช้ดูแนวโน้มพื้นที่แห้งและผลกระทบอากาศ"
           : "Use for dry-zone and climate-stress context.",
-      tone: droughtTrigger ? "jump" : "context"
+      tone: droughtTrigger ? "jump" : "context",
+      targetLayers: ["weather", "resilience", "jaxa-rainfall"]
     },
     {
       id: "flood",
@@ -927,7 +928,8 @@ function DashboardPage() {
         : lang === "th"
           ? "ใช้ดูพื้นที่ลุ่มต่ำและฝนสะสม"
           : "Use for basin, rainfall, and flood-plain context.",
-      tone: floodTrigger ? "jump" : "watch"
+      tone: floodTrigger ? "jump" : "watch",
+      targetLayers: ["jaxa-rainfall", "water", "resilience"]
     },
     {
       id: "water",
@@ -939,7 +941,8 @@ function DashboardPage() {
         : lang === "th"
           ? "ใช้ติดตามคลอง อ่างเก็บน้ำ และพื้นที่น้ำสัมพันธ์"
           : "Use for canals, reservoirs, and water-linked land patterns.",
-      tone: waterTrigger ? "watch" : "context"
+      tone: waterTrigger ? "watch" : "context",
+      targetLayers: ["water", "bangkok-passages", "jaxa-rainfall"]
     },
     {
       id: "land",
@@ -951,7 +954,8 @@ function DashboardPage() {
         : lang === "th"
           ? "ใช้ดูการขยายตัวเมืองและรูปแบบพื้นที่"
           : "Use for urban expansion and land-use pattern context.",
-      tone: landTrigger ? "watch" : "context"
+      tone: landTrigger ? "watch" : "context",
+      targetLayers: ["land-use", "agriculture", "smart-city-thailand"]
     }
   ];
   const focusPresets = [
@@ -1289,6 +1293,16 @@ function DashboardPage() {
       </header>
 
       <aside className="sidebar">
+        <div className="side-section side-search">
+          <input
+            type="search"
+            className="search-input"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder={copy.search}
+          />
+        </div>
+
         <div className="side-section side-assistant-launch">
           <button type="button" className="side-ai-launcher" onClick={() => setAssistantOpen(true)}>
             <span className="eyebrow">{copy.askAssistant}</span>
@@ -1623,7 +1637,15 @@ function DashboardPage() {
                   <button
                     key={item.slug}
                     className={item.slug === city ? "map-city-button active" : "map-city-button"}
-                    onClick={() => updateParam("city", item.slug)}
+                    onClick={() => {
+                      const next = buildStableParams();
+                      next.set("city", item.slug);
+                      next.set("view", "city");
+                      startTransition(() => {
+                        setSearchParams(next);
+                        setRecenterSignal((v) => v + 1);
+                      });
+                    }}
                   >
                     {localize(lang, item.name)}
                   </button>
@@ -1897,7 +1919,15 @@ function DashboardPage() {
             <div className="compare-table tile-scroll">
               {compactCities.map((item) => (
                 <div key={item.slug} className={item.slug === city ? "compare-row active" : "compare-row"}>
-                  <button onClick={() => updateParam("city", item.slug)}>{localize(lang, item.name)}</button>
+                  <button onClick={() => {
+                    const next = buildStableParams();
+                    next.set("city", item.slug);
+                    next.set("view", "city");
+                    startTransition(() => {
+                      setSearchParams(next);
+                      setRecenterSignal((v) => v + 1);
+                    });
+                  }}>{localize(lang, item.name)}</button>
                   <span>{Math.round(item.scores.reduce((sum, score) => sum + score.score, 0) / item.scores.length)}</span>
                 </div>
               ))}
@@ -2144,10 +2174,25 @@ function DashboardPage() {
               </div>
               <div className="eo-watch-grid">
                 {eoWatchItems.map((item) => (
-                  <div key={item.id} className={`eo-watch-item ${item.tone}`}>
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`eo-watch-item ${item.tone}`}
+                    onClick={() => {
+                      const next = buildStableParams();
+                      next.set("layers", item.targetLayers.join(","));
+                      if (item.targetLayers.includes("smart-city-thailand") || item.targetLayers.includes("jaxa-rainfall")) {
+                        next.set("view", "national");
+                      }
+                      startTransition(() => {
+                        setSearchParams(next);
+                        setRecenterSignal((v) => v + 1);
+                      });
+                    }}
+                  >
                     <span className="eyebrow">{item.title}</span>
                     <small>{item.detail}</small>
-                  </div>
+                  </button>
                 ))}
               </div>
               <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
@@ -2394,13 +2439,18 @@ function AdminConsolePage() {
 
     for (const baseUrl of API_BASE_CANDIDATES) {
       try {
+        const headers: Record<string, string> = {
+          "x-admin-token": token,
+          ...(init?.headers as Record<string, string> ?? {})
+        };
+
+        if (init?.body) {
+          headers["Content-Type"] = "application/json";
+        }
+
         const response = await fetch(`${baseUrl}${path}`, {
           ...init,
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-token": token,
-            ...(init?.headers ?? {})
-          }
+          headers
         });
 
         const payload = await response.json().catch(() => ({}));

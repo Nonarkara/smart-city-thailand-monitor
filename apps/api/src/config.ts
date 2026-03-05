@@ -3,6 +3,7 @@ export const config = {
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
   allowLiveFetch: process.env.ALLOW_LIVE_FETCH === "true",
   syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 300000),
+  stateSnapshotPath: process.env.STATE_SNAPSHOT_PATH ?? "tmp/api-state.json",
   knowledgeDir: process.env.KNOWLEDGE_DIR ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
@@ -44,6 +45,12 @@ export const config = {
   dataGoThEndpoint: process.env.DATAGOTH_ENDPOINT ?? "",
   urbanisEndpoint: process.env.URBANIS_ENDPOINT ?? "",
   gistdaEndpoint: process.env.GISTDA_ENDPOINT ?? "",
+  agricultureCollectionEndpoint:
+    process.env.ESA_AGRICULTURE_COLLECTION_ENDPOINT ??
+    "https://raw.githubusercontent.com/ESA-eodashboards/eodashboard-catalog/main/collections/E10c_rice_planting.json",
+  waterCollectionEndpoint:
+    process.env.JAXA_WATER_COLLECTION_ENDPOINT ??
+    "https://s3.ap-northeast-1.wasabisys.com/je-pds/cog/v1/JAXA.EORC_GSMaP_standard.Gauge.00Z-23Z.v6_daily/collection.json",
   weatherEndpoint:
     process.env.OPEN_METEO_WEATHER_ENDPOINT ??
     "https://api.open-meteo.com/v1/forecast?latitude=13.7563&longitude=100.5018&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&timezone=Asia%2FBangkok",

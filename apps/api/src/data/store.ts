@@ -33,12 +33,14 @@ import type {
   ProjectRecord,
   ResilienceSnapshot,
   SocialListeningSnapshot,
+  SourceMeta,
   SourceRecord,
   SyncHealthRecord,
   TimeRange,
   TimeSnapshot
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
+import { persistStoreSnapshot } from "./persistence.js";
 
 interface StoreState {
   projects: ProjectRecord[];
@@ -58,6 +60,8 @@ interface StoreState {
   lastSyncAt: string;
   latestTime: TimeSnapshot;
 }
+
+export type StoreSnapshot = StoreState;
 
 function average(values: number[]) {
   if (values.length === 0) {
@@ -136,7 +140,81 @@ function createState(): StoreState {
 
 const state = createState();
 
+function mergeByKey<T>(seeded: T[], persisted: T[], getKey: (value: T) => string) {
+  const merged = [...persisted, ...seeded];
+  return cloneSeed(
+    merged.filter(
+      (value, index, values) => values.findIndex((candidate) => getKey(candidate) === getKey(value)) === index
+    )
+  );
+}
+
+function mergeSourceBacked<T extends { source: SourceMeta }>(seeded: T, persisted?: T): T {
+  if (!persisted) {
+    return cloneSeed(seeded);
+  }
+
+  return cloneSeed({
+    ...seeded,
+    ...persisted,
+    source: {
+      ...seeded.source,
+      ...persisted.source
+    }
+  }) as T;
+}
+
+function persistCurrentState() {
+  void persistStoreSnapshot(store.getSnapshot());
+}
+
 export const store = {
+  getSnapshot(): StoreSnapshot {
+    return cloneSeed(state);
+  },
+
+  hydrate(snapshot?: Partial<StoreSnapshot> | null) {
+    if (!snapshot) {
+      return this.getSnapshot();
+    }
+
+    const seeded = createState();
+
+    state.projects = Array.isArray(snapshot.projects)
+      ? mergeByKey(seeded.projects, snapshot.projects, (project) => project.slug)
+      : seeded.projects;
+    state.news = Array.isArray(snapshot.news)
+      ? mergeByKey(seeded.news, snapshot.news, (item) => item.slug)
+      : seeded.news;
+    state.sources = Array.isArray(snapshot.sources)
+      ? mergeByKey(seeded.sources, snapshot.sources, (source) => source.id)
+      : seeded.sources;
+    state.activityLog = Array.isArray(snapshot.activityLog)
+      ? mergeByKey(seeded.activityLog, snapshot.activityLog, (item) => item.id).slice(0, 24)
+      : seeded.activityLog;
+    state.layers = Array.isArray(snapshot.layers)
+      ? mergeByKey(seeded.layers, snapshot.layers, (layer) => layer.id)
+      : seeded.layers;
+    state.mediaFeeds = Array.isArray(snapshot.mediaFeeds)
+      ? mergeByKey(seeded.mediaFeeds, snapshot.mediaFeeds, (item) => item.id)
+      : seeded.mediaFeeds;
+    state.syncHealth = Array.isArray(snapshot.syncHealth) ? cloneSeed(snapshot.syncHealth) : [];
+    state.lastSyncAt = typeof snapshot.lastSyncAt === "string" ? snapshot.lastSyncAt : seeded.lastSyncAt;
+    state.latestTime = snapshot.latestTime ? cloneSeed(snapshot.latestTime) : seeded.latestTime;
+    state.briefing = mergeSourceBacked(seeded.briefing, snapshot.briefing);
+    state.resilience = mergeSourceBacked(seeded.resilience, snapshot.resilience);
+    state.changePulse = snapshot.changePulse ? cloneSeed(snapshot.changePulse) : seeded.changePulse;
+    state.socialListening = mergeSourceBacked(seeded.socialListening, snapshot.socialListening);
+    state.officialImpact = mergeSourceBacked(seeded.officialImpact, snapshot.officialImpact);
+    state.marketSnapshot = mergeSourceBacked(seeded.marketSnapshot, snapshot.marketSnapshot);
+    state.mapFeaturesByLayer = {
+      ...cloneSeed(seeded.mapFeaturesByLayer),
+      ...(snapshot.mapFeaturesByLayer ? cloneSeed(snapshot.mapFeaturesByLayer) : {})
+    };
+
+    return this.getSnapshot();
+  },
+
   getOverview(filters: {
     view?: DashboardView;
     timeRange?: TimeRange;
@@ -360,6 +438,7 @@ export const store = {
     };
 
     state.mediaFeeds.unshift(record);
+    persistCurrentState();
     return cloneSeed(record);
   },
 
@@ -377,6 +456,7 @@ export const store = {
       }
     };
 
+    persistCurrentState();
     return cloneSeed(state.briefing);
   },
 
@@ -389,6 +469,7 @@ export const store = {
     };
 
     state.news.unshift(record);
+    persistCurrentState();
     return cloneSeed(record);
   },
 
@@ -401,6 +482,7 @@ export const store = {
     };
 
     state.projects.unshift(record);
+    persistCurrentState();
     return cloneSeed(record);
   },
 
@@ -409,6 +491,7 @@ export const store = {
     if (!target) return null;
 
     Object.assign(target, patch, { updatedAt: new Date().toISOString() });
+    persistCurrentState();
     return cloneSeed(target);
   },
 
@@ -417,6 +500,7 @@ export const store = {
     if (!target) return null;
 
     Object.assign(target, patch);
+    persistCurrentState();
     return cloneSeed(target);
   },
 
@@ -711,6 +795,7 @@ export const store = {
       }
     };
 
+    persistCurrentState();
     return this.getSyncHealth();
   }
 };

@@ -1,7 +1,14 @@
 import "./loadEnv.js";
 import { config } from "./config.js";
+import { loadPersistedStoreSnapshot } from "./data/persistence.js";
+import { store } from "./data/store.js";
 import { runSourceSync } from "./services/sync.js";
 import { createServer } from "./server.js";
+
+const persistedSnapshot = await loadPersistedStoreSnapshot();
+if (persistedSnapshot) {
+  store.hydrate(persistedSnapshot);
+}
 
 const server = await createServer();
 

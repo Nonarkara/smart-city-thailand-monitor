@@ -1,9 +1,11 @@
 import { syncCitydataCatalog } from "../adapters/citydataAdapter.js";
 import { syncDataGoTh } from "../adapters/dataGoThAdapter.js";
 import { syncEonetEvents } from "../adapters/eonetAdapter.js";
+import { syncEsaAgriculture } from "../adapters/esaAgricultureAdapter.js";
 import { syncGdeltSignals } from "../adapters/gdeltAdapter.js";
 import { syncGistdaDisaster } from "../adapters/gistdaDisasterAdapter.js";
 import { syncGoogleNewsRss } from "../adapters/googleNewsRssAdapter.js";
+import { syncJaxaWater } from "../adapters/jaxaWaterAdapter.js";
 import { syncMarketSignals } from "../adapters/marketSignalsAdapter.js";
 import { syncNewsApi } from "../adapters/newsApiAdapter.js";
 import { syncOpenAq } from "../adapters/openaqAdapter.js";
@@ -22,6 +24,8 @@ export async function runSourceSync() {
     syncDataGoTh(),
     syncUrbanis(),
     syncGistdaDisaster(),
+    syncEsaAgriculture(),
+    syncJaxaWater(),
     syncGoogleNewsRss(),
     syncGdeltSignals(),
     syncTalkwalkerAlerts(),
@@ -45,6 +49,8 @@ export async function runSourceSync() {
       "data-go-th",
       "urbanis",
       "gistda-disaster",
+      "esa-eodashboard",
+      "jaxa-earth",
       "google-news-rss",
       "gdelt-signals",
       "talkwalker-alerts",
