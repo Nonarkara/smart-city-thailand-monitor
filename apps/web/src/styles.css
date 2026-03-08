@@ -711,27 +711,34 @@ textarea {
   min-height: 0;
 }
 
-.activity-card {
+.satellite-card {
   grid-column: 1 / span 2;
   grid-row: 2;
   min-height: 0;
 }
 
+.activity-card {
+  grid-column: 1 / span 2;
+  grid-row: 3;
+  min-height: 0;
+}
+
 .research-card {
   grid-column: 1 / -1;
-  grid-row: 3;
+  grid-row: 4;
   min-height: 0;
 }
 
 .toolkit-card {
   grid-column: 1 / -1;
-  grid-row: 4;
+  grid-row: 5;
   min-height: 0;
 }
 
 .market-card,
 .global-card,
 .world-card,
+.satellite-card,
 .activity-card,
 .research-card,
 .toolkit-card,
@@ -1536,6 +1543,71 @@ textarea {
   overflow: hidden;
 }
 
+.satellite-shell,
+.satellite-panel,
+.satellite-priority-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.satellite-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.satellite-preset {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.6rem 0.66rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.68);
+  text-align: left;
+  color: inherit;
+}
+
+.satellite-preset.active {
+  border-color: rgba(0, 87, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(0, 87, 255, 0.08), rgba(21, 124, 88, 0.06)),
+    rgba(255, 255, 255, 0.9);
+}
+
+.satellite-preset strong {
+  font-size: 0.9rem;
+  line-height: 1.15;
+}
+
+.satellite-preset small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.32;
+}
+
+.satellite-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.satellite-panel {
+  padding: 0.58rem 0.62rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.satellite-source-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.satellite-source-item {
+  text-decoration: none;
+  color: inherit;
+}
+
 .eo-watch-card {
   display: grid;
   gap: 0.45rem;
@@ -1940,6 +2012,7 @@ textarea {
   .market-card,
   .global-card,
   .world-card,
+  .satellite-card,
   .activity-card,
   .research-card,
   .toolkit-card,
@@ -2030,6 +2103,7 @@ textarea {
   .market-card,
   .global-card,
   .world-card,
+  .satellite-card,
   .activity-card,
   .research-card,
   .toolkit-card,
@@ -2045,6 +2119,8 @@ textarea {
   .hotspot-strip,
   .map-legend,
   .eo-watch-grid,
+  .satellite-preset-grid,
+  .satellite-grid,
   .city-intel-grid,
   .candidate-grid,
   .news-columns,

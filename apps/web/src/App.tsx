@@ -103,6 +103,71 @@ const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   governance: ["governance", "administration", "service", "management", "municipal", "public", "policy"]
 };
 
+const SATELLITE_LAYER_IDS = ["eo-aerosol", "eo-precipitation", "eo-vegetation", "jaxa-rainfall"] as const;
+const SATELLITE_CREDENTIAL_SOURCE_IDS = [
+  "sentinel-hub-process",
+  "sentinel-hub-statistics",
+  "sentinel-hub-ogc",
+  "copernicus-stac",
+  "copernicus-odata",
+  "copernicus-openeo"
+] as const;
+const SATELLITE_PRESETS = [
+  {
+    id: "satellite-flood",
+    label: { th: "Flood watch", en: "Flood watch" },
+    detail: {
+      th: "เปิดฝนดาวเทียม น้ำ และ resilience สำหรับดูบริบทมรสุมระดับประเทศ",
+      en: "Turns on precipitation, water, and resilience layers for national monsoon context."
+    },
+    layers: ["smart-city-thailand", "water", "resilience", "eo-precipitation", "jaxa-rainfall"]
+  },
+  {
+    id: "satellite-haze",
+    label: { th: "Haze watch", en: "Haze watch" },
+    detail: {
+      th: "จับคู่ aerosol กับ AQI และ weather เพื่อดูหมอกควันและฝุ่นในภาพรวม",
+      en: "Pairs aerosol with AQI and weather for a national haze and dust view."
+    },
+    layers: ["smart-city-thailand", "pollution", "weather", "eo-aerosol"]
+  },
+  {
+    id: "satellite-green",
+    label: { th: "Green cover", en: "Green cover" },
+    detail: {
+      th: "ใช้ NDVI กับ land use และ agriculture เพื่อดูพื้นที่สีเขียวและ land-change",
+      en: "Uses NDVI with land use and agriculture for green-cover and land-change context."
+    },
+    layers: ["smart-city-thailand", "land-use", "agriculture", "eo-vegetation"]
+  }
+] as const;
+const THAILAND_SATELLITE_PRIORITIES = [
+  {
+    id: "sentinel-1",
+    title: { th: "Sentinel-1 GRD", en: "Sentinel-1 GRD" },
+    detail: {
+      th: "เหมาะสุดสำหรับน้ำท่วมและฤดูมรสุมของไทย เพราะเรดาร์มองทะลุเมฆได้",
+      en: "Best for Thailand flood and monsoon monitoring because radar works through cloud."
+    }
+  },
+  {
+    id: "sentinel-2",
+    title: { th: "Sentinel-2 L2A", en: "Sentinel-2 L2A" },
+    detail: {
+      th: "ใช้ดูพืชพรรณ น้ำ พื้นที่เมือง และ true-color / NDVI / NDWI",
+      en: "Use for vegetation, water, urban surfaces, and true-color / NDVI / NDWI products."
+    }
+  },
+  {
+    id: "sentinel-5p",
+    title: { th: "Sentinel-5P L2", en: "Sentinel-5P L2" },
+    detail: {
+      th: "ใช้เสริมบริบทชั้นบรรยากาศและมลพิษระดับภูมิภาค ไม่ใช่ AQI ระดับถนน",
+      en: "Good for regional atmospheric context, not street-level AQI."
+    }
+  }
+] as const;
+
 const copyDeck = {
   th: {
     title: "Smart City Thailand Monitor",
@@ -233,6 +298,11 @@ const copyDeck = {
     transferIdeas: "แนวทางที่ย้ายมาใช้ได้",
     livabilityLens: "กรอบ Livability",
     eiuRank: "อันดับ EIU 2025",
+    satellite: "Satellite Intelligence",
+    satelliteLiveLayers: "ชั้นภาพสาธารณะที่เปิดใช้ได้ทันที",
+    satelliteReadySources: "Copernicus / Sentinel ที่พร้อมเชื่อม",
+    satelliteThailandPriority: "ลำดับความสำคัญสำหรับไทย",
+    satelliteSignalReady: "NASA GIBS และ JAXA เปิดใช้ได้แล้ว ขณะที่ Copernicus / Sentinel พร้อมต่อด้วย OAuth",
     copyright:
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
@@ -366,6 +436,11 @@ const copyDeck = {
     transferIdeas: "Transferable Ideas",
     livabilityLens: "Livability Lens",
     eiuRank: "EIU 2025 Rank",
+    satellite: "Satellite Intelligence",
+    satelliteLiveLayers: "Public live layers",
+    satelliteReadySources: "Copernicus / Sentinel ready",
+    satelliteThailandPriority: "Thailand priorities",
+    satelliteSignalReady: "NASA GIBS and JAXA are live now, while Copernicus / Sentinel are ready for OAuth-backed integration.",
     copyright:
       "Copyright, trademarks, and external datasets remain with their respective owners. This prototype is shared as an open learning resource and should be independently validated before operational use."
   }
@@ -814,6 +889,14 @@ function DashboardPage() {
   const globalWatchSources = sources.filter((source) =>
     ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals", "undp-data"].includes(source.id)
   );
+  const satelliteLayerCatalog = layerSeed.filter((layer) =>
+    SATELLITE_LAYER_IDS.includes(layer.id as (typeof SATELLITE_LAYER_IDS)[number])
+  );
+  const activeSatelliteLayers = satelliteLayerCatalog.filter((layer) => layers.includes(layer.id));
+  const satelliteLiveSources = sources.filter((source) => ["nasa-gibs", "jaxa-earth"].includes(source.id));
+  const satelliteReadySources = sources.filter((source) =>
+    SATELLITE_CREDENTIAL_SOURCE_IDS.includes(source.id as (typeof SATELLITE_CREDENTIAL_SOURCE_IDS)[number])
+  );
   const undpDataSource = sources.find((source) => source.id === "undp-data") ?? null;
   const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
   const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
@@ -913,6 +996,20 @@ function DashboardPage() {
     layers.includes("land-use") ||
     layers.includes("agriculture");
   const droughtTrigger = hottestTemperature >= 34 || (hottestTemperature >= 32 && hottestHumidity <= 55);
+  const satelliteNarrative =
+    layers.includes("eo-aerosol") || (topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70)
+      ? lang === "th"
+        ? "หมอกควันและฝุ่นเป็นสัญญาณดาวเทียมที่เด่นที่สุดตอนนี้ ควรดู aerosol คู่กับ AQI และ weather"
+        : "Haze is the strongest satellite signal right now. Pair aerosol with AQI and weather."
+      : layers.includes("eo-precipitation") || layers.includes("jaxa-rainfall") || floodTrigger
+        ? lang === "th"
+          ? "บริบทมรสุมและฝนทั่วประเทศกำลังเหมาะกับการใช้ precipitation และ JAXA rain ร่วมกัน"
+          : "National monsoon context is strong right now. Combine precipitation with JAXA rain."
+        : layers.includes("eo-vegetation")
+          ? lang === "th"
+            ? "NDVI กำลังช่วยอ่านพื้นที่สีเขียว การใช้ที่ดิน และแนวเขตเกษตรในภาพรวม"
+            : "NDVI is currently the best lens for green cover, land use, and agriculture."
+          : copy.satelliteSignalReady;
   const eoWatchItems = [
     {
       id: "drought",
@@ -1035,6 +1132,10 @@ function DashboardPage() {
       }
     }
   ];
+  const satellitePresets = SATELLITE_PRESETS.map((preset) => ({
+    ...preset,
+    active: preset.layers.every((layerId) => layers.includes(layerId))
+  }));
 
   const exportSnippets = useMemo(() => createDashboardScaffoldSnippets(), []);
   const activeExportSnippet = exportSnippets[exportLanguage];
@@ -1106,6 +1207,20 @@ function DashboardPage() {
       next.set("modelCity", modelCityParam);
     }
     return next;
+  }
+
+  function applyLayerPreset(nextLayers: string[], nextView: DashboardView = "national") {
+    const next = buildStableParams();
+    next.set("layers", nextLayers.join(","));
+    next.set("view", nextView);
+    if (nextView === "national") {
+      next.delete("domain");
+    }
+
+    startTransition(() => {
+      setSearchParams(next);
+      setRecenterSignal((value) => value + 1);
+    });
   }
 
   const stableParamsString = buildStableParams().toString();
@@ -1674,7 +1789,7 @@ function DashboardPage() {
                 </label>
               ) : null}
             </div>
-            <span className="hero-note">CityData + GDELT + EONET + live overlays</span>
+            <span className="hero-note">CityData + GDELT + EONET + NASA GIBS + JAXA</span>
           </div>
 
           <div className="map-legend">
@@ -2122,6 +2237,86 @@ function DashboardPage() {
             <div className="impact-headline">
               <span className="eyebrow">Signal</span>
               <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
+            </div>
+          </section>
+
+          <section className="card satellite-card" id="satellite">
+            <div className="card-header">
+              <span className="eyebrow">{copy.satellite}</span>
+              <span className="status-pill">{`${activeSatelliteLayers.length} active / ${satelliteReadySources.length} ready`}</span>
+            </div>
+
+            <div className="satellite-shell">
+              <div className="satellite-preset-grid">
+                {satellitePresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={preset.active ? "satellite-preset active" : "satellite-preset"}
+                    onClick={() => applyLayerPreset([...preset.layers], "national")}
+                  >
+                    <span className="eyebrow">{localize(lang, preset.label)}</span>
+                    <strong>{localize(lang, preset.label)}</strong>
+                    <small>{localize(lang, preset.detail)}</small>
+                  </button>
+                ))}
+              </div>
+
+              <div className="impact-headline">
+                <span className="eyebrow">{copy.latestSignal}</span>
+                <strong>{satelliteNarrative}</strong>
+              </div>
+
+              <div className="satellite-grid">
+                <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteLiveLayers}</span>
+                  <div className="pill-list compact">
+                    {satelliteLayerCatalog.map((layer) => (
+                      <button
+                        key={layer.id}
+                        type="button"
+                        className={layers.includes(layer.id) ? "chip active" : "chip"}
+                        onClick={() => toggleLayer(layer.id)}
+                      >
+                        {localize(lang, layer.label)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="satellite-source-list">
+                    {satelliteLiveSources.map((source) => (
+                      <div key={source.id} className="headline-item satellite-source-item">
+                        <strong>{source.name}</strong>
+                        <small>{source.message}</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteReadySources}</span>
+                  <div className="satellite-source-list">
+                    {satelliteReadySources.map((source) => (
+                      <a key={source.id} className="headline-item satellite-source-item" href={source.url} target="_blank" rel="noreferrer">
+                        <strong>{source.name}</strong>
+                        <small>{source.message}</small>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="satellite-priority-list">
+                <span className="eyebrow">{copy.satelliteThailandPriority}</span>
+                {THAILAND_SATELLITE_PRIORITIES.map((item) => (
+                  <div key={item.id} className="stack-item">
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className="status-pill">TH</span>
+                    </div>
+                    <small>{localize(lang, item.detail)}</small>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
