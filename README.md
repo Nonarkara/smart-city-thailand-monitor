@@ -26,6 +26,27 @@ This repo is currently opinionated toward the following sources for the first li
 - `Smart City Thailand Office / depa`: official manual/editorial updates
 - `Server time sync`: UTC + multi-time-zone dashboard clocks
 
+## Satellite stack for Thailand
+
+The nationwide dashboard now separates satellite providers into two groups:
+
+- `NASA GIBS WMTS`: public no-secret overlays already suitable for nationwide aerosol, precipitation, and vegetation context
+- `JAXA Earth API`: public EO context already used for rainfall overlays
+- `Sentinel Hub Process API`: credential-backed raster API for Thailand true-color, NDVI, NDWI, flood, haze, and cloud-aware composites
+- `Sentinel Hub Statistical API`: credential-backed summary/time-series API for Thai provinces, basins, and custom AOIs
+- `Copernicus Data Space STAC`: preferred scene-search API for Thailand coverage discovery
+- `Copernicus Data Space OData`: direct product-search and download API
+- `Copernicus Data Space openEO`: server-side EO processing for Thailand-scale cubes and batch jobs
+
+### Practical note
+
+- Prefer `STAC` and `OData` for Copernicus catalogue and download workflows.
+- Do not plan around `OpenSearch`; Copernicus Data Space documentation states it was decommissioned effective `2026-03-02`.
+- For Thailand specifically, the most useful collections to prioritize are:
+  - `Sentinel-1` for monsoon-season flood and cloud-resistant monitoring
+  - `Sentinel-2 L2A` for land, vegetation, water, and urban-surface context
+  - `Sentinel-5P` when atmospheric or pollution context is needed at broader scale
+
 ## Quick start
 
 1. Install dependencies:

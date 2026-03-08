@@ -3,6 +3,7 @@ import type { DashboardView, GeoFeatureRecord, Locale, MapFeatureCollection, New
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { getEoTileConfigs, type EoLayerId } from "./eoTiles";
 
 const JAXA_SCRIPT_URL = "https://data.earth.jaxa.jp/api/javascript/v1.2.3/jaxa.earth.umd.js";
 const JAXA_GSMAP_DAILY_COLLECTION =
@@ -41,6 +42,9 @@ type LayerId =
   | "land-use"
   | "weather"
   | "pollution"
+  | "eo-aerosol"
+  | "eo-precipitation"
+  | "eo-vegetation"
   | "jaxa-rainfall"
   | "disaster";
 
@@ -116,9 +120,14 @@ const layerColors: Record<LayerId, string> = {
   "land-use": "#6b7280",
   weather: "#119fb8",
   pollution: "#c0264f",
+  "eo-aerosol": "#9333ea",
+  "eo-precipitation": "#2563eb",
+  "eo-vegetation": "#65a30d",
   "jaxa-rainfall": "#0f8cff",
   disaster: "#cf5c00"
 };
+
+const EO_LAYER_IDS: readonly EoLayerId[] = ["eo-aerosol", "eo-precipitation", "eo-vegetation"];
 
 const coverageDomainKeywords: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -578,6 +587,7 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const jaxaLayerRef = useRef<L.Layer | null>(null);
   const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
@@ -715,6 +725,53 @@ export default function InteractiveMap({
       renderDisaster(overlay, locale);
     }
   }, [domainSlug, featureCollections, layerKey, locale, news, projects]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const configs = getEoTileConfigs();
+    const activeEoLayers = new Set(EO_LAYER_IDS.filter((id) => layers.includes(id)));
+
+    EO_LAYER_IDS.forEach((id) => {
+      const existingLayer = eoLayerRefs.current[id];
+
+      if (!activeEoLayers.has(id)) {
+        if (existingLayer && map.hasLayer(existingLayer)) {
+          map.removeLayer(existingLayer);
+        }
+        delete eoLayerRefs.current[id];
+        return;
+      }
+
+      const config = configs[id];
+      if (!config) {
+        return;
+      }
+
+      if (existingLayer) {
+        existingLayer.setUrl(config.url);
+        existingLayer.setOpacity(config.opacity);
+        if (!map.hasLayer(existingLayer)) {
+          existingLayer.addTo(map);
+        }
+        return;
+      }
+
+      const nextLayer = L.tileLayer(config.url, {
+        opacity: config.opacity,
+        maxZoom: 18,
+        maxNativeZoom: config.maxNativeZoom,
+        attribution: config.attribution,
+        crossOrigin: true
+      });
+
+      nextLayer.addTo(map);
+      eoLayerRefs.current[id] = nextLayer;
+    });
+  }, [layers]);
 
   useEffect(() => {
     const map = mapRef.current;

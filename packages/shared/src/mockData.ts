@@ -427,6 +427,69 @@ export const sources: SourceRecord[] = [
     message: "Browser-side and Python Earth observation APIs for rainfall, land temperature, and other satellite layers."
   },
   {
+    id: "nasa-gibs",
+    name: "NASA GIBS WMTS",
+    category: "geospatial",
+    url: "https://gibs.earthdata.nasa.gov",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Global Imagery Browse Services provides satellite tile overlays for aerosol, precipitation, and vegetation context."
+  },
+  {
+    id: "sentinel-hub-process",
+    name: "Sentinel Hub Process API",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Credential-ready raster API for Thailand true-color, NDVI, NDWI, flood, and haze composites over arbitrary AOIs."
+  },
+  {
+    id: "sentinel-hub-statistics",
+    name: "Sentinel Hub Statistical API",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Statistical.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Credential-ready stats API for Thai provinces, basins, and city polygons without downloading full scenes."
+  },
+  {
+    id: "sentinel-hub-ogc",
+    name: "Sentinel Hub OGC / WMTS",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/OGC.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Credential-ready WMS/WMTS access for GIS and web-map overlays when a configured instance is available."
+  },
+  {
+    id: "copernicus-stac",
+    name: "Copernicus Data Space STAC",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/newSTACcatalogue.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Primary catalogue for finding Thailand scenes by bbox, datetime, and collection. Prefer this over deprecated OpenSearch."
+  },
+  {
+    id: "copernicus-odata",
+    name: "Copernicus Data Space OData",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/OData.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Direct product-search and download API for raw Copernicus scenes, subscriptions, and catalogue automation."
+  },
+  {
+    id: "copernicus-openeo",
+    name: "Copernicus Data Space openEO",
+    category: "geospatial",
+    url: "https://documentation.dataspace.copernicus.eu/APIs/openEO/openEO.html",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Server-side EO processing for Thailand-scale datacubes, time-series analytics, and batch exports."
+  },
+  {
     id: "undp-data",
     name: "UNDP Data Hub",
     category: "catalog",
@@ -603,6 +666,28 @@ export const mapLayers: MapLayerConfig[] = [
     zIndex: 22
   },
   {
+    id: "eo-vegetation",
+    label: { th: "พืชพรรณ (NDVI)", en: "Vegetation (NDVI)" },
+    active: false,
+    color: "#65a30d",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Vegetation",
+    zIndex: 23
+  },
+  {
+    id: "eo-precipitation",
+    label: { th: "ฝนดาวเทียม", en: "Precipitation" },
+    active: false,
+    color: "#2563eb",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Precipitation",
+    zIndex: 24
+  },
+  {
     id: "jaxa-rainfall",
     label: { th: "EO Rain", en: "EO Rain" },
     active: false,
@@ -623,6 +708,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "open-meteo-air",
     legendLabel: "Pollution",
     zIndex: 24
+  },
+  {
+    id: "eo-aerosol",
+    label: { th: "ละอองลอย", en: "Aerosol" },
+    active: false,
+    color: "#9333ea",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Aerosol",
+    zIndex: 25
   },
   {
     id: "disaster",

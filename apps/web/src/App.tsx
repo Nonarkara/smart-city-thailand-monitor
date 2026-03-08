@@ -165,7 +165,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "จัดกึ่งกลางแผนที่",
-    eoOverlay: "ภาพฝน EO",
+    eoOverlay: "JAXA Rain",
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
     focusAirRisk: "ความเสี่ยงอากาศ",
@@ -185,6 +185,9 @@ const copyDeck = {
     agricultureLegend: "สีเขียวมะกอก = เขตเกษตรและแปลงเพาะปลูก",
     waterLegend: "สีน้ำเงิน = ลุ่มน้ำ คลอง และแหล่งกักเก็บ",
     landUseLegend: "สีเทา = รูปแบบการใช้ที่ดินและพื้นที่เมือง",
+    aerosolLegend: "สีม่วง = ชั้นละอองลอย MODIS จาก NASA GIBS สำหรับหมอกควันและฝุ่นในภาพรวม",
+    precipitationLegend: "สีน้ำเงินเข้ม = ฝนดาวเทียม IMERG จาก NASA GIBS สำหรับการกระจายฝนทั่วประเทศ",
+    vegetationLegend: "สีเขียว = ชั้น NDVI จาก MODIS สำหรับพื้นที่สีเขียวและแนวพืชพรรณ",
     disasterLegend: "สีส้มเข้ม = โซนเฝ้าระวังภัย",
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
     jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
@@ -295,7 +298,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "Recenter Map",
-    eoOverlay: "EO Rainfall",
+    eoOverlay: "JAXA Rain",
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
     focusAirRisk: "Air Risk",
@@ -315,6 +318,9 @@ const copyDeck = {
     agricultureLegend: "Olive = crop belts and farming zones",
     waterLegend: "Blue = basins, canals, and storage nodes",
     landUseLegend: "Gray = land-use and urban pattern zones",
+    aerosolLegend: "Purple = NASA GIBS MODIS aerosol optical depth for haze and dust context",
+    precipitationLegend: "Blue = NASA GIBS IMERG satellite precipitation for nationwide rainfall context",
+    vegetationLegend: "Green = NASA GIBS MODIS NDVI for vegetation and green-corridor context",
     disasterLegend: "Deep orange = hazard watch zone",
     coverageLegend: "Red = nationwide smart city footprint",
     jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
@@ -876,6 +882,9 @@ function DashboardPage() {
     agriculture: copy.agricultureLegend,
     water: copy.waterLegend,
     "land-use": copy.landUseLegend,
+    "eo-aerosol": copy.aerosolLegend,
+    "eo-precipitation": copy.precipitationLegend,
+    "eo-vegetation": copy.vegetationLegend,
     disaster: copy.disasterLegend,
     "jaxa-rainfall": copy.jaxaLegend,
     "smart-city-thailand": copy.coverageLegend,
@@ -910,13 +919,13 @@ function DashboardPage() {
       title: lang === "th" ? "ภัยแล้ง / ความร้อน" : "Drought / heat",
       detail: droughtTrigger
         ? lang === "th"
-          ? "ความร้อนสูงขึ้น ควรเปิดภาพรวมความชื้นและพื้นที่แห้ง"
-          : "Heat is elevated. Jump to EO moisture and dry-zone context."
+          ? "ความร้อนสูงขึ้น ควรเปิดภาพรวมฝุ่น พืชพรรณ และพื้นที่แห้ง"
+          : "Heat is elevated. Jump to aerosol, vegetation, and dry-zone context."
         : lang === "th"
           ? "ใช้ดูแนวโน้มพื้นที่แห้งและผลกระทบอากาศ"
           : "Use for dry-zone and climate-stress context.",
       tone: droughtTrigger ? "jump" : "context",
-      targetLayers: ["weather", "resilience", "jaxa-rainfall"]
+      targetLayers: ["weather", "resilience", "eo-aerosol", "eo-vegetation"]
     },
     {
       id: "flood",
@@ -929,7 +938,7 @@ function DashboardPage() {
           ? "ใช้ดูพื้นที่ลุ่มต่ำและฝนสะสม"
           : "Use for basin, rainfall, and flood-plain context.",
       tone: floodTrigger ? "jump" : "watch",
-      targetLayers: ["jaxa-rainfall", "water", "resilience"]
+      targetLayers: ["eo-precipitation", "jaxa-rainfall", "water", "resilience"]
     },
     {
       id: "water",
@@ -942,7 +951,7 @@ function DashboardPage() {
           ? "ใช้ติดตามคลอง อ่างเก็บน้ำ และพื้นที่น้ำสัมพันธ์"
           : "Use for canals, reservoirs, and water-linked land patterns.",
       tone: waterTrigger ? "watch" : "context",
-      targetLayers: ["water", "bangkok-passages", "jaxa-rainfall"]
+      targetLayers: ["water", "eo-vegetation", "eo-precipitation", "jaxa-rainfall"]
     },
     {
       id: "land",
@@ -955,7 +964,7 @@ function DashboardPage() {
           ? "ใช้ดูการขยายตัวเมืองและรูปแบบพื้นที่"
           : "Use for urban expansion and land-use pattern context.",
       tone: landTrigger ? "watch" : "context",
-      targetLayers: ["land-use", "agriculture", "smart-city-thailand"]
+      targetLayers: ["land-use", "agriculture", "smart-city-thailand", "eo-vegetation"]
     }
   ];
   const focusPresets = [
@@ -2181,7 +2190,13 @@ function DashboardPage() {
                     onClick={() => {
                       const next = buildStableParams();
                       next.set("layers", item.targetLayers.join(","));
-                      if (item.targetLayers.includes("smart-city-thailand") || item.targetLayers.includes("jaxa-rainfall")) {
+                      if (
+                        item.targetLayers.includes("smart-city-thailand") ||
+                        item.targetLayers.includes("jaxa-rainfall") ||
+                        item.targetLayers.includes("eo-aerosol") ||
+                        item.targetLayers.includes("eo-precipitation") ||
+                        item.targetLayers.includes("eo-vegetation")
+                      ) {
                         next.set("view", "national");
                       }
                       startTransition(() => {

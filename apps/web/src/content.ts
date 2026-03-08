@@ -505,6 +505,96 @@ export const toolkitLinks: ToolkitLink[] = [
     }
   },
   {
+    id: "tool-nasa-gibs",
+    name: "NASA GIBS WMTS",
+    href: "https://gibs.earthdata.nasa.gov",
+    kind: "Tile API",
+    description: {
+      th: "ชั้นภาพดาวเทียมสาธารณะสำหรับ aerosol, precipitation และ vegetation ที่เปิดใช้ได้ทันทีในแผนที่ประเทศไทย",
+      en: "Public satellite tile service for aerosol, precipitation, and vegetation overlays that can be enabled immediately in Thailand maps."
+    }
+  },
+  {
+    id: "tool-sentinel-hub",
+    name: "Sentinel Hub APIs",
+    href: "https://www.sentinel-hub.com/develop/api/",
+    kind: "Satellite API",
+    description: {
+      th: "ภาพรวม API สำหรับสร้างภาพ Sentinel-1 / Sentinel-2, ดัชนีพืชพรรณ, น้ำ, และการประมวลผลพื้นที่สนใจในไทย",
+      en: "Satellite API suite for Sentinel-1 / Sentinel-2 imagery, vegetation and water indices, and AOI processing over Thailand."
+    }
+  },
+  {
+    id: "tool-sentinel-process",
+    name: "Sentinel Hub Process API",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html",
+    kind: "Raster API",
+    description: {
+      th: "เหมาะสำหรับ true color, NDVI, NDWI, flood maps และภาพ cloud-aware mosaic ของพื้นที่ในไทย",
+      en: "Best fit for Thailand true-color, NDVI, NDWI, flood maps, and cloud-aware mosaics."
+    }
+  },
+  {
+    id: "tool-sentinel-statistics",
+    name: "Sentinel Hub Statistical API",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Statistical.html",
+    kind: "Stats API",
+    description: {
+      th: "คำนวณ time series ของจังหวัด ลุ่มน้ำ หรือเขตเมืองไทยได้โดยไม่ต้องดาวน์โหลด scene ทั้งก้อน",
+      en: "Calculates province, basin, and urban-polygon time series without downloading full scenes."
+    }
+  },
+  {
+    id: "tool-sentinel-ogc",
+    name: "Sentinel Hub OGC / WMTS",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/OGC.html",
+    kind: "Tile API",
+    description: {
+      th: "เส้นทาง WMS/WMTS สำหรับเอาภาพ Sentinel เข้า web map และ GIS เมื่อมี instance ที่ตั้งค่าแล้ว",
+      en: "WMS/WMTS access for web maps and GIS when a Sentinel Hub instance is configured."
+    }
+  },
+  {
+    id: "tool-copernicus-stac",
+    name: "Copernicus Data Space STAC",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/newSTACcatalogue.html",
+    kind: "Catalog API",
+    description: {
+      th: "ค้นหา scene ที่ครอบพื้นที่ในไทยด้วย bbox, date, cloud cover และ collection แบบมาตรฐาน STAC",
+      en: "Search Thailand scenes by bbox, date, cloud cover, and collection through the STAC catalogue."
+    }
+  },
+  {
+    id: "tool-copernicus-services",
+    name: "Copernicus Services",
+    href: "https://dataspace.copernicus.eu/ecosystem/services",
+    kind: "Service Map",
+    description: {
+      th: "ภาพรวมบริการหลักของ Copernicus Data Space เพื่อเลือกเส้นทางระหว่าง browser, APIs, notebooks, openEO และ batch processing",
+      en: "Top-level Copernicus Data Space service map for choosing between browser, APIs, notebooks, openEO, and batch processing."
+    }
+  },
+  {
+    id: "tool-copernicus-odata",
+    name: "Copernicus Data Space OData",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/OData.html",
+    kind: "Download API",
+    description: {
+      th: "ใช้ดึงรายการสินค้าและดาวน์โหลด product เต็มสำหรับ workflow วิเคราะห์ภาพดาวเทียมของไทย",
+      en: "Direct product search and download path for Thailand satellite-analysis workflows."
+    }
+  },
+  {
+    id: "tool-copernicus-openeo",
+    name: "Copernicus Data Space openEO",
+    href: "https://documentation.dataspace.copernicus.eu/APIs/openEO/openEO.html",
+    kind: "Processing API",
+    description: {
+      th: "เหมาะกับ batch processing และ datacube analytics ระดับประเทศไทย เช่น crop, flood, heat, และ water dynamics",
+      en: "Best for Thailand-scale batch processing and datacube analytics for crops, floods, heat, and water dynamics."
+    }
+  },
+  {
     id: "tool-undp-data",
     name: "UNDP Data Hub",
     href: "https://data.undp.org/access-all-data",
