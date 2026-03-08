@@ -65,33 +65,10 @@ function normalizeApiBase(baseUrl: string) {
 
 function getApiBaseCandidates() {
   const configuredBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-  const candidates: string[] = [];
-
-  if (configuredBase) {
-    candidates.push(normalizeApiBase(configuredBase));
-  }
-
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-
-    if (hostname.endsWith(".onrender.com") && hostname.includes("-web")) {
-      candidates.push(`${protocol}//${hostname.replace("-web", "-api")}`);
-    }
-
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      candidates.push("http://localhost:4000");
-    }
-  }
-
-  if (candidates.length === 0) {
-    candidates.push("http://localhost:4000");
-  }
-
-  return [...new Set(candidates)];
+  return [configuredBase ? normalizeApiBase(configuredBase) : ""];
 }
 
 const API_BASE_CANDIDATES = getApiBaseCandidates();
-const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "http://localhost:4000";
 const LIVE_POLL_INTERVAL_MS = 300000;
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -105,9 +82,9 @@ const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
 
 const copyDeck = {
   th: {
-    title: "Smart City Thailand Monitor",
-    brandEyebrow: "แดชบอร์ดปฏิบัติการสาธารณะ",
-    subtitle: "แดชบอร์ดทดลองสาธารณะสำหรับติดตามสัญญาณเมืองอัจฉริยะไทย",
+    title: "IMPACT เมืองทองธานี Super Dashboard",
+    brandEyebrow: "by SLIC · เมืองทองธานี นนทบุรี",
+    subtitle: "Super Dashboard ติดตามสัญญาณเมืองอัจฉริยะ IMPACT เมืองทองธานี จ.นนทบุรี — โดย SLIC",
     view: "มุมมอง",
     range: "ช่วงเวลา",
     share: "คัดลอกลิงก์",
@@ -234,9 +211,9 @@ const copyDeck = {
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
   en: {
-    title: "Smart City Thailand Monitor",
-    brandEyebrow: "Public Operations Dashboard",
-    subtitle: "Experimental public dashboard for Thailand’s smart city pulse",
+    title: "IMPACT Muang Thong Thani Super Dashboard",
+    brandEyebrow: "by SLIC · Nonthaburi",
+    subtitle: "IMPACT Muang Thong Thani Super Dashboard by SLIC — live signals, projects, and city intelligence",
     view: "View",
     range: "Time Range",
     share: "Copy Link",
@@ -365,15 +342,66 @@ const copyDeck = {
   }
 } as const;
 
-async function fetchFromApi<T>(path: string, fallback: T): Promise<T> {
+function buildApiUrl(baseUrl: string, path: string) {
+  return baseUrl ? `${baseUrl}${path}` : path;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isOverviewPayload(value: unknown): value is OverviewSnapshot {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    Array.isArray(value.cities) &&
+    Array.isArray(value.domains) &&
+    Array.isArray(value.metrics) &&
+    isRecord(value.briefing)
+  );
+}
+
+function isMapFeatureCollectionPayload(value: unknown): value is MapFeatureCollection[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.layerId === "string" &&
+        Array.isArray(item.features)
+    )
+  );
+}
+
+function isSourceRecordPayload(value: unknown): value is SourceRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.id === "string" &&
+        typeof item.name === "string" &&
+        typeof item.category === "string"
+    )
+  );
+}
+
+async function fetchFromApi<T>(path: string, fallback: T, validate?: (payload: unknown) => payload is T): Promise<T> {
   for (const baseUrl of API_BASE_CANDIDATES) {
     try {
-      const response = await fetch(`${baseUrl}${path}`);
+      const response = await fetch(buildApiUrl(baseUrl, path));
       if (!response.ok) {
         continue;
       }
 
-      return (await response.json()) as T;
+      const payload = (await response.json()) as unknown;
+      if (validate && !validate(payload)) {
+        continue;
+      }
+
+      return payload as T;
     } catch {
       // Try the next configured API base before falling back to seed data.
     }
@@ -387,7 +415,7 @@ async function postToApi<TResponse>(path: string, body: unknown): Promise<TRespo
 
   for (const baseUrl of API_BASE_CANDIDATES) {
     try {
-      const response = await fetch(`${baseUrl}${path}`, {
+      const response = await fetch(buildApiUrl(baseUrl, path), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -504,7 +532,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? "bangkok";
+  const city = searchParams.get("city") ?? "muang-thong-thani";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
   const layers = useMemo(() => parseLayerSet(rawLayers), [rawLayers]);
@@ -532,7 +560,8 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const overviewQuery = useQuery({
     queryKey: ["overview", queryString.toString()],
-    queryFn: () => fetchFromApi<OverviewSnapshot>(`/api/overview?${queryString.toString()}`, overviewFallback),
+    queryFn: () =>
+      fetchFromApi<OverviewSnapshot>(`/api/overview?${queryString.toString()}`, overviewFallback, isOverviewPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -636,7 +665,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const sourcesQuery = useQuery({
     queryKey: ["sources"],
-    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed)),
+    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed), isSourceRecordPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -649,7 +678,8 @@ function useDashboardData(searchParams: URLSearchParams) {
         `/api/map/features?layers=${encodeURIComponent(layers.join(","))}`,
         cloneSeed(
           mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")
-        )
+        ),
+        isMapFeatureCollectionPayload
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
@@ -748,11 +778,13 @@ function DashboardPage() {
   const suggestedModelCityId =
     selectedCity.slug === "phuket"
       ? "vancouver"
-      : selectedCity.slug === "khon-kaen"
+      : selectedCity.slug === "muang-thong-thani"
         ? "osaka"
-        : selectedCity.slug === "chiang-mai"
-          ? "vienna"
-          : "copenhagen";
+        : selectedCity.slug === "khon-kaen"
+          ? "osaka"
+          : selectedCity.slug === "chiang-mai"
+            ? "vienna"
+            : "copenhagen";
   const selectedModelCity =
     globalReferenceCities.find((item) => item.id === modelCityParam) ??
     globalReferenceCities.find((item) => item.id === suggestedModelCityId) ??
@@ -874,12 +906,31 @@ function DashboardPage() {
     resilience: copy.resilienceLegend,
     economy: copy.economyLegend,
     agriculture: copy.agricultureLegend,
+    "eo-aerosol":
+      lang === "th"
+        ? "ชั้นละอองลอย MODIS จาก NASA GIBS ใช้ดูหมอกควันและฝุ่นในภาพรวม"
+        : "MODIS aerosol optical depth from NASA GIBS for haze and dust context.",
+    "eo-precipitation":
+      lang === "th"
+        ? "ฝนดาวเทียม IMERG จาก NASA GIBS สำหรับติดตามการกระจายฝนรอบกรุงเทพเหนือ"
+        : "IMERG satellite precipitation from NASA GIBS for north-Bangkok rainfall context.",
+    "eo-vegetation":
+      lang === "th"
+        ? "ชั้น NDVI จาก MODIS ใช้ดูแนวพื้นที่สีเขียว คลอง และพื้นที่ชุ่มน้ำ"
+        : "MODIS NDVI for green corridors, canals, and peri-urban vegetation context.",
+    "geography-detail":
+      lang === "th"
+        ? "โครงสร้างพื้นที่เมืองทอง แจ้งวัฒนะ หลักสี่ และแนวคลอง/ทางด่วน"
+        : "Local structure for MTT, Chaeng Watthana, Lak Si, and canal / expressway corridors.",
     water: copy.waterLegend,
     "land-use": copy.landUseLegend,
     disaster: copy.disasterLegend,
     "jaxa-rainfall": copy.jaxaLegend,
     "smart-city-thailand": copy.coverageLegend,
-    "bangkok-passages": copy.bangkokPlacesLegend
+    "bangkok-passages":
+      lang === "th"
+        ? "จุดหลักรอบเมืองทอง ปากเกร็ด แจ้งวัฒนะ หลักสี่ และดอนเมือง"
+        : "Key places across MTT, Pak Kret, Chaeng Watthana, Lak Si, and Don Mueang."
   };
   const activeLegendItems = layerSeed
     .filter((item) => layers.includes(item.id))
@@ -1229,11 +1280,17 @@ function DashboardPage() {
 
   return (
     <div className="shell">
+      <div className="partner-bar">
+        <div className="partner-logos" aria-label="Partner logos">
+          <img src="/depa-logo.jpg" alt="depa" className="partner-logo" />
+          <img src="/mdes-logo.jpg" alt="MDES" className="partner-logo" />
+          <img src="/slic-logo.jpg" alt="SLIC" className="partner-logo partner-logo-slic" />
+          <img src="/smart-city-logo.jpg" alt="Smart City Thailand" className="partner-logo partner-logo-sc" />
+        </div>
+      </div>
       <header className="topbar">
         <div className="brand-cluster">
-          <img src="/Logo depa-01.png" alt="depa" className="brand-logo" />
-          <img src="/Smart City Logo-02.png" alt="Smart City Thailand Office" className="brand-logo smart-city-logo" />
-          <img src="/mdes.png" alt="MDES" className="brand-logo secondary" />
+          <img src="/axiom-mark.png" alt="Axiom" className="brand-mark" />
           <div className="brand-copy">
             <p className="eyebrow">{copy.brandEyebrow}</p>
             <h1>{copy.title}</h1>
@@ -1314,6 +1371,24 @@ function DashboardPage() {
         <div className="side-section">
           <span className="eyebrow">Layers</span>
           <nav className="side-nav side-layer-nav">
+                <label key="jaxa-rainfall" className="legend-item jaxa-item">
+                  <input
+                    type="checkbox"
+                    checked={layers.includes("jaxa-rainfall")}
+                    onChange={() => toggleLayer("jaxa-rainfall")}
+                  />
+                  <span className="dot" style={{ backgroundColor: "#0f8cff" }}></span>
+                  <small>{copy.jaxaLegend}</small>
+                </label>
+                <label key="satellite-imagery" className="legend-item satellite-item">
+                  <input
+                    type="checkbox"
+                    checked={layers.includes("satellite-imagery")}
+                    onChange={() => toggleLayer("satellite-imagery")}
+                  />
+                  <span className="dot" style={{ backgroundColor: "#e2e8f0" }}></span>
+                  <small>Satellite View (EO)</small>
+                </label>
             {layerSeed.map((layer) => (
               <button
                 key={layer.id}
@@ -1535,7 +1610,11 @@ function DashboardPage() {
           <div className="card-header">
             <span className="eyebrow">{copy.map}</span>
             <span className="status-pill">
-              {view === "national" && layers.includes("smart-city-thailand") ? "Thailand Coverage" : view === "national" ? "Thailand" : "Bangkok Passages"}
+              {view === "national" && layers.includes("smart-city-thailand")
+                ? "Thailand Coverage"
+                : view === "national"
+                  ? "North Bangkok / MTT"
+                  : "Local Detail"}
             </span>
           </div>
 
@@ -2448,7 +2527,7 @@ function AdminConsolePage() {
           headers["Content-Type"] = "application/json";
         }
 
-        const response = await fetch(`${baseUrl}${path}`, {
+        const response = await fetch(buildApiUrl(baseUrl, path), {
           ...init,
           headers
         });
@@ -2510,7 +2589,7 @@ function AdminConsolePage() {
       <header className="admin-header">
         <div>
           <p className="eyebrow">{copy.admin}</p>
-          <h1>Smart City Thailand Admin</h1>
+          <h1>IMPACT MTT Super Dashboard — Admin Console</h1>
         </div>
         <div className="compact-group">
           <NavLink className={({ isActive }) => (isActive ? "chip active" : "chip")} to="/">

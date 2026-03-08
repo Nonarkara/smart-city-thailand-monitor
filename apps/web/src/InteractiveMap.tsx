@@ -3,6 +3,7 @@ import type { DashboardView, GeoFeatureRecord, Locale, MapFeatureCollection, New
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { getEoTileConfigs, type EoLayerId } from "./eoTiles";
 
 const JAXA_SCRIPT_URL = "https://data.earth.jaxa.jp/api/javascript/v1.2.3/jaxa.earth.umd.js";
 const JAXA_GSMAP_DAILY_COLLECTION =
@@ -32,6 +33,7 @@ declare global {
 type LayerId =
   | "smart-city-thailand"
   | "bangkok-passages"
+  | "geography-detail"
   | "projects"
   | "news"
   | "resilience"
@@ -41,13 +43,23 @@ type LayerId =
   | "land-use"
   | "weather"
   | "pollution"
+  | "eo-aerosol"
+  | "eo-precipitation"
+  | "eo-vegetation"
   | "jaxa-rainfall"
-  | "disaster";
+  | "satellite-imagery"
+  | "disaster"
+  | "itic-traffic";
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
 
-const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
-const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
+const greaterBangkokBounds = L.latLngBounds([13.45, 100.30], [14.20, 100.86]);
+// Tight north-Bangkok / Nonthaburi operating frame for the MTT dashboard
+const northBangkokBounds = L.latLngBounds([13.84, 100.49], [13.95, 100.62]);
+// Tight MTT district bounds (zoom ≈ 14 fills screen with the estate)
+const mttBounds = L.latLngBounds([13.880, 100.525], [13.945, 100.580]);
+const localViewportBounds = greaterBangkokBounds.pad(0.03);
+const macroRegionalLayers = new Set<LayerId>(["resilience", "economy", "agriculture", "water", "land-use", "disaster"]);
 
 const cityCenters: Record<
   string,
@@ -57,56 +69,62 @@ const cityCenters: Record<
     lon: number;
   }
 > = {
+  "muang-thong-thani": {
+    label: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    lat: 13.9118,
+    lon: 100.5512
+  },
+  nonthaburi: {
+    label: { th: "จังหวัดนนทบุรี", en: "Nonthaburi" },
+    lat: 13.8591,
+    lon: 100.5144
+  },
+  "pak-kret": {
+    label: { th: "ปากเกร็ด", en: "Pak Kret" },
+    lat: 13.9261,
+    lon: 100.5224
+  },
+  "impact-core": {
+    label: { th: "อิมแพ็ค", en: "IMPACT Core" },
+    lat: 13.9128,
+    lon: 100.5479
+  },
+  "chaeng-watthana": {
+    label: { th: "แจ้งวัฒนะ", en: "Chaeng Watthana" },
+    lat: 13.8945,
+    lon: 100.5676
+  },
+  "lak-si": {
+    label: { th: "หลักสี่", en: "Lak Si" },
+    lat: 13.8864,
+    lon: 100.5798
+  },
+  "don-mueang": {
+    label: { th: "ดอนเมือง", en: "Don Mueang" },
+    lat: 13.9154,
+    lon: 100.6074
+  },
+  "nonthaburi-civic": {
+    label: { th: "ศูนย์ราชการนนทบุรี", en: "Nonthaburi Civic Center" },
+    lat: 13.8606,
+    lon: 100.5148
+  },
   bangkok: {
     label: { th: "กรุงเทพมหานคร", en: "Bangkok" },
     lat: 13.7563,
     lon: 100.5018
   },
-  phuket: {
-    label: { th: "ภูเก็ต", en: "Phuket" },
-    lat: 7.8804,
-    lon: 98.3923
-  },
-  "khon-kaen": {
-    label: { th: "ขอนแก่น", en: "Khon Kaen" },
-    lat: 16.4322,
-    lon: 102.8236
-  },
-  "chiang-mai": {
-    label: { th: "เชียงใหม่", en: "Chiang Mai" },
-    lat: 18.7883,
-    lon: 98.9853
-  },
-  "chon-buri": {
-    label: { th: "ชลบุรี", en: "Chon Buri" },
-    lat: 13.3611,
-    lon: 100.9847
-  },
-  "hat-yai": {
-    label: { th: "หาดใหญ่", en: "Hat Yai" },
-    lat: 7.0084,
-    lon: 100.4747
-  },
-  phrae: {
-    label: { th: "แพร่", en: "Phrae" },
-    lat: 18.1459,
-    lon: 100.1408
-  },
-  lampang: {
-    label: { th: "ลำปาง", en: "Lampang" },
-    lat: 18.2888,
-    lon: 99.4908
-  },
-  "nakhon-ratchasima": {
-    label: { th: "นครราชสีมา", en: "Nakhon Ratchasima" },
-    lat: 14.9799,
-    lon: 102.0978
+  pathumthani: {
+    label: { th: "ปทุมธานี", en: "Pathumthani" },
+    lat: 14.0208,
+    lon: 100.5250
   }
 };
 
 const layerColors: Record<LayerId, string> = {
   "smart-city-thailand": "#ff5b57",
   "bangkok-passages": "#22c55e",
+  "geography-detail": "#1d4ed8",
   projects: "#0057ff",
   news: "#0c9b63",
   resilience: "#f59a00",
@@ -116,8 +134,13 @@ const layerColors: Record<LayerId, string> = {
   "land-use": "#6b7280",
   weather: "#119fb8",
   pollution: "#c0264f",
+  "eo-aerosol": "#9333ea",
+  "eo-precipitation": "#2563eb",
+  "eo-vegetation": "#65a30d",
   "jaxa-rainfall": "#0f8cff",
-  disaster: "#cf5c00"
+  "satellite-imagery": "#e2e8f0",
+  disaster: "#cf5c00",
+  "itic-traffic": "#ef4444"
 };
 
 const coverageDomainKeywords: Record<string, string[]> = {
@@ -195,16 +218,21 @@ function renderNews(target: L.LayerGroup, locale: Locale, news: NewsItem[]) {
 
 function renderResilience(target: L.LayerGroup, locale: Locale) {
   [
-    { citySlug: "bangkok", radius: 22000, label: { th: "เฝ้าระวังน้ำ", en: "Flood watch" } },
-    { citySlug: "chiang-mai", radius: 18000, label: { th: "เฝ้าระวังอากาศ", en: "Air-quality watch" } }
+    { citySlug: "muang-thong-thani", radius: 1900, label: { th: "เฝ้าระวังคุณภาพอากาศ", en: "Air-quality watch" } },
+    { citySlug: "chaeng-watthana", radius: 2600, label: { th: "เฝ้าระวังการเดินทาง", en: "Mobility pressure watch" } },
+    { citySlug: "nonthaburi-civic", radius: 3200, label: { th: "เฝ้าระวังน้ำและคลอง", en: "Canal and flood watch" } }
   ].forEach((item) => {
     const city = cityCenters[item.citySlug];
+    if (!city) {
+      return;
+    }
     const circle = L.circle([city.lat, city.lon], {
       radius: item.radius,
       color: layerColors.resilience,
-      weight: 2,
+      weight: 1.5,
       fillColor: layerColors.resilience,
-      fillOpacity: 0.08
+      fillOpacity: 0.035,
+      dashArray: "8 6"
     });
     circle.bindTooltip(`${localize(locale, city.label)}: ${localize(locale, item.label)}`);
     circle.addTo(target);
@@ -213,11 +241,14 @@ function renderResilience(target: L.LayerGroup, locale: Locale) {
 
 function renderEconomy(target: L.LayerGroup, locale: Locale) {
   [
-    { citySlug: "bangkok", value: 82 },
-    { citySlug: "phuket", value: 76 },
-    { citySlug: "khon-kaen", value: 71 },
-    { citySlug: "chiang-mai", value: 74 }
+    { citySlug: "bangkok", value: 80 },
+    { citySlug: "muang-thong-thani", value: 82 },
+    { citySlug: "nonthaburi", value: 76 },
+    { citySlug: "pathumthani", value: 74 }
   ].forEach((item) => {
+    if (!cityCenters[item.citySlug]) {
+      return;
+    }
     const label = `${localize(locale, cityCenters[item.citySlug].label)}: ${item.value}`;
     addCitySignal(target, item.citySlug, layerColors.economy, 6 + Math.round(item.value / 20), label, {
       fillOpacity: 0.18,
@@ -296,6 +327,19 @@ function normalizeCoordinatePair(value: unknown): [number, number] | null {
   return [lon, lat];
 }
 
+function collectCoordinatePairs(value: unknown): Array<[number, number]> {
+  const point = normalizeCoordinatePair(value);
+  if (point) {
+    return [point];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => collectCoordinatePairs(entry));
+}
+
 function toLeafletLatLngs(value: unknown) {
   if (!Array.isArray(value)) {
     return [] as Array<[number, number]>;
@@ -305,6 +349,41 @@ function toLeafletLatLngs(value: unknown) {
     .map((entry) => normalizeCoordinatePair(entry))
     .filter((entry): entry is [number, number] => Boolean(entry))
     .map(([lon, lat]) => [lat, lon] as [number, number]);
+}
+
+function getFeatureBounds(feature: GeoFeatureRecord) {
+  const points = collectCoordinatePairs(feature.coordinates).map(([lon, lat]) => L.latLng(lat, lon));
+  if (points.length === 0) {
+    return null;
+  }
+
+  return L.latLngBounds(points);
+}
+
+function shouldRenderFeature(collectionId: string, feature: GeoFeatureRecord, focusBounds: L.LatLngBounds) {
+  const bounds = getFeatureBounds(feature);
+  if (!bounds) {
+    return false;
+  }
+
+  if (feature.geometryType === "Point") {
+    return focusBounds.contains(bounds.getCenter());
+  }
+
+  if (!focusBounds.intersects(bounds)) {
+    return false;
+  }
+
+  if (macroRegionalLayers.has(collectionId as LayerId)) {
+    const latSpan = Math.abs(bounds.getNorth() - bounds.getSouth());
+    const lonSpan = Math.abs(bounds.getEast() - bounds.getWest());
+
+    if (latSpan > 0.24 || lonSpan > 0.24) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function buildPopupContent(feature: GeoFeatureRecord) {
@@ -427,6 +506,7 @@ function renderFeatureCollections(
   target: L.LayerGroup,
   activeLayers: Set<LayerId>,
   featureCollections: MapFeatureCollection[],
+  focusBounds: L.LatLngBounds,
   domainSlug?: string
 ) {
   featureCollections.forEach((collection) => {
@@ -436,6 +516,10 @@ function renderFeatureCollections(
 
     collection.features.forEach((feature) => {
       if (collection.layerId === "smart-city-thailand" && !matchesCoverageDomain(feature, domainSlug)) {
+        return;
+      }
+
+      if (!shouldRenderFeature(collection.layerId, feature, focusBounds)) {
         return;
       }
 
@@ -462,29 +546,29 @@ function renderFeatureCollections(
         const [lon, lat] = point;
         const marker = L.circleMarker([lat, lon], {
           radius: isNationalFootprint
-            ? 7
+            ? 5
             : isBangkokPlaces
               ? 6
               : isPollutionLayer
-                ? Math.max(5, Math.min(10, 4 + intensity / 20))
+                ? Math.max(4, Math.min(8, 3 + intensity / 35))
                 : collection.layerId === "weather"
-                  ? 6
+                  ? 5
                   : collection.layerId === "agriculture" || collection.layerId === "water" || collection.layerId === "land-use"
                     ? 5
                   : 4,
           color: pointColor,
           fillColor: pointColor,
-          fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
+          fillOpacity: isNationalFootprint ? 0.2 : isPollutionLayer ? 0.22 : 0.3,
           weight: 2
         });
 
-        if (isPollutionLayer && intensity >= 55) {
+        if (isPollutionLayer && intensity >= 70) {
           const glow = L.circle([lat, lon], {
-            radius: 22000 + intensity * 220,
+            radius: 900 + intensity * 18,
             color: pointColor,
             weight: 1,
             fillColor: pointColor,
-            fillOpacity: intensity >= 80 ? 0.1 : 0.06
+            fillOpacity: intensity >= 85 ? 0.05 : 0.03
           });
           glow.addTo(target);
         }
@@ -504,11 +588,11 @@ function renderFeatureCollections(
           color: pointColor,
           weight:
             collection.layerId === "economy" || collection.layerId === "water"
-              ? 5
+              ? 4
               : collection.layerId === "agriculture"
-                ? 4.5
-                : 4,
-          opacity: 0.82,
+                ? 4
+                : 3.25,
+          opacity: 0.68,
           dashArray: collection.layerId === "disaster" ? "10 6" : undefined
         });
 
@@ -525,24 +609,24 @@ function renderFeatureCollections(
 
         const polygon = L.polygon(latLngs, {
           color: pointColor,
-          weight: collection.layerId === "smart-city-thailand" ? 2 : 1.5,
+          weight: collection.layerId === "smart-city-thailand" ? 1.5 : 1.25,
           fillColor: pointColor,
           fillOpacity:
             collection.layerId === "economy"
-              ? 0.12
+              ? 0.04
               : collection.layerId === "agriculture"
-                ? 0.14
+                ? 0.05
                 : collection.layerId === "water"
-                  ? 0.1
+                  ? 0.04
                   : collection.layerId === "land-use"
-                    ? 0.11
-              : collection.layerId === "resilience"
-                ? 0.1
+                    ? 0.04
+                    : collection.layerId === "resilience"
+                      ? 0.035
                 : collection.layerId === "projects"
-                  ? 0.08
+                  ? 0.05
                   : collection.layerId === "disaster"
-                    ? 0.11
-                    : 0.09
+                    ? 0.045
+                    : 0.05
         });
 
         polygon.bindPopup(popupContent);
@@ -578,6 +662,7 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const eoTileLayersRef = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const jaxaLayerRef = useRef<L.Layer | null>(null);
   const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
@@ -598,10 +683,20 @@ export default function InteractiveMap({
 
     const map = L.map(containerRef.current, {
       zoomControl: false,
-      attributionControl: true
+      attributionControl: true,
+      maxBounds: localViewportBounds,
+      maxBoundsViscosity: 1,
+      minZoom: 10,
+      zoomSnap: 0.5
     });
 
     L.control.zoom({ position: "topright" }).addTo(map);
+
+    map.createPane("eo-overlay-pane");
+    const eoPane = map.getPane("eo-overlay-pane");
+    if (eoPane) {
+      eoPane.style.zIndex = "320";
+    }
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
@@ -610,6 +705,14 @@ export default function InteractiveMap({
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
+    
+    // Add Satellite Imagery layer but keep it hidden by default until selected
+    const satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+    });
+    
+    (map as any).satelliteLayer = satelliteLayer;
+    
     mapRef.current = map;
 
     requestAnimationFrame(() => {
@@ -645,20 +748,8 @@ export default function InteractiveMap({
     lastViewportKeyRef.current = nextViewportKey;
 
     if (view === "national") {
-      if (hasNationalCoverageLayer && nationalCoverageBounds) {
-        map.fitBounds(
-          [
-            [nationalCoverageBounds[0], nationalCoverageBounds[1]],
-            [nationalCoverageBounds[2], nationalCoverageBounds[3]]
-          ],
-          {
-            padding: [18, 18]
-          }
-        );
-        return;
-      }
-
-      map.fitBounds(thailandBounds, {
+      // MTT dashboard: "national" means Greater Bangkok coverage, not all-Thailand
+      map.fitBounds(greaterBangkokBounds, {
         padding: [18, 18]
       });
       return;
@@ -677,15 +768,27 @@ export default function InteractiveMap({
       return;
     }
 
-    if (citySlug === "bangkok") {
-      map.fitBounds(bangkokBounds, {
+    // MTT: fit tight estate bounds for detail, or Greater Bangkok for context
+    if (citySlug === "muang-thong-thani") {
+      if (view === "city") {
+        map.fitBounds(mttBounds, { padding: [24, 24] });
+      } else {
+        map.fitBounds(northBangkokBounds, { padding: [18, 18] });
+      }
+      return;
+    }
+
+    if (citySlug === "bangkok" || citySlug === "nonthaburi") {
+      map.fitBounds(greaterBangkokBounds, {
         padding: [18, 18]
       });
       return;
     }
 
-    const city = cityCenters[citySlug] ?? cityCenters.bangkok;
-    map.setView([city.lat, city.lon], view === "city" ? 10 : 8);
+    const city = cityCenters[citySlug] ?? cityCenters["muang-thong-thani"];
+    // All local cities are in Greater Bangkok — use tighter zoom
+    const zoom = view === "city" ? 13 : 11;
+    map.setView([city.lat, city.lon], zoom);
   }, [view, citySlug, layers, bangkokBoundsKey, nationalBoundsKey]);
 
   useEffect(() => {
@@ -696,8 +799,16 @@ export default function InteractiveMap({
 
     overlay.clearLayers();
     const activeLayers = new Set(layers as LayerId[]);
+    const focusBounds =
+      view === "city" && citySlug === "muang-thong-thani"
+        ? northBangkokBounds.pad(0.02)
+        : view === "city"
+          ? greaterBangkokBounds
+          : view === "domain"
+            ? northBangkokBounds.pad(0.04)
+            : localViewportBounds;
 
-    renderFeatureCollections(overlay, activeLayers, featureCollections, domainSlug);
+    renderFeatureCollections(overlay, activeLayers, featureCollections, focusBounds, domainSlug);
 
     if (activeLayers.has("projects")) {
       renderProjects(overlay, locale, projects);
@@ -714,7 +825,60 @@ export default function InteractiveMap({
     if (activeLayers.has("disaster")) {
       renderDisaster(overlay, locale);
     }
-  }, [domainSlug, featureCollections, layerKey, locale, news, projects]);
+    
+    const map = mapRef.current;
+    if (map) {
+      const satelliteLayer = (map as any).satelliteLayer;
+      if (activeLayers.has("satellite-imagery")) {
+        if (!map.hasLayer(satelliteLayer)) {
+          satelliteLayer.addTo(map);
+        }
+      } else {
+        if (map.hasLayer(satelliteLayer)) {
+          map.removeLayer(satelliteLayer);
+        }
+      }
+    }
+  }, [citySlug, domainSlug, featureCollections, layerKey, locale, news, projects, view]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const configs = getEoTileConfigs();
+
+    (Object.keys(configs) as EoLayerId[]).forEach((id) => {
+      const existingLayer = eoTileLayersRef.current[id];
+
+      if (!layers.includes(id)) {
+        if (existingLayer && map.hasLayer(existingLayer)) {
+          map.removeLayer(existingLayer);
+        }
+        return;
+      }
+
+      if (existingLayer) {
+        if (!map.hasLayer(existingLayer)) {
+          existingLayer.addTo(map);
+        }
+        return;
+      }
+
+      const config = configs[id];
+      const nextLayer = L.tileLayer(config.url, {
+        opacity: config.opacity,
+        maxNativeZoom: config.maxNativeZoom,
+        maxZoom: 18,
+        pane: "eo-overlay-pane",
+        attribution: config.attribution
+      });
+
+      eoTileLayersRef.current[id] = nextLayer;
+      nextLayer.addTo(map);
+    });
+  }, [layerKey, layers]);
 
   useEffect(() => {
     const map = mapRef.current;

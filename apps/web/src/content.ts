@@ -58,6 +58,39 @@ export interface ResourceLink {
 
 export const trendWatchItems: TrendWatchItem[] = [
   {
+    id: "muang-thong-thani",
+    term: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    query: "Muang Thong Thani",
+    category: { th: "พื้นที่หลัก", en: "Focus area" },
+    values: [30, 38, 44, 52, 58, 63, 68, 72],
+    note: {
+      th: "ติดตามความสนใจต่อเมืองทองธานีโดยตรง",
+      en: "Direct interest signal for Muang Thong Thani as a smart city area."
+    }
+  },
+  {
+    id: "impact-arena",
+    term: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    query: "IMPACT Arena Nonthaburi",
+    category: { th: "พื้นที่หลัก", en: "Focus area" },
+    values: [22, 28, 34, 40, 46, 53, 58, 62],
+    note: {
+      th: "ศูนย์ประชุมและแสดงสินค้าระดับนานาชาติในเมืองทองธานี",
+      en: "Tracks interest in the IMPACT Exhibition & Convention Centre within MTT."
+    }
+  },
+  {
+    id: "nonthaburi-smart",
+    term: { th: "Nonthaburi Smart City", en: "Nonthaburi Smart City" },
+    query: "Nonthaburi Smart City",
+    category: { th: "จังหวัด", en: "Province" },
+    values: [14, 18, 22, 28, 34, 40, 46, 52],
+    note: {
+      th: "สัญญาณเมืองอัจฉริยะในระดับจังหวัดนนทบุรี",
+      en: "Province-level smart city signal for Nonthaburi."
+    }
+  },
+  {
     id: "smart-city",
     term: { th: "Smart City", en: "Smart City" },
     query: "smart city",
@@ -502,6 +535,16 @@ export const toolkitLinks: ToolkitLink[] = [
     description: {
       th: "พอร์ทัลข้อมูลโลกจาก JAXA สำหรับภาพถ่ายดาวเทียมและบริบทเชิงพื้นที่",
       en: "JAXA Earth data portal for satellite imagery and spatial Earth-observation context."
+    }
+  },
+  {
+    id: "tool-itic-foundation",
+    name: "iTIC Foundation",
+    href: "https://iticfoundation.org/en/open-data-sharing/",
+    kind: "Open Data",
+    description: {
+      th: "แหล่งข้อมูลจราจรอัจฉริยะของไทย พร้อม open-data archives สำหรับ location table ประวัติการจราจร และ probe data แบบติดต่อขอใช้งาน",
+      en: "Thailand intelligent traffic source with open-data archives for location tables, traffic history, and probe data through request-based access."
     }
   },
   {

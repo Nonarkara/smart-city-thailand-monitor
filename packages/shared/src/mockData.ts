@@ -121,6 +121,40 @@ export const domains: DomainScorecard[] = [
 
 export const cities: CityProfile[] = [
   {
+    id: "city-mtt",
+    slug: "muang-thong-thani",
+    name: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    region: { th: "นนทบุรี", en: "Nonthaburi" },
+    population: 80000,
+    focus: {
+      th: "ศูนย์ประชุม IMPACT นิคมที่อยู่อาศัย และโครงสร้างพื้นฐานเมืองอัจฉริยะ",
+      en: "IMPACT convention hub, mixed-use residential, and smart city infrastructure."
+    },
+    scores: [
+      { domainSlug: "economy", score: 82 },
+      { domainSlug: "mobility", score: 76 },
+      { domainSlug: "environment", score: 74 },
+      { domainSlug: "energy", score: 71 },
+      { domainSlug: "living", score: 79 }
+    ]
+  },
+  {
+    id: "city-nonthaburi",
+    slug: "nonthaburi",
+    name: { th: "จังหวัดนนทบุรี", en: "Nonthaburi" },
+    region: { th: "ภาคกลาง", en: "Central" },
+    population: 1300000,
+    focus: {
+      th: "เมืองบริวารกรุงเทพ การขนส่ง และเขตที่อยู่อาศัยชั้นนำ",
+      en: "Bangkok satellite city, transit-oriented development, and residential services."
+    },
+    scores: [
+      { domainSlug: "mobility", score: 78 },
+      { domainSlug: "governance", score: 74 },
+      { domainSlug: "living", score: 75 }
+    ]
+  },
+  {
     id: "city-bangkok",
     slug: "bangkok",
     name: { th: "กรุงเทพมหานคร", en: "Bangkok" },
@@ -137,116 +171,141 @@ export const cities: CityProfile[] = [
     ]
   },
   {
-    id: "city-phuket",
-    slug: "phuket",
-    name: { th: "ภูเก็ต", en: "Phuket" },
-    region: { th: "ภาคใต้", en: "South" },
-    population: 417000,
+    id: "city-pakred",
+    slug: "pak-kret",
+    name: { th: "อำเภอปากเกร็ด", en: "Pak Kret" },
+    region: { th: "นนทบุรี", en: "Nonthaburi" },
+    population: 210000,
     focus: {
-      th: "การท่องเที่ยวอัจฉริยะ ความปลอดภัย และโครงสร้างพื้นฐาน",
-      en: "Smart tourism, safety, and infrastructure readiness."
+      th: "ชุมชนริมน้ำ พื้นที่อยู่อาศัย และบริการเมืองระดับอำเภอ",
+      en: "Riverfront community, residential zones, and district-level smart services."
     },
     scores: [
-      { domainSlug: "economy", score: 76 },
-      { domainSlug: "living", score: 74 },
-      { domainSlug: "governance", score: 70 }
-    ]
-  },
-  {
-    id: "city-khon-kaen",
-    slug: "khon-kaen",
-    name: { th: "ขอนแก่น", en: "Khon Kaen" },
-    region: { th: "ภาคตะวันออกเฉียงเหนือ", en: "Northeast" },
-    population: 412000,
-    focus: {
-      th: "การเดินทางสาธารณะและการพัฒนาเศรษฐกิจระดับภูมิภาค",
-      en: "Public transport and regional economic modernization."
-    },
-    scores: [
-      { domainSlug: "mobility", score: 73 },
-      { domainSlug: "economy", score: 72 },
-      { domainSlug: "people", score: 68 }
-    ]
-  },
-  {
-    id: "city-chiang-mai",
-    slug: "chiang-mai",
-    name: { th: "เชียงใหม่", en: "Chiang Mai" },
-    region: { th: "ภาคเหนือ", en: "North" },
-    population: 1270000,
-    focus: {
-      th: "อากาศ คุณภาพชีวิต และนวัตกรรมเชิงวัฒนธรรม",
-      en: "Air quality, livability, and cultural innovation."
-    },
-    scores: [
-      { domainSlug: "environment", score: 74 },
+      { domainSlug: "environment", score: 72 },
       { domainSlug: "living", score: 76 },
-      { domainSlug: "people", score: 71 }
+      { domainSlug: "mobility", score: 70 }
+    ]
+  },
+  {
+    id: "city-pathumthani",
+    slug: "pathumthani",
+    name: { th: "ปทุมธานี", en: "Pathumthani" },
+    region: { th: "ภาคกลาง", en: "Central" },
+    population: 1200000,
+    focus: {
+      th: "เขตอุตสาหกรรม มหาวิทยาลัย และนิคมที่อยู่อาศัยทางเหนือของกรุงเทพ",
+      en: "Industrial estates, universities, and northern Bangkok residential corridor."
+    },
+    scores: [
+      { domainSlug: "economy", score: 75 },
+      { domainSlug: "people", score: 73 },
+      { domainSlug: "mobility", score: 71 }
     ]
   }
 ];
 
 export const projects: ProjectRecord[] = [
   {
-    id: "project-1",
-    slug: "bangkok-flood-command",
-    title: { th: "ศูนย์สั่งการน้ำท่วมกรุงเทพ", en: "Bangkok Flood Command Grid" },
-    citySlug: "bangkok",
+    id: "project-mtt-1",
+    slug: "mtt-smart-environment-sensor",
+    title: { th: "ระบบเซนเซอร์สิ่งแวดล้อมเมืองทองธานี", en: "MTT Smart Environment Sensor Grid" },
+    citySlug: "muang-thong-thani",
     domainSlug: "environment",
     status: "active",
-    completionPercent: 81,
-    owner: { th: "สำนักงานเมืองอัจฉริยะ", en: "Smart City Office" },
+    completionPercent: 74,
+    owner: { th: "depa / SLIC", en: "depa / SLIC" },
     summary: {
-      th: "เชื่อมข้อมูลฝน ระบายน้ำ และสัญญาณภาคสนามเพื่อจัดการการตอบสนอง",
-      en: "Links rainfall, drainage, and field signals for faster flood response."
+      th: "ติดตั้งเซนเซอร์ PM2.5 อุณหภูมิ ความชื้น และเสียง ทั่วพื้นที่เมืองทองธานี",
+      en: "Deploys PM2.5, temperature, humidity, and noise sensors across the MTT estate."
     },
     nextMilestone: {
-      th: "ทดสอบเตือนภัย 10 เขตในไตรมาสหน้า",
-      en: "Pilot district warning workflow in 10 districts next quarter."
+      th: "ขยายครอบคลุม 30 จุดในไตรมาสหน้า",
+      en: "Expand to 30 sensor nodes next quarter."
     },
     updatedAt: seededAt,
-    source: seedMeta("Smart City Thailand Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
+    source: seedMeta("depa Smart City Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
   },
   {
-    id: "project-2",
-    slug: "phuket-tourism-mobility-loop",
-    title: { th: "Phuket Tourism Mobility Loop", en: "Phuket Tourism Mobility Loop" },
-    citySlug: "phuket",
+    id: "project-mtt-2",
+    slug: "mtt-impact-mobility",
+    title: { th: "ระบบขนส่งอัจฉริยะ IMPACT", en: "IMPACT Smart Mobility & EV Loop" },
+    citySlug: "muang-thong-thani",
     domainSlug: "mobility",
-    status: "watch",
-    completionPercent: 58,
-    owner: { th: "เทศบาลและพันธมิตรท้องถิ่น", en: "Municipal and local partners" },
+    status: "active",
+    completionPercent: 61,
+    owner: { th: "IMPACT Exhibition Center / เทศบาลนนทบุรี", en: "IMPACT Exhibition Center / Nonthaburi Municipality" },
     summary: {
-      th: "เชื่อมการเดินทาง การท่องเที่ยว และความปลอดภัยในโครงข่ายเดียว",
-      en: "Unifies mobility, tourism, and safety data into one operating view."
+      th: "เชื่อม EV shuttle รถสาธารณะ และสัญญาณจราจรในพื้นที่ IMPACT และเมืองทองธานี",
+      en: "Connects EV shuttles, public transit, and traffic signals around IMPACT and MTT."
     },
     nextMilestone: {
-      th: "เชื่อมข้อมูลรถโดยสารและจุดท่องเที่ยวหลัก",
-      en: "Connect transport feeds and major tourist nodes."
+      th: "ทดสอบ EV loop เชื่อม MRT สายสีม่วง ในไตรมาสหน้า",
+      en: "Pilot EV loop connecting MRT Purple Line stations next quarter."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("IMPACT Exhibition Center", "https://www.impact.co.th")
+  },
+  {
+    id: "project-mtt-3",
+    slug: "mtt-slic-innovation-hub",
+    title: { th: "SLIC นวัตกรรมเมืองทองธานี", en: "SLIC Smart Innovation Hub" },
+    citySlug: "muang-thong-thani",
+    domainSlug: "economy",
+    status: "active",
+    completionPercent: 85,
+    owner: { th: "SLIC / depa", en: "SLIC / depa" },
+    summary: {
+      th: "พื้นที่ทดลองนวัตกรรมเมืองอัจฉริยะ รวม co-working พื้นที่ sandbox และหน่วยงานพันธมิตร",
+      en: "Smart city innovation sandbox combining co-working, prototyping, and partner agencies in MTT."
+    },
+    nextMilestone: {
+      th: "เปิดตัว cohort startup ที่ 3 และ open data layer",
+      en: "Launch Cohort 3 startups and public open-data layer."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("SLIC", "https://www.depa.or.th")
+  },
+  {
+    id: "project-mtt-4",
+    slug: "mtt-energy-grid",
+    title: { th: "กริดพลังงานอัจฉริยะเมืองทองธานี", en: "MTT Smart Energy Microgrid" },
+    citySlug: "muang-thong-thani",
+    domainSlug: "energy",
+    status: "watch",
+    completionPercent: 47,
+    owner: { th: "EGAT / ผู้ประกอบการเอกชน", en: "EGAT / private operator" },
+    summary: {
+      th: "ติดตั้ง Solar + Battery และระบบตรวจสอบการใช้พลังงานแบบ real-time ในอาคาร IMPACT",
+      en: "Installs solar + battery storage with real-time energy monitoring across IMPACT halls."
+    },
+    nextMilestone: {
+      th: "ทดสอบ Peak shaving ในอาคาร Hall 9–12",
+      en: "Pilot peak-shaving in Exhibition Halls 9–12."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("EGAT Smart Grid", "https://www.egat.co.th")
+  },
+  {
+    id: "project-mtt-5",
+    slug: "mtt-citydata-platform",
+    title: { th: "แพลตฟอร์มข้อมูลเมืองนนทบุรี", en: "Nonthaburi City Data Platform" },
+    citySlug: "nonthaburi",
+    domainSlug: "governance",
+    status: "active",
+    completionPercent: 68,
+    owner: { th: "depa / เทศบาลนนทบุรี", en: "depa / Nonthaburi Municipality" },
+    summary: {
+      th: "รวมข้อมูลสาธารณะของจังหวัดนนทบุรีในรูป open API บน CityData platform",
+      en: "Consolidates Nonthaburi public datasets as open APIs on the national CityData platform."
+    },
+    nextMilestone: {
+      th: "เพิ่มชุดข้อมูลสุขภาพและสิ่งแวดล้อม 15 ชุด",
+      en: "Add 15 health and environment dataset packages."
     },
     updatedAt: seededAt,
     source: seedMeta("CityData Thailand", "https://www.citydata.in.th")
-  },
-  {
-    id: "project-3",
-    slug: "khon-kaen-civic-transit",
-    title: { th: "Khon Kaen Civic Transit Pulse", en: "Khon Kaen Civic Transit Pulse" },
-    citySlug: "khon-kaen",
-    domainSlug: "people",
-    status: "active",
-    completionPercent: 67,
-    owner: { th: "ภาคีเมืองและมหาวิทยาลัย", en: "City coalition and universities" },
-    summary: {
-      th: "ใช้ข้อมูลสาธารณะเพื่อติดตามการเข้าถึงบริการและการเดินทาง",
-      en: "Tracks service access and mobility outcomes with public data."
-    },
-    nextMilestone: {
-      th: "เผยแพร่แดชบอร์ดชุมชนเวอร์ชันสาธารณะ",
-      en: "Publish public community-facing metrics board."
-    },
-    updatedAt: seededAt,
-    source: seedMeta("data.go.th", "https://data.go.th")
   }
+
 ];
 
 export const news: NewsItem[] = [
@@ -365,12 +424,12 @@ export const sources: SourceRecord[] = [
   },
   {
     id: "bangkok-passages",
-    name: "Bangkok Shared Places Map",
+    name: "MTT / North Bangkok Detail Map",
     category: "geospatial",
     url: "https://www.google.com/maps/d/u/0/viewer?mid=1DbE8UXPzd5V_e7PxHee-TXc57Bb_a02P&ll=13.838530327896784%2C100.64165750169461&z=11",
     freshnessStatus: "live",
     lastCheckedAt: seededAt,
-    message: "Public Google My Maps layer normalized into the hero map."
+    message: "Curated local places around Muang Thong Thani, Pak Kret, Lak Si, and north Bangkok."
   },
   {
     id: "news-api",
@@ -425,6 +484,33 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
     message: "Browser-side and Python Earth observation APIs for rainfall, land temperature, and other satellite layers."
+  },
+  {
+    id: "nasa-gibs",
+    name: "NASA GIBS WMTS",
+    category: "geospatial",
+    url: "https://gibs.earthdata.nasa.gov",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Raster overlay tiles for aerosol, precipitation, vegetation, and optical Earth observation."
+  },
+  {
+    id: "mtt-geography",
+    name: "MTT Geography Detail",
+    category: "geospatial",
+    url: "https://www.openstreetmap.org/#map=13/13.9118/100.5512",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Curated local geography for Muang Thong Thani, Chaeng Watthana, Lak Si, and Pak Kret."
+  },
+  {
+    id: "itic-traffic",
+    name: "iTIC Traffic / Longdo",
+    category: "geospatial",
+    url: "https://iticfoundation.org/en/open-data-sharing/",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Thai intelligent traffic open-data archives and developer-contact path for location tables, traffic history, and probe-data access."
   },
   {
     id: "undp-data",
@@ -495,7 +581,7 @@ export const mapLayers: MapLayerConfig[] = [
   {
     id: "smart-city-thailand",
     label: { th: "Smart City TH", en: "Smart City TH" },
-    active: true,
+    active: false,
     color: "#ff5b57",
     kind: "dataset",
     defaultViews: ["national"],
@@ -505,7 +591,7 @@ export const mapLayers: MapLayerConfig[] = [
   },
   {
     id: "bangkok-passages",
-    label: { th: "Bangkok Places", en: "Bangkok Places" },
+    label: { th: "MTT / กรุงเทพเหนือ", en: "MTT / North Bangkok" },
     active: true,
     color: "#22c55e",
     kind: "dataset",
@@ -513,6 +599,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "bangkok-passages",
     legendLabel: "Places",
     zIndex: 40
+  },
+  {
+    id: "geography-detail",
+    label: { th: "ภูมิศาสตร์พื้นที่", en: "Local Geography" },
+    active: true,
+    color: "#1d4ed8",
+    kind: "dataset",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "mtt-geography",
+    legendLabel: "Geography",
+    zIndex: 39
   },
   {
     id: "projects",
@@ -539,7 +636,7 @@ export const mapLayers: MapLayerConfig[] = [
   {
     id: "resilience",
     label: { th: "ความยืดหยุ่น", en: "Resilience" },
-    active: true,
+    active: false,
     color: "#ff8f00",
     kind: "signal",
     defaultViews: ["bangkok", "national"],
@@ -550,7 +647,7 @@ export const mapLayers: MapLayerConfig[] = [
   {
     id: "economy",
     label: { th: "เศรษฐกิจ", en: "Economy" },
-    active: true,
+    active: false,
     color: "#5d3df7",
     kind: "signal",
     defaultViews: ["bangkok", "national"],
@@ -568,6 +665,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "esa-eodashboard",
     legendLabel: "Agriculture",
     zIndex: 17
+  },
+  {
+    id: "itic-traffic",
+    label: { th: "รายงานจราจร (iTIC)", en: "Traffic (iTIC)" },
+    active: false,
+    color: "#ef4444",
+    kind: "signal",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "itic-traffic",
+    legendLabel: "Traffic",
+    zIndex: 45
   },
   {
     id: "water",
@@ -603,6 +711,28 @@ export const mapLayers: MapLayerConfig[] = [
     zIndex: 22
   },
   {
+    id: "eo-vegetation",
+    label: { th: "พืชพรรณ (NDVI)", en: "Vegetation (NDVI)" },
+    active: false,
+    color: "#65a30d",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Vegetation",
+    zIndex: 23
+  },
+  {
+    id: "eo-precipitation",
+    label: { th: "ฝนดาวเทียม", en: "Precipitation" },
+    active: false,
+    color: "#2563eb",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Precipitation",
+    zIndex: 24
+  },
+  {
     id: "jaxa-rainfall",
     label: { th: "EO Rain", en: "EO Rain" },
     active: false,
@@ -615,7 +745,7 @@ export const mapLayers: MapLayerConfig[] = [
   },
   {
     id: "pollution",
-    label: { th: "มลพิษ", en: "Pollution" },
+    label: { th: "AQI / PM2.5", en: "AQI / PM2.5" },
     active: true,
     color: "#c1254a",
     kind: "signal",
@@ -623,6 +753,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "open-meteo-air",
     legendLabel: "Pollution",
     zIndex: 24
+  },
+  {
+    id: "eo-aerosol",
+    label: { th: "ละอองลอย", en: "Aerosol" },
+    active: false,
+    color: "#9333ea",
+    kind: "external",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "nasa-gibs",
+    legendLabel: "Aerosol",
+    zIndex: 25
   },
   {
     id: "disaster",
@@ -638,8 +779,14 @@ export const mapLayers: MapLayerConfig[] = [
 ];
 
 const bangkokPlaceMeta = seedMeta(
-  "Bangkok Shared Places Map",
-  "https://www.google.com/maps/d/u/0/viewer?mid=1DbE8UXPzd5V_e7PxHee-TXc57Bb_a02P&ll=13.838530327896784%2C100.64165750169461&z=11",
+  "MTT / North Bangkok Detail Map",
+  "https://www.openstreetmap.org/#map=13/13.9118/100.5512",
+  "live"
+);
+
+const mttGeographyMeta = seedMeta(
+  "Muang Thong / North Bangkok Geography",
+  "https://www.openstreetmap.org/#map=13/13.9118/100.5512",
   "live"
 );
 
@@ -685,12 +832,27 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: smartCityThailandMeta
       },
       {
+        id: "smart-city-mtt",
+        layerId: "smart-city-thailand",
+        geometryType: "Point",
+        coordinates: [100.5512, 13.9118],
+        title: "เมืองทองธานี — Muang Thong Thani Smart City",
+        description: "MTT flagship smart city zone: IMPACT hub, SLIC innovation, MRT Purple Line corridor, and sensor grid.",
+        properties: {
+          city: "Muang Thong Thani",
+          region: "Nonthaburi",
+          population: 80000,
+          smartFocus: "IMPACT events hub, SLIC innovation, EV mobility, smart energy, and environmental sensors."
+        },
+        source: smartCityThailandMeta
+      },
+      {
         id: "smart-city-th-2",
         layerId: "smart-city-thailand",
         geometryType: "Point",
         coordinates: [100.5144, 13.8591],
         title: "Nonthaburi",
-        description: "Greater Bangkok smart service and urban-management footprint.",
+        description: "Greater Bangkok smart service and urban-management footprint — host province of Muang Thong Thani.",
         properties: { city: "Nonthaburi", region: "Central" },
         source: smartCityThailandMeta
       },
@@ -725,171 +887,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: smartCityThailandMeta
       },
       {
-        id: "smart-city-th-6",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.5328, 14.0228],
-        title: "Kanchanaburi",
-        description: "Western corridor pilot area within the national smart city footprint.",
-        properties: { city: "Kanchanaburi", region: "West" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-7",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.9311, 13.1737],
-        title: "Chon Buri - Si Racha",
-        description: "EEC-connected industrial and urban innovation zone.",
-        properties: { city: "Si Racha", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-8",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.8825, 12.9236],
-        title: "Pattaya",
-        description: "Smart tourism, mobility, and public-space operating zone.",
-        properties: { city: "Pattaya", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-9",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [101.2816, 12.6814],
-        title: "Rayong",
-        description: "Industrial and logistics smart city growth corridor.",
-        properties: { city: "Rayong", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-10",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [98.9853, 18.7883],
-        title: "Chiang Mai",
-        description: "Livability, environment, and innovation city cluster.",
-        properties: {
-          city: "Chiang Mai",
-          region: "North",
-          population: 1270000,
-          smartFocus: "Air quality, livability, and cultural innovation."
-        },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-11",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.8406, 19.9105],
-        title: "Chiang Rai",
-        description: "Northern regional smart city and border-economy node.",
-        properties: { city: "Chiang Rai", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-12",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.2659, 16.8211],
-        title: "Phitsanulok",
-        description: "Upper-central logistics and service modernization node.",
-        properties: { city: "Phitsanulok", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-13",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.1231, 15.6987],
-        title: "Nakhon Sawan",
-        description: "Gateway city monitoring and regional integration node.",
-        properties: { city: "Nakhon Sawan", region: "Central" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-14",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [102.8236, 16.4322],
-        title: "Khon Kaen",
-        description: "Flagship regional smart mobility and civic innovation city.",
-        properties: {
-          city: "Khon Kaen",
-          region: "Northeast",
-          population: 412000,
-          smartFocus: "Regional mobility, public services, and civic innovation."
-        },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-15",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [102.7875, 17.4138],
-        title: "Udon Thani",
-        description: "Northeastern smart growth and service-access node.",
-        properties: { city: "Udon Thani", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-16",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [102.0977, 14.9799],
-        title: "Nakhon Ratchasima",
-        description: "Regional transport, economy, and city services hub.",
-        properties: { city: "Nakhon Ratchasima", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-17",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [104.847, 15.2447],
-        title: "Ubon Ratchathani",
-        description: "Eastern-Isan smart city and service modernization node.",
-        properties: { city: "Ubon Ratchathani", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-18",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [98.3923, 7.8804],
-        title: "Phuket",
-        description: "Smart tourism and island-scale city systems pilot.",
-        properties: {
-          city: "Phuket",
-          region: "South",
-          population: 417000,
-          smartFocus: "Tourism, mobility, and resilient island infrastructure."
-        },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-19",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.3215, 9.1382],
-        title: "Surat Thani",
-        description: "Southern regional smart service and logistics node.",
-        properties: { city: "Surat Thani", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-20",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.4747, 7.0084],
-        title: "Hat Yai / Songkhla",
-        description: "Southern metro cluster within the Smart City Thailand network.",
-        properties: { city: "Hat Yai", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
         id: "smart-city-th-21",
         layerId: "smart-city-thailand",
         geometryType: "Point",
@@ -917,186 +914,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Samut Songkhram",
         description: "Water-edge service and resilient community pilot area.",
         properties: { city: "Samut Songkhram", region: "Central" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-24",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.7959, 13.3611],
-        title: "Chachoengsao",
-        description: "Eastern corridor smart administration and services node.",
-        properties: { city: "Chachoengsao", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-25",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [101.3686, 14.0509],
-        title: "Prachinburi",
-        description: "Industrial transition and green-growth smart city zone.",
-        properties: { city: "Prachinburi", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-26",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [102.1039, 12.6115],
-        title: "Chanthaburi",
-        description: "Eastern trade and agricultural logistics smart node.",
-        properties: { city: "Chanthaburi", region: "East" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-27",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.9925, 15.1852],
-        title: "Lopburi",
-        description: "Historic city and service modernization cluster.",
-        properties: { city: "Lopburi", region: "Central" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-28",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.9159, 14.5336],
-        title: "Saraburi",
-        description: "Central logistics and industrial-support smart node.",
-        properties: { city: "Saraburi", region: "Central" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-29",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [103.1035, 16.0544],
-        title: "Maha Sarakham",
-        description: "Education-led civic services and regional innovation node.",
-        properties: { city: "Maha Sarakham", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-30",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [103.6531, 16.0514],
-        title: "Roi Et",
-        description: "Provincial service delivery and smart-governance footprint.",
-        properties: { city: "Roi Et", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-31",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [104.1486, 17.1611],
-        title: "Sakon Nakhon",
-        description: "Northeastern service-access and resilient growth node.",
-        properties: { city: "Sakon Nakhon", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-32",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [104.7786, 17.392],
-        title: "Nakhon Phanom",
-        description: "Mekong-edge connectivity and cross-border services node.",
-        properties: { city: "Nakhon Phanom", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-33",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [103.101, 14.993],
-        title: "Buri Ram",
-        description: "Regional mobility, events, and civic management zone.",
-        properties: { city: "Buri Ram", region: "Northeast" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-34",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.9631, 8.4304],
-        title: "Nakhon Si Thammarat",
-        description: "Southern regional governance and service-access cluster.",
-        properties: { city: "Nakhon Si Thammarat", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-35",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.0818, 8.0863],
-        title: "Krabi",
-        description: "Tourism, mobility, and coastal resilience smart node.",
-        properties: { city: "Krabi", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-36",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.6114, 7.5568],
-        title: "Trang",
-        description: "Southern coastal services and logistics smart footprint.",
-        properties: { city: "Trang", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-37",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.025, 6.6238],
-        title: "Satun",
-        description: "Southern border-facing service modernization and livability node.",
-        properties: { city: "Satun", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-38",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [101.2505, 6.8695],
-        title: "Pattani",
-        description: "Deep South civic services and resilient urban-management node.",
-        properties: { city: "Pattani", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-39",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.0136, 9.512],
-        title: "Koh Samui",
-        description: "Island-scale tourism, utilities, and mobility smart city footprint.",
-        properties: { city: "Koh Samui", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-40",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [98.45, 8.4519],
-        title: "Phang Nga",
-        description: "Coastal resilience and tourism-service operating zone.",
-        properties: { city: "Phang Nga", region: "South" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-41",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.9059, 13.1381],
-        title: "Saensuk",
-        description: "Municipal smart beach-city services and public-space management node.",
-        properties: { city: "Saensuk", region: "East" },
         source: smartCityThailandMeta
       },
       {
@@ -1129,84 +946,25 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         properties: { city: "Bangkok", region: "Central" },
         source: smartCityThailandMeta
       },
-      {
-        id: "smart-city-th-45",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [98.9515, 18.8054],
-        title: "CMU Smart Campus",
-        description: "University-led smart campus and urban experimentation node.",
-        properties: { city: "Chiang Mai", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-46",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.8826, 18.2897],
-        title: "Lampang / Mae Moh",
-        description: "Northern energy transition and smart utility operations footprint.",
-        properties: { city: "Lampang", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-47",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [100.7714, 19.1503],
-        title: "Nan Municipality",
-        description: "Provincial-scale smart living and civic services node.",
-        properties: { city: "Nan", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-48",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.1333, 18.576],
-        title: "Sri-Trang",
-        description: "Northern regional smart community and service pilot footprint.",
-        properties: { city: "Lamphun", region: "North" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-49",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [99.8218, 17.0056],
-        title: "Tak",
-        description: "Western-border logistics, administration, and service-access node.",
-        properties: { city: "Tak", region: "West" },
-        source: smartCityThailandMeta
-      },
-      {
-        id: "smart-city-th-50",
-        layerId: "smart-city-thailand",
-        geometryType: "Point",
-        coordinates: [102.0283, 14.9738],
-        title: "Korat",
-        description: "Metropolitan-scale northeastern gateway and service transformation zone.",
-        properties: { city: "Nakhon Ratchasima", region: "Northeast" },
-        source: smartCityThailandMeta
-      }
     ]
   },
   {
     layerId: "bangkok-passages",
     updatedAt: seededAt,
-    bounds: [13.69, 100.43, 13.87, 100.74],
+    bounds: [13.875, 100.495, 13.922, 100.607],
     source: bangkokPlaceMeta,
     features: [
       {
         id: "bangkok-place-1",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.5267632, 13.7541639],
-        title: "The moon massage in Bangkok",
-        description: "Shared public place record imported from the Google My Maps dataset.",
+        coordinates: [100.5478, 13.9126],
+        title: "IMPACT Challenger Hall",
+        description: "Primary exhibition and event anchor inside Muang Thong Thani.",
         properties: {
-          city: "Bangkok",
-          dataset: "shared-map"
+          city: "Muang Thong Thani",
+          district: "Pak Kret",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1214,12 +972,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-2",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.5511, 13.8012],
-        title: "Bangkok Local Place Cluster",
-        description: "Fallback marker used while the live My Maps source is syncing.",
+        coordinates: [100.5554, 13.9146],
+        title: "Lakeside / Muang Thong Core",
+        description: "Residential and mixed-use center around the internal lake district.",
         properties: {
-          city: "Bangkok",
-          dataset: "fallback"
+          city: "Muang Thong Thani",
+          district: "Pak Kret",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1227,12 +986,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-3",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.6416575, 13.8385303],
-        title: "Shared Map Focus",
-        description: "The default Bangkok focus derived from the shared map center.",
+        coordinates: [100.5471, 13.9079],
+        title: "Cosmo Bazaar / Arena Edge",
+        description: "Retail and event spillover zone serving IMPACT footfall.",
         properties: {
-          city: "Bangkok",
-          dataset: "fallback"
+          city: "Muang Thong Thani",
+          district: "Pak Kret",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1240,12 +1000,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-4",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.4931, 13.7526],
-        title: "Rattanakosin Civic Loop",
-        description: "Historic-core walking and public-space waypoint.",
+        coordinates: [100.5719, 13.8993],
+        title: "Chaeng Watthana Gateway",
+        description: "Primary road access and interchange edge for the north-Bangkok corridor.",
         properties: {
-          city: "Bangkok",
-          dataset: "curated"
+          city: "Chaeng Watthana",
+          district: "North Bangkok",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1253,12 +1014,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-5",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.5134, 13.7367],
-        title: "Chao Phraya Riverfront",
-        description: "River-edge mobility and public-realm highlight.",
+        coordinates: [100.5648, 13.8789],
+        title: "Government Complex Interface",
+        description: "Administrative cluster linking Chaeng Watthana demand with the MTT corridor.",
         properties: {
-          city: "Bangkok",
-          dataset: "curated"
+          city: "Lak Si",
+          district: "North Bangkok",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1266,12 +1028,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-6",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.5383, 13.7658],
-        title: "Phaya Thai Civic Spine",
-        description: "Transit-linked civic services cluster.",
+        coordinates: [100.5846, 13.8872],
+        title: "Lak Si Transit Link",
+        description: "North-Bangkok transfer edge for road, rail, and district services.",
         properties: {
-          city: "Bangkok",
-          dataset: "curated"
+          city: "Lak Si",
+          district: "North Bangkok",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1279,12 +1042,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-7",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.5814, 13.7219],
-        title: "Bang Na Learning Edge",
-        description: "Eastern Bangkok learning and innovation waypoint.",
+        coordinates: [100.6039, 13.9146],
+        title: "Don Mueang Access Gate",
+        description: "Airport-facing mobility node connecting Muang Thong Thani to the regional gateway.",
         properties: {
-          city: "Bangkok",
-          dataset: "curated"
+          city: "Don Mueang",
+          district: "North Bangkok",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
       },
@@ -1292,14 +1056,139 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         id: "bangkok-place-8",
         layerId: "bangkok-passages",
         geometryType: "Point",
-        coordinates: [100.4662, 13.7421],
-        title: "Thonburi Canal Watch",
-        description: "Canal-side community signal and local access node.",
+        coordinates: [100.5006, 13.9111],
+        title: "Pak Kret Riverfront Link",
+        description: "Chao Phraya-side community and service edge west of the estate.",
         properties: {
-          city: "Bangkok",
-          dataset: "curated"
+          city: "Pak Kret",
+          district: "Nonthaburi",
+          dataset: "local-curated"
         },
         source: bangkokPlaceMeta
+      }
+    ]
+  },
+  {
+    layerId: "geography-detail",
+    updatedAt: seededAt,
+    bounds: [13.872, 100.498, 13.932, 100.611],
+    source: mttGeographyMeta,
+    features: [
+      {
+        id: "geo-mtt-estate",
+        layerId: "geography-detail",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.532, 13.892],
+          [100.577, 13.892],
+          [100.577, 13.928],
+          [100.532, 13.928]
+        ],
+        title: "Muang Thong Thani Estate",
+        description: "Primary estate footprint used as the local dashboard frame.",
+        properties: {
+          category: "district",
+          area: "Muang Thong Thani"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-impact-campus",
+        layerId: "geography-detail",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.542, 13.903],
+          [100.558, 13.903],
+          [100.559, 13.918],
+          [100.543, 13.919]
+        ],
+        title: "IMPACT Campus",
+        description: "Convention, arena, and exhibition campus inside the estate core.",
+        properties: {
+          category: "campus",
+          area: "IMPACT"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-chaeng-watthana-corridor",
+        layerId: "geography-detail",
+        geometryType: "LineString",
+        coordinates: [
+          [100.505, 13.905],
+          [100.533, 13.904],
+          [100.562, 13.902],
+          [100.607, 13.898]
+        ],
+        title: "Chaeng Watthana Corridor",
+        description: "Main east-west movement corridor serving MTT, Lak Si, and the government complex.",
+        properties: {
+          category: "mobility",
+          type: "arterial"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-si-rat-approach",
+        layerId: "geography-detail",
+        geometryType: "LineString",
+        coordinates: [
+          [100.516, 13.92],
+          [100.544, 13.918],
+          [100.569, 13.915],
+          [100.595, 13.912]
+        ],
+        title: "Si Rat Expressway Approach",
+        description: "Regional expressway access feeding the estate, event halls, and airport edge.",
+        properties: {
+          category: "mobility",
+          type: "expressway"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-khlong-prapa",
+        layerId: "geography-detail",
+        geometryType: "LineString",
+        coordinates: [
+          [100.503, 13.879],
+          [100.515, 13.891],
+          [100.528, 13.903],
+          [100.543, 13.922]
+        ],
+        title: "Khlong Prapa Edge",
+        description: "Water infrastructure line relevant to drainage, ecology, and settlement boundaries.",
+        properties: {
+          category: "water-edge",
+          type: "canal"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-slic-hub",
+        layerId: "geography-detail",
+        geometryType: "Point",
+        coordinates: [100.5518, 13.9103],
+        title: "SLIC Innovation Hub",
+        description: "Innovation, prototyping, and smart-city program anchor inside Muang Thong Thani.",
+        properties: {
+          category: "innovation",
+          type: "hub"
+        },
+        source: mttGeographyMeta
+      },
+      {
+        id: "geo-pink-line-interface",
+        layerId: "geography-detail",
+        geometryType: "Point",
+        coordinates: [100.5712, 13.9017],
+        title: "Pink Line / Sri Rat Interface",
+        description: "Transit interchange edge shaping event access and north-Bangkok distribution.",
+        properties: {
+          category: "transit",
+          type: "station-interface"
+        },
+        source: mttGeographyMeta
       }
     ]
   },
@@ -1366,20 +1255,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         },
         source: dataToPolicyMeta
       },
-      {
-        id: "projects-chiangmai-campus",
-        layerId: "projects",
-        geometryType: "Point",
-        coordinates: [98.9515, 18.8054],
-        title: "Northern civic innovation campus",
-        description: "University and city sandbox for livability and climate response pilots.",
-        properties: {
-          city: "Chiang Mai",
-          status: "watch",
-          focus: "living-lab"
-        },
-        source: dataToPolicyMeta
-      }
     ]
   },
   {
@@ -1403,20 +1278,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: gdeltSignalsMeta
       },
       {
-        id: "news-chiangmai-air",
-        layerId: "news",
-        geometryType: "Point",
-        coordinates: [98.9853, 18.7883],
-        title: "Chiang Mai air-quality watch",
-        description: "Recurring environmental coverage spike around haze and livability.",
-        properties: {
-          city: "Chiang Mai",
-          mentions: 11,
-          theme: "environment"
-        },
-        source: gdeltSignalsMeta
-      },
-      {
         id: "news-eastern-freight",
         layerId: "news",
         geometryType: "Point",
@@ -1427,20 +1288,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           city: "Rayong",
           mentions: 9,
           theme: "economy"
-        },
-        source: gdeltSignalsMeta
-      },
-      {
-        id: "news-phuket-tourism",
-        layerId: "news",
-        geometryType: "Point",
-        coordinates: [98.3923, 7.8804],
-        title: "Phuket tourism operations watch",
-        description: "Service-quality and visitor-flow stories remain active.",
-        properties: {
-          city: "Phuket",
-          mentions: 7,
-          theme: "living"
         },
         source: gdeltSignalsMeta
       },
@@ -1689,19 +1536,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         },
         source: undpDataMeta
       },
-      {
-        id: "agriculture-chiangmai-highland",
-        layerId: "agriculture",
-        geometryType: "Point",
-        coordinates: [98.935, 18.86],
-        title: "Northern highland farming node",
-        description: "Highland horticulture and watershed-dependent farming cluster.",
-        properties: {
-          crop: "highland-mixed",
-          intensity: "cluster"
-        },
-        source: esaEodashboardMeta
-      }
     ]
   },
   {
@@ -1859,24 +1693,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: esaEodashboardMeta
       },
       {
-        id: "land-use-phuket-tourism-strip",
-        layerId: "land-use",
-        geometryType: "LineString",
-        coordinates: [
-          [98.24, 8.05],
-          [98.32, 7.96],
-          [98.37, 7.88],
-          [98.42, 7.79]
-        ],
-        title: "Phuket tourism strip",
-        description: "Coastal service corridor where tourism intensity shapes land use.",
-        properties: {
-          classification: "tourism-coast",
-          changeSignal: "seasonal"
-        },
-        source: undpDataMeta
-      },
-      {
         id: "land-use-khonkaen-civic-core",
         layerId: "land-use",
         geometryType: "Point",
@@ -1894,87 +1710,97 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
   {
     layerId: "weather",
     updatedAt: seededAt,
-    bounds: [7.0, 98.2, 18.9, 102.9],
+    bounds: [13.74, 100.49, 14.03, 100.61],
     source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live"),
     features: [
       {
-        id: "weather-bangkok",
+        id: "weather-bangkok-core",
         layerId: "weather",
         geometryType: "Point",
         coordinates: [100.5018, 13.7563],
-        title: "Bangkok",
-        description: "City weather watchpoint",
-        properties: { city: "Bangkok", temperatureC: 32, humidity: 60, windKph: 10, region: "Central" },
+        title: "Bangkok Core",
+        description: "Urban core weather watchpoint",
+        properties: { city: "Bangkok Core", temperatureC: 34, humidity: 58, windKph: 11, region: "Bangkok" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-chiang-mai",
+        id: "weather-mtt",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [98.9853, 18.7883],
-        title: "Chiang Mai",
-        description: "City weather watchpoint",
-        properties: { city: "Chiang Mai", temperatureC: 29, humidity: 52, windKph: 8, region: "North" },
+        coordinates: [100.5512, 13.9118],
+        title: "Muang Thong Thani",
+        description: "Estate weather watchpoint",
+        properties: { city: "Muang Thong Thani", temperatureC: 33, humidity: 63, windKph: 9, region: "Nonthaburi" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-khon-kaen",
+        id: "weather-impact-core",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [102.8236, 16.4322],
-        title: "Khon Kaen",
-        description: "City weather watchpoint",
-        properties: { city: "Khon Kaen", temperatureC: 31, humidity: 48, windKph: 12, region: "Northeast" },
+        coordinates: [100.5479, 13.9128],
+        title: "IMPACT Core",
+        description: "Convention campus weather watchpoint",
+        properties: { city: "IMPACT Core", temperatureC: 33, humidity: 64, windKph: 8, region: "Muang Thong Thani" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-phuket",
+        id: "weather-pak-kret",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [98.3923, 7.8804],
-        title: "Phuket",
-        description: "City weather watchpoint",
-        properties: { city: "Phuket", temperatureC: 30, humidity: 74, windKph: 15, region: "South" },
+        coordinates: [100.4976, 13.9062],
+        title: "Pak Kret",
+        description: "District weather watchpoint",
+        properties: { city: "Pak Kret", temperatureC: 32, humidity: 65, windKph: 10, region: "Nonthaburi" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-chon-buri",
+        id: "weather-chaeng-watthana",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [100.9847, 13.3611],
-        title: "Chon Buri",
-        description: "Industrial-coast weather watchpoint",
-        properties: { city: "Chon Buri", temperatureC: 33, humidity: 68, windKph: 14, region: "East" },
+        coordinates: [100.5676, 13.8945],
+        title: "Chaeng Watthana",
+        description: "North-Bangkok corridor weather watchpoint",
+        properties: { city: "Chaeng Watthana", temperatureC: 33, humidity: 61, windKph: 9, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-hat-yai",
+        id: "weather-lak-si",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [100.4747, 7.0084],
-        title: "Hat Yai",
-        description: "Southern urban weather watchpoint",
-        properties: { city: "Hat Yai", temperatureC: 31, humidity: 79, windKph: 11, region: "South" },
+        coordinates: [100.5798, 13.8864],
+        title: "Lak Si",
+        description: "North-Bangkok district weather watchpoint",
+        properties: { city: "Lak Si", temperatureC: 33, humidity: 60, windKph: 12, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-korat",
+        id: "weather-don-mueang",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [102.0978, 14.9799],
-        title: "Nakhon Ratchasima",
-        description: "Plateau weather watchpoint",
-        properties: { city: "Nakhon Ratchasima", temperatureC: 34, humidity: 43, windKph: 16, region: "Northeast" },
+        coordinates: [100.6074, 13.9154],
+        title: "Don Mueang",
+        description: "Airport-edge weather watchpoint",
+        properties: { city: "Don Mueang", temperatureC: 34, humidity: 57, windKph: 14, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-lampang",
+        id: "weather-nonthaburi-civic",
         layerId: "weather",
         geometryType: "Point",
-        coordinates: [99.4908, 18.2888],
-        title: "Lampang",
-        description: "Northern inland weather watchpoint",
-        properties: { city: "Lampang", temperatureC: 33, humidity: 46, windKph: 9, region: "North" },
+        coordinates: [100.5148, 13.8606],
+        title: "Nonthaburi Civic Center",
+        description: "Province administrative weather watchpoint",
+        properties: { city: "Nonthaburi Civic Center", temperatureC: 32, humidity: 62, windKph: 9, region: "Nonthaburi" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-pathumthani",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [100.525, 14.0208],
+        title: "Pathum Thani",
+        description: "Northern corridor weather watchpoint",
+        properties: { city: "Pathum Thani", temperatureC: 32, humidity: 59, windKph: 10, region: "Central" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       }
     ]
@@ -1982,87 +1808,97 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
   {
     layerId: "pollution",
     updatedAt: seededAt,
-    bounds: [7.0, 98.2, 18.9, 102.9],
+    bounds: [13.74, 100.49, 14.03, 100.61],
     source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live"),
     features: [
       {
-        id: "pollution-bangkok",
+        id: "pollution-bangkok-core",
         layerId: "pollution",
         geometryType: "Point",
         coordinates: [100.5018, 13.7563],
-        title: "Bangkok",
-        description: "City AQI watchpoint",
-        properties: { city: "Bangkok", aqi: 57, pm25: 11, pm10: 12, region: "Central" },
+        title: "Bangkok Core",
+        description: "Urban-core AQI watchpoint",
+        properties: { city: "Bangkok Core", aqi: 84, pm25: 26, pm10: 33, region: "Bangkok" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-chiang-mai",
+        id: "pollution-mtt",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [98.9853, 18.7883],
-        title: "Chiang Mai",
-        description: "City AQI watchpoint",
-        properties: { city: "Chiang Mai", aqi: 88, pm25: 29, pm10: 40, region: "North" },
+        coordinates: [100.5512, 13.9118],
+        title: "Muang Thong Thani",
+        description: "Estate AQI watchpoint",
+        properties: { city: "Muang Thong Thani", aqi: 96, pm25: 31, pm10: 37, region: "Nonthaburi" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-khon-kaen",
+        id: "pollution-impact-core",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [102.8236, 16.4322],
-        title: "Khon Kaen",
-        description: "City AQI watchpoint",
-        properties: { city: "Khon Kaen", aqi: 49, pm25: 9, pm10: 14, region: "Northeast" },
+        coordinates: [100.5479, 13.9128],
+        title: "IMPACT Core",
+        description: "Convention-campus AQI watchpoint",
+        properties: { city: "IMPACT Core", aqi: 92, pm25: 28, pm10: 35, region: "Muang Thong Thani" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-phuket",
+        id: "pollution-pak-kret",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [98.3923, 7.8804],
-        title: "Phuket",
-        description: "City AQI watchpoint",
-        properties: { city: "Phuket", aqi: 34, pm25: 6, pm10: 9, region: "South" },
+        coordinates: [100.4976, 13.9062],
+        title: "Pak Kret",
+        description: "District AQI watchpoint",
+        properties: { city: "Pak Kret", aqi: 88, pm25: 27, pm10: 34, region: "Nonthaburi" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-chon-buri",
+        id: "pollution-chaeng-watthana",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [100.9847, 13.3611],
-        title: "Chon Buri",
-        description: "Industrial-coast AQI watchpoint",
-        properties: { city: "Chon Buri", aqi: 63, pm25: 18, pm10: 27, region: "East" },
+        coordinates: [100.5676, 13.8945],
+        title: "Chaeng Watthana",
+        description: "North-Bangkok corridor AQI watchpoint",
+        properties: { city: "Chaeng Watthana", aqi: 94, pm25: 30, pm10: 36, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-hat-yai",
+        id: "pollution-lak-si",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [100.4747, 7.0084],
-        title: "Hat Yai",
-        description: "Southern AQI watchpoint",
-        properties: { city: "Hat Yai", aqi: 42, pm25: 8, pm10: 13, region: "South" },
+        coordinates: [100.5798, 13.8864],
+        title: "Lak Si",
+        description: "North-Bangkok district AQI watchpoint",
+        properties: { city: "Lak Si", aqi: 91, pm25: 29, pm10: 35, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-korat",
+        id: "pollution-don-mueang",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [102.0978, 14.9799],
-        title: "Nakhon Ratchasima",
-        description: "Plateau AQI watchpoint",
-        properties: { city: "Nakhon Ratchasima", aqi: 69, pm25: 22, pm10: 32, region: "Northeast" },
+        coordinates: [100.6074, 13.9154],
+        title: "Don Mueang",
+        description: "Airport-edge AQI watchpoint",
+        properties: { city: "Don Mueang", aqi: 86, pm25: 24, pm10: 31, region: "North Bangkok" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       },
       {
-        id: "pollution-lampang",
+        id: "pollution-nonthaburi-civic",
         layerId: "pollution",
         geometryType: "Point",
-        coordinates: [99.4908, 18.2888],
-        title: "Lampang",
-        description: "Northern AQI watchpoint",
-        properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" },
+        coordinates: [100.5148, 13.8606],
+        title: "Nonthaburi Civic Center",
+        description: "Province administrative AQI watchpoint",
+        properties: { city: "Nonthaburi Civic Center", aqi: 82, pm25: 23, pm10: 30, region: "Nonthaburi" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-pathumthani",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [100.525, 14.0208],
+        title: "Pathum Thani",
+        description: "Northern corridor AQI watchpoint",
+        properties: { city: "Pathum Thani", aqi: 73, pm25: 20, pm10: 27, region: "Central" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       }
     ]
@@ -2176,7 +2012,7 @@ export const resilience: ResilienceSnapshot = {
   },
   warnings: [
     { th: "เฝ้าระวังฝนสะสมเขตลุ่มต่ำ", en: "Watch low-lying areas for cumulative rainfall." },
-    { th: "เชียงใหม่ควรสื่อสาร PM2.5 แบบรายวัน", en: "Chiang Mai should continue daily PM2.5 advisories." }
+    { th: "เมืองทองธานี — ติดตาม PM2.5 และคุณภาพอากาศรายวัน", en: "Muang Thong Thani: monitor PM2.5 and air quality daily." }
   ],
   weatherTemperatureC: 31,
   aqi: 68,
@@ -2186,45 +2022,45 @@ export const resilience: ResilienceSnapshot = {
 export const briefing: BriefingNote = {
   id: "briefing-1",
   headline: {
-    th: "สถานะวันนี้: ความคืบหน้าเดินหน้า แต่ความยืดหยุ่นและอากาศยังต้องเฝ้าระวัง",
-    en: "Today: Progress is moving, but resilience and air quality still require attention."
+    th: "เมืองทองธานี: โครงการ SLIC และ IMPACT Mobility ก้าวหน้าตามแผน คุณภาพอากาศอยู่ในเกณฑ์ดี",
+    en: "MTT Update: SLIC hub and IMPACT Mobility on track — air quality within safe range."
   },
   body: {
-    th: "เมืองหลักยังเดินหน้าในด้านธรรมาภิบาลและบริการดิจิทัล ขณะที่ประเด็นคุณภาพอากาศและน้ำยังเป็นตัวแปรที่ต้องติดตามใกล้ชิด",
-    en: "Core cities are advancing in governance and service delivery, while air quality and water response remain the main watchpoints."
+    th: "โครงการด้านพลังงานและการเดินทางเมืองทองธานีคืบหน้าตามแผน ขณะที่ PM2.5 ยังอยู่ในเกณฑ์ที่ยอมรับได้สำหรับพื้นที่เมืองใหม่",
+    en: "Energy microgrid and mobility pilots are advancing, while PM2.5 remains within acceptable range for the new town district."
   },
   updatedAt: seededAt,
-  source: seedMeta("Smart City Thailand Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
+  source: seedMeta("depa / SLIC", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
 };
 
 export const overviewMetrics = [
   {
     id: "active-projects",
-    label: { th: "โครงการที่กำลังเดินหน้า", en: "Active Programs" },
-    value: 42,
-    displayValue: "42",
+    label: { th: "โครงการเมืองทองธานีที่กำลังเดินหน้า", en: "MTT Active Projects" },
+    value: 5,
+    displayValue: "5",
     trend: "up" as const,
-    deltaText: { th: "+6 จากเดือนก่อน", en: "+6 vs last month" },
+    deltaText: { th: "+2 จากไตรมาสก่อน", en: "+2 vs last quarter" },
     tone: "positive" as const,
-    meta: seedMeta("Smart City Thailand Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
+    meta: seedMeta("depa Smart City Office", "https://www.depa.or.th/th/smart-city-plan/smart-city-office")
   },
   {
-    id: "cities-tracked",
-    label: { th: "เมืองที่ติดตาม", en: "Cities Tracked" },
-    value: 26,
-    displayValue: "26",
-    trend: "steady" as const,
-    deltaText: { th: "คงที่", en: "Stable" },
-    tone: "neutral" as const,
-    meta: seedMeta("CityData Thailand", "https://www.citydata.in.th", "live")
+    id: "sensor-nodes",
+    label: { th: "จุดเซนเซอร์สิ่งแวดล้อม", en: "Environment Sensor Nodes" },
+    value: 18,
+    displayValue: "18",
+    trend: "up" as const,
+    deltaText: { th: "+8 จากรอบก่อน", en: "+8 new nodes" },
+    tone: "positive" as const,
+    meta: seedMeta("MTT Sensor Grid", "https://www.depa.or.th", "live")
   },
   {
     id: "resilience-watch",
     label: { th: "สัญญาณเฝ้าระวัง", en: "Watch Signals" },
-    value: 3,
-    displayValue: "03",
+    value: 1,
+    displayValue: "01",
     trend: "down" as const,
-    deltaText: { th: "ลดลง 1 จุด", en: "Down 1 from prior period" },
+    deltaText: { th: "ลดลงจาก 3 จุด", en: "Down from 3 signals" },
     tone: "warning" as const,
     meta: seedMeta("Open-Meteo", "https://open-meteo.com/en/docs", "live")
   },

@@ -239,7 +239,7 @@ export const store = {
         };
       }
 
-      if (metric.id === "cities-tracked") {
+      if (metric.id === "cities-tracked" || metric.id === "sensor-nodes") {
         return {
           ...metric,
           value: coverageCount,

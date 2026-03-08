@@ -15,6 +15,7 @@ import { syncTalkwalkerAlerts } from "../adapters/talkwalkerAlertsAdapter.js";
 import { syncTimeSnapshot } from "../adapters/timeSyncService.js";
 import { syncUrbanis } from "../adapters/urbanisAdapter.js";
 import { syncYouTubeSignals } from "../adapters/youtubeSignalsAdapter.js";
+import { runIticSync } from "../adapters/iticAdapter.js";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { store } from "../data/store.js";
 
@@ -36,7 +37,8 @@ export async function runSourceSync() {
     syncOpenMeteoWeather(),
     syncOpenMeteoAirQuality(),
     syncOpenAq(),
-    syncTimeSnapshot()
+    syncTimeSnapshot(),
+    runIticSync()
   ]);
 
   const results: AdapterSyncResult[] = settled.map((entry, index) => {
@@ -61,7 +63,8 @@ export async function runSourceSync() {
       "open-meteo-weather",
       "open-meteo-air",
       "openaq",
-      "time-sync"
+      "time-sync",
+      "itic-traffic"
     ];
 
     return {

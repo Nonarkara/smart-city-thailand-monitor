@@ -98,7 +98,7 @@ export async function syncOpenMeteoAirQuality() {
   return buildResult({
     sourceId: "open-meteo-air",
     status: "live",
-    message: `Air-quality feed refreshed for ${liveCities.length} Thai cities.`,
+    message: `Air-quality feed refreshed for ${liveCities.length} Bangkok metro monitoring points.`,
     sourceUrl: "https://open-meteo.com/en/docs/air-quality-api",
     mapFeatureCollections: [mapCollection],
     resiliencePatch: {

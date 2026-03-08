@@ -98,7 +98,7 @@ export async function syncOpenMeteoWeather() {
   return buildResult({
     sourceId: "open-meteo-weather",
     status: "live",
-    message: `Weather feed refreshed for ${liveCities.length} Thai cities.`,
+    message: `Weather feed refreshed for ${liveCities.length} Bangkok metro monitoring points.`,
     sourceUrl: "https://open-meteo.com/en/docs",
     mapFeatureCollections: [mapCollection],
     resiliencePatch: {
