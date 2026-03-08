@@ -36,104 +36,94 @@ export interface MonitoringCity {
 
 export const thailandMonitoringCities: MonitoringCity[] = [
   {
-    slug: "muang-thong-thani",
-    labelTh: "เมืองทองธานี",
-    labelEn: "Muang Thong Thani",
-    regionTh: "นนทบุรี",
-    regionEn: "Nonthaburi",
-    lat: 13.9118,
-    lon: 100.5512,
-    population: 300000
-  },
-  {
-    slug: "impact-core",
-    labelTh: "ศูนย์ประชุมอิมแพ็ค",
-    labelEn: "IMPACT Core",
-    regionTh: "เมืองทองธานี",
-    regionEn: "Muang Thong Thani",
-    lat: 13.9128,
-    lon: 100.5479,
-    population: 90000
-  },
-  {
-    slug: "pak-kret",
-    labelTh: "ปากเกร็ด",
-    labelEn: "Pak Kret",
-    regionTh: "นนทบุรี",
-    regionEn: "Nonthaburi",
-    lat: 13.9062,
-    lon: 100.4976,
-    population: 210000
-  },
-  {
-    slug: "chaeng-watthana",
-    labelTh: "แจ้งวัฒนะ",
-    labelEn: "Chaeng Watthana",
-    regionTh: "กรุงเทพเหนือ",
-    regionEn: "North Bangkok",
-    lat: 13.8945,
-    lon: 100.5676,
-    population: 180000
-  },
-  {
-    slug: "lak-si",
-    labelTh: "หลักสี่",
-    labelEn: "Lak Si",
-    regionTh: "กรุงเทพเหนือ",
-    regionEn: "North Bangkok",
-    lat: 13.8864,
-    lon: 100.5798,
-    population: 100000
-  },
-  {
-    slug: "don-mueang",
-    labelTh: "ดอนเมือง",
-    labelEn: "Don Mueang",
-    regionTh: "กรุงเทพเหนือ",
-    regionEn: "North Bangkok",
-    lat: 13.9154,
-    lon: 100.6074,
-    population: 160000
-  },
-  {
-    slug: "nonthaburi-civic",
-    labelTh: "ศูนย์ราชการนนทบุรี",
-    labelEn: "Nonthaburi Civic Center",
-    regionTh: "นนทบุรี",
-    regionEn: "Nonthaburi",
-    lat: 13.8606,
-    lon: 100.5148,
-    population: 120000
-  },
-  {
-    slug: "ngam-wong-wan",
-    labelTh: "งามวงศ์วาน",
-    labelEn: "Ngam Wong Wan",
-    regionTh: "นนทบุรี",
-    regionEn: "Nonthaburi",
-    lat: 13.8556,
-    lon: 100.5411,
-    population: 140000
-  },
-  {
-    slug: "pathumthani",
-    labelTh: "ปทุมธานี",
-    labelEn: "Pathum Thani",
+    slug: "bangkok",
+    labelTh: "กรุงเทพมหานคร",
+    labelEn: "Bangkok",
     regionTh: "ภาคกลาง",
     regionEn: "Central",
-    lat: 14.0208,
-    lon: 100.525,
-    population: 1200000
-  },
-  {
-    slug: "bangkok-core",
-    labelTh: "กรุงเทพชั้นใน",
-    labelEn: "Bangkok Core",
-    regionTh: "กรุงเทพมหานคร",
-    regionEn: "Bangkok",
     lat: 13.7563,
     lon: 100.5018,
     population: 10539000
+  },
+  {
+    slug: "chiang-mai",
+    labelTh: "เชียงใหม่",
+    labelEn: "Chiang Mai",
+    regionTh: "ภาคเหนือ",
+    regionEn: "North",
+    lat: 18.7883,
+    lon: 98.9853,
+    population: 1270000
+  },
+  {
+    slug: "khon-kaen",
+    labelTh: "ขอนแก่น",
+    labelEn: "Khon Kaen",
+    regionTh: "ภาคตะวันออกเฉียงเหนือ",
+    regionEn: "Northeast",
+    lat: 16.4322,
+    lon: 102.8236,
+    population: 412000
+  },
+  {
+    slug: "phuket",
+    labelTh: "ภูเก็ต",
+    labelEn: "Phuket",
+    regionTh: "ภาคใต้",
+    regionEn: "South",
+    lat: 7.8804,
+    lon: 98.3923,
+    population: 417000
+  },
+  {
+    slug: "chon-buri",
+    labelTh: "ชลบุรี",
+    labelEn: "Chon Buri",
+    regionTh: "ภาคตะวันออก",
+    regionEn: "East",
+    lat: 13.3611,
+    lon: 100.9847,
+    population: 1550000
+  },
+  {
+    slug: "hat-yai",
+    labelTh: "หาดใหญ่",
+    labelEn: "Hat Yai",
+    regionTh: "ภาคใต้",
+    regionEn: "South",
+    lat: 7.0084,
+    lon: 100.4747,
+    population: 415000
+  },
+  {
+    slug: "phrae",
+    labelTh: "แพร่",
+    labelEn: "Phrae",
+    regionTh: "ภาคเหนือ",
+    regionEn: "North",
+    lat: 18.1459,
+    lon: 100.1408,
+    population: 107000
+  },
+  {
+    slug: "lampang",
+    labelTh: "ลำปาง",
+    labelEn: "Lampang",
+    regionTh: "ภาคเหนือ",
+    regionEn: "North",
+    lat: 18.2888,
+    lon: 99.4908,
+    population: 120000
+  },
+  {
+    slug: "nakhon-ratchasima",
+    labelTh: "นครราชสีมา",
+    labelEn: "Nakhon Ratchasima",
+    regionTh: "ภาคตะวันออกเฉียงเหนือ",
+    regionEn: "Northeast",
+    lat: 14.9799,
+    lon: 102.0978,
+    population: 2630000
   }
 ];
 

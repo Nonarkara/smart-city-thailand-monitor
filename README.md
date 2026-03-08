@@ -46,9 +46,6 @@ npm run dev:api
 npm run dev:web
 ```
 
-The frontend now calls relative `/api` paths by default. During local `dev` and `preview`, Vite proxies those requests to `http://127.0.0.1:4001` unless you override it.
-If another local project is already using `4001`, set `VITE_API_PROXY_TARGET=http://127.0.0.1:<your-api-port>` before starting the web app so the dashboard still points at this repo's API.
-
 4. Optionally run the worker manually:
 
 ```bash
@@ -71,8 +68,6 @@ Copy `.env.example` to `.env` and set:
 - `NEWS_API_PAGE_SIZE` to control per-query article count
 - `ALLOW_LIVE_FETCH=true` when you want the adapters to hit live sources
 - `SYNC_INTERVAL_MS=300000` to keep the API-side live refresh on a 5-minute cadence
-- `VITE_API_BASE_URL` only when you want the browser to call a non-local API directly. Leave it blank locally to use the built-in Vite `/api` proxy.
-- `VITE_API_PROXY_TARGET` only when local `dev` or `preview` should proxy `/api` to a backend port other than `http://127.0.0.1:4001`
 - source-specific endpoints only when you have confirmed stable machine-readable URLs
 
 ## Security note
