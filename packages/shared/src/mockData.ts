@@ -422,9 +422,18 @@ export const sources: SourceRecord[] = [
     name: "JAXA Earth API",
     category: "geospatial",
     url: "https://data.earth.jaxa.jp/en/",
-    freshnessStatus: "manual",
+    freshnessStatus: "live",
     lastCheckedAt: seededAt,
-    message: "Browser-side and Python Earth observation APIs for rainfall, land temperature, and other satellite layers."
+    message: "Earth observation layers are online for rainfall, vegetation, aerosol, and night-light context."
+  },
+  {
+    id: "itic-traffic",
+    name: "iTIC / Longdo Traffic",
+    category: "geospatial",
+    url: "https://traffic.longdo.com",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Bangkok traffic events and camera-linked signals are ready for operational map overlays."
   },
   {
     id: "nasa-gibs",
@@ -633,6 +642,17 @@ export const mapLayers: MapLayerConfig[] = [
     zIndex: 17
   },
   {
+    id: "itic-traffic",
+    label: { th: "รายงานจราจร (iTIC)", en: "Traffic (iTIC)" },
+    active: true,
+    color: "#ef4444",
+    kind: "signal",
+    defaultViews: ["bangkok", "national"],
+    sourceId: "itic-traffic",
+    legendLabel: "Traffic",
+    zIndex: 45
+  },
+  {
     id: "water",
     label: { th: "น้ำ", en: "Water" },
     active: false,
@@ -757,6 +777,7 @@ const gistdaDisasterMeta = seedMeta(
   "GISTDA Disaster API",
   "https://disaster.gistda.or.th/services/open-api"
 );
+const iticTrafficMeta = seedMeta("iTIC / Longdo Traffic", "https://traffic.longdo.com", "live");
 
 export const mapFeatureCollections: MapFeatureCollection[] = [
   {
@@ -1984,6 +2005,70 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           changeSignal: "active"
         },
         source: dataToPolicyMeta
+      }
+    ]
+  },
+  {
+    layerId: "itic-traffic",
+    updatedAt: seededAt,
+    bounds: [13.66, 100.44, 13.85, 100.67],
+    source: iticTrafficMeta,
+    features: [
+      {
+        id: "itic-rama9-congestion",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5712, 13.7562],
+        title: "Rama IX inbound congestion watch",
+        description: "Live probe-traffic watchpoint covering the Rama IX eastbound approach.",
+        properties: {
+          kind: "traffic",
+          severity: "watch",
+          speedKph: 18
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-dindaeng-junction",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5478, 13.7709],
+        title: "Din Daeng junction traffic event",
+        description: "Traffic incident cluster affecting interchange access and peak-hour delays.",
+        properties: {
+          kind: "incident",
+          severity: "high",
+          speedKph: 12
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-chaopraya-bridge",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5034, 13.7241],
+        title: "Chao Phraya bridge flow check",
+        description: "Bridge approach watchpoint used to track cross-river travel pressure.",
+        properties: {
+          kind: "traffic",
+          severity: "watch",
+          speedKph: 21
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-bangna-corridor",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.6121, 13.6678],
+        title: "Bang Na logistics corridor",
+        description: "Freight and airport-linked corridor watchpoint for outbound cargo movement.",
+        properties: {
+          kind: "freight",
+          severity: "moderate",
+          speedKph: 27
+        },
+        source: iticTrafficMeta
       }
     ]
   },

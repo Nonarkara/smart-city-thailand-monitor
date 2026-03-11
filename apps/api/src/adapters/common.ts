@@ -124,6 +124,16 @@ export const thailandMonitoringCities: MonitoringCity[] = [
     lat: 14.9799,
     lon: 102.0978,
     population: 2630000
+  },
+  {
+    slug: "muang-thong-thani",
+    labelTh: "เมืองทองธานี",
+    labelEn: "Muang Thong Thani",
+    regionTh: "นนทบุรี",
+    regionEn: "Nonthaburi",
+    lat: 13.9118,
+    lon: 100.5512,
+    population: 300000
   }
 ];
 

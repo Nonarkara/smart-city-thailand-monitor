@@ -595,6 +595,16 @@ export const toolkitLinks: ToolkitLink[] = [
     }
   },
   {
+    id: "tool-itic-foundation",
+    name: "iTIC Foundation",
+    href: "https://iticfoundation.org/en/open-data-sharing/",
+    kind: "Open Data",
+    description: {
+      th: "แหล่งข้อมูลจราจรอัจฉริยะของไทย พร้อม open-data archives สำหรับ location table ประวัติการจราจร และ probe data แบบติดต่อขอใช้งาน",
+      en: "Thailand intelligent traffic source with open-data archives for location tables, traffic history, and probe data through request-based access."
+    }
+  },
+  {
     id: "tool-undp-data",
     name: "UNDP Data Hub",
     href: "https://data.undp.org/access-all-data",

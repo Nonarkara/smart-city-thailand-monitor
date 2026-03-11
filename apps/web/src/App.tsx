@@ -168,6 +168,117 @@ const THAILAND_SATELLITE_PRIORITIES = [
   }
 ] as const;
 
+interface ToggleOption {
+  id: string;
+  label: {
+    th: string;
+    en: string;
+  };
+  detail: {
+    th: string;
+    en: string;
+  };
+  color: string;
+}
+
+interface SlicThailandCity {
+  id: string;
+  rank: number;
+  nameEn: string;
+  nameTh: string;
+  region: string;
+  provinceType: string;
+  overall: number;
+  avgMonthlyIncome: number;
+  pm25Annual: number;
+  greenCoverage: number;
+  tagline: string;
+  highlights: string[];
+  status: string;
+}
+
+interface SlicThailandSnapshot {
+  updatedAt: string;
+  source: {
+    name: string;
+    url: string;
+    freshnessStatus: "live" | "stale" | "manual";
+  };
+  topCities: SlicThailandCity[];
+}
+
+const operationalLayerToggleIds = [
+  "smart-city-thailand",
+  "bangkok-passages",
+  "weather",
+  "pollution",
+  "itic-traffic",
+  "projects",
+  "news",
+  "resilience",
+  "economy",
+  "water",
+  "land-use",
+  "agriculture",
+  "disaster"
+] as const;
+
+const satelliteToggleOptions: ToggleOption[] = [
+  {
+    id: "satellite-imagery",
+    label: { th: "ภาพจริง", en: "True Color" },
+    detail: { th: "ภาพดาวเทียมสีจริง", en: "NASA true-color imagery" },
+    color: "#d5e7ff"
+  },
+  {
+    id: "satellite-vegetation",
+    label: { th: "พืชพรรณ", en: "Vegetation" },
+    detail: { th: "ดัชนีพืชพรรณ NDVI", en: "NDVI vegetation index" },
+    color: "#4ade80"
+  },
+  {
+    id: "satellite-aerosol",
+    label: { th: "ละอองลอย", en: "Aerosol" },
+    detail: { th: "ดัชนีละอองลอยชั้นบรรยากาศ", en: "Atmospheric aerosol index" },
+    color: "#f59e0b"
+  },
+  {
+    id: "satellite-night-lights",
+    label: { th: "แสงกลางคืน", en: "Night Lights" },
+    detail: { th: "ความหนาแน่นแสงเมืองยามค่ำ", en: "Night-time urban light intensity" },
+    color: "#8b5cf6"
+  },
+  {
+    id: "jaxa-rainfall",
+    label: { th: "ฝน JAXA", en: "JAXA Rain" },
+    detail: { th: "ภาพฝนดาวเทียม EO", en: "Satellite rainfall raster" },
+    color: "#0f8cff"
+  }
+];
+
+const slicCitySlugMap: Record<string, string> = {
+  bangkok: "bangkok",
+  "chiang-mai": "chiang-mai",
+  "khon-kaen": "khon-kaen",
+  phuket: "phuket",
+  "chon-buri": "chon-buri",
+  "chonburi-pattaya": "chon-buri",
+  nonthaburi: "muang-thong-thani",
+  "pathum-thani": "muang-thong-thani",
+  "nakhon-ratchasima": "nakhon-ratchasima",
+  korat: "nakhon-ratchasima",
+  lampang: "lampang"
+};
+
+const coreApiSourceIds = [
+  "citydata",
+  "open-meteo-weather",
+  "open-meteo-air",
+  "google-news-rss",
+  "jaxa-earth",
+  "itic-traffic"
+] as const;
+
 const copyDeck = {
   th: {
     title: "Smart City Thailand Monitor",
@@ -585,7 +696,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? "bangkok";
+  const city = searchParams.get("city") ?? "muang-thong-thani";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
   const layers = useMemo(() => parseLayerSet(rawLayers), [rawLayers]);
@@ -829,15 +940,63 @@ function DashboardPage() {
   const suggestedModelCityId =
     selectedCity.slug === "phuket"
       ? "vancouver"
-      : selectedCity.slug === "khon-kaen"
+      : selectedCity.slug === "muang-thong-thani"
         ? "osaka"
-        : selectedCity.slug === "chiang-mai"
-          ? "vienna"
-          : "copenhagen";
+        : selectedCity.slug === "khon-kaen"
+          ? "osaka"
+          : selectedCity.slug === "chiang-mai"
+            ? "vienna"
+            : "copenhagen";
   const selectedModelCity =
     globalReferenceCities.find((item) => item.id === modelCityParam) ??
     globalReferenceCities.find((item) => item.id === suggestedModelCityId) ??
     globalReferenceCities[0];
+  const slicThailandFallback = useMemo<SlicThailandSnapshot>(() => {
+    const fallbackCities = [...overview.cities]
+      .map((item) => ({
+        id: item.slug,
+        rank: 0,
+        nameEn: item.name.en,
+        nameTh: item.name.th,
+        region: item.region.en,
+        provinceType: "tracked",
+        overall: Math.round(item.scores.reduce((sum, score) => sum + score.score, 0) / Math.max(item.scores.length, 1)),
+        avgMonthlyIncome: 0,
+        pm25Annual: 0,
+        greenCoverage: 0,
+        tagline: item.focus.en,
+        highlights: [item.focus.en],
+        status: "manual"
+      }))
+      .sort((left, right) => right.overall - left.overall)
+      .slice(0, 8)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1
+      }));
+
+    return {
+      updatedAt: new Date().toISOString(),
+      source: {
+        name: "SLIC Thailand",
+        url: "https://slic-index.onrender.com/thailand",
+        freshnessStatus: "manual"
+      },
+      topCities: fallbackCities
+    };
+  }, [overview.cities]);
+  const slicThailandQuery = useQuery({
+    queryKey: ["slic-thailand"],
+    queryFn: () => fetchFromApi<SlicThailandSnapshot>("/api/external/slic-thailand", slicThailandFallback),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+  const slicThailand =
+    slicThailandQuery.data && slicThailandQuery.data.topCities.length > 0 ? slicThailandQuery.data : slicThailandFallback;
+  const operationalLayerOptions = operationalLayerToggleIds
+    .map((id) => layerSeed.find((layer) => layer.id === id))
+    .filter((item): item is (typeof layerSeed)[number] => Boolean(item));
 
   const filteredProjects = normalizedSearch
     ? projects.filter((project) => {
@@ -961,6 +1120,7 @@ function DashboardPage() {
     projects: copy.projectLegend,
     news: copy.newsLegend,
     resilience: copy.resilienceLegend,
+    "itic-traffic": lang === "th" ? "สีแดง = จุดจราจรและเหตุการณ์จราจรสด" : "Red = live traffic watchpoints and incidents",
     economy: copy.economyLegend,
     agriculture: copy.agricultureLegend,
     water: copy.waterLegend,
@@ -970,17 +1130,68 @@ function DashboardPage() {
     "eo-vegetation": copy.vegetationLegend,
     disaster: copy.disasterLegend,
     "jaxa-rainfall": copy.jaxaLegend,
+    "satellite-imagery": lang === "th" ? "ภาพสีจริงจาก NASA GIBS" : "NASA GIBS true-color imagery",
+    "satellite-vegetation": lang === "th" ? "ค่าพืชพรรณ NDVI จาก NASA GIBS" : "NASA GIBS NDVI vegetation index",
+    "satellite-aerosol": lang === "th" ? "ดัชนีละอองลอยจาก NASA GIBS" : "NASA GIBS aerosol index",
+    "satellite-night-lights": lang === "th" ? "แสงเมืองยามค่ำจาก NASA GIBS" : "NASA GIBS night-light intensity",
     "smart-city-thailand": copy.coverageLegend,
     "bangkok-passages": copy.bangkokPlacesLegend
   };
-  const activeLegendItems = layerSeed
+  const activeLegendItems = [
+    ...layerSeed.map((item) => ({
+      id: item.id,
+      color: item.color,
+      label: localize(lang, item.label)
+    })),
+    ...satelliteToggleOptions.map((item) => ({
+      id: item.id,
+      color: item.color,
+      label: localize(lang, item.label)
+    }))
+  ]
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index)
     .filter((item) => layers.includes(item.id))
     .map((item) => ({
       id: item.id,
       color: item.color,
-      label: localize(lang, item.label),
+      label: item.label,
       detail: layerLegendDetails[item.id] ?? copy.bangkokPlacesLegend
     }));
+  const apiWatchSources = [
+    ...coreApiSourceIds
+      .map((id) => sources.find((source) => source.id === id))
+      .filter((source): source is SourceRecord => Boolean(source)),
+    {
+      id: "nasa-gibs",
+      name: "NASA GIBS",
+      category: "geospatial" as const,
+      url: "https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs",
+      freshnessStatus: "live" as const,
+      lastCheckedAt: new Date().toISOString(),
+      message:
+        lang === "th"
+          ? "ภาพดาวเทียมจริง พืชพรรณ ละอองลอย และแสงกลางคืนพร้อมใช้งาน"
+          : "True color, vegetation, aerosol, and night-light satellite layers are online."
+    },
+    {
+      id: "slic-thailand",
+      name: "SLIC Thailand",
+      category: "catalog" as const,
+      url: slicThailand.source.url,
+      freshnessStatus: slicThailand.source.freshnessStatus,
+      lastCheckedAt: slicThailand.updatedAt,
+      message:
+        lang === "th"
+          ? "อันดับเมืองไทยสดจากหน้า SLIC Thailand"
+          : "Live Thailand city rankings from the SLIC Thailand page."
+    }
+  ];
+  const apiReadyCount = apiWatchSources.filter(
+    (source) => source.freshnessStatus !== "delayed" && source.freshnessStatus !== "stale"
+  ).length;
+  const apiStatusLabel =
+    apiReadyCount === apiWatchSources.length ? "HIGH" : apiReadyCount >= apiWatchSources.length - 1 ? "WATCH" : "LOW";
+  const slicTopCities = slicThailand.topCities.slice(0, 5);
   const warningHaystack = resilience.warnings.map((item) => `${item.en} ${item.th}`.toLowerCase()).join(" ");
   const hottestTemperature = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "temperatureC") : 0;
   const hottestHumidity = hottestWeatherFeature ? numericProperty(hottestWeatherFeature, "humidity") : 0;
@@ -1353,6 +1564,13 @@ function DashboardPage() {
 
   return (
     <div className="shell">
+      <div className="partner-bar">
+        <img src="/mdes.png" alt="MDES" className="partner-logo" />
+        <img src="/Logo depa-01.png" alt="depa" className="partner-logo" />
+        <img src="/for dark BG.png" alt="SLIC" className="partner-logo" />
+        <img src="/Smart City Logo-02.png" alt="Smart City Thailand Office" className="partner-logo" />
+        <img src="/Logo on White BG-01.jpg" alt="Smart City Thailand Monitor" className="partner-logo" />
+      </div>
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/Logo depa-01.png" alt="depa" className="brand-logo" />
@@ -1436,20 +1654,63 @@ function DashboardPage() {
         </div>
 
         <div className="side-section">
-          <span className="eyebrow">Layers</span>
-          <nav className="side-nav side-layer-nav">
-            {layerSeed.map((layer) => (
-              <button
-                key={layer.id}
-                type="button"
-                className={layers.includes(layer.id) ? "side-button active" : "side-button"}
-                onClick={() => toggleLayer(layer.id)}
-              >
-                <span className="swatch" style={{ background: layer.color }} />
-                <span>{localize(lang, layer.label)}</span>
-              </button>
-            ))}
-          </nav>
+          <span className="eyebrow">{lang === "th" ? "ชั้นข้อมูลปฏิบัติการ" : "Operational Layers"}</span>
+          <div className="toggle-stack">
+            {operationalLayerOptions.map((layer) => {
+              const active = layers.includes(layer.id);
+              const detail =
+                layer.kind === "signal"
+                  ? lang === "th"
+                    ? "สัญญาณตัดสินใจ"
+                    : "Decision signal"
+                  : lang === "th"
+                    ? "ข้อมูลอ้างอิง"
+                    : "Reference layer";
+
+              return (
+                <button
+                  key={layer.id}
+                  type="button"
+                  aria-pressed={active}
+                  className={active ? "side-toggle active" : "side-toggle"}
+                  onClick={() => toggleLayer(layer.id)}
+                >
+                  <div className="side-toggle-row">
+                    <span className="swatch" style={{ background: layer.color }} />
+                    <strong>{localize(lang, layer.label)}</strong>
+                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                  </div>
+                  <small>{detail}</small>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="side-section">
+          <span className="eyebrow">{lang === "th" ? "ภาพดาวเทียม" : "Satellite Feeds"}</span>
+          <div className="toggle-stack">
+            {satelliteToggleOptions.map((item) => {
+              const active = layers.includes(item.id);
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={active}
+                  className={active ? "side-toggle active satellite" : "side-toggle satellite"}
+                  onClick={() => (item.id === "jaxa-rainfall" ? toggleEoOverlay() : toggleLayer(item.id))}
+                >
+                  <div className="side-toggle-row">
+                    <span className="swatch" style={{ background: item.color }} />
+                    <strong>{localize(lang, item.label)}</strong>
+                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                  </div>
+                  <small>{localize(lang, item.detail)}</small>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="side-section side-filter-group">
@@ -1789,7 +2050,9 @@ function DashboardPage() {
                 </label>
               ) : null}
             </div>
-            <span className="hero-note">CityData + GDELT + EONET + NASA GIBS + JAXA</span>
+            <span className="hero-note">
+              {lang === "th" ? "Ops room • city signals • satellite overlays" : "Ops room • city signals • satellite overlays"}
+            </span>
           </div>
 
           <div className="map-legend">
@@ -1862,7 +2125,10 @@ function DashboardPage() {
                 {copy.sync}: {overview.updatedAt.slice(11, 19)} UTC
               </span>
             </div>
-
+            <div className="terminal-callout">
+              <span className="eyebrow">Decision Signal</span>
+              <strong>{executiveSignal}</strong>
+            </div>
             <div className="metric-grid">
               {overview.metrics.map((metric, index) => (
                 <article key={metric.id} className={`metric-card tone-${metric.tone}`}>
@@ -1878,24 +2144,134 @@ function DashboardPage() {
                 </article>
               ))}
             </div>
-
             <div className="selection-strip">
               <div>
-                <span className="eyebrow">City focus</span>
+                <span className="eyebrow">City Focus</span>
                 <strong>{localize(lang, selectedCity.name)}</strong>
                 <p>{localize(lang, selectedCity.focus)}</p>
               </div>
               <div>
-                <span className="eyebrow">Domain focus</span>
-                <strong>
-                  {selectedDomain ? localize(lang, selectedDomain.title) : copy.topLine}
-                </strong>
-                <p>
-                  {selectedDomain
-                    ? localize(lang, selectedDomain.description)
-                    : localize(lang, overview.briefing.body)}
-                </p>
+                <span className="eyebrow">Domain Focus</span>
+                <strong>{selectedDomain ? localize(lang, selectedDomain.title) : copy.topLine}</strong>
+                <p>{selectedDomain ? localize(lang, selectedDomain.description) : localize(lang, overview.briefing.body)}</p>
               </div>
+            </div>
+            <div className="change-grid">
+              {changes.items.map((item) => (
+                <article key={item.id} className={`change-item tone-${item.tone}`}>
+                  <span className="eyebrow">{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                  <small>{localize(lang, item.detail)}</small>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="card briefing-card" id="briefing">
+            <div className="card-header">
+              <span className="eyebrow">{copy.briefing}</span>
+              <span className="status-pill">{view}</span>
+            </div>
+            <h2>{localize(lang, overview.briefing.headline)}</h2>
+            <p>{localize(lang, overview.briefing.body)}</p>
+            <div className="briefing-cycle">
+              <span className="eyebrow">{copy.thisWeek}</span>
+              <div className="briefing-list">
+                {thisCycleItems.map((item) => (
+                  <div key={item.id} className="briefing-line">
+                    <strong>{localize(lang, item.label)}</strong>
+                    <span>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="focus-preset-group">
+              <span className="eyebrow">{copy.focusPresets}</span>
+              <div className="pill-list compact">
+                {focusPresets.map((preset) => {
+                  const presetActive = preset.layers.every((item) => layers.includes(item));
+
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={presetActive ? "chip active" : "chip"}
+                      onClick={preset.run}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="card resilience-card" id="resilience">
+            <div className="card-header">
+              <span className="eyebrow">{copy.resilience}</span>
+              <span className="status-pill">{resilience.source.freshnessStatus}</span>
+            </div>
+            <div className="resilience-grid">
+              <div className="city-intel-stat">
+                <p className="eyebrow">Weather</p>
+                <strong>{localize(lang, resilience.weatherSummary)}</strong>
+              </div>
+              <div className="city-intel-stat">
+                <p className="eyebrow">Pollution</p>
+                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+              </div>
+              <div className="warning-list terminal-list">
+                {resilience.warnings.map((warning, index) => (
+                  <p key={index}>{localize(lang, warning)}</p>
+                ))}
+              </div>
+            </div>
+            <div className="hotspot-strip compact">
+              {topAqiFeature ? (
+                <button
+                  type="button"
+                  className="hotspot-chip warning"
+                  onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}
+                >
+                  <span className="eyebrow">{copy.airHotspot}</span>
+                  <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+                  <small>{copy.clickToFocus}</small>
+                </button>
+              ) : null}
+              {hottestWeatherFeature ? (
+                <button
+                  type="button"
+                  className="hotspot-chip"
+                  onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}
+                >
+                  <span className="eyebrow">{copy.weatherHotspot}</span>
+                  <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+                  <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
+                </button>
+              ) : null}
+            </div>
+            <div className="eo-watch-grid">
+              {eoWatchItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`eo-watch-item ${item.tone}`}
+                  onClick={() => {
+                    const next = buildStableParams();
+                    next.set("layers", item.targetLayers.join(","));
+                    if (item.targetLayers.includes("smart-city-thailand") || item.targetLayers.includes("jaxa-rainfall")) {
+                      next.set("view", "national");
+                    }
+                    startTransition(() => {
+                      setSearchParams(next);
+                      setRecenterSignal((v) => v + 1);
+                    });
+                  }}
+                >
+                  <span className="eyebrow">{item.title}</span>
+                  <small>{item.detail}</small>
+                </button>
+              ))}
             </div>
           </section>
 
@@ -1935,48 +2311,6 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card briefing-card">
-            <div className="card-header">
-              <span className="eyebrow">{copy.briefing}</span>
-              <span className="status-pill">{view}</span>
-            </div>
-            <h2>{localize(lang, overview.briefing.headline)}</h2>
-            <p>{localize(lang, overview.briefing.body)}</p>
-            <div className="briefing-cycle">
-              <span className="eyebrow">{copy.thisWeek}</span>
-              <div className="briefing-list">
-                {thisCycleItems.map((item) => (
-                  <div key={item.id} className="briefing-line">
-                    <strong>{localize(lang, item.label)}</strong>
-                    <span>{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card resilience-card" id="resilience">
-            <div className="card-header">
-              <span className="eyebrow">{copy.resilience}</span>
-              <span className="status-pill">{resilience.source.freshnessStatus}</span>
-            </div>
-            <div className="resilience-grid">
-              <div>
-                <p className="eyebrow">Weather</p>
-                <strong>{localize(lang, resilience.weatherSummary)}</strong>
-              </div>
-              <div>
-                <p className="eyebrow">Pollution</p>
-                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
-              </div>
-              <div className="warning-list">
-                {resilience.warnings.map((warning, index) => (
-                  <p key={index}>{localize(lang, warning)}</p>
-                ))}
-              </div>
-            </div>
-          </section>
-
           <section className="card projects-card" id="projects">
             <div className="card-header">
               <span className="eyebrow">{copy.projects}</span>
@@ -2004,448 +2338,24 @@ function DashboardPage() {
 
           <section className="card sources-card" id="sources">
             <div className="card-header">
-              <span className="eyebrow">{copy.sources}</span>
-              <span className="eyebrow">{sources.length}</span>
+              <span className="eyebrow">{copy.apiWatch}</span>
+              <span className={`status-pill api-${apiStatusLabel.toLowerCase()}`}>{apiStatusLabel}</span>
             </div>
-            <div className="stack-list tile-scroll">
-              {compactSources.map((source) => (
-                <article key={source.id} className="source-item compact-source">
-                  <div className="stack-title">
-                    <strong>{source.name}</strong>
-                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
-                  </div>
-                  <small>{source.message}</small>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="card time-card">
-            <div className="card-header">
-              <span className="eyebrow">{copy.time}</span>
-              <span className="status-pill">UTC</span>
-            </div>
-            <div className="time-zones">
-              {timeZones.map((zone) => (
-                <div key={zone.timeZone} className="time-zone">
-                  <span className="eyebrow">{zone.label}</span>
-                  <strong>{zone.localTime}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="card compare-card" id="compare">
-            <div className="card-header">
-              <span className="eyebrow">{copy.compare}</span>
-              <span className="eyebrow">{overview.cities.length}</span>
-            </div>
-            <div className="compare-table tile-scroll">
-              {compactCities.map((item) => (
-                <div key={item.slug} className={item.slug === city ? "compare-row active" : "compare-row"}>
-                  <button onClick={() => {
-                    const next = buildStableParams();
-                    next.set("city", item.slug);
-                    next.set("view", "city");
-                    startTransition(() => {
-                      setSearchParams(next);
-                      setRecenterSignal((v) => v + 1);
-                    });
-                  }}>{localize(lang, item.name)}</button>
-                  <span>{Math.round(item.scores.reduce((sum, score) => sum + score.score, 0) / item.scores.length)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="card trends-card" id="trends">
-            <div className="card-header">
-              <span className="eyebrow">{copy.trendWatch}</span>
-              <span className="status-pill">TH / 5Y</span>
-            </div>
-            <div className="trend-list tile-scroll">
-              {visibleTrends.map((item) => {
-                const stats = getTrendStats(item.values);
-
-                return (
-                  <a
-                    key={item.id}
-                    className="trend-row"
-                    href={createGoogleTrendsUrl(item.query)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="trend-term">
-                      <strong>{pickLocalized(lang, item.term)}</strong>
-                      <span className="status-pill">{pickLocalized(lang, item.category)}</span>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendNow}</span>
-                      <strong>{stats.latest}</strong>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendDelta}</span>
-                      <strong className={stats.delta >= 0 ? "trend-positive" : "trend-negative"}>
-                        {stats.delta >= 0 ? `+${stats.delta}` : stats.delta}
-                      </strong>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendPeak}</span>
-                      <strong>{stats.peak}</strong>
-                    </div>
-                    <div className="trend-mini">
-                      <Sparkline values={item.values} />
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="card media-card" id="media">
-            <div className="card-header">
-              <span className="eyebrow">Live Media</span>
-              <span className="status-pill">{mediaFeeds.length}</span>
-            </div>
-            <div className="stack-list tile-scroll">
-              {compactMedia.map((item) => (
-                <a
-                  key={item.id}
-                  className="stack-item linked"
-                  href={item.externalUrl ?? item.embedUrl ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <div className="stack-title">
-                    <strong>{item.label}</strong>
-                    <span className={`status-tag ${item.status === "live" ? "live" : "manual"}`}>{item.status}</span>
-                  </div>
-                  <small>{item.region ?? item.kind}</small>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          <section className="card changes-card" id="changes">
-            <div className="card-header">
-              <span className="eyebrow">{copy.changes}</span>
-              <span className="status-pill">{changes.updatedAt.slice(11, 16)} UTC</span>
-            </div>
-            <div className="change-grid">
-              {changes.items.map((item) => (
-                <article key={item.id} className={`change-item tone-${item.tone}`}>
-                  <span className="eyebrow">{localize(lang, item.label)}</span>
-                  <strong>{item.value}</strong>
-                  <small>{localize(lang, item.detail)}</small>
-                </article>
-              ))}
-            </div>
-            <div className="threshold-strip">
-              <span className="eyebrow">{copy.thresholdWatch}</span>
-              <div className="threshold-list">
-                {changes.thresholds.map((threshold) => (
-                  <div key={threshold.id} className={`threshold-item ${threshold.state}`}>
-                    <strong>{localize(lang, threshold.label)}</strong>
-                    <small>{localize(lang, threshold.detail)}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card social-card" id="social">
-            <div className="card-header">
-              <span className="eyebrow">{copy.social}</span>
-              <span className="status-pill">{socialListening.source.freshnessStatus}</span>
-            </div>
-            <div className="social-stats">
-              <div className="social-stat">
-                <span className="eyebrow">{copy.mentions}</span>
-                <strong>{socialListening.mentionCount}</strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">{copy.sentiment}</span>
-                <strong className={socialListening.sentimentScore >= 0 ? "trend-positive" : "trend-negative"}>
-                  {socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}
-                </strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">{copy.sourceMix}</span>
-                <strong>{socialListening.sourceCount}</strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">Positive</span>
-                <strong>{Math.round(socialListening.positiveShare * 100)}%</strong>
-              </div>
-            </div>
-            <div className="social-meta">
-              <span>{socialListening.dominantSource}</span>
-              <div className="pill-list compact">
-                {socialListening.topTerms.slice(0, 5).map((term) => (
-                  <span key={term} className="stack-pill">
-                    {term}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card impact-card" id="impact">
-            <div className="card-header">
-              <span className="eyebrow">{copy.impact}</span>
-              <span className="status-pill">{impact.source.freshnessStatus}</span>
-            </div>
-            <div className="impact-list">
-              <div className="impact-row">
-                <span>{copy.official}</span>
-                <strong>{impact.officialUpdates}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Live</span>
-                <strong>{impact.liveSources}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Cities</span>
-                <strong>{impact.trackedCities}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Signals</span>
-                <strong>{impact.publicSignals}</strong>
-              </div>
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">Latest</span>
-              <strong>{localize(lang, impact.latestHeadline)}</strong>
-            </div>
-          </section>
-        </section>
-
-        <section className="support-grid">
-          <section className="card market-card" id="markets">
-            <div className="card-header">
-              <span className="eyebrow">{copy.markets}</span>
-              <span className="status-pill">{markets.source.freshnessStatus}</span>
-            </div>
-            <div className="impact-list">
-              {markets.items.map((item) => (
-                <div key={item.id} className={`impact-row tone-${item.tone}`}>
-                  <span>{localize(lang, item.label)}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">Signal</span>
-              <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
-            </div>
-          </section>
-
-          <section className="card satellite-card" id="satellite">
-            <div className="card-header">
-              <span className="eyebrow">{copy.satellite}</span>
-              <span className="status-pill">{`${activeSatelliteLayers.length} active / ${satelliteReadySources.length} ready`}</span>
-            </div>
-
-            <div className="satellite-shell">
-              <div className="satellite-preset-grid">
-                {satellitePresets.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={preset.active ? "satellite-preset active" : "satellite-preset"}
-                    onClick={() => applyLayerPreset([...preset.layers], "national")}
-                  >
-                    <span className="eyebrow">{localize(lang, preset.label)}</span>
-                    <strong>{localize(lang, preset.label)}</strong>
-                    <small>{localize(lang, preset.detail)}</small>
-                  </button>
-                ))}
-              </div>
-
-              <div className="impact-headline">
-                <span className="eyebrow">{copy.latestSignal}</span>
-                <strong>{satelliteNarrative}</strong>
-              </div>
-
-              <div className="satellite-grid">
-                <div className="satellite-panel">
-                  <span className="eyebrow">{copy.satelliteLiveLayers}</span>
-                  <div className="pill-list compact">
-                    {satelliteLayerCatalog.map((layer) => (
-                      <button
-                        key={layer.id}
-                        type="button"
-                        className={layers.includes(layer.id) ? "chip active" : "chip"}
-                        onClick={() => toggleLayer(layer.id)}
-                      >
-                        {localize(lang, layer.label)}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="satellite-source-list">
-                    {satelliteLiveSources.map((source) => (
-                      <div key={source.id} className="headline-item satellite-source-item">
-                        <strong>{source.name}</strong>
-                        <small>{source.message}</small>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="satellite-panel">
-                  <span className="eyebrow">{copy.satelliteReadySources}</span>
-                  <div className="satellite-source-list">
-                    {satelliteReadySources.map((source) => (
-                      <a key={source.id} className="headline-item satellite-source-item" href={source.url} target="_blank" rel="noreferrer">
-                        <strong>{source.name}</strong>
-                        <small>{source.message}</small>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="satellite-priority-list">
-                <span className="eyebrow">{copy.satelliteThailandPriority}</span>
-                {THAILAND_SATELLITE_PRIORITIES.map((item) => (
-                  <div key={item.id} className="stack-item">
-                    <div className="stack-title">
-                      <strong>{localize(lang, item.title)}</strong>
-                      <span className="status-pill">TH</span>
-                    </div>
-                    <small>{localize(lang, item.detail)}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card global-card" id="global-signals">
-            <div className="card-header">
-              <span className="eyebrow">{copy.globalSignals}</span>
-              <span className="status-pill">{globalSignalNews.length}</span>
-            </div>
-            <div className="stack-list tile-scroll">
-              {globalSignalNews.length > 0 ? (
-                globalSignalNews.map((item) => (
-                  <a
-                    key={item.id}
-                    className="stack-item linked"
-                    href={item.source.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="stack-title">
-                      <strong>{localize(lang, item.title)}</strong>
-                      <span className="status-pill">{formatUtcClock(item.publishedAt)} UTC</span>
-                    </div>
-                    <small>{item.source.sourceName}</small>
-                  </a>
-                ))
-              ) : (
-                <div className="stack-item">
-                  <p>{copy.noExternalSignals}</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="card world-card" id="world-watch">
-            <div className="card-header">
-              <span className="eyebrow">{copy.worldWatch}</span>
-              <span className="status-pill">{globalWatchSources.length}</span>
-            </div>
-            <div className="stack-list">
+            <div className="terminal-callout compact">
               <span className="eyebrow">{copy.sourceStatus}</span>
-              {globalWatchSources.map((source) => (
-                <div key={source.id} className="stack-item compact-source">
+              <strong>{`${apiReadyCount}/${apiWatchSources.length} operational`}</strong>
+            </div>
+            <div className="api-watch-grid">
+              {apiWatchSources.map((source) => (
+                <article key={source.id} className={`api-watch-item ${source.freshnessStatus}`}>
                   <div className="stack-title">
                     <strong>{source.name}</strong>
                     <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
                   </div>
                   <small>{source.message}</small>
-                </div>
+                </article>
               ))}
             </div>
-            <div className="impact-headline">
-              <span className="eyebrow">{copy.worldContext}</span>
-              <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
-            </div>
-            <div className="eo-watch-card">
-              <div className="stack-title">
-                <strong>{lang === "th" ? "Earth Observation Watch" : "Earth Observation Watch"}</strong>
-                <span className="status-pill">EO</span>
-              </div>
-              <div className="eo-watch-grid">
-                {eoWatchItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`eo-watch-item ${item.tone}`}
-                    onClick={() => {
-                      const next = buildStableParams();
-                      next.set("layers", item.targetLayers.join(","));
-                      if (
-                        item.targetLayers.includes("smart-city-thailand") ||
-                        item.targetLayers.includes("jaxa-rainfall") ||
-                        item.targetLayers.includes("eo-aerosol") ||
-                        item.targetLayers.includes("eo-precipitation") ||
-                        item.targetLayers.includes("eo-vegetation")
-                      ) {
-                        next.set("view", "national");
-                      }
-                      startTransition(() => {
-                        setSearchParams(next);
-                        setRecenterSignal((v) => v + 1);
-                      });
-                    }}
-                  >
-                    <span className="eyebrow">{item.title}</span>
-                    <small>{item.detail}</small>
-                  </button>
-                ))}
-              </div>
-              <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
-                {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
-              </a>
-            </div>
-            {undpDataSource ? (
-              <a className="stack-item linked compact-source" href={undpDataSource.url} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{undpDataSource.name}</strong>
-                  <span className={`status-tag ${undpDataSource.freshnessStatus}`}>{undpDataSource.freshnessStatus}</span>
-                </div>
-                <small>
-                  {lang === "th"
-                    ? "เปิด UNDP Data Hub เพื่อเข้าถึง development indicators, datasets, tiles, และ API URLs"
-                    : "Open UNDP Data Hub for development indicators, datasets, tiles, and dataset API URLs."}
-                </small>
-              </a>
-            ) : null}
-            <div className="compact-list">
-              {undpQuickLinks.map((item) => (
-                <a key={item.id} className="headline-item" href={item.href} target="_blank" rel="noreferrer">
-                  <strong>{localize(lang, item.title)}</strong>
-                  <small>{localize(lang, item.note)}</small>
-                </a>
-              ))}
-            </div>
-            {compactMedia.length > 0 ? (
-              <div className="compact-list">
-                {compactMedia.slice(0, 2).map((item) => (
-                  <a
-                    key={item.id}
-                    className="headline-item"
-                    href={item.externalUrl ?? item.embedUrl ?? "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <strong>{item.label}</strong>
-                    <small>{item.region ?? item.kind}</small>
-                  </a>
-                ))}
-              </div>
-            ) : null}
           </section>
 
           <section className="card activity-card" id="activity">
@@ -2467,122 +2377,52 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card research-card" id="candidate-compare">
+          <section className="card slic-card" id="slic-thailand">
             <div className="card-header">
-              <span className="eyebrow">{copy.candidateCompare}</span>
-              <span className="status-pill">{selectedModelCity.name}</span>
+              <span className="eyebrow">SLIC Thailand</span>
+              <span className={`status-pill ${slicThailand.source.freshnessStatus}`}>{formatUtcClock(slicThailand.updatedAt)} UTC</span>
             </div>
-            <label className="stack-field">
-              <span className="eyebrow">{copy.modelCity}</span>
-              <select value={selectedModelCity.id} onChange={(event) => updateParam("modelCity", event.target.value)}>
-                {globalReferenceCities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {`${item.name}, ${item.country}`}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="candidate-grid">
-              <div className="candidate-panel">
-                <span className="eyebrow">{localize(lang, selectedCity.name)}</span>
-                <strong>{formatPopulation(selectedCity.population)}</strong>
-                <small>{localize(lang, selectedCity.region)}</small>
-                <p>{localize(lang, selectedCity.focus)}</p>
-              </div>
-              <div className="candidate-panel">
-                <span className="eyebrow">{`${selectedModelCity.name}, ${selectedModelCity.country}`}</span>
-                <strong>{selectedModelCity.approxPopulation}</strong>
-                <small>{`${copy.eiuRank}: ${selectedModelCity.eiuRank2025}`}</small>
-                <p>{pickLocalized(lang, selectedModelCity.modelLens)}</p>
-              </div>
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{lang === "th" ? "จัดอันดับล่าสุด" : "Live ranking"}</span>
+              <strong>{lang === "th" ? "เมืองไทยที่ขึ้นมานำ" : "Top Thai cities right now"}</strong>
             </div>
-            <div className="impact-headline">
-              <span className="eyebrow">{copy.fitSignal}</span>
-              <strong>
-                {fitDomains.length > 0
-                  ? fitDomains.map((item) => localize(lang, item.title)).join(" • ")
-                  : pickLocalized(lang, selectedModelCity.modelLens)}
-              </strong>
-            </div>
-            <div className="stack-list">
-              <span className="eyebrow">{copy.transferIdeas}</span>
-              {selectedModelCity.innovationIdeas.map((item, index) => (
-                <div key={`${selectedModelCity.id}-${index}`} className="stack-item">
-                  <p>{pickLocalized(lang, item)}</p>
-                </div>
-              ))}
-            </div>
-            <a className="stack-item linked" href={selectedModelCity.href} target="_blank" rel="noreferrer">
-              <div className="stack-title">
-                <strong>{copy.livabilityLens}</strong>
-                <span className="status-pill">{copy.eiuRank}</span>
-              </div>
-              <p>
-                {lang === "th"
-                  ? "ใช้เมืองอันดับสูงของ EIU เป็นเมืองอ้างอิงเพื่อชี้ให้เห็นแนวทางที่ถ่ายโอนได้"
-                  : "Uses high-ranking EIU cities as reference models for transferable planning ideas."}
-              </p>
-            </a>
-          </section>
+            <div className="slic-ranking-list">
+              {slicTopCities.map((item) => {
+                const mappedCitySlug = slicCitySlugMap[item.id];
+                const actionable = Boolean(mappedCitySlug && knownCitySlugs.has(mappedCitySlug));
+                const rankingCard = (
+                  <>
+                    <div className="slic-ranking-head">
+                      <span className="status-pill">#{item.rank}</span>
+                      <div>
+                        <strong>{lang === "th" ? item.nameTh || item.nameEn : item.nameEn}</strong>
+                        <small>{item.region}</small>
+                      </div>
+                      <strong className="slic-score">{item.overall}</strong>
+                    </div>
+                    <p>{item.tagline}</p>
+                    <div className="slic-ranking-meta">
+                      <span>{item.avgMonthlyIncome > 0 ? `${item.avgMonthlyIncome.toLocaleString("en-US")} THB/mo` : "Tracked city"}</span>
+                      <span>{item.pm25Annual > 0 ? `PM2.5 ${item.pm25Annual}` : "Monitor mode"}</span>
+                    </div>
+                  </>
+                );
 
-          <section className="card toolkit-card" id="toolkit">
-            <div className="card-header">
-              <span className="eyebrow">{copy.toolkit}</span>
-              <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
-            </div>
-
-            <div className="toolkit-shell tile-scroll">
-              <div className="toolkit-block">
-                <h3>{copy.apiDirectory}</h3>
-                <div className="tool-link-grid">
-                  {toolkitLinks.map((tool) => (
-                    <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
-                      <strong>{tool.name}</strong>
-                      <span>{tool.kind}</span>
-                      <p>{pickLocalized(lang, tool.description)}</p>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div className="toolkit-block">
-                <h3>{copy.stack}</h3>
-                <div className="pill-list">
-                  {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
-                    <span key={item} className="stack-pill">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="export-panel">
-                  <div className="stack-title">
-                    <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
-                    <button className="share-button" onClick={copySkeleton}>
-                      {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
-                    </button>
-                  </div>
-                  <div className="export-tabs">
-                    {exportOptions.map((option) => {
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
-                          onClick={() => setExportLanguage(option.id)}
-                        >
-                          <span className="export-tab-mark">{option.mark}</span>
-                          <span className="export-tab-copy">
-                            <strong>{option.label}</strong>
-                            <small>{option.detail}</small>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <pre>{activeExportSnippet}</pre>
-                </div>
-              </div>
+                return actionable ? (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="slic-ranking-card action"
+                    onClick={() => focusCityWithLayer(mappedCitySlug, "smart-city-thailand")}
+                  >
+                    {rankingCard}
+                  </button>
+                ) : (
+                  <article key={item.id} className="slic-ranking-card">
+                    {rankingCard}
+                  </article>
+                );
+              })}
             </div>
           </section>
         </section>

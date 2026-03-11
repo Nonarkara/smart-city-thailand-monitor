@@ -1,7 +1,7 @@
 export const config = {
   port: Number(process.env.PORT ?? 4000),
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
-  allowLiveFetch: process.env.ALLOW_LIVE_FETCH === "true",
+  allowLiveFetch: process.env.ALLOW_LIVE_FETCH !== "false",
   syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 300000),
   stateSnapshotPath: process.env.STATE_SNAPSHOT_PATH ?? "tmp/api-state.json",
   knowledgeDir: process.env.KNOWLEDGE_DIR ?? "",
@@ -9,11 +9,12 @@ export const config = {
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
   newsApiKey: process.env.NEWS_API_KEY ?? "",
   newsApiPageSize: Number(process.env.NEWS_API_PAGE_SIZE ?? 4),
-  newsApiQueries: (process.env.NEWS_API_QUERIES ?? "")
+  satelliteImageryEndpoint: process.env.SATELLITE_IMAGERY_ENDPOINT ?? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  newsApiQueries: (process.env.NEWS_API_QUERIES ?? "Muang Thong Thani|IMPACT Muang Thong Thani|Nonthaburi Smart City")
     .split("|")
     .map((item) => item.trim())
     .filter(Boolean),
-  googleNewsRssQueries: (process.env.GOOGLE_NEWS_RSS_QUERIES ?? "")
+  googleNewsRssQueries: (process.env.GOOGLE_NEWS_RSS_QUERIES ?? "Muang Thong Thani|Nonthaburi Smart City")
     .split("|")
     .map((item) => item.trim())
     .filter(Boolean),
@@ -53,10 +54,10 @@ export const config = {
     "https://s3.ap-northeast-1.wasabisys.com/je-pds/cog/v1/JAXA.EORC_GSMaP_standard.Gauge.00Z-23Z.v6_daily/collection.json",
   weatherEndpoint:
     process.env.OPEN_METEO_WEATHER_ENDPOINT ??
-    "https://api.open-meteo.com/v1/forecast?latitude=13.7563&longitude=100.5018&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&timezone=Asia%2FBangkok",
+    "https://api.open-meteo.com/v1/forecast?latitude=13.9118&longitude=100.5512&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&timezone=Asia%2FBangkok",
   airQualityEndpoint:
     process.env.OPEN_METEO_AIR_ENDPOINT ??
-    "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=13.7563&longitude=100.5018&current=pm10,pm2_5,us_aqi&timezone=Asia%2FBangkok",
+    "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=13.9118&longitude=100.5512&current=pm10,pm2_5,us_aqi&timezone=Asia%2FBangkok",
   openaqEndpoint:
     process.env.OPENAQ_ENDPOINT ??
     "https://api.openaq.org/v3/locations?country=TH&limit=6",
@@ -67,5 +68,6 @@ export const config = {
   marketUsdThbEndpoint:
     process.env.MARKET_USD_THB_ENDPOINT ??
     "https://api.frankfurter.app/latest?from=USD&to=THB",
-  marketGoldEndpoint: process.env.MARKET_GOLD_ENDPOINT ?? "https://api.gold-api.com/price/XAU"
+  marketGoldEndpoint: process.env.MARKET_GOLD_ENDPOINT ?? "https://api.gold-api.com/price/XAU",
+  slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand"
 };

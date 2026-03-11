@@ -46,9 +46,19 @@ type LayerId =
   | "eo-precipitation"
   | "eo-vegetation"
   | "jaxa-rainfall"
-  | "disaster";
+  | "satellite-imagery"
+  | "satellite-vegetation"
+  | "satellite-aerosol"
+  | "satellite-night-lights"
+  | "disaster"
+  | "itic-traffic";
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
+type SatelliteLayerId =
+  | "satellite-imagery"
+  | "satellite-vegetation"
+  | "satellite-aerosol"
+  | "satellite-night-lights";
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
@@ -105,6 +115,11 @@ const cityCenters: Record<
     label: { th: "นครราชสีมา", en: "Nakhon Ratchasima" },
     lat: 14.9799,
     lon: 102.0978
+  },
+  "muang-thong-thani": {
+    label: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    lat: 13.9118,
+    lon: 100.5512
   }
 };
 
@@ -124,10 +139,46 @@ const layerColors: Record<LayerId, string> = {
   "eo-precipitation": "#2563eb",
   "eo-vegetation": "#65a30d",
   "jaxa-rainfall": "#0f8cff",
-  disaster: "#cf5c00"
+  "satellite-imagery": "#e2e8f0",
+  "satellite-vegetation": "#4ade80",
+  "satellite-aerosol": "#f59e0b",
+  "satellite-night-lights": "#8b5cf6",
+  disaster: "#cf5c00",
+  "itic-traffic": "#ef4444"
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = ["eo-aerosol", "eo-precipitation", "eo-vegetation"];
+const satelliteLayerDefinitions: Record<
+  SatelliteLayerId,
+  {
+    url: string;
+    opacity: number;
+    maxZoom: number;
+  }
+> = {
+  "satellite-imagery": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",
+    opacity: 0.92,
+    maxZoom: 9
+  },
+  "satellite-vegetation": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_8Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
+    opacity: 0.58,
+    maxZoom: 9
+  },
+  "satellite-aerosol": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/OMPS_NOAA20_NadirMapper_AerosolIndex_360_v2_NRT/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",
+    opacity: 0.52,
+    maxZoom: 6
+  },
+  "satellite-night-lights": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png",
+    opacity: 0.5,
+    maxZoom: 8
+  }
+};
+
+const satelliteAttribution = 'Imagery courtesy of <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">NASA GIBS</a>';
 
 const coverageDomainKeywords: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -387,49 +438,12 @@ function loadJaxaEarthLibrary(): Promise<JaxaEarthGlobal | null> {
 
 function renderEoRainFallback(target: L.LayerGroup, locale: Locale, featureCollections: MapFeatureCollection[]) {
   target.clearLayers();
-
-  const weatherCollection = featureCollections.find((collection) => collection.layerId === "weather");
-  const weatherPoints = weatherCollection?.features.filter(
-    (feature) => feature.geometryType === "Point" && Array.isArray(feature.coordinates) && feature.coordinates.length >= 2
-  );
-
-  if (!weatherPoints || weatherPoints.length === 0) {
-    L.rectangle(
-      [
-        [6.2, 98.2],
-        [19.8, 104.6]
-      ],
-      {
-        color: layerColors["jaxa-rainfall"],
-        weight: 1,
-        fillColor: layerColors["jaxa-rainfall"],
-        fillOpacity: 0.05
-      }
-    ).addTo(target);
-    return;
+  if (locale) {
+    // Intentionally no synthetic fallback geometry.
   }
-
-  weatherPoints.forEach((feature) => {
-    const [lon, lat] = feature.coordinates as [number, number];
-    const humidity = Number(feature.properties.humidity ?? 0);
-    const wind = Number(feature.properties.windKph ?? 0);
-
-    const circle = L.circle([lat, lon], {
-      radius: 48000 + humidity * 520 + wind * 260,
-      color: layerColors["jaxa-rainfall"],
-      weight: 1,
-      fillColor: layerColors["jaxa-rainfall"],
-      fillOpacity: Math.min(0.18, 0.045 + humidity / 760)
-    });
-
-    circle.bindTooltip(
-      locale === "th"
-        ? `${feature.title}: โหมดสำรองจากบริบทอากาศ`
-        : `${feature.title}: fallback rain watch from local weather context`
-    );
-
-    circle.addTo(target);
-  });
+  if (featureCollections) {
+    // Keep the signature stable for the JAXA fallback call site.
+  }
 }
 
 function renderFeatureCollections(
@@ -474,6 +488,8 @@ function renderFeatureCollections(
             ? 7
             : isBangkokPlaces
               ? 6
+              : collection.layerId === "itic-traffic"
+                ? 6
               : isPollutionLayer
                 ? Math.max(5, Math.min(10, 4 + intensity / 20))
                 : collection.layerId === "weather"
@@ -486,17 +502,6 @@ function renderFeatureCollections(
           fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
           weight: 2
         });
-
-        if (isPollutionLayer && intensity >= 55) {
-          const glow = L.circle([lat, lon], {
-            radius: 22000 + intensity * 220,
-            color: pointColor,
-            weight: 1,
-            fillColor: pointColor,
-            fillOpacity: intensity >= 80 ? 0.1 : 0.06
-          });
-          glow.addTo(target);
-        }
 
         marker.bindPopup(popupContent);
         marker.addTo(target);
@@ -588,6 +593,7 @@ export default function InteractiveMap({
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
   const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
+  const satelliteLayersRef = useRef<Partial<Record<SatelliteLayerId, L.TileLayer>>>({});
   const jaxaLayerRef = useRef<L.Layer | null>(null);
   const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
@@ -620,6 +626,18 @@ export default function InteractiveMap({
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
+
+    satelliteLayersRef.current = Object.fromEntries(
+      Object.entries(satelliteLayerDefinitions).map(([id, definition]) => [
+        id,
+        L.tileLayer(definition.url, {
+          attribution: satelliteAttribution,
+          opacity: definition.opacity,
+          maxZoom: definition.maxZoom
+        })
+      ])
+    ) as Partial<Record<SatelliteLayerId, L.TileLayer>>;
+
     mapRef.current = map;
 
     requestAnimationFrame(() => {
@@ -695,7 +713,9 @@ export default function InteractiveMap({
     }
 
     const city = cityCenters[citySlug] ?? cityCenters.bangkok;
-    map.setView([city.lat, city.lon], view === "city" ? 10 : 8);
+    // For Muang Thong Thani, zoom out slightly to show Greater Bangkok context
+    const zoom = citySlug === "muang-thong-thani" ? 11 : (view === "city" ? 10 : 8);
+    map.setView([city.lat, city.lon], zoom);
   }, [view, citySlug, layers, bangkokBoundsKey, nationalBoundsKey]);
 
   useEffect(() => {
@@ -709,22 +729,27 @@ export default function InteractiveMap({
 
     renderFeatureCollections(overlay, activeLayers, featureCollections, domainSlug);
 
-    if (activeLayers.has("projects")) {
-      renderProjects(overlay, locale, projects);
+    const map = mapRef.current;
+    if (map) {
+      Object.entries(satelliteLayersRef.current).forEach(([id, layer]) => {
+        if (!layer) {
+          return;
+        }
+
+        if (activeLayers.has(id as LayerId)) {
+          if (!map.hasLayer(layer)) {
+            layer.addTo(map);
+          }
+          layer.setOpacity(satelliteLayerDefinitions[id as SatelliteLayerId].opacity);
+          return;
+        }
+
+        if (map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+      });
     }
-    if (activeLayers.has("news")) {
-      renderNews(overlay, locale, news);
-    }
-    if (activeLayers.has("resilience")) {
-      renderResilience(overlay, locale);
-    }
-    if (activeLayers.has("economy")) {
-      renderEconomy(overlay, locale);
-    }
-    if (activeLayers.has("disaster")) {
-      renderDisaster(overlay, locale);
-    }
-  }, [domainSlug, featureCollections, layerKey, locale, news, projects]);
+  }, [domainSlug, featureCollections, layerKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -895,9 +920,9 @@ export default function InteractiveMap({
           ? "EO rain: JAXA สด"
           : "EO rain: JAXA live"
         : eoRainState === "fallback"
-          ? locale === "th"
-            ? "EO rain: โหมดสำรอง"
-            : "EO rain: fallback preview"
+        ? locale === "th"
+            ? "EO rain: รอภาพชั้นข้อมูล"
+            : "EO rain: awaiting raster"
           : "";
 
   return (

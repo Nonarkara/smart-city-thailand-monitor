@@ -4,6 +4,7 @@ import type { AssistantQueryRequest, DashboardView, TimeRange } from "@smart-cit
 import { requireAdmin } from "./lib/adminAuth.js";
 import { store } from "./data/store.js";
 import { getAssistantStatus, queryAssistant } from "./services/knowledgeAssistant.js";
+import { getSlicThailandSnapshot } from "./services/slicThailand.js";
 import { runSourceSync } from "./services/sync.js";
 
 function parseList(value: unknown) {
@@ -164,6 +165,7 @@ export async function createServer() {
   });
   app.get("/api/media/channels", async () => store.getMediaChannels());
   app.get("/api/assistant/status", async () => getAssistantStatus());
+  app.get("/api/external/slic-thailand", async () => getSlicThailandSnapshot());
   app.post("/api/assistant/query", async (request, reply) => {
     const body = request.body as AssistantQueryRequest;
 
