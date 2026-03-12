@@ -64,6 +64,7 @@ import {
   trendWatchItems,
   undpQuickLinks
 } from "./content";
+import { getEoTileConfigs } from "./eoTiles";
 import InteractiveMap from "./InteractiveMap";
 
 function normalizeApiBase(baseUrl: string) {
@@ -127,6 +128,13 @@ const SATELLITE_PRESETS = [
     layers: ["smart-city-thailand", "land-use", "agriculture", "eo-vegetation"]
   }
 ] as const;
+const TIME_RANGE_OPTIONS = ["24h", "7d", "30d", "90d"] as const;
+const BLEND_MODE_OPTIONS = [
+  { id: "normal", label: { th: "ปกติ", en: "Normal" } },
+  { id: "multiply", label: { th: "เข้ม", en: "Multiply" } },
+  { id: "screen", label: { th: "สว่าง", en: "Screen" } },
+  { id: "overlay", label: { th: "ซ้อน", en: "Overlay" } }
+] as const;
 const THAILAND_SATELLITE_PRIORITIES = [
   {
     id: "sentinel-1",
@@ -165,6 +173,47 @@ interface ToggleOption {
     en: string;
   };
   color: string;
+}
+
+type BlendModeOption = (typeof BLEND_MODE_OPTIONS)[number]["id"];
+
+interface OverlayStudioSetting {
+  opacity: number;
+  blendMode: BlendModeOption;
+  order: number;
+}
+
+interface OpsDrawerState {
+  title: string;
+  subtitle: string;
+  citySlug: string;
+  reason: string;
+  layers: string[];
+  sourceLabel: string;
+  confidence: number;
+}
+
+interface ScreenshotScene {
+  id: string;
+  title: {
+    th: string;
+    en: string;
+  };
+  detail: {
+    th: string;
+    en: string;
+  };
+  shot: {
+    th: string;
+    en: string;
+  };
+  state: {
+    view: DashboardView;
+    city?: string;
+    basemap: "atlas" | "satellite";
+    timeRange: TimeRange;
+    layers: string[];
+  };
 }
 
 interface SlicThailandCity {
@@ -271,6 +320,218 @@ const satelliteToggleOptions: ToggleOption[] = [
     color: "#8b5cf6"
   }
 ];
+
+const screenshotManualScenes: ScreenshotScene[] = [
+  {
+    id: "national-command",
+    title: { th: "ภาพรวมประเทศ", en: "National command view" },
+    detail: {
+      th: "ใช้สำหรับภาพเปิดเดโมที่เน้น command bar, smart-city footprint, และสัญญาณหลักของประเทศ",
+      en: "Use as the opening demo shot with the command bar, nationwide footprint, and headline signals."
+    },
+    shot: {
+      th: "เก็บทั้ง command bar, map hero, และคำอธิบายชั้นข้อมูล",
+      en: "Capture the command bar, map hero, and layer legend together."
+    },
+    state: {
+      view: "national",
+      basemap: "atlas",
+      timeRange: "7d",
+      layers: ["smart-city-thailand", "projects", "news", "economy"]
+    }
+  },
+  {
+    id: "flood-watch",
+    title: { th: "ภาพมรสุมและน้ำ", en: "Flood and monsoon watch" },
+    detail: {
+      th: "เปิดชั้นภาพฝน, มรสุม, น้ำ และ resilience เพื่ออธิบายมุมมองเชิงปฏิบัติการ",
+      en: "Turn on rain, monsoon, water, and resilience layers for an operations-focused flood frame."
+    },
+    shot: {
+      th: "ใช้แผนที่ aerial และซูมระดับประเทศเพื่อให้เห็น pattern ฝนสะสม",
+      en: "Use the aerial base and a national zoom to show the rainfall pattern clearly."
+    },
+    state: {
+      view: "national",
+      basemap: "satellite",
+      timeRange: "24h",
+      layers: ["satellite-imagery", "eo-precipitation", "jaxa-rainfall", "water", "resilience"]
+    }
+  },
+  {
+    id: "haze-watch",
+    title: { th: "ภาพฝุ่นและหมอกควัน", en: "Haze and aerosol watch" },
+    detail: {
+      th: "จับคู่ aerosol กับ AQI และ weather เพื่อใช้ในสไลด์ด้านสิ่งแวดล้อม",
+      en: "Pair aerosol with AQI and weather for the environmental demo section."
+    },
+    shot: {
+      th: "เน้น hotspot strip และ right drawer เพื่ออธิบายเหตุผลของภาพ",
+      en: "Include the hotspot strip and the right drawer to explain why the view matters."
+    },
+    state: {
+      view: "national",
+      basemap: "satellite",
+      timeRange: "7d",
+      layers: ["satellite-imagery", "eo-aerosol", "pollution", "weather"]
+    }
+  },
+  {
+    id: "green-cover",
+    title: { th: "ภาพพื้นที่สีเขียว", en: "Green cover view" },
+    detail: {
+      th: "ใช้ vegetation, land use, และ agriculture เพื่อเล่าเรื่อง land-change",
+      en: "Use vegetation, land use, and agriculture to tell the land-change story."
+    },
+    shot: {
+      th: "เหมาะกับภาพ side-by-side ใน compare panel",
+      en: "Works best as a side-by-side reference in the compare panel."
+    },
+    state: {
+      view: "national",
+      basemap: "atlas",
+      timeRange: "30d",
+      layers: ["eo-vegetation", "land-use", "agriculture", "smart-city-thailand"]
+    }
+  },
+  {
+    id: "bangkok-ops",
+    title: { th: "ภาพเมืองเชิงปฏิบัติการ", en: "City operations view" },
+    detail: {
+      th: "ใช้สำหรับภาพเมืองที่มี AQI, weather, projects และ drawer อธิบายด้านขวา",
+      en: "Use for a city screenshot with AQI, weather, projects, and the explanation drawer."
+    },
+    shot: {
+      th: "เปิด drawer แล้วเก็บ map hero พร้อม city compare ด้านล่าง",
+      en: "Open the drawer and capture the map hero with the compare panel below."
+    },
+    state: {
+      view: "city",
+      city: "bangkok",
+      basemap: "atlas",
+      timeRange: "7d",
+      layers: ["weather", "pollution", "projects", "news"]
+    }
+  }
+];
+
+const groundTruthDirectory: Record<
+  string,
+  Array<{
+    id: string;
+    label: { th: string; en: string };
+    note: { th: string; en: string };
+    url: string;
+  }>
+> = {
+  national: [
+    {
+      id: "tmd-radar",
+      label: { th: "เรดาร์อุตุ", en: "TMD weather radar" },
+      note: { th: "ตรวจสอบกลุ่มฝนและพายุจากกรมอุตุนิยมวิทยา", en: "Check live rainfall cells and storms from Thailand’s meteorological radar." },
+      url: "https://weather.tmd.go.th/radar/"
+    },
+    {
+      id: "thaipbs-live",
+      label: { th: "Thai PBS Live", en: "Thai PBS Live" },
+      note: { th: "ใช้ยืนยันเหตุการณ์ระดับประเทศหรือข่าวสด", en: "Use for live national confirmation and breaking-news context." },
+      url: "https://www.thaipbs.or.th/live"
+    },
+    {
+      id: "eonet",
+      label: { th: "NASA EONET", en: "NASA EONET" },
+      note: { th: "ดูเหตุการณ์ธรรมชาติที่รายงานแบบ near real-time", en: "See near-real-time natural event reports." },
+      url: "https://eonet.gsfc.nasa.gov/map"
+    }
+  ],
+  bangkok: [
+    {
+      id: "longdo",
+      label: { th: "Longdo Traffic", en: "Longdo Traffic" },
+      note: { th: "ยืนยันสภาพจราจรกรุงเทพฯ แบบสด", en: "Check live Bangkok traffic conditions." },
+      url: "https://traffic.longdo.com"
+    },
+    {
+      id: "bma",
+      label: { th: "กรุงเทพมหานคร", en: "Bangkok Metropolitan Administration" },
+      note: { th: "หน้าอ้างอิงภาครัฐของกรุงเทพฯ", en: "Official city reference page." },
+      url: "https://www.bangkok.go.th"
+    }
+  ],
+  "chiang-mai": [
+    {
+      id: "chiang-mai-news",
+      label: { th: "Chiang Mai News", en: "Chiang Mai News" },
+      note: { th: "ใช้ประกอบบริบทฝุ่นและไฟป่า", en: "Use for local haze and wildfire context." },
+      url: "https://www.chiangmainews.co.th"
+    }
+  ],
+  phuket: [
+    {
+      id: "phuket-city",
+      label: { th: "เทศบาลนครภูเก็ต", en: "Phuket City Municipality" },
+      note: { th: "หน้าอ้างอิงเมืองและประกาศท้องถิ่น", en: "Official city reference page and local notices." },
+      url: "https://www.phuketcity.go.th"
+    }
+  ],
+  "khon-kaen": [
+    {
+      id: "khon-kaen-city",
+      label: { th: "เทศบาลนครขอนแก่น", en: "Khon Kaen City Municipality" },
+      note: { th: "ข้อมูลภาครัฐและประกาศท้องถิ่น", en: "Official city reference and local notices." },
+      url: "https://www.kkmuni.go.th"
+    }
+  ]
+};
+
+function getDefaultOverlayOpacity(id: string) {
+  switch (id) {
+    case "satellite-imagery":
+      return 0.92;
+    case "eo-vegetation":
+      return 0.6;
+    case "eo-aerosol":
+      return 0.54;
+    case "eo-precipitation":
+      return 0.58;
+    case "jaxa-rainfall":
+      return 0.42;
+    case "satellite-night-lights":
+      return 0.5;
+    default:
+      return 0.6;
+  }
+}
+
+function getDefaultBlendMode(id: string): BlendModeOption {
+  switch (id) {
+    case "satellite-imagery":
+      return "normal";
+    case "satellite-night-lights":
+      return "screen";
+    case "eo-aerosol":
+      return "multiply";
+    case "eo-precipitation":
+      return "overlay";
+    case "jaxa-rainfall":
+      return "overlay";
+    default:
+      return "multiply";
+  }
+}
+
+function createDefaultOverlayStudioSettings() {
+  return Object.fromEntries(
+    satelliteToggleOptions.map((item, index) => [
+      item.id,
+      {
+        opacity: getDefaultOverlayOpacity(item.id),
+        blendMode: getDefaultBlendMode(item.id),
+        order: index
+      }
+    ])
+  ) as Record<string, OverlayStudioSetting>;
+}
 
 const slicCitySlugMap: Record<string, string> = {
   bangkok: "bangkok",
@@ -1356,6 +1617,13 @@ function DashboardPage() {
   const [exportLanguage, setExportLanguage] = useState<"json" | "typescript" | "python">("json");
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [opsDrawerState, setOpsDrawerState] = useState<OpsDrawerState | null>(null);
+  const [timeCompareEnabled, setTimeCompareEnabled] = useState(false);
+  const [compareSelection, setCompareSelection] = useState<string[]>(["bangkok", "chiang-mai", "phuket"]);
+  const [overlayStudioSettings, setOverlayStudioSettings] = useState<Record<string, OverlayStudioSetting>>(
+    () => createDefaultOverlayStudioSettings()
+  );
   const [assistantQuestion, setAssistantQuestion] = useState("");
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantError, setAssistantError] = useState("");
@@ -1427,6 +1695,39 @@ function DashboardPage() {
     globalReferenceCities.find((item) => item.id === modelCityParam) ??
     globalReferenceCities.find((item) => item.id === suggestedModelCityId) ??
     globalReferenceCities[0];
+  const eoTileConfigs = useMemo(() => getEoTileConfigs(), []);
+  const uiText = {
+    screenshotManual: lang === "th" ? "คู่มือภาพหน้าจอ" : "Screenshot Manual",
+    explainView: lang === "th" ? "อธิบายมุมมอง" : "Explain View",
+    commandBar: lang === "th" ? "National Command Bar" : "National Command Bar",
+    layerStudio: lang === "th" ? "Layer Studio" : "Layer Studio",
+    comparePanel: lang === "th" ? "Map compare" : "Map compare",
+    compareWindow: lang === "th" ? "เทียบช่วงก่อนหน้า" : "Compare previous window",
+    compareWindowOff: lang === "th" ? "โหมด snapshot" : "Snapshot mode",
+    cityProvinceCompare: lang === "th" ? "City / Province Compare" : "City / Province Compare",
+    comparePick: lang === "th" ? "เลือก 2-4 เมืองเพื่อเทียบกัน" : "Pick 2-4 cities to compare",
+    groundTruth: lang === "th" ? "Ground Truth Links" : "Ground Truth Links",
+    drawerProjects: lang === "th" ? "โครงการที่เกี่ยวข้อง" : "Relevant projects",
+    drawerNews: lang === "th" ? "ข่าวล่าสุด" : "Latest news",
+    drawerSources: lang === "th" ? "แหล่งข้อมูลสนับสนุน" : "Supporting sources",
+    drawerSatellite: lang === "th" ? "บริบทดาวเทียม" : "Satellite context",
+    drawerOpen: lang === "th" ? "เปิดที่มาภายนอก" : "Open external reference",
+    opacity: lang === "th" ? "ความทึบ" : "Opacity",
+    blend: lang === "th" ? "โหมดผสม" : "Blend mode",
+    order: lang === "th" ? "ลำดับชั้น" : "Layer order",
+    moveUp: lang === "th" ? "ขึ้น" : "Up",
+    moveDown: lang === "th" ? "ลง" : "Down",
+    active: lang === "th" ? "เปิดอยู่" : "Active",
+    inactive: lang === "th" ? "ปิดอยู่" : "Inactive",
+    shot: lang === "th" ? "ช็อตที่ควรเก็บ" : "Recommended shot",
+    applyScene: lang === "th" ? "จัดฉากนี้" : "Apply scene",
+    focusMap: lang === "th" ? "โฟกัสบนแผนที่" : "Focus map",
+    openDrawer: lang === "th" ? "เปิดคำอธิบาย" : "Open explanation",
+    confidence: lang === "th" ? "ความเชื่อมั่น" : "Confidence",
+    sourceFreshness: lang === "th" ? "ความสดของแหล่งข้อมูล" : "Source freshness",
+    liveWindow: lang === "th" ? "ช่วงเวลาที่กำลังดู" : "Viewing window",
+    compareMode: lang === "th" ? "โหมดเปรียบเทียบ" : "Compare mode"
+  };
   const slicThailandFallback = useMemo<SlicThailandSnapshot>(() => {
     const fallbackCities = [...overview.cities]
       .map((item) => ({
@@ -1519,8 +1820,6 @@ function DashboardPage() {
   const externalNews = filteredNews.filter((item) => item.kind === "external").slice(0, 3);
   const globalSignalNews = globalNews.slice(0, 4);
   const compactProjects = filteredProjects.slice(0, 3);
-  const compactSources = sources.slice(0, 4);
-  const compactCities = overview.cities.slice(0, 4);
   const visibleTrends = trendWatchItems.slice(0, 3);
   const compactMedia = mediaFeeds.slice(0, 3);
   const activityItems = activity.slice(0, 6);
@@ -1902,6 +2201,259 @@ function DashboardPage() {
     ...preset,
     active: preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId))
   }));
+  const timeRangeIndex = TIME_RANGE_OPTIONS.indexOf(timeRange);
+  const compareCitySlugs = [selectedCity.slug, ...compareSelection.filter((item) => item !== selectedCity.slug)].slice(0, 4);
+  const compareProfiles = compareCitySlugs
+    .map((slug) => overview.cities.find((item) => item.slug === slug))
+    .filter((item): item is (typeof overview.cities)[number] => Boolean(item));
+  const orderedOverlayItems = [...satelliteToggleOptions].sort(
+    (left, right) => overlayStudioSettings[left.id].order - overlayStudioSettings[right.id].order
+  );
+  const groundTruthLinks = [
+    ...(groundTruthDirectory[selectedCity.slug] ?? []),
+    ...groundTruthDirectory.national
+  ].filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index);
+  const mapCompareCards = [
+    {
+      id: "street",
+      title: { th: "ถนน", en: "Street" },
+      detail: { th: "ฐาน OpenStreetMap สำหรับอ่านตำแหน่งและชื่อพื้นที่", en: "OpenStreetMap base for labels, roads, and civic context." },
+      active: basemap === "atlas",
+      previewUrl: "https://tile.openstreetmap.org/6/52/31.png",
+      action: () => updateParam("basemap", "atlas")
+    },
+    {
+      id: "aerial",
+      title: { th: "ภาพถ่ายทางอากาศ", en: "Aerial" },
+      detail: { th: "ฐานภาพถ่ายสำหรับดูโครงสร้างภูมิประเทศและพื้นที่เมือง", en: "Aerial imagery base for terrain, coastline, and built-form context." },
+      active: basemap === "satellite",
+      previewUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/31/52",
+      action: () => updateParam("basemap", "satellite")
+    },
+    {
+      id: "satellite-imagery",
+      title: { th: "ภาพจริง", en: "True Color" },
+      detail: { th: "ภาพจริงจาก NASA GIBS", en: "NASA GIBS true-color imagery." },
+      active: layers.includes("satellite-imagery"),
+      previewUrl:
+        "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/6/31/52.jpg",
+      action: () => toggleSatelliteLayer("satellite-imagery")
+    },
+    {
+      id: "eo-vegetation",
+      title: { th: "พืชพรรณ", en: "Vegetation" },
+      detail: { th: "NDVI สำหรับพื้นที่สีเขียว", en: "NDVI context for green cover." },
+      active: layers.includes("eo-vegetation"),
+      previewUrl: eoTileConfigs["eo-vegetation"].url.replace("{z}", "6").replace("{y}", "31").replace("{x}", "52"),
+      action: () => toggleSatelliteLayer("eo-vegetation")
+    },
+    {
+      id: "eo-aerosol",
+      title: { th: "ละอองลอย", en: "Aerosol" },
+      detail: { th: "บริบทหมอกควันและฝุ่น", en: "Aerosol context for haze and dust." },
+      active: layers.includes("eo-aerosol"),
+      previewUrl: eoTileConfigs["eo-aerosol"].url.replace("{z}", "6").replace("{y}", "31").replace("{x}", "52"),
+      action: () => toggleSatelliteLayer("eo-aerosol")
+    },
+    {
+      id: "eo-precipitation",
+      title: { th: "มรสุม", en: "Monsoon" },
+      detail: { th: "การกระจายฝนระดับประเทศ", en: "Nationwide precipitation distribution." },
+      active: layers.includes("eo-precipitation"),
+      previewUrl: eoTileConfigs["eo-precipitation"].url.replace("{z}", "6").replace("{y}", "31").replace("{x}", "52"),
+      action: () => toggleSatelliteLayer("eo-precipitation")
+    },
+    {
+      id: "jaxa-rainfall",
+      title: { th: "ฝน", en: "Rain" },
+      detail: { th: "ภาพฝนและเรดาร์สำรองสำหรับฤดูมรสุม", en: "Rain and radar fallback for monsoon operations." },
+      active: layers.includes("jaxa-rainfall"),
+      previewUrl: buildApiUrl("/api/satellite/preview/flood-radar"),
+      action: () => toggleSatelliteLayer("jaxa-rainfall")
+    },
+    {
+      id: "satellite-night-lights",
+      title: { th: "แสงกลางคืน", en: "Night Lights" },
+      detail: { th: "ดูความหนาแน่นเมืองยามค่ำคืน", en: "Night-light intensity for urban density context." },
+      active: layers.includes("satellite-night-lights"),
+      previewUrl:
+        "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/default/GoogleMapsCompatible_Level8/6/31/52.png",
+      action: () => toggleSatelliteLayer("satellite-night-lights")
+    }
+  ];
+  const commandAlerts = [
+    topAqiFeature
+      ? {
+          id: "air",
+          location: topAqiFeature.title,
+          title:
+            lang === "th"
+              ? `AQI ${numericProperty(topAqiFeature, "aqi")} กำลังนำสัญญาณ`
+              : `AQI ${numericProperty(topAqiFeature, "aqi")} is leading the watchlist`,
+          reason:
+            lang === "th"
+              ? "Aerosol, AQI และ weather ควรถูกอ่านคู่กันทันที"
+              : "Aerosol, AQI, and weather should be read together now.",
+          layers: ["pollution", "weather", "eo-aerosol"],
+          citySlug: topAqiCitySlug || selectedCity.slug,
+          basemap: "satellite" as const,
+          confidence: topAqiFeature.source.confidence,
+          freshness: topAqiFeature.source.freshnessStatus
+        }
+      : null,
+    {
+      id: "monsoon",
+      location: lang === "th" ? "ประเทศไทย" : "Thailand",
+      title: lang === "th" ? "บริบทฝนและมรสุมกำลังเด่น" : "Monsoon context is elevated",
+      reason:
+        floodTrigger
+          ? lang === "th"
+            ? "คำเตือน resilience ชี้ว่าควรเปิดชั้นฝนและน้ำทันที"
+            : "Resilience warnings suggest switching to precipitation and water context."
+          : lang === "th"
+            ? "ใช้เป็นมุมมองมาตรฐานเพื่อตรวจ pattern ฝนสะสม"
+            : "Use as the baseline view for rainfall accumulation patterns.",
+      layers: ["eo-precipitation", "jaxa-rainfall", "water", "resilience"],
+      citySlug: selectedCity.slug,
+      basemap: "satellite" as const,
+      confidence: floodTrigger ? 0.81 : 0.68,
+      freshness: satelliteLiveSources[0]?.freshnessStatus ?? "live"
+    },
+    hottestWeatherFeature
+      ? {
+          id: "heat",
+          location: hottestWeatherFeature.title,
+          title:
+            lang === "th"
+              ? `${numericProperty(hottestWeatherFeature, "temperatureC")}C คือจุดร้อนสุด`
+              : `${numericProperty(hottestWeatherFeature, "temperatureC")}C is the hottest current reading`,
+          reason:
+            lang === "th"
+              ? "ใช้ weather คู่กับ vegetation เพื่ออ่าน heat stress"
+              : "Pair weather with vegetation to read heat stress.",
+          layers: ["weather", "eo-vegetation", "resilience"],
+          citySlug: hottestCitySlug || selectedCity.slug,
+          basemap: "atlas" as const,
+          confidence: hottestWeatherFeature.source.confidence,
+          freshness: hottestWeatherFeature.source.freshnessStatus
+        }
+      : null,
+    latestExternalSignal
+      ? {
+          id: "media",
+          location: latestExternalSignal.citySlug ? localize(lang, selectedCity.name) : (lang === "th" ? "สื่อภายนอก" : "External media"),
+          title: lang === "th" ? "สื่อและข่าวภายนอกมีน้ำหนัก" : "Media attention is materially shaping the view",
+          reason:
+            lang === "th"
+              ? "ใช้ news, projects และ world watch ประกอบการอธิบาย"
+              : "Use news, projects, and world-watch signals as supporting context.",
+          layers: ["news", "projects", "smart-city-thailand"],
+          citySlug: latestExternalSignal.citySlug ?? selectedCity.slug,
+          basemap: "atlas" as const,
+          confidence: latestExternalSignal.source.confidence,
+          freshness: latestExternalSignal.source.freshnessStatus
+        }
+      : null,
+    {
+      id: "green",
+      location: lang === "th" ? "แนวพื้นที่สีเขียว" : "Green cover",
+      title: lang === "th" ? "NDVI พร้อมสำหรับ land-change story" : "NDVI is ready for the land-change story",
+      reason:
+        lang === "th"
+          ? "ใช้ vegetation, land use และ agriculture ร่วมกันในภาพเดียว"
+          : "Use vegetation, land use, and agriculture together in one frame.",
+      layers: ["eo-vegetation", "land-use", "agriculture"],
+      citySlug: selectedCity.slug,
+      basemap: "atlas" as const,
+      confidence: 0.73,
+      freshness: "live" as const
+    }
+  ].filter(Boolean) as Array<{
+    id: string;
+    location: string;
+    title: string;
+    reason: string;
+    layers: string[];
+    citySlug: string;
+    basemap: "atlas" | "satellite";
+    confidence: number;
+    freshness: string;
+  }>;
+  const compareRows = [
+    {
+      id: "population",
+      label: lang === "th" ? "Population" : "Population",
+      getValue: (profile: (typeof compareProfiles)[number]) => formatPopulation(profile.population)
+    },
+    {
+      id: "score",
+      label: lang === "th" ? "Avg score" : "Avg score",
+      getValue: (profile: (typeof compareProfiles)[number]) =>
+        `${Math.round(profile.scores.reduce((sum, score) => sum + score.score, 0) / Math.max(profile.scores.length, 1))}`
+    },
+    {
+      id: "projects",
+      label: lang === "th" ? "Projects" : "Projects",
+      getValue: (profile: (typeof compareProfiles)[number]) =>
+        `${projects.filter((project) => project.citySlug === profile.slug).length}`
+    },
+    {
+      id: "news",
+      label: lang === "th" ? "News" : "News",
+      getValue: (profile: (typeof compareProfiles)[number]) =>
+        `${news.filter((item) => item.citySlug === profile.slug).length}`
+    },
+    {
+      id: "domain",
+      label: lang === "th" ? "Leading domain" : "Leading domain",
+      getValue: (profile: (typeof compareProfiles)[number]) => {
+        const topScore = [...profile.scores].sort((left, right) => right.score - left.score)[0];
+        const topDomain = overview.domains.find((item) => item.slug === topScore?.domainSlug);
+        return topDomain ? localize(lang, topDomain.title) : "--";
+      }
+    },
+    {
+      id: "watch",
+      label: lang === "th" ? "Watch" : "Watch",
+      getValue: (profile: (typeof compareProfiles)[number]) => {
+        if (profile.slug === topAqiCitySlug) {
+          return lang === "th" ? "AQI hotspot" : "AQI hotspot";
+        }
+        if (profile.slug === hottestCitySlug) {
+          return lang === "th" ? "Heat watch" : "Heat watch";
+        }
+        return lang === "th" ? "Tracked" : "Tracked";
+      }
+    }
+  ];
+  const drawerCity = overview.cities.find((item) => item.slug === opsDrawerState?.citySlug) ?? selectedCity;
+  const drawerProjects = projects.filter((project) => project.citySlug === drawerCity.slug).slice(0, 3);
+  const drawerNews = news
+    .filter((item) => item.citySlug === drawerCity.slug || (!item.citySlug && item.kind === "external"))
+    .slice(0, 3);
+  const drawerSourceIds = new Set(
+    (opsDrawerState?.layers ?? layers)
+      .map((layerId) => {
+        const seededLayer = layerSeed.find((item) => item.id === layerId);
+        if (seededLayer?.sourceId) {
+          return seededLayer.sourceId;
+        }
+        if (layerId === "satellite-imagery" || layerId === "satellite-night-lights") {
+          return "nasa-gibs";
+        }
+        if (layerId === "jaxa-rainfall") {
+          return "jaxa-earth";
+        }
+        return null;
+      })
+      .filter((value): value is string => Boolean(value))
+  );
+  const drawerSources = sources.filter((source) => drawerSourceIds.has(source.id)).slice(0, 4);
+  const drawerGroundTruthLinks = [
+    ...(groundTruthDirectory[drawerCity.slug] ?? []),
+    ...groundTruthDirectory.national
+  ].filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index);
+  const drawerSatelliteLayers = satelliteToggleOptions.filter((item) => (opsDrawerState?.layers ?? layers).includes(item.id));
 
   const exportSnippets = useMemo(() => createDashboardScaffoldSnippets(), []);
   const activeExportSnippet = exportSnippets[exportLanguage];
@@ -2026,6 +2578,53 @@ function DashboardPage() {
     });
   }
 
+  function applyDashboardScene(scene: {
+    view?: DashboardView;
+    city?: string;
+    domain?: string;
+    basemap?: "atlas" | "satellite";
+    timeRange?: TimeRange;
+    layers?: string[];
+  }) {
+    const next = buildStableParams();
+
+    if (scene.view) {
+      next.set("view", scene.view);
+      if (scene.view === "national" && scene.domain === undefined) {
+        next.delete("domain");
+      }
+    }
+
+    if (scene.city) {
+      next.set("city", scene.city);
+    }
+
+    if (scene.domain !== undefined) {
+      if (scene.domain) {
+        next.set("domain", scene.domain);
+      } else {
+        next.delete("domain");
+      }
+    }
+
+    if (scene.basemap) {
+      next.set("basemap", scene.basemap);
+    }
+
+    if (scene.timeRange) {
+      next.set("timeRange", scene.timeRange);
+    }
+
+    if (scene.layers) {
+      next.set("layers", scene.layers.join(","));
+    }
+
+    startTransition(() => {
+      setSearchParams(next);
+      setRecenterSignal((value) => value + 1);
+    });
+  }
+
   const stableParamsString = buildStableParams().toString();
 
   useEffect(() => {
@@ -2037,6 +2636,14 @@ function DashboardPage() {
       setSearchParams(buildStableParams(), { replace: true });
     });
   }, [searchParams, stableParamsString, setSearchParams]);
+
+  useEffect(() => {
+    setCompareSelection((current) => {
+      const next = [selectedCity.slug, ...current.filter((item) => item !== selectedCity.slug)];
+      const normalized = next.slice(0, 4);
+      return normalized.join(",") === current.join(",") ? current : normalized;
+    });
+  }, [selectedCity.slug]);
 
   function updateParam(key: string, value: string) {
     const next = buildStableParams();
@@ -2150,6 +2757,76 @@ function DashboardPage() {
     toggleLayer(id);
   }
 
+  function openOpsDrawer(state: OpsDrawerState) {
+    setManualOpen(false);
+    setOpsDrawerState(state);
+  }
+
+  function openCityOpsDrawer(citySlug: string, reason: string, layerIds: string[]) {
+    const targetCity = overview.cities.find((item) => item.slug === citySlug) ?? selectedCity;
+    openOpsDrawer({
+      title: localize(lang, targetCity.name),
+      subtitle: localize(lang, targetCity.region),
+      citySlug: targetCity.slug,
+      reason,
+      layers: layerIds,
+      sourceLabel: latestSyncSource?.name ?? "Ops",
+      confidence: 0.78
+    });
+  }
+
+  function toggleCompareCity(slug: string) {
+    if (slug === selectedCity.slug) {
+      return;
+    }
+
+    setCompareSelection((current) => {
+      if (current.includes(slug)) {
+        return current.filter((item) => item !== slug);
+      }
+
+      return [...current, slug].slice(-4);
+    });
+  }
+
+  function updateOverlaySetting(id: string, patch: Partial<OverlayStudioSetting>) {
+    setOverlayStudioSettings((current) => ({
+      ...current,
+      [id]: {
+        ...current[id],
+        ...patch
+      }
+    }));
+  }
+
+  function moveOverlayItem(id: string, direction: -1 | 1) {
+    setOverlayStudioSettings((current) => {
+      const orderedIds = Object.entries(current)
+        .sort((left, right) => left[1].order - right[1].order)
+        .map(([layerId]) => layerId);
+      const currentIndex = orderedIds.indexOf(id);
+      const nextIndex = currentIndex + direction;
+
+      if (currentIndex === -1 || nextIndex < 0 || nextIndex >= orderedIds.length) {
+        return current;
+      }
+
+      const nextIds = [...orderedIds];
+      const [target] = nextIds.splice(currentIndex, 1);
+      nextIds.splice(nextIndex, 0, target);
+
+      return Object.fromEntries(
+        Object.entries(current).map(([layerId, setting]) => [
+          layerId,
+          {
+            ...setting,
+            order: nextIds.indexOf(layerId)
+          }
+        ])
+      ) as Record<string, OverlayStudioSetting>;
+    });
+  }
+
   async function copyLink() {
     await navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
@@ -2235,7 +2912,7 @@ function DashboardPage() {
 
           <div className="compact-group">
             <span className="eyebrow">{copy.range}</span>
-            {(["24h", "7d", "30d", "90d"] as TimeRange[]).map((option) => (
+            {TIME_RANGE_OPTIONS.map((option) => (
               <button
                 key={option}
                 className={option === timeRange ? "chip active" : "chip"}
@@ -2254,6 +2931,32 @@ function DashboardPage() {
               TH
             </button>
           </div>
+
+          <button
+            className="share-button"
+            onClick={() => {
+              setManualOpen(false);
+              openCityOpsDrawer(
+                selectedCity.slug,
+                lang === "th"
+                  ? "ใช้ drawer นี้เพื่ออธิบายมุมมองปัจจุบัน พร้อมโครงการ ข่าว และชั้นภาพที่เกี่ยวข้อง"
+                  : "Use this drawer to explain the current view with supporting projects, news, and layers.",
+                layers
+              );
+            }}
+          >
+            {uiText.explainView}
+          </button>
+
+          <button
+            className="share-button"
+            onClick={() => {
+              setOpsDrawerState(null);
+              setManualOpen(true);
+            }}
+          >
+            {uiText.screenshotManual}
+          </button>
 
           <button className="share-button" onClick={copyLink}>
             {copiedLink ? copy.copied : copy.share}
@@ -2560,7 +3263,264 @@ function DashboardPage() {
         </>
       ) : null}
 
+      {manualOpen ? (
+        <>
+          <button
+            type="button"
+            className="utility-scrim"
+            aria-label={uiText.screenshotManual}
+            onClick={() => setManualOpen(false)}
+          />
+          <aside className="utility-panel manual-panel" aria-label={uiText.screenshotManual}>
+            <div className="utility-panel-header">
+              <div>
+                <span className="eyebrow">{uiText.screenshotManual}</span>
+                <strong>{lang === "th" ? "คู่มือสำหรับเดโมและสไลด์" : "Manual for demos and slides"}</strong>
+              </div>
+              <button type="button" className="chip" onClick={() => setManualOpen(false)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="utility-panel-note">
+              <p>
+                {lang === "th"
+                  ? "ใช้ปุ่มด้านล่างเพื่อจัดฉากภาพที่อ่านง่ายและพร้อมสำหรับสกรีนช็อต โดยระบบจะเปลี่ยน basemap, layers, และช่วงเวลาให้ทันที"
+                  : "Use the scene buttons below to stage clean demo screenshots. The dashboard will switch the basemap, layers, and time window automatically."}
+              </p>
+            </div>
+
+            <div className="manual-scene-list tile-scroll">
+              {screenshotManualScenes.map((scene) => (
+                <article key={scene.id} className="manual-scene-card">
+                  <div className="stack-title">
+                    <strong>{localize(lang, scene.title)}</strong>
+                    <span className="status-pill">{scene.state.timeRange}</span>
+                  </div>
+                  <p>{localize(lang, scene.detail)}</p>
+                  <small>
+                    {uiText.shot}: {localize(lang, scene.shot)}
+                  </small>
+                  <div className="pill-list compact">
+                    {scene.state.layers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((item) => item.id === layerId)?.label ??
+                        layerSeed.find((item) => item.id === layerId)?.label;
+                      return (
+                        <span key={`${scene.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    className="share-button"
+                    onClick={() => {
+                      applyDashboardScene(scene.state);
+                      setManualOpen(false);
+                    }}
+                  >
+                    {uiText.applyScene}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </aside>
+        </>
+      ) : null}
+
+      {opsDrawerState ? (
+        <>
+          <button
+            type="button"
+            className="utility-scrim"
+            aria-label={uiText.openDrawer}
+            onClick={() => setOpsDrawerState(null)}
+          />
+          <aside className="utility-panel ops-panel" aria-label={uiText.openDrawer}>
+            <div className="utility-panel-header">
+              <div>
+                <span className="eyebrow">{uiText.openDrawer}</span>
+                <strong>{opsDrawerState.title}</strong>
+                <small>{opsDrawerState.subtitle}</small>
+              </div>
+              <button type="button" className="chip" onClick={() => setOpsDrawerState(null)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="utility-panel-note">
+              <p>{opsDrawerState.reason}</p>
+              <div className="pill-list compact">
+                <span className="stack-pill">{`${uiText.confidence} ${Math.round(opsDrawerState.confidence * 100)}%`}</span>
+                <span className="stack-pill">{opsDrawerState.sourceLabel}</span>
+                <span className="stack-pill">{`${uiText.liveWindow}: ${timeRange}`}</span>
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <div className="card-header">
+                <span className="eyebrow">{copy.placeLookup}</span>
+                <span className="status-pill">{localize(lang, drawerCity.name)}</span>
+              </div>
+              <div className="utility-stat-grid">
+                <div className="utility-stat">
+                  <span className="eyebrow">{copy.population}</span>
+                  <strong>{formatPopulation(drawerCity.population)}</strong>
+                </div>
+                <div className="utility-stat">
+                  <span className="eyebrow">{copy.region}</span>
+                  <strong>{localize(lang, drawerCity.region)}</strong>
+                </div>
+                <div className="utility-stat">
+                  <span className="eyebrow">{uiText.compareMode}</span>
+                  <strong>{timeCompareEnabled ? uiText.compareWindow : uiText.compareWindowOff}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerSatellite}</span>
+              <div className="pill-list compact">
+                <span className="stack-pill">{basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas}</span>
+                {drawerSatelliteLayers.map((item) => (
+                  <span key={`drawer-layer-${item.id}`} className="stack-pill">
+                    {localize(lang, item.label)}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerProjects}</span>
+              <div className="utility-link-list">
+                {drawerProjects.length > 0 ? (
+                  drawerProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      className="utility-link-card"
+                      onClick={() => applyDashboardScene({ view: "city", city: project.citySlug, layers: ["projects", "news", "weather"] })}
+                    >
+                      <strong>{localize(lang, project.title)}</strong>
+                      <small>{localize(lang, project.nextMilestone)}</small>
+                    </button>
+                  ))
+                ) : (
+                  <div className="utility-link-card static">
+                    <strong>{lang === "th" ? "ยังไม่มีโครงการเฉพาะเมือง" : "No city-specific projects yet"}</strong>
+                    <small>{localize(lang, drawerCity.focus)}</small>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerNews}</span>
+              <div className="utility-link-list">
+                {drawerNews.length > 0 ? (
+                  drawerNews.map((item) => (
+                    <a key={item.id} className="utility-link-card" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{item.source.sourceName}</small>
+                    </a>
+                  ))
+                ) : (
+                  <div className="utility-link-card static">
+                    <strong>{lang === "th" ? "ยังไม่มีข่าวเฉพาะเมือง" : "No city-specific news yet"}</strong>
+                    <small>{lang === "th" ? "ใช้ global signals เป็นบริบทเสริม" : "Use global signals as supporting context."}</small>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.sourceFreshness}</span>
+              <div className="utility-link-list">
+                {drawerSources.map((source) => (
+                  <a key={source.id} className="utility-link-card" href={source.url} target="_blank" rel="noreferrer">
+                    <strong>{source.name}</strong>
+                    <small>{`${source.freshnessStatus} • ${formatUtcClock(source.lastCheckedAt)} UTC`}</small>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.groundTruth}</span>
+              <div className="utility-link-list">
+                {drawerGroundTruthLinks.map((item) => (
+                  <a key={item.id} className="utility-link-card" href={item.url} target="_blank" rel="noreferrer">
+                    <strong>{localize(lang, item.label)}</strong>
+                    <small>{localize(lang, item.note)}</small>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </>
+      ) : null}
+
       <main className="dashboard-shell">
+        <section className="card command-card" id="command-bar">
+          <div className="card-header">
+            <span className="eyebrow">{uiText.commandBar}</span>
+            <span className="status-pill">{`${commandAlerts.length} ${lang === "th" ? "รายการ" : "alerts"}`}</span>
+          </div>
+          <div className="command-grid">
+            {commandAlerts.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="command-alert"
+                onClick={() => {
+                  applyDashboardScene({
+                    view:
+                      item.layers.includes("eo-precipitation") ||
+                      item.layers.includes("jaxa-rainfall") ||
+                      item.layers.includes("smart-city-thailand")
+                        ? "national"
+                        : "city",
+                    city: item.citySlug,
+                    basemap: item.basemap,
+                    layers: item.layers
+                  });
+                  openOpsDrawer({
+                    title: item.title,
+                    subtitle: item.location,
+                    citySlug: item.citySlug,
+                    reason: item.reason,
+                    layers: item.layers,
+                    sourceLabel: item.freshness,
+                    confidence: item.confidence
+                  });
+                }}
+              >
+                <div className="command-alert-head">
+                  <span className="eyebrow">{item.location}</span>
+                  <span className="status-pill">{item.freshness}</span>
+                </div>
+                <strong>{item.title}</strong>
+                <p>{item.reason}</p>
+                <div className="pill-list compact">
+                  {item.layers.map((layerId) => {
+                    const layerLabel =
+                      satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                      layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                    return (
+                      <span key={`${item.id}-${layerId}`} className="stack-pill">
+                        {layerLabel ? localize(lang, layerLabel) : layerId}
+                      </span>
+                    );
+                  })}
+                  <span className="stack-pill">{`${uiText.confidence} ${Math.round(item.confidence * 100)}%`}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="card map-hero" id="map">
           <div className="card-header">
             <span className="eyebrow">{copy.map}</span>
@@ -2582,6 +3542,7 @@ function DashboardPage() {
               domainSlug={domain || undefined}
               basemap={basemap}
               layers={layers}
+              overlayStyles={overlayStudioSettings}
               projects={projects}
               news={news}
               featureCollections={mapFeaturesForView}
@@ -2615,7 +3576,16 @@ function DashboardPage() {
               <button
                 type="button"
                 className="hotspot-chip warning"
-                onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}
+                onClick={() => {
+                  focusCityWithLayer(topAqiCitySlug || city, "pollution");
+                  openCityOpsDrawer(
+                    topAqiCitySlug || city,
+                    lang === "th"
+                      ? "จุดนี้เป็น AQI hotspot ที่ควรอ่านคู่กับ aerosol และ weather"
+                      : "This hotspot should be read together with aerosol and weather.",
+                    ["pollution", "weather", "eo-aerosol"]
+                  );
+                }}
               >
                 <span className="eyebrow">{copy.airHotspot}</span>
                 <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
@@ -2627,7 +3597,16 @@ function DashboardPage() {
               <button
                 type="button"
                 className="hotspot-chip"
-                onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}
+                onClick={() => {
+                  focusCityWithLayer(hottestCitySlug || city, "weather");
+                  openCityOpsDrawer(
+                    hottestCitySlug || city,
+                    lang === "th"
+                      ? "จุดนี้เป็น heat watch และควรเทียบกับชั้น vegetation"
+                      : "This heat watch should be compared with vegetation context.",
+                    ["weather", "eo-vegetation", "resilience"]
+                  );
+                }}
               >
                 <span className="eyebrow">{copy.weatherHotspot}</span>
                 <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
@@ -2709,12 +3688,34 @@ function DashboardPage() {
                         setSearchParams(next);
                         setRecenterSignal((v) => v + 1);
                       });
+                      openCityOpsDrawer(
+                        item.slug,
+                        lang === "th"
+                          ? "เปิด drawer นี้เพื่ออธิบายเมืองที่เลือกพร้อมข่าว โครงการ และชั้นภาพที่เกี่ยวข้อง"
+                          : "Open this drawer for the selected city with related projects, news, and map layers.",
+                        layers
+                      );
                     }}
                   >
                     {localize(lang, item.name)}
                   </button>
                 ))}
               </div>
+              <button
+                type="button"
+                className="chip"
+                onClick={() =>
+                  openCityOpsDrawer(
+                    selectedCity.slug,
+                    lang === "th"
+                      ? "คำอธิบายนี้สรุปว่าทำไมมุมมองปัจจุบันจึงสำคัญ"
+                      : "This explanation summarizes why the current view matters.",
+                    layers
+                  )
+                }
+              >
+                {uiText.openDrawer}
+              </button>
               {layers.includes("smart-city-thailand") ? (
                 <label className="coverage-filter">
                   <span className="eyebrow">Coverage Domain</span>
@@ -3136,6 +4137,306 @@ function DashboardPage() {
               })}
             </div>
           </section>
+
+          <section className="card time-card">
+            <div className="card-header">
+              <span className="eyebrow">{copy.time}</span>
+              <span className="status-pill">UTC</span>
+            </div>
+            <div className="time-scrubber">
+              <div className="time-scrubber-head">
+                <strong>{timeRange}</strong>
+                <button
+                  type="button"
+                  className={timeCompareEnabled ? "chip active" : "chip"}
+                  onClick={() => setTimeCompareEnabled((value) => !value)}
+                >
+                  {timeCompareEnabled ? uiText.compareWindow : uiText.compareWindowOff}
+                </button>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={TIME_RANGE_OPTIONS.length - 1}
+                step={1}
+                value={Math.max(0, timeRangeIndex)}
+                onChange={(event) => updateParam("timeRange", TIME_RANGE_OPTIONS[Number(event.target.value)])}
+              />
+              <div className="time-scrubber-scale">
+                {TIME_RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={`scrubber-${option}`}
+                    type="button"
+                    className={option === timeRange ? "chip active" : "chip"}
+                    onClick={() => updateParam("timeRange", option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <small>
+                {timeCompareEnabled
+                  ? lang === "th"
+                    ? "กำลังอ่านผลต่างเทียบกับช่วงเวลาก่อนหน้าใน narrative และ drawer"
+                    : "Narrative and drawer now read the current window against the previous period."
+                  : lang === "th"
+                    ? "โหมด snapshot ใช้สำหรับบันทึกภาพหรืออธิบายสภาพล่าสุด"
+                    : "Snapshot mode is best for clean screenshots and explaining the current state."}
+              </small>
+            </div>
+            <div className="time-zones">
+              {timeZones.map((zone) => (
+                <div key={zone.timeZone} className="time-zone">
+                  <span className="eyebrow">{zone.label}</span>
+                  <strong>{zone.localTime}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card compare-card" id="compare">
+            <div className="card-header">
+              <span className="eyebrow">{uiText.cityProvinceCompare}</span>
+              <span className="eyebrow">{`${compareProfiles.length}/4`}</span>
+            </div>
+            <small>{uiText.comparePick}</small>
+            <div className="pill-list compact">
+              {overview.cities.map((item) => {
+                const active = compareCitySlugs.includes(item.slug);
+                return (
+                  <button
+                    key={`compare-toggle-${item.slug}`}
+                    type="button"
+                    className={active ? "chip active" : "chip"}
+                    onClick={() => toggleCompareCity(item.slug)}
+                  >
+                    {localize(lang, item.name)}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="compare-matrix">
+              <div className="compare-city-headers">
+                {compareProfiles.map((profile) => (
+                  <button
+                    key={`compare-profile-${profile.slug}`}
+                    type="button"
+                    className={profile.slug === selectedCity.slug ? "compare-city-card active" : "compare-city-card"}
+                    onClick={() => {
+                      applyDashboardScene({ view: "city", city: profile.slug });
+                      openCityOpsDrawer(
+                        profile.slug,
+                        lang === "th"
+                          ? "ใช้การ์ดนี้เพื่อเทียบเมืองและเปิดคำอธิบายต่อด้านขวา"
+                          : "Use this card to compare the city and open a right-side explanation.",
+                        layers
+                      );
+                    }}
+                  >
+                    <span className="eyebrow">{localize(lang, profile.region)}</span>
+                    <strong>{localize(lang, profile.name)}</strong>
+                    <small>{localize(lang, profile.focus)}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="compare-metric-list">
+                {compareRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="compare-metric-row"
+                    style={{ gridTemplateColumns: `minmax(108px, 0.9fr) repeat(${Math.max(compareProfiles.length, 1)}, minmax(0, 1fr))` }}
+                  >
+                    <span className="eyebrow">{row.label}</span>
+                    {compareProfiles.map((profile) => (
+                      <strong key={`${row.id}-${profile.slug}`}>{row.getValue(profile)}</strong>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card trends-card" id="trends">
+            <div className="card-header">
+              <span className="eyebrow">{copy.trendWatch}</span>
+              <span className="status-pill">TH / 5Y</span>
+            </div>
+            <div className="trend-list tile-scroll">
+              {visibleTrends.map((item) => {
+                const stats = getTrendStats(item.values);
+
+                return (
+                  <a
+                    key={item.id}
+                    className="trend-row"
+                    href={createGoogleTrendsUrl(item.query)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="trend-term">
+                      <strong>{pickLocalized(lang, item.term)}</strong>
+                      <span className="status-pill">{pickLocalized(lang, item.category)}</span>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendNow}</span>
+                      <strong>{stats.latest}</strong>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendDelta}</span>
+                      <strong className={stats.delta >= 0 ? "trend-positive" : "trend-negative"}>
+                        {stats.delta >= 0 ? `+${stats.delta}` : stats.delta}
+                      </strong>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendPeak}</span>
+                      <strong>{stats.peak}</strong>
+                    </div>
+                    <div className="trend-mini">
+                      <Sparkline values={item.values} />
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="card media-card" id="media">
+            <div className="card-header">
+              <span className="eyebrow">Live Media</span>
+              <span className="status-pill">{mediaFeeds.length}</span>
+            </div>
+            <div className="stack-list tile-scroll">
+              {compactMedia.map((item) => (
+                <a
+                  key={item.id}
+                  className="stack-item linked"
+                  href={item.externalUrl ?? item.embedUrl ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div className="stack-title">
+                    <strong>{item.label}</strong>
+                    <span className={`status-tag ${item.status === "live" ? "live" : "manual"}`}>{item.status}</span>
+                  </div>
+                  <small>{item.region ?? item.kind}</small>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section className="card changes-card" id="changes">
+            <div className="card-header">
+              <span className="eyebrow">{copy.changes}</span>
+              <span className="status-pill">{changes.updatedAt.slice(11, 16)} UTC</span>
+            </div>
+            <div className="change-grid">
+              {changes.items.map((item) => (
+                <article key={item.id} className={`change-item tone-${item.tone}`}>
+                  <span className="eyebrow">{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                  <small>{localize(lang, item.detail)}</small>
+                </article>
+              ))}
+            </div>
+            <div className="threshold-strip">
+              <span className="eyebrow">{copy.thresholdWatch}</span>
+              <div className="threshold-list">
+                {changes.thresholds.map((threshold) => (
+                  <div key={threshold.id} className={`threshold-item ${threshold.state}`}>
+                    <strong>{localize(lang, threshold.label)}</strong>
+                    <small>{localize(lang, threshold.detail)}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card social-card" id="social">
+            <div className="card-header">
+              <span className="eyebrow">{copy.social}</span>
+              <span className="status-pill">{socialListening.source.freshnessStatus}</span>
+            </div>
+            <div className="social-stats">
+              <div className="social-stat">
+                <span className="eyebrow">{copy.mentions}</span>
+                <strong>{socialListening.mentionCount}</strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">{copy.sentiment}</span>
+                <strong className={socialListening.sentimentScore >= 0 ? "trend-positive" : "trend-negative"}>
+                  {socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}
+                </strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">{copy.sourceMix}</span>
+                <strong>{socialListening.sourceCount}</strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">Positive</span>
+                <strong>{Math.round(socialListening.positiveShare * 100)}%</strong>
+              </div>
+            </div>
+            <div className="social-meta">
+              <span>{socialListening.dominantSource}</span>
+              <div className="pill-list compact">
+                {socialListening.topTerms.slice(0, 5).map((term) => (
+                  <span key={term} className="stack-pill">
+                    {term}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card impact-card" id="impact">
+            <div className="card-header">
+              <span className="eyebrow">{copy.impact}</span>
+              <span className="status-pill">{impact.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
+              <div className="impact-row">
+                <span>{copy.official}</span>
+                <strong>{impact.officialUpdates}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Live</span>
+                <strong>{impact.liveSources}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Cities</span>
+                <strong>{impact.trackedCities}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Signals</span>
+                <strong>{impact.publicSignals}</strong>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Latest</span>
+              <strong>{localize(lang, impact.latestHeadline)}</strong>
+            </div>
+          </section>
+        </section>
+
+        <section className="support-grid">
+          <section className="card market-card" id="markets">
+            <div className="card-header">
+              <span className="eyebrow">{copy.markets}</span>
+              <span className="status-pill">{markets.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
+              {markets.items.map((item) => (
+                <div key={item.id} className={`impact-row tone-${item.tone}`}>
+                  <span>{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Signal</span>
+              <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
+            </div>
+          </section>
           <section className="card satellite-card" id="satellite">
             <div className="card-header">
               <span className="eyebrow">{copy.satellite}</span>
@@ -3265,6 +4566,98 @@ function DashboardPage() {
                 </div>
               </div>
 
+              <div className="satellite-section-label">{uiText.layerStudio}</div>
+              <div className="layer-studio-list">
+                {orderedOverlayItems.map((item, index) => {
+                  const active = layers.includes(item.id);
+                  const settings = overlayStudioSettings[item.id];
+
+                  return (
+                    <article key={`studio-${item.id}`} className="layer-studio-row">
+                      <div className="layer-studio-head">
+                        <div>
+                          <div className="side-toggle-row">
+                            <span className="swatch" style={{ background: item.color }} />
+                            <strong>{localize(lang, item.label)}</strong>
+                          </div>
+                          <small>{localize(lang, item.detail)}</small>
+                        </div>
+                        <button
+                          type="button"
+                          className={active ? "chip active" : "chip"}
+                          onClick={() => toggleSatelliteLayer(item.id)}
+                        >
+                          {active ? uiText.active : uiText.inactive}
+                        </button>
+                      </div>
+                      <div className="layer-studio-controls">
+                        <label>
+                          <span className="eyebrow">{uiText.opacity}</span>
+                          <input
+                            type="range"
+                            min={0.15}
+                            max={1}
+                            step={0.05}
+                            value={settings.opacity}
+                            onChange={(event) =>
+                              updateOverlaySetting(item.id, { opacity: Number(event.target.value) })
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span className="eyebrow">{uiText.blend}</span>
+                          <select
+                            value={settings.blendMode}
+                            onChange={(event) =>
+                              updateOverlaySetting(item.id, {
+                                blendMode: event.target.value as BlendModeOption
+                              })
+                            }
+                          >
+                            {BLEND_MODE_OPTIONS.map((option) => (
+                              <option key={`${item.id}-${option.id}`} value={option.id}>
+                                {localize(lang, option.label)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className="layer-order-controls">
+                          <span className="eyebrow">{`${uiText.order} ${index + 1}`}</span>
+                          <div className="pill-list compact">
+                            <button type="button" className="chip" onClick={() => moveOverlayItem(item.id, -1)}>
+                              {uiText.moveUp}
+                            </button>
+                            <button type="button" className="chip" onClick={() => moveOverlayItem(item.id, 1)}>
+                              {uiText.moveDown}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="satellite-section-label">{uiText.comparePanel}</div>
+              <div className="map-compare-grid">
+                {mapCompareCards.map((item) => (
+                  <button
+                    key={`compare-${item.id}`}
+                    type="button"
+                    className={item.active ? "map-compare-card active" : "map-compare-card"}
+                    onClick={item.action}
+                  >
+                    <div className="map-compare-thumb">
+                      <img src={item.previewUrl} alt={`${localize(lang, item.title)} preview`} loading="lazy" />
+                    </div>
+                    <div className="map-compare-copy">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{localize(lang, item.detail)}</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
               <div className="satellite-priority-list">
                 <span className="eyebrow">{copy.satelliteThailandPriority}</span>
                 {THAILAND_SATELLITE_PRIORITIES.map((item) => (
@@ -3353,6 +4746,311 @@ function DashboardPage() {
               ))}
             </div>
           </section>
+
+          <section className="card global-card" id="global-signals">
+            <div className="card-header">
+              <span className="eyebrow">{copy.globalSignals}</span>
+              <span className="status-pill">{globalSignalNews.length}</span>
+            </div>
+            <div className="stack-list tile-scroll">
+              {globalSignalNews.length > 0 ? (
+                globalSignalNews.map((item) => (
+                  <a
+                    key={item.id}
+                    className="stack-item linked"
+                    href={item.source.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className="status-pill">{formatUtcClock(item.publishedAt)} UTC</span>
+                    </div>
+                    <small>{item.source.sourceName}</small>
+                  </a>
+                ))
+              ) : (
+                <div className="stack-item">
+                  <p>{copy.noExternalSignals}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="card world-card" id="world-watch">
+            <div className="card-header">
+              <span className="eyebrow">{copy.worldWatch}</span>
+              <span className="status-pill">{globalWatchSources.length}</span>
+            </div>
+            <div className="stack-list">
+              <span className="eyebrow">{copy.sourceStatus}</span>
+              {globalWatchSources.map((source) => (
+                <div key={source.id} className="stack-item compact-source">
+                  <div className="stack-title">
+                    <strong>{source.name}</strong>
+                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                  </div>
+                  <small>{source.message}</small>
+                </div>
+              ))}
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.worldContext}</span>
+              <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
+            </div>
+            <div className="eo-watch-card">
+              <div className="stack-title">
+                <strong>{lang === "th" ? "Earth Observation Watch" : "Earth Observation Watch"}</strong>
+                <span className="status-pill">EO</span>
+              </div>
+              <div className="eo-watch-grid">
+                {eoWatchItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`eo-watch-item ${item.tone}`}
+                    onClick={() => {
+                      const next = buildStableParams();
+                      next.set("layers", item.targetLayers.join(","));
+                      if (
+                        item.targetLayers.includes("smart-city-thailand") ||
+                        item.targetLayers.includes("jaxa-rainfall") ||
+                        item.targetLayers.includes("eo-aerosol") ||
+                        item.targetLayers.includes("eo-precipitation") ||
+                        item.targetLayers.includes("eo-vegetation")
+                      ) {
+                        next.set("view", "national");
+                      }
+                      startTransition(() => {
+                        setSearchParams(next);
+                        setRecenterSignal((v) => v + 1);
+                      });
+                    }}
+                  >
+                    <span className="eyebrow">{item.title}</span>
+                    <small>{item.detail}</small>
+                  </button>
+                ))}
+              </div>
+              <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
+                {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
+              </a>
+            </div>
+            {undpDataSource ? (
+              <a className="stack-item linked compact-source" href={undpDataSource.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{undpDataSource.name}</strong>
+                  <span className={`status-tag ${undpDataSource.freshnessStatus}`}>{undpDataSource.freshnessStatus}</span>
+                </div>
+                <small>
+                  {lang === "th"
+                    ? "เปิด UNDP Data Hub เพื่อเข้าถึง development indicators, datasets, tiles, และ API URLs"
+                    : "Open UNDP Data Hub for development indicators, datasets, tiles, and dataset API URLs."}
+                </small>
+              </a>
+            ) : null}
+            <div className="compact-list">
+              {undpQuickLinks.map((item) => (
+                <a key={item.id} className="headline-item" href={item.href} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.title)}</strong>
+                  <small>{localize(lang, item.note)}</small>
+                </a>
+              ))}
+            </div>
+            <div className="compact-list">
+              <span className="eyebrow">{uiText.groundTruth}</span>
+              {groundTruthLinks.map((item) => (
+                <a key={item.id} className="headline-item" href={item.url} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.label)}</strong>
+                  <small>{localize(lang, item.note)}</small>
+                </a>
+              ))}
+            </div>
+            {compactMedia.length > 0 ? (
+              <div className="compact-list">
+                {compactMedia.slice(0, 2).map((item) => (
+                  <a
+                    key={item.id}
+                    className="headline-item"
+                    href={item.externalUrl ?? item.embedUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{item.region ?? item.kind}</small>
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="card activity-card" id="activity">
+            <div className="card-header">
+              <span className="eyebrow">{copy.activity}</span>
+              <span className="status-pill">{activityItems.length}</span>
+            </div>
+            <div className="activity-list tile-scroll">
+              {activityItems.map((item) => (
+                <article key={item.id} className="activity-item">
+                  <div className="stack-title">
+                    <strong>{item.label}</strong>
+                    <span className={`status-tag ${item.status}`}>{item.status}</span>
+                  </div>
+                  <small>{formatUtcClock(item.timestamp)} UTC</small>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="card research-card" id="candidate-compare">
+            <div className="card-header">
+              <span className="eyebrow">{copy.candidateCompare}</span>
+              <span className="status-pill">{selectedModelCity.name}</span>
+            </div>
+            <label className="stack-field">
+              <span className="eyebrow">{copy.modelCity}</span>
+              <select value={selectedModelCity.id} onChange={(event) => updateParam("modelCity", event.target.value)}>
+                {globalReferenceCities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {`${item.name}, ${item.country}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="candidate-grid">
+              <div className="candidate-panel">
+                <span className="eyebrow">{localize(lang, selectedCity.name)}</span>
+                <strong>{formatPopulation(selectedCity.population)}</strong>
+                <small>{localize(lang, selectedCity.region)}</small>
+                <p>{localize(lang, selectedCity.focus)}</p>
+              </div>
+              <div className="candidate-panel">
+                <span className="eyebrow">{`${selectedModelCity.name}, ${selectedModelCity.country}`}</span>
+                <strong>{selectedModelCity.approxPopulation}</strong>
+                <small>{`${copy.eiuRank}: ${selectedModelCity.eiuRank2025}`}</small>
+                <p>{pickLocalized(lang, selectedModelCity.modelLens)}</p>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.fitSignal}</span>
+              <strong>
+                {fitDomains.length > 0
+                  ? fitDomains.map((item) => localize(lang, item.title)).join(" • ")
+                  : pickLocalized(lang, selectedModelCity.modelLens)}
+              </strong>
+            </div>
+            <div className="stack-list">
+              <span className="eyebrow">{copy.transferIdeas}</span>
+              {selectedModelCity.innovationIdeas.map((item, index) => (
+                <div key={`${selectedModelCity.id}-${index}`} className="stack-item">
+                  <p>{pickLocalized(lang, item)}</p>
+                </div>
+              ))}
+            </div>
+            <a className="stack-item linked" href={selectedModelCity.href} target="_blank" rel="noreferrer">
+              <div className="stack-title">
+                <strong>{copy.livabilityLens}</strong>
+                <span className="status-pill">{copy.eiuRank}</span>
+              </div>
+              <p>
+                {lang === "th"
+                  ? "ใช้เมืองอันดับสูงของ EIU เป็นเมืองอ้างอิงเพื่อชี้ให้เห็นแนวทางที่ถ่ายโอนได้"
+                  : "Uses high-ranking EIU cities as reference models for transferable planning ideas."}
+              </p>
+            </a>
+          </section>
+
+          <section className="card toolkit-card" id="toolkit">
+            <div className="card-header">
+              <span className="eyebrow">{copy.toolkit}</span>
+              <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
+            </div>
+
+            <div className="toolkit-shell tile-scroll">
+              <div className="toolkit-block">
+                <h3>{copy.apiDirectory}</h3>
+                <div className="tool-link-grid">
+                  {toolkitLinks.map((tool) => (
+                    <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
+                      <strong>{tool.name}</strong>
+                      <span>{tool.kind}</span>
+                      <p>{pickLocalized(lang, tool.description)}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="toolkit-block">
+                <h3>{copy.stack}</h3>
+                <div className="pill-list">
+                  {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
+                    <span key={item} className="stack-pill">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="export-panel">
+                  <div className="stack-title">
+                    <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
+                    <button className="share-button" onClick={copySkeleton}>
+                      {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
+                    </button>
+                  </div>
+                  <div className="export-tabs">
+                    {exportOptions.map((option) => {
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
+                          onClick={() => setExportLanguage(option.id)}
+                        >
+                          <span className="export-tab-mark">{option.mark}</span>
+                          <span className="export-tab-copy">
+                            <strong>{option.label}</strong>
+                            <small>{option.detail}</small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <pre>{activeExportSnippet}</pre>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section className="card footnote-card" id="fine-print">
+          <div className="card-header">
+            <span className="eyebrow">{copy.finePrint}</span>
+            <span className="status-pill">experimental</span>
+          </div>
+          <div className="footnote-grid">
+            <p>{copy.privacy}</p>
+            <p>{copy.experimental}</p>
+            <p>{copy.copyright}</p>
+            <div className="contact-card">
+              <div className="stack-title">
+                <strong>{copy.contactTitle}</strong>
+                <span className="status-pill">public</span>
+              </div>
+              <p className="contact-copy">{copy.contactLead}</p>
+              <p className="contact-copy">{copy.contactPrompt}</p>
+              <div className="contact-links">
+                <a href="mailto:non.ar@depa.or.th">
+                  <span className="eyebrow">{copy.contactEmailLabel}</span>
+                  <strong>non.ar@depa.or.th</strong>
+                </a>
+                <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noreferrer">
+                  <span className="eyebrow">{copy.contactLinkedInLabel}</span>
+                  <strong>linkedin.com/in/drnon</strong>
+                </a>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 

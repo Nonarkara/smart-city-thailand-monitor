@@ -2232,6 +2232,334 @@ textarea {
   word-break: break-word;
 }
 
+.command-card {
+  background:
+    linear-gradient(135deg, rgba(56, 88, 199, 0.04), rgba(47, 110, 82, 0.04)),
+    var(--panel);
+}
+
+.command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.command-alert {
+  padding: 0.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+  display: grid;
+  gap: 0.5rem;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.command-alert:hover,
+.compare-city-card:hover,
+.map-compare-card:hover,
+.manual-scene-card:hover,
+.utility-link-card:hover {
+  border-color: var(--line-strong);
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.command-alert-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.command-alert strong,
+.map-compare-copy strong,
+.manual-scene-card strong,
+.utility-link-card strong,
+.compare-city-card strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.command-alert p,
+.manual-scene-card p,
+.utility-panel-note p {
+  color: var(--muted);
+  line-height: 1.42;
+  font-size: 0.88rem;
+}
+
+.utility-scrim {
+  position: fixed;
+  inset: 72px 0 44px 96px;
+  border: 0;
+  background: rgba(20, 20, 20, 0.18);
+  z-index: 28;
+}
+
+.utility-panel {
+  position: fixed;
+  top: 72px;
+  right: 0;
+  bottom: 44px;
+  width: min(420px, calc(100vw - 120px));
+  padding: 0.9rem;
+  border-left: 1px solid var(--line);
+  background: rgba(247, 246, 242, 0.98);
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  z-index: 29;
+  box-shadow: -18px 0 42px rgba(20, 20, 20, 0.1);
+}
+
+.ops-panel {
+  grid-template-rows: auto auto repeat(5, auto);
+}
+
+.manual-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.utility-panel-header,
+.utility-panel-note,
+.utility-section,
+.manual-scene-card,
+.utility-link-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.utility-panel-header {
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.utility-panel-header small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
+.utility-panel-note,
+.utility-section,
+.manual-scene-card {
+  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.manual-scene-list {
+  display: grid;
+  gap: 0.65rem;
+  min-height: 0;
+  align-content: start;
+  padding-right: 0.12rem;
+}
+
+.utility-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.utility-stat {
+  padding: 0.55rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.55);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.utility-link-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.utility-link-card {
+  padding: 0.7rem 0.75rem;
+  display: grid;
+  gap: 0.2rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.utility-link-card.static {
+  cursor: default;
+}
+
+.utility-link-card small {
+  color: var(--muted);
+  line-height: 1.38;
+}
+
+.time-scrubber {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.time-scrubber-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.time-scrubber input[type="range"],
+.layer-studio-controls input[type="range"] {
+  width: 100%;
+  accent-color: var(--blue);
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.time-scrubber-scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.time-scrubber small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.compare-matrix,
+.compare-metric-list,
+.layer-studio-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.compare-city-headers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+
+.compare-city-card {
+  padding: 0.72rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.68);
+  display: grid;
+  gap: 0.24rem;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.compare-city-card.active {
+  border-color: rgba(56, 88, 199, 0.24);
+  background: rgba(56, 88, 199, 0.06);
+}
+
+.compare-city-card small,
+.map-compare-copy small {
+  color: var(--muted);
+  line-height: 1.32;
+}
+
+.compare-metric-row {
+  display: grid;
+  grid-template-columns: minmax(108px, 0.9fr) repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.58rem 0.2rem;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.06);
+}
+
+.compare-metric-row strong {
+  font-size: 0.82rem;
+  line-height: 1.28;
+}
+
+.layer-studio-row {
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.7);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.layer-studio-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.layer-studio-head small {
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.layer-studio-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.layer-studio-controls label,
+.layer-order-controls {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.map-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.55rem;
+}
+
+.map-compare-card {
+  padding: 0.55rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.66);
+  display: grid;
+  gap: 0.5rem;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.map-compare-card.active {
+  border-color: rgba(56, 88, 199, 0.24);
+  background: rgba(56, 88, 199, 0.06);
+}
+
+.map-compare-thumb {
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  background: rgba(20, 20, 20, 0.05);
+  aspect-ratio: 1.35;
+}
+
+.map-compare-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-compare-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
 .footnote-grid p {
   padding: 0.8rem;
   border-radius: 16px;
@@ -2945,12 +3273,20 @@ textarea:focus {
     inset: 72px 0 44px 96px;
   }
 
+  .utility-scrim {
+    inset: 72px 0 44px 96px;
+  }
+
   .assistant-edge-tab {
     left: 96px;
   }
 
   .assistant-drawer {
     width: min(380px, calc(100vw - 128px));
+  }
+
+  .utility-panel {
+    width: min(360px, calc(100vw - 128px));
   }
 
   .city-intel-grid {
@@ -3003,6 +3339,11 @@ textarea:focus {
   .satellite-preview-grid,
   .satellite-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compare-metric-row,
+  .layer-studio-controls {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3075,6 +3416,10 @@ textarea:focus {
     inset: 0;
   }
 
+  .utility-scrim {
+    inset: 0;
+  }
+
   .assistant-edge-tab {
     display: none;
   }
@@ -3086,6 +3431,15 @@ textarea:focus {
     bottom: 0;
     width: 100vw;
     border-right: 0;
+    box-shadow: none;
+  }
+
+  .utility-panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    border-left: 0;
     box-shadow: none;
   }
 
@@ -3138,6 +3492,7 @@ textarea:focus {
   .selection-strip,
   .hotspot-strip,
   .map-legend,
+  .command-grid,
   .eo-watch-grid,
   .satellite-preview-grid,
   .satellite-preset-grid,
@@ -3147,6 +3502,7 @@ textarea:focus {
   .candidate-grid,
   .news-columns,
   .time-zones,
+  .utility-stat-grid,
   .support-grid,
   .toolkit-shell,
   .tool-link-grid,
@@ -3193,6 +3549,11 @@ textarea:focus {
 
   .hero-note {
     white-space: normal;
+  }
+
+  .compare-city-headers,
+  .map-compare-grid {
+    grid-template-columns: 1fr;
   }
 
   .bottombar {
@@ -3247,6 +3608,10 @@ textarea:focus {
     padding: 0.75rem;
   }
 
+  .utility-panel {
+    padding: 0.75rem;
+  }
+
   .assistant-form textarea {
     font-size: 0.85rem;
     min-height: 60px;
@@ -3296,5 +3661,11 @@ textarea:focus {
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .command-alert,
+  .manual-scene-card,
+  .layer-studio-row {
+    padding: 0.65rem;
   }
 }

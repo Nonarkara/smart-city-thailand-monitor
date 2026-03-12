@@ -220,6 +220,56 @@ const satelliteLayerDefinitions: Record<
 
 const satelliteAttribution = 'Imagery courtesy of <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">NASA GIBS</a>';
 
+function applyTileLayerVisuals(
+  layer: L.TileLayer,
+  visuals: {
+    opacity: number;
+    blendMode: "normal" | "multiply" | "screen" | "overlay";
+    order: number;
+  }
+) {
+  layer.setOpacity(visuals.opacity);
+  layer.setZIndex(220 + visuals.order);
+
+  const container = layer.getContainer();
+  if (container) {
+    container.style.mixBlendMode = visuals.blendMode;
+  }
+}
+
+function applyGenericLayerVisuals(
+  layer: L.Layer | null,
+  visuals: {
+    opacity: number;
+    blendMode: "normal" | "multiply" | "screen" | "overlay";
+    order: number;
+  }
+) {
+  if (!layer) {
+    return;
+  }
+
+  const withOpacity = layer as L.Layer & { setOpacity?: (value: number) => void };
+  const withZIndex = layer as L.Layer & { setZIndex?: (value: number) => void };
+  const withContainer = layer as L.Layer & { getContainer?: () => HTMLElement | null };
+
+  if (typeof withOpacity.setOpacity === "function") {
+    withOpacity.setOpacity(visuals.opacity);
+  }
+
+  if (typeof withZIndex.setZIndex === "function") {
+    withZIndex.setZIndex(220 + visuals.order);
+  }
+
+  if (typeof withContainer.getContainer === "function") {
+    const container = withContainer.getContainer();
+    if (container) {
+      container.style.mixBlendMode = visuals.blendMode;
+      container.style.opacity = String(visuals.opacity);
+    }
+  }
+}
+
 const coverageDomainKeywords: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
   economy: ["economy", "industrial", "trade", "tourism", "innovation", "growth", "logistics"],
@@ -614,6 +664,14 @@ interface InteractiveMapProps {
   domainSlug?: string;
   basemap: "atlas" | "satellite";
   layers: string[];
+  overlayStyles: Record<
+    string,
+    {
+      opacity: number;
+      blendMode: "normal" | "multiply" | "screen" | "overlay";
+      order: number;
+    }
+  >;
   projects: ProjectRecord[];
   news: NewsItem[];
   featureCollections: MapFeatureCollection[];
@@ -628,6 +686,7 @@ export default function InteractiveMap({
   domainSlug,
   basemap,
   layers,
+  overlayStyles,
   projects,
   news,
   featureCollections,
@@ -646,6 +705,10 @@ export default function InteractiveMap({
   const [eoRainState, setEoRainState] = useState<EoRainState>("off");
 
   const layerKey = layers.join(",");
+  const overlayStyleKey = Object.entries(overlayStyles)
+    .sort((left, right) => left[1].order - right[1].order)
+    .map(([id, value]) => `${id}:${value.opacity}:${value.blendMode}:${value.order}`)
+    .join("|");
   const bangkokFeatureBounds =
     featureCollections.find((collection) => collection.layerId === "bangkok-passages")?.bounds ?? null;
   const nationalCoverageBounds =
@@ -842,7 +905,11 @@ export default function InteractiveMap({
           if (!map.hasLayer(layer)) {
             layer.addTo(map);
           }
-          layer.setOpacity(satelliteLayerDefinitions[id as SatelliteLayerId].opacity);
+          applyTileLayerVisuals(layer, overlayStyles[id] ?? {
+            opacity: satelliteLayerDefinitions[id as SatelliteLayerId].opacity,
+            blendMode: "normal",
+            order: 0
+          });
           return;
         }
 
@@ -851,7 +918,7 @@ export default function InteractiveMap({
         }
       });
     }
-  }, [domainSlug, featureCollections, layerKey]);
+  }, [domainSlug, featureCollections, layerKey, overlayStyleKey, overlayStyles]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -877,10 +944,15 @@ export default function InteractiveMap({
       if (!config) {
         return;
       }
+      const visuals = overlayStyles[id] ?? {
+        opacity: config.opacity,
+        blendMode: "multiply",
+        order: 0
+      };
 
       if (existingLayer) {
         existingLayer.setUrl(config.url);
-        existingLayer.setOpacity(config.opacity);
+        applyTileLayerVisuals(existingLayer, visuals);
         if (!map.hasLayer(existingLayer)) {
           existingLayer.addTo(map);
         }
@@ -888,7 +960,7 @@ export default function InteractiveMap({
       }
 
       const nextLayer = L.tileLayer(config.url, {
-        opacity: config.opacity,
+        opacity: visuals.opacity,
         maxZoom: 18,
         maxNativeZoom: config.maxNativeZoom,
         attribution: config.attribution,
@@ -896,9 +968,10 @@ export default function InteractiveMap({
       });
 
       nextLayer.addTo(map);
+      applyTileLayerVisuals(nextLayer, visuals);
       eoLayerRefs.current[id] = nextLayer;
     });
-  }, [layers]);
+  }, [layers, overlayStyleKey, overlayStyles]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -959,6 +1032,11 @@ export default function InteractiveMap({
     void (async () => {
       const jaxa = await loadJaxaEarthLibrary();
       const createLayer = jaxa?.leaflet?.createLayer;
+      const jaxaVisuals = overlayStyles["jaxa-rainfall"] ?? {
+        opacity: 0.42,
+        blendMode: "overlay",
+        order: 0
+      };
 
       if (!createLayer || cancelled) {
         if (!cancelled) {
@@ -974,7 +1052,7 @@ export default function InteractiveMap({
             L,
             collection: JAXA_GSMAP_DAILY_COLLECTION,
             date: getLatestJaxaRainDate(),
-            opacity: 0.42,
+            opacity: jaxaVisuals.opacity,
             projection: "EPSG:3857"
           })
         );
@@ -999,6 +1077,7 @@ export default function InteractiveMap({
 
         nextLayer.addTo(map);
         jaxaLayerRef.current = nextLayer;
+        applyGenericLayerVisuals(nextLayer, jaxaVisuals);
         setEoRainState("live");
       } catch {
         if (!cancelled) {
@@ -1010,7 +1089,7 @@ export default function InteractiveMap({
     return () => {
       cancelled = true;
     };
-  }, [featureCollections, layerKey, layers, locale]);
+  }, [featureCollections, layerKey, layers, locale, overlayStyleKey, overlayStyles]);
 
   const eoRainStatusLabel =
     eoRainState === "loading"
