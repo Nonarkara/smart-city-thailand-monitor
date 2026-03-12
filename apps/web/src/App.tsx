@@ -84,7 +84,6 @@ const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   governance: ["governance", "administration", "service", "management", "municipal", "public", "policy"]
 };
 
-const SATELLITE_LAYER_IDS = ["eo-aerosol", "eo-precipitation", "eo-vegetation"] as const;
 const SATELLITE_CREDENTIAL_SOURCE_IDS = [
   "sentinel-hub-process",
   "sentinel-hub-statistics",
@@ -212,28 +211,34 @@ const satelliteToggleOptions: ToggleOption[] = [
     color: "#d5e7ff"
   },
   {
-    id: "satellite-vegetation",
+    id: "eo-vegetation",
     label: { th: "พืชพรรณ", en: "Vegetation" },
     detail: { th: "ดัชนีพืชพรรณ NDVI", en: "NDVI vegetation index" },
-    color: "#4ade80"
+    color: "#65a30d"
   },
   {
-    id: "satellite-aerosol",
+    id: "eo-aerosol",
     label: { th: "ละอองลอย", en: "Aerosol" },
     detail: { th: "ดัชนีละอองลอยชั้นบรรยากาศ", en: "Atmospheric aerosol index" },
-    color: "#f59e0b"
+    color: "#9333ea"
+  },
+  {
+    id: "eo-precipitation",
+    label: { th: "มรสุม", en: "Monsoon" },
+    detail: { th: "ภาพรวมฝนและมรสุมระดับประเทศ", en: "Nationwide precipitation and monsoon context" },
+    color: "#2563eb"
+  },
+  {
+    id: "jaxa-rainfall",
+    label: { th: "ฝน", en: "Rain" },
+    detail: { th: "ภาพฝนดาวเทียมรายวันจาก JAXA", en: "Daily JAXA rainfall raster" },
+    color: "#0f8cff"
   },
   {
     id: "satellite-night-lights",
     label: { th: "แสงกลางคืน", en: "Night Lights" },
     detail: { th: "ความหนาแน่นแสงเมืองยามค่ำ", en: "Night-time urban light intensity" },
     color: "#8b5cf6"
-  },
-  {
-    id: "jaxa-rainfall",
-    label: { th: "ฝน JAXA", en: "JAXA Rain" },
-    detail: { th: "ภาพฝนดาวเทียม EO", en: "Satellite rainfall raster" },
-    color: "#0f8cff"
   }
 ];
 
@@ -429,8 +434,8 @@ const copyDeck = {
     briefing: "สรุปสถานการณ์",
     time: "เวลาอ้างอิง",
     map: "แผนที่สัญญาณ",
-    mapAtlas: "Atlas",
-    mapSatellite: "Satellite",
+    mapAtlas: "ถนน",
+    mapSatellite: "ภาพถ่ายทางอากาศ",
     official: "ข่าวภายใน",
     external: "ข่าวภายนอก",
     adminToken: "โทเค็นผู้ดูแล",
@@ -471,7 +476,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "จัดกึ่งกลางแผนที่",
-    eoOverlay: "JAXA Rain",
+    eoOverlay: "Rain",
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
     focusAirRisk: "ความเสี่ยงอากาศ",
@@ -540,9 +545,9 @@ const copyDeck = {
     livabilityLens: "กรอบ Livability",
     eiuRank: "อันดับ EIU 2025",
     satellite: "Satellite Intelligence",
-    satelliteMapStack: "ชั้นภาพดาวเทียมบนแผนที่",
+    satelliteMapStack: "สไตล์แผนที่ + ชั้นภาพ",
     satelliteLivePreviews: "ภาพสดจาก Copernicus / Sentinel",
-    satelliteLiveLayers: "ชั้นภาพสาธารณะที่เปิดใช้ได้ทันที",
+    satelliteLiveLayers: "แผนที่ฐานและชั้นภาพที่เปิดใช้ได้ทันที",
     satelliteReadySources: "Copernicus / Sentinel ที่พร้อมเชื่อม",
     satelliteThailandPriority: "ลำดับความสำคัญสำหรับไทย",
     satelliteSignalReady: "NASA GIBS และ JAXA เปิดใช้ได้แล้ว ขณะที่ Copernicus / Sentinel พร้อมต่อด้วย OAuth",
@@ -579,8 +584,8 @@ const copyDeck = {
     briefing: "Briefing",
     time: "Reference Time",
     map: "Signal Map",
-    mapAtlas: "Atlas",
-    mapSatellite: "Satellite",
+    mapAtlas: "Street",
+    mapSatellite: "Aerial",
     official: "Official",
     external: "External",
     adminToken: "Admin token",
@@ -622,7 +627,7 @@ const copyDeck = {
     social: "Social Listening",
     impact: "Official Impact",
     recenter: "Recenter Map",
-    eoOverlay: "JAXA Rain",
+    eoOverlay: "Rain",
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
     focusAirRisk: "Air Risk",
@@ -691,9 +696,9 @@ const copyDeck = {
     livabilityLens: "Livability Lens",
     eiuRank: "EIU 2025 Rank",
     satellite: "Satellite Intelligence",
-    satelliteMapStack: "Map satellite stack",
+    satelliteMapStack: "Map styles + overlays",
     satelliteLivePreviews: "Live Copernicus / Sentinel previews",
-    satelliteLiveLayers: "Public live layers",
+    satelliteLiveLayers: "Live basemaps + overlays",
     satelliteReadySources: "Copernicus / Sentinel ready",
     satelliteThailandPriority: "Thailand priorities",
     satelliteSignalReady: "NASA GIBS and JAXA are live now, while Copernicus / Sentinel are ready for OAuth-backed integration.",
@@ -1337,11 +1342,8 @@ function DashboardPage() {
   const globalWatchSources = sources.filter((source) =>
     ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals", "undp-data"].includes(source.id)
   );
-  const satelliteLayerCatalog = layerSeed.filter((layer) =>
-    SATELLITE_LAYER_IDS.includes(layer.id as (typeof SATELLITE_LAYER_IDS)[number])
-  );
-  const satelliteMapLayers = [...satelliteLayerCatalog];
-  const activeSatelliteLayers = satelliteLayerCatalog.filter((layer) => layers.includes(layer.id));
+  const satelliteToolbarOptions = satelliteToggleOptions.filter((item) => item.id !== "satellite-night-lights");
+  const activeSatelliteLayers = satelliteToggleOptions.filter((item) => layers.includes(item.id));
   const satelliteLiveSources = sources.filter((source) => ["nasa-gibs", "jaxa-earth"].includes(source.id));
   const satelliteReadySources = sources.filter((source) =>
     SATELLITE_CREDENTIAL_SOURCE_IDS.includes(source.id as (typeof SATELLITE_CREDENTIAL_SOURCE_IDS)[number])
@@ -1828,6 +1830,15 @@ function DashboardPage() {
     });
   }
 
+  function toggleSatelliteLayer(id: string) {
+    if (id === "jaxa-rainfall") {
+      toggleEoOverlay();
+      return;
+    }
+
+    toggleLayer(id);
+  }
+
   async function copyLink() {
     await navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
@@ -2011,7 +2022,7 @@ function DashboardPage() {
                   type="button"
                   aria-pressed={active}
                   className={active ? "side-toggle active satellite" : "side-toggle satellite"}
-                  onClick={() => (item.id === "jaxa-rainfall" ? toggleEoOverlay() : toggleLayer(item.id))}
+                  onClick={() => toggleSatelliteLayer(item.id)}
                 >
                   <div className="side-toggle-row">
                     <span className="swatch" style={{ background: item.color }} />
@@ -2255,7 +2266,7 @@ function DashboardPage() {
                 <span>{view === "national" ? "Smart City coverage footprint" : localize(lang, selectedCity.region)}</span>
               </div>
               <span className="map-open-link">
-                {`${basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas} · ${activeSatelliteLayers.length + (layers.includes("jaxa-rainfall") ? 1 : 0)} EO`}
+                {`${basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas} · ${activeSatelliteLayers.length} ${lang === "th" ? "ชั้นภาพ" : "overlays"}`}
               </span>
             </div>
           </div>
@@ -2339,23 +2350,16 @@ function DashboardPage() {
                   >
                     {copy.mapSatellite}
                   </button>
-                  {satelliteMapLayers.map((layer) => (
+                  {satelliteToolbarOptions.map((item) => (
                     <button
-                      key={layer.id}
+                      key={item.id}
                       type="button"
-                      className={layers.includes(layer.id) ? "chip active" : "chip"}
-                      onClick={() => toggleLayer(layer.id)}
+                      className={layers.includes(item.id) ? "chip active" : "chip"}
+                      onClick={() => toggleSatelliteLayer(item.id)}
                     >
-                      {localize(lang, layer.label)}
+                      {localize(lang, item.label)}
                     </button>
                   ))}
-                  <button
-                    type="button"
-                    className={layers.includes("jaxa-rainfall") ? "chip active" : "chip"}
-                    onClick={toggleEoOverlay}
-                  >
-                    {copy.eoOverlay}
-                  </button>
                 </div>
               </div>
               <button className="chip" onClick={() => setRecenterSignal((value) => value + 1)}>
@@ -3075,14 +3079,30 @@ function DashboardPage() {
                 <div className="satellite-panel">
                   <span className="eyebrow">{copy.satelliteLiveLayers}</span>
                   <div className="pill-list compact">
-                    {satelliteLayerCatalog.map((layer) => (
+                    <button
+                      type="button"
+                      className={basemap === "atlas" ? "chip active" : "chip"}
+                      onClick={() => updateParam("basemap", "atlas")}
+                    >
+                      {copy.mapAtlas}
+                    </button>
+                    <button
+                      type="button"
+                      className={basemap === "satellite" ? "chip active" : "chip"}
+                      onClick={() => updateParam("basemap", "satellite")}
+                    >
+                      {copy.mapSatellite}
+                    </button>
+                  </div>
+                  <div className="pill-list compact">
+                    {satelliteToggleOptions.map((item) => (
                       <button
-                        key={layer.id}
+                        key={item.id}
                         type="button"
-                        className={layers.includes(layer.id) ? "chip active" : "chip"}
-                        onClick={() => toggleLayer(layer.id)}
+                        className={layers.includes(item.id) ? "chip active" : "chip"}
+                        onClick={() => toggleSatelliteLayer(item.id)}
                       >
-                        {localize(lang, layer.label)}
+                        {localize(lang, item.label)}
                       </button>
                     ))}
                   </div>
