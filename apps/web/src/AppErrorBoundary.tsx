@@ -1,17 +1,15 @@
-import React from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
-type AppErrorBoundaryProps = {
-  children: React.ReactNode;
-};
+interface AppErrorBoundaryProps {
+  children: ReactNode;
+}
 
-type AppErrorBoundaryState = {
+interface AppErrorBoundaryState {
   error: Error | null;
-};
+}
 
-const showDetails = import.meta.env.DEV;
-
-export default class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
-  override state: AppErrorBoundaryState = {
+export default class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
+  state: AppErrorBoundaryState = {
     error: null
   };
 
@@ -19,39 +17,34 @@ export default class AppErrorBoundary extends React.Component<AppErrorBoundaryPr
     return { error };
   }
 
-  override componentDidCatch(error: Error) {
-    console.error("Dashboard boot failed", error);
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Dashboard crash captured by error boundary.", error, info.componentStack);
   }
 
-  override render() {
+  render() {
     if (!this.state.error) {
       return this.props.children;
     }
 
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          padding: "24px",
-          background: "#f7f6f2"
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            width: "min(640px, 100%)",
-            padding: "24px",
-            display: "grid",
-            gap: "12px"
-          }}
-        >
-          <span className="eyebrow">Dashboard Boot Error</span>
-          <strong>The dashboard could not finish loading.</strong>
-          <p>Refresh the page or check the API connection before the demo.</p>
-          {showDetails ? <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{this.state.error.message}</pre> : null}
-        </div>
+      <div className="app-error-shell">
+        <section className="app-error-card">
+          <span className="eyebrow">Recovery Mode</span>
+          <h1>Dashboard recovered from an unexpected error.</h1>
+          <p>
+            We caught the crash before it blanked the page. Reload to retry the current view or reset back to the base
+            dashboard.
+          </p>
+          <div className="app-error-actions">
+            <button type="button" className="share-button" onClick={() => window.location.reload()}>
+              Reload
+            </button>
+            <button type="button" className="chip" onClick={() => window.location.assign("/")}>
+              Reset view
+            </button>
+          </div>
+          <pre className="app-error-detail">{this.state.error.message}</pre>
+        </section>
       </div>
     );
   }

@@ -64,6 +64,56 @@ p {
   margin: 0;
 }
 
+.app-error-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.app-error-card {
+  width: min(560px, 100%);
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(94, 255, 175, 0.24);
+  background:
+    linear-gradient(135deg, rgba(71, 232, 179, 0.08), rgba(245, 184, 78, 0.05)),
+    rgba(7, 18, 12, 0.94);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.7rem;
+}
+
+.app-error-card h1 {
+  font-family: "Space Grotesk", "IBM Plex Sans Thai", sans-serif;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  line-height: 1.02;
+}
+
+.app-error-card p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.app-error-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.app-error-detail {
+  margin: 0;
+  padding: 0.8rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(4, 10, 7, 0.88);
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .shell {
   min-height: 100vh;
   display: grid;

@@ -818,6 +818,34 @@ function parseLayerSet(raw: string | null) {
     .filter(Boolean);
 }
 
+function safeArray<T>(value: T[] | undefined | null, fallback: T[]) {
+  return Array.isArray(value) ? value : fallback;
+}
+
+function normalizeOverviewSnapshot(value: OverviewSnapshot | undefined, fallback: OverviewSnapshot): OverviewSnapshot {
+  if (
+    !value ||
+    !Array.isArray(value.cities) ||
+    value.cities.length === 0 ||
+    !Array.isArray(value.domains) ||
+    !Array.isArray(value.metrics) ||
+    !value.briefing ||
+    typeof value.updatedAt !== "string"
+  ) {
+    return fallback;
+  }
+
+  return value;
+}
+
+function normalizeTimeSnapshot(value: TimeSnapshot | undefined, fallback: TimeSnapshot): TimeSnapshot {
+  if (!value || !Array.isArray(value.zones) || typeof value.updatedAt !== "string") {
+    return fallback;
+  }
+
+  return value;
+}
+
 function Sparkline({ values }: { values: number[] }) {
   const points = values.map((value, index) => `${(index / Math.max(values.length - 1, 1)) * 100},${100 - value}`).join(" ");
   return (
@@ -915,7 +943,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? "muang-thong-thani";
+  const city = searchParams.get("city") ?? "bangkok";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
   const layers = useMemo(() => parseLayerSet(rawLayers), [rawLayers]);
@@ -940,6 +968,22 @@ function useDashboardData(searchParams: URLSearchParams) {
     domain: domain || undefined,
     layers
   });
+  const projectFallback = cloneSeed(projectSeed.filter((project) => !cityFilter || project.citySlug === cityFilter));
+  const newsFallback = cloneSeed(
+    newsSeed.filter((item) => {
+      if (cityFilter && item.citySlug && item.citySlug !== cityFilter) return false;
+      if (domain && item.domainSlug && item.domainSlug !== domain) return false;
+      return true;
+    })
+  );
+  const globalNewsFallback = cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6));
+  const activityFallback = cloneSeed(activityLogSeed).slice(0, 6);
+  const sourcesFallback = cloneSeed(sourceSeed);
+  const mapFeaturesFallback = cloneSeed(
+    mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")
+  );
+  const mediaFeedsFallback = cloneSeed(mediaFeedSeed);
+  const timeFallback = createTimeSnapshot();
 
   const overviewQuery = useQuery({
     queryKey: ["overview", queryString.toString()],
@@ -955,13 +999,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     queryFn: () =>
       fetchFromApi<ProjectRecord[]>(
         `/api/projects${cityFilter ? `?city=${cityFilter}` : "?"}${domain ? `${cityFilter ? "&" : ""}domain=${domain}` : ""}`,
-        cloneSeed(
-          projectSeed.filter((project) => {
-            if (cityFilter && project.citySlug !== cityFilter) return false;
-            if (domain && project.domainSlug !== domain) return false;
-            return true;
-          })
-        ),
+        projectFallback,
         Array.isArray
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
@@ -974,13 +1012,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     queryFn: () =>
       fetchFromApi<NewsItem[]>(
         `/api/news?limit=8${cityFilter ? `&city=${cityFilter}` : ""}${domain ? `&domain=${domain}` : ""}`,
-        cloneSeed(
-          newsSeed.filter((item) => {
-            if (cityFilter && item.citySlug && item.citySlug !== cityFilter) return false;
-            if (domain && item.domainSlug && item.domainSlug !== domain) return false;
-            return true;
-          })
-        ),
+        newsFallback,
         Array.isArray
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
@@ -990,12 +1022,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const globalNewsQuery = useQuery({
     queryKey: ["news-global"],
-    queryFn: () =>
-      fetchFromApi<NewsItem[]>(
-        "/api/news?kind=external&limit=6",
-        cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6)),
-        Array.isArray
-      ),
+    queryFn: () => fetchFromApi<NewsItem[]>("/api/news?kind=external&limit=6", globalNewsFallback, Array.isArray),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1025,7 +1052,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const activityQuery = useQuery({
     queryKey: ["activity"],
-    queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", cloneSeed(activityLogSeed).slice(0, 6), Array.isArray),
+    queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", activityFallback, Array.isArray),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1067,7 +1094,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const sourcesQuery = useQuery({
     queryKey: ["sources"],
-    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed), isSourceRecordPayload),
+    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", sourcesFallback, isSourceRecordPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1087,9 +1114,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     queryFn: () =>
       fetchFromApi<MapFeatureCollection[]>(
         `/api/map/features?layers=${encodeURIComponent(layers.join(","))}`,
-        cloneSeed(
-          mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")
-        ),
+        mapFeaturesFallback,
         isMapFeatureCollectionPayload
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
@@ -1099,7 +1124,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const mediaFeedsQuery = useQuery({
     queryKey: ["media-feeds"],
-    queryFn: () => fetchFromApi<MediaFeedItem[]>("/api/media/feeds", cloneSeed(mediaFeedSeed), Array.isArray),
+    queryFn: () => fetchFromApi<MediaFeedItem[]>("/api/media/feeds", mediaFeedsFallback, Array.isArray),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1107,9 +1132,11 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const timeQuery = useQuery({
     queryKey: ["time"],
-    queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", createTimeSnapshot(), isTimeSnapshotPayload),
+    queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", timeFallback, isTimeSnapshotPayload),
     refetchInterval: 1000
   });
+
+  const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
     lang,
@@ -1118,23 +1145,21 @@ function useDashboardData(searchParams: URLSearchParams) {
     city,
     domain,
     layers,
-    overview: overviewQuery.data ?? overviewFallback,
-    projects: projectsQuery.data ?? cloneSeed(projectSeed),
-    news: newsQuery.data ?? cloneSeed(newsSeed),
-    globalNews: globalNewsQuery.data ?? cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6)),
+    overview,
+    projects: safeArray(projectsQuery.data, projectFallback),
+    news: safeArray(newsQuery.data, newsFallback),
+    globalNews: safeArray(globalNewsQuery.data, globalNewsFallback),
     resilience: resilienceQuery.data ?? cloneSeed(resilienceSeed),
     changes: changesQuery.data ?? cloneSeed(changePulseSeed),
-    activity: activityQuery.data ?? cloneSeed(activityLogSeed),
+    activity: safeArray(activityQuery.data, activityFallback),
     socialListening: socialListeningQuery.data ?? cloneSeed(socialListeningSeed),
     impact: impactQuery.data ?? cloneSeed(officialImpactSeed),
     markets: marketQuery.data ?? cloneSeed(marketSnapshotSeed),
-    sources: sourcesQuery.data ?? cloneSeed(sourceSeed),
+    sources: safeArray(sourcesQuery.data, sourcesFallback),
     satelliteDigest: satelliteDigestQuery.data ?? createSatelliteDigestFallback(),
-    mapFeatures:
-      mapFeaturesQuery.data ??
-      cloneSeed(mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")),
-    mediaFeeds: mediaFeedsQuery.data ?? cloneSeed(mediaFeedSeed),
-    time: timeQuery.data ?? createTimeSnapshot()
+    mapFeatures: safeArray(mapFeaturesQuery.data, mapFeaturesFallback),
+    mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
+    time: normalizeTimeSnapshot(timeQuery.data, timeFallback)
   };
 }
 
@@ -1193,6 +1218,7 @@ function DashboardPage() {
   const selectedCity = overview.cities.find((item) => item.slug === city) ?? overview.cities[0];
   const selectedDomain = overview.domains.find((item) => item.slug === domain);
   const knownCitySlugs = new Set(overview.cities.map((item) => item.slug));
+  const knownCitySlugsKey = overview.cities.map((item) => item.slug).join(",");
   const normalizedSearch = deferredSearchText.trim().toLowerCase();
   const suggestedModelCityId =
     selectedCity.slug === "phuket"
@@ -1250,7 +1276,13 @@ function DashboardPage() {
     refetchOnWindowFocus: true
   });
   const slicThailand =
-    slicThailandQuery.data && slicThailandQuery.data.topCities.length > 0 ? slicThailandQuery.data : slicThailandFallback;
+    slicThailandQuery.data &&
+    Array.isArray(slicThailandQuery.data.topCities) &&
+    slicThailandQuery.data.topCities.length > 0 &&
+    slicThailandQuery.data.source &&
+    typeof slicThailandQuery.data.updatedAt === "string"
+      ? slicThailandQuery.data
+      : slicThailandFallback;
   const operationalLayerOptions = operationalLayerToggleIds
     .map((id) => layerSeed.find((layer) => layer.id === id))
     .filter((item): item is (typeof layerSeed)[number] => Boolean(item));
@@ -1669,6 +1701,19 @@ function DashboardPage() {
       })
     )
   }));
+
+  useEffect(() => {
+    if (view === "national" || knownCitySlugs.size === 0 || knownCitySlugs.has(city) || selectedCity.slug === city) {
+      return;
+    }
+
+    const next = buildStableParams();
+    next.set("city", selectedCity.slug);
+
+    startTransition(() => {
+      setSearchParams(next, { replace: true });
+    });
+  }, [city, knownCitySlugsKey, selectedCity.slug, setSearchParams, view]);
 
   function buildStableParams() {
     const next = new URLSearchParams();
