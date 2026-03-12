@@ -1,5 +1,6 @@
 export const config = {
   port: Number(process.env.PORT ?? 4000),
+  host: process.env.HOST ?? "127.0.0.1",
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
   allowLiveFetch: process.env.ALLOW_LIVE_FETCH !== "false",
   syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 300000),

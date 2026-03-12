@@ -61,38 +61,17 @@ import {
 import InteractiveMap from "./InteractiveMap";
 
 function normalizeApiBase(baseUrl: string) {
-  return baseUrl.replace(/\/+$/, "");
+  const trimmed = baseUrl.trim();
+  return trimmed ? trimmed.replace(/\/+$/, "") : "";
 }
 
 function getApiBaseCandidates() {
-  const configuredBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-  const candidates: string[] = [];
-
-  if (configuredBase) {
-    candidates.push(normalizeApiBase(configuredBase));
-  }
-
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-
-    if (hostname.endsWith(".onrender.com") && hostname.includes("-web")) {
-      candidates.push(`${protocol}//${hostname.replace("-web", "-api")}`);
-    }
-
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      candidates.push("http://localhost:4000");
-    }
-  }
-
-  if (candidates.length === 0) {
-    candidates.push("http://localhost:4000");
-  }
-
-  return [...new Set(candidates)];
+  const configuredBase = normalizeApiBase((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "");
+  return configuredBase ? [configuredBase] : [""];
 }
 
 const API_BASE_CANDIDATES = getApiBaseCandidates();
-const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "http://localhost:4000";
+const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
@@ -105,7 +84,7 @@ const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   governance: ["governance", "administration", "service", "management", "municipal", "public", "policy"]
 };
 
-const SATELLITE_LAYER_IDS = ["eo-aerosol", "eo-precipitation", "eo-vegetation", "jaxa-rainfall"] as const;
+const SATELLITE_LAYER_IDS = ["eo-aerosol", "eo-precipitation", "eo-vegetation"] as const;
 const SATELLITE_CREDENTIAL_SOURCE_IDS = [
   "sentinel-hub-process",
   "sentinel-hub-statistics",
@@ -732,7 +711,50 @@ const copyDeck = {
   }
 } as const;
 
-async function fetchFromApi<T>(path: string, fallback: T): Promise<T> {
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isOverviewSnapshotPayload(value: unknown) {
+  return (
+    isObject(value) &&
+    Array.isArray(value.cities) &&
+    Array.isArray(value.domains) &&
+    Array.isArray(value.metrics) &&
+    isObject(value.briefing)
+  );
+}
+
+function isMapFeatureCollectionPayload(value: unknown) {
+  return Array.isArray(value) && value.every((item) => isObject(item) && typeof item.layerId === "string" && Array.isArray(item.features));
+}
+
+function isSourceRecordPayload(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    value.every((item) => isObject(item) && typeof item.id === "string" && typeof item.name === "string" && typeof item.category === "string")
+  );
+}
+
+function isTimeSnapshotPayload(value: unknown) {
+  return isObject(value) && Array.isArray(value.zones);
+}
+
+function isSatelliteDigestPayload(value: unknown) {
+  return (
+    isObject(value) &&
+    Array.isArray(value.previews) &&
+    Array.isArray(value.metrics) &&
+    Array.isArray(value.scenes) &&
+    isObject(value.status)
+  );
+}
+
+function isSlicThailandPayload(value: unknown) {
+  return isObject(value) && Array.isArray(value.topCities) && isObject(value.source);
+}
+
+async function fetchFromApi<T>(path: string, fallback: T, validate?: (value: unknown) => boolean): Promise<T> {
   for (const baseUrl of API_BASE_CANDIDATES) {
     try {
       const response = await fetch(`${baseUrl}${path}`);
@@ -740,7 +762,16 @@ async function fetchFromApi<T>(path: string, fallback: T): Promise<T> {
         continue;
       }
 
-      return (await response.json()) as T;
+      const payload = (await response.json().catch(() => null)) as unknown;
+      if (payload === null) {
+        continue;
+      }
+
+      if (validate && !validate(payload)) {
+        continue;
+      }
+
+      return payload as T;
     } catch {
       // Try the next configured API base before falling back to seed data.
     }
@@ -912,7 +943,8 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const overviewQuery = useQuery({
     queryKey: ["overview", queryString.toString()],
-    queryFn: () => fetchFromApi<OverviewSnapshot>(`/api/overview?${queryString.toString()}`, overviewFallback),
+    queryFn: () =>
+      fetchFromApi<OverviewSnapshot>(`/api/overview?${queryString.toString()}`, overviewFallback, isOverviewSnapshotPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -929,7 +961,8 @@ function useDashboardData(searchParams: URLSearchParams) {
             if (domain && project.domainSlug !== domain) return false;
             return true;
           })
-        )
+        ),
+        Array.isArray
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
@@ -947,7 +980,8 @@ function useDashboardData(searchParams: URLSearchParams) {
             if (domain && item.domainSlug && item.domainSlug !== domain) return false;
             return true;
           })
-        )
+        ),
+        Array.isArray
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
@@ -959,7 +993,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     queryFn: () =>
       fetchFromApi<NewsItem[]>(
         "/api/news?kind=external&limit=6",
-        cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6))
+        cloneSeed(newsSeed.filter((item) => item.kind === "external").slice(0, 6)),
+        Array.isArray
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
@@ -968,7 +1003,12 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const resilienceQuery = useQuery({
     queryKey: ["resilience"],
-    queryFn: () => fetchFromApi<ResilienceSnapshot>("/api/resilience", cloneSeed(resilienceSeed)),
+    queryFn: () =>
+      fetchFromApi<ResilienceSnapshot>(
+        "/api/resilience",
+        cloneSeed(resilienceSeed),
+        (value) => isObject(value) && Array.isArray(value.warnings) && Array.isArray(value.stressors)
+      ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -976,7 +1016,8 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const changesQuery = useQuery({
     queryKey: ["changes"],
-    queryFn: () => fetchFromApi<ChangePulse>("/api/changes", cloneSeed(changePulseSeed)),
+    queryFn: () =>
+      fetchFromApi<ChangePulse>("/api/changes", cloneSeed(changePulseSeed), (value) => isObject(value) && Array.isArray(value.items)),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -984,7 +1025,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const activityQuery = useQuery({
     queryKey: ["activity"],
-    queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", cloneSeed(activityLogSeed).slice(0, 6)),
+    queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", cloneSeed(activityLogSeed).slice(0, 6), Array.isArray),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -992,7 +1033,12 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const socialListeningQuery = useQuery({
     queryKey: ["social-listening"],
-    queryFn: () => fetchFromApi<SocialListeningSnapshot>("/api/social-listening", cloneSeed(socialListeningSeed)),
+    queryFn: () =>
+      fetchFromApi<SocialListeningSnapshot>(
+        "/api/social-listening",
+        cloneSeed(socialListeningSeed),
+        (value) => isObject(value) && typeof value.mentionCount === "number" && Array.isArray(value.topTerms)
+      ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1000,7 +1046,12 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const impactQuery = useQuery({
     queryKey: ["impact"],
-    queryFn: () => fetchFromApi<OfficialImpactSnapshot>("/api/impact", cloneSeed(officialImpactSeed)),
+    queryFn: () =>
+      fetchFromApi<OfficialImpactSnapshot>(
+        "/api/impact",
+        cloneSeed(officialImpactSeed),
+        (value) => isObject(value) && typeof value.officialUpdates === "number" && isObject(value.source)
+      ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1008,7 +1059,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const marketQuery = useQuery({
     queryKey: ["markets"],
-    queryFn: () => fetchFromApi<MarketSnapshot>("/api/markets", cloneSeed(marketSnapshotSeed)),
+    queryFn: () => fetchFromApi<MarketSnapshot>("/api/markets", cloneSeed(marketSnapshotSeed), (value) => isObject(value) && Array.isArray(value.items)),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1016,7 +1067,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const sourcesQuery = useQuery({
     queryKey: ["sources"],
-    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed)),
+    queryFn: () => fetchFromApi<SourceRecord[]>("/api/sources", cloneSeed(sourceSeed), isSourceRecordPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1024,7 +1075,8 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const satelliteDigestQuery = useQuery({
     queryKey: ["satellite-digest"],
-    queryFn: () => fetchFromApi<SatelliteDigest>("/api/satellite/digest", createSatelliteDigestFallback()),
+    queryFn: () =>
+      fetchFromApi<SatelliteDigest>("/api/satellite/digest", createSatelliteDigestFallback(), isSatelliteDigestPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1037,7 +1089,8 @@ function useDashboardData(searchParams: URLSearchParams) {
         `/api/map/features?layers=${encodeURIComponent(layers.join(","))}`,
         cloneSeed(
           mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")
-        )
+        ),
+        isMapFeatureCollectionPayload
       ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
@@ -1046,7 +1099,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const mediaFeedsQuery = useQuery({
     queryKey: ["media-feeds"],
-    queryFn: () => fetchFromApi<MediaFeedItem[]>("/api/media/feeds", cloneSeed(mediaFeedSeed)),
+    queryFn: () => fetchFromApi<MediaFeedItem[]>("/api/media/feeds", cloneSeed(mediaFeedSeed), Array.isArray),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1054,7 +1107,7 @@ function useDashboardData(searchParams: URLSearchParams) {
 
   const timeQuery = useQuery({
     queryKey: ["time"],
-    queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", createTimeSnapshot()),
+    queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", createTimeSnapshot(), isTimeSnapshotPayload),
     refetchInterval: 1000
   });
 
@@ -1099,7 +1152,12 @@ function DashboardPage() {
   const [assistantResponse, setAssistantResponse] = useState<AssistantResponse | null>(null);
   const assistantStatusQuery = useQuery({
     queryKey: ["assistant-status"],
-    queryFn: () => fetchFromApi<AssistantStatus>("/api/assistant/status", { available: false, documentCount: 0, geminiReady: false }),
+    queryFn: () =>
+      fetchFromApi<AssistantStatus>(
+        "/api/assistant/status",
+        { available: false, documentCount: 0, geminiReady: false },
+        (value) => isObject(value) && typeof value.available === "boolean"
+      ),
     staleTime: 60000
   });
   const assistantStatus = assistantStatusQuery.data ?? null;
@@ -1186,7 +1244,7 @@ function DashboardPage() {
   }, [overview.cities]);
   const slicThailandQuery = useQuery({
     queryKey: ["slic-thailand"],
-    queryFn: () => fetchFromApi<SlicThailandSnapshot>("/api/external/slic-thailand", slicThailandFallback),
+    queryFn: () => fetchFromApi<SlicThailandSnapshot>("/api/external/slic-thailand", slicThailandFallback, isSlicThailandPayload),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true

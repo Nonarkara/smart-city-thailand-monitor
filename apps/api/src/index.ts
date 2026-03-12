@@ -15,7 +15,7 @@ const server = await createServer();
 try {
   await server.listen({
     port: config.port,
-    host: "0.0.0.0"
+    host: config.host
   });
 
   if (config.allowLiveFetch) {
