@@ -5,6 +5,12 @@ import { requireAdmin } from "./lib/adminAuth.js";
 import { store } from "./data/store.js";
 import { getAssistantStatus, queryAssistant } from "./services/knowledgeAssistant.js";
 import { getSlicThailandSnapshot } from "./services/slicThailand.js";
+import {
+  getSatelliteDigest,
+  getSatellitePreview,
+  getSatelliteSearch,
+  getSatelliteStats
+} from "./services/satellite.js";
 import { runSourceSync } from "./services/sync.js";
 
 function parseList(value: unknown) {
@@ -155,6 +161,27 @@ export async function createServer() {
   app.get("/api/impact", async () => store.getOfficialImpact());
   app.get("/api/markets", async () => store.getMarketSnapshot());
   app.get("/api/sources", async () => store.getSources());
+  app.get("/api/satellite/digest", async () => getSatelliteDigest());
+  app.get("/api/satellite/stats", async () => getSatelliteStats());
+  app.get("/api/satellite/search", async (request) => {
+    const query = request.query as { collection?: string; limit?: string };
+    return getSatelliteSearch(query.collection, query.limit ? Number(query.limit) : undefined);
+  });
+  app.get("/api/satellite/preview/:presetId", async (request, reply) => {
+    const params = request.params as { presetId: string };
+
+    try {
+      const preview = await getSatellitePreview(params.presetId);
+      reply.header("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
+      reply.type(preview.contentType);
+      return reply.send(preview.body);
+    } catch (error) {
+      reply.code(404);
+      return {
+        message: error instanceof Error ? error.message : "Satellite preview not found"
+      };
+    }
+  });
   app.get("/api/briefings/latest", async () => store.getBriefing());
   app.get("/api/time", async () => store.getTime());
   app.get("/api/media/feeds", async (request) => {

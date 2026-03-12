@@ -295,3 +295,77 @@ export interface OverviewSnapshot {
   domains: DomainScorecard[];
   sources: SourceRecord[];
 }
+
+export type SatellitePreviewPresetId = "true-color" | "vegetation" | "flood-radar";
+
+export interface SatelliteAreaOfInterest {
+  id: string;
+  label: LocalizedText;
+  bbox: [number, number, number, number];
+}
+
+export interface SatelliteServiceStatus {
+  provider: "copernicus-data-space";
+  configured: boolean;
+  available: boolean;
+  mode: "oauth-live" | "not-configured" | "degraded";
+  message: string;
+  docsUrl: string;
+}
+
+export interface SatellitePreviewItem {
+  id: SatellitePreviewPresetId;
+  title: LocalizedText;
+  description: LocalizedText;
+  collectionId: string;
+  previewUrl: string;
+  legend: LocalizedText;
+  note: LocalizedText;
+  available: boolean;
+  generatedAt?: string;
+  sceneDate?: string;
+  cloudCover?: number;
+}
+
+export interface SatelliteMetric {
+  id: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  collectionId: string;
+  value: number | null;
+  displayValue: string;
+  unit?: string;
+}
+
+export interface SatelliteSceneRecord {
+  id: string;
+  collectionId: string;
+  title: string;
+  timestamp: string;
+  cloudCover?: number;
+  quicklookUrl?: string;
+}
+
+export interface SatelliteStatsResponse {
+  updatedAt: string;
+  area: SatelliteAreaOfInterest;
+  status: SatelliteServiceStatus;
+  metrics: SatelliteMetric[];
+}
+
+export interface SatelliteSearchResponse {
+  updatedAt: string;
+  area: SatelliteAreaOfInterest;
+  status: SatelliteServiceStatus;
+  collectionId: string;
+  scenes: SatelliteSceneRecord[];
+}
+
+export interface SatelliteDigest {
+  updatedAt: string;
+  area: SatelliteAreaOfInterest;
+  status: SatelliteServiceStatus;
+  previews: SatellitePreviewItem[];
+  metrics: SatelliteMetric[];
+  scenes: SatelliteSceneRecord[];
+}

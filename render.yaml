@@ -33,3 +33,7 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: "gemini-2.5-flash"
+      - key: COPERNICUS_CLIENT_ID
+        sync: false
+      - key: COPERNICUS_CLIENT_SECRET
+        sync: false

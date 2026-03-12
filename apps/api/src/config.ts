@@ -69,5 +69,16 @@ export const config = {
     process.env.MARKET_USD_THB_ENDPOINT ??
     "https://api.frankfurter.app/latest?from=USD&to=THB",
   marketGoldEndpoint: process.env.MARKET_GOLD_ENDPOINT ?? "https://api.gold-api.com/price/XAU",
+  copernicusClientId: process.env.COPERNICUS_CLIENT_ID ?? "",
+  copernicusClientSecret: process.env.COPERNICUS_CLIENT_SECRET ?? "",
+  copernicusTokenUrl:
+    process.env.COPERNICUS_TOKEN_URL ??
+    "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+  sentinelHubProcessUrl:
+    process.env.SENTINEL_HUB_PROCESS_URL ?? "https://sh.dataspace.copernicus.eu/api/v1/process",
+  sentinelHubStatsUrl:
+    process.env.SENTINEL_HUB_STATS_URL ?? "https://sh.dataspace.copernicus.eu/api/v1/statistics",
+  sentinelHubCatalogSearchUrl:
+    process.env.SENTINEL_HUB_CATALOG_URL ?? "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search",
   slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand"
 };

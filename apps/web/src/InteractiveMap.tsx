@@ -571,6 +571,7 @@ interface InteractiveMapProps {
   view: DashboardView;
   citySlug: string;
   domainSlug?: string;
+  basemap: "atlas" | "satellite";
   layers: string[];
   projects: ProjectRecord[];
   news: NewsItem[];
@@ -583,6 +584,7 @@ export default function InteractiveMap({
   view,
   citySlug,
   domainSlug,
+  basemap,
   layers,
   projects,
   news,
@@ -592,6 +594,8 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const atlasBaseRef = useRef<L.TileLayer | null>(null);
+  const satelliteBaseRef = useRef<L.TileLayer | null>(null);
   const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const satelliteLayersRef = useRef<Partial<Record<SatelliteLayerId, L.TileLayer>>>({});
   const jaxaLayerRef = useRef<L.Layer | null>(null);
@@ -614,15 +618,28 @@ export default function InteractiveMap({
 
     const map = L.map(containerRef.current, {
       zoomControl: false,
-      attributionControl: true
+      attributionControl: true,
+      minZoom: 5,
+      maxBoundsViscosity: 0.85
     });
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    const atlasLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+    const satelliteLayer = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 18,
+        attribution: "Tiles &copy; Esri"
+      }
+    );
+
+    atlasBaseRef.current = atlasLayer;
+    satelliteBaseRef.current = satelliteLayer;
+    map.setMaxBounds(thailandBounds.pad(0.22));
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
@@ -645,6 +662,28 @@ export default function InteractiveMap({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const atlasLayer = atlasBaseRef.current;
+    const satelliteLayer = satelliteBaseRef.current;
+    if (!map || !atlasLayer || !satelliteLayer) {
+      return;
+    }
+
+    const activeBase = basemap === "satellite" ? satelliteLayer : atlasLayer;
+    const inactiveBase = basemap === "satellite" ? atlasLayer : satelliteLayer;
+
+    if (!map.hasLayer(activeBase)) {
+      activeBase.addTo(map);
+    }
+
+    if (map.hasLayer(inactiveBase)) {
+      map.removeLayer(inactiveBase);
+    }
+
+    activeBase.bringToBack();
+  }, [basemap]);
 
   useEffect(() => {
     if (recenterSignal > 0) {

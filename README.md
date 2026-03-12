@@ -38,6 +38,17 @@ The nationwide dashboard now separates satellite providers into two groups:
 - `Copernicus Data Space OData`: direct product-search and download API
 - `Copernicus Data Space openEO`: server-side EO processing for Thailand-scale cubes and batch jobs
 
+### Live nationwide satellite routes
+
+When `COPERNICUS_CLIENT_ID` and `COPERNICUS_CLIENT_SECRET` are configured, the API now exposes:
+
+- `/api/satellite/digest`: nationwide preview cards, EO freshness metrics, and recent searchable scenes
+- `/api/satellite/preview/:presetId`: token-backed Sentinel Hub preview images for `true-color`, `vegetation`, and `flood-radar`
+- `/api/satellite/stats`: nationwide EO freshness metrics plus Sentinel-2 NDVI median
+- `/api/satellite/search`: token-backed Sentinel Hub catalog search for recent scenes over Thailand
+
+If credentials are missing, the JSON routes return a typed `not-configured` status and the image route returns a placeholder SVG so the dashboard still renders cleanly.
+
 ### Practical note
 
 - Prefer `STAC` and `OData` for Copernicus catalogue and download workflows.
@@ -89,6 +100,7 @@ Copy `.env.example` to `.env` and set:
 - `NEWS_API_PAGE_SIZE` to control per-query article count
 - `ALLOW_LIVE_FETCH=true` when you want the adapters to hit live sources
 - `SYNC_INTERVAL_MS=300000` to keep the API-side live refresh on a 5-minute cadence
+- `COPERNICUS_CLIENT_ID` and `COPERNICUS_CLIENT_SECRET` for live Sentinel Hub / Copernicus previews
 - source-specific endpoints only when you have confirmed stable machine-readable URLs
 
 ## Security note
@@ -122,9 +134,12 @@ The app already runs its own in-process sync loop in the API service, so the fir
    - `CITYDATA_CATALOG_ENDPOINT`
    - `DATAGOTH_ENDPOINT`
    - `GISTDA_ENDPOINT`
+   - `COPERNICUS_CLIENT_ID`
+   - `COPERNICUS_CLIENT_SECRET`
 7. Deploy and verify:
    - API health at `/health`
    - live source status at `/api/sources`
+   - live satellite digest at `/api/satellite/digest`
    - the public dashboard renders and continues updating every 5 minutes
 
 ### Why the first launch is minimal
