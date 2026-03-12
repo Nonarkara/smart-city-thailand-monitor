@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   activityLog as activityLogSeed,
+  auditTrail as auditTrailSeed,
   changePulse as changePulseSeed,
   cloneSeed,
   createOverviewSnapshot,
   createTimeSnapshot,
+  decisionQueue as decisionQueueSeed,
+  districts as districtSeed,
   localize,
   mapFeatureCollections as mapFeatureSeed,
   mapLayers as layerSeed,
@@ -19,11 +22,14 @@ import {
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
+  AuditEventRecord,
   AssistantQueryRequest,
   AssistantResponse,
   AssistantStatus,
   ChangePulse,
   DashboardView,
+  DecisionQueueItem,
+  DistrictProfile,
   GeoFeatureRecord,
   Locale,
   MapFeatureCollection,
@@ -765,6 +771,32 @@ function isSourceRecordPayload(value: unknown) {
   );
 }
 
+function isDistrictProfilePayload(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isObject(item) &&
+        typeof item.id === "string" &&
+        typeof item.slug === "string" &&
+        typeof item.citySlug === "string"
+    )
+  );
+}
+
+function isDecisionQueuePayload(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isObject(item) &&
+        typeof item.id === "string" &&
+        typeof item.citySlug === "string" &&
+        typeof item.domainSlug === "string"
+    )
+  );
+}
+
 function isTimeSnapshotPayload(value: unknown) {
   return isObject(value) && Array.isArray(value.zones);
 }
@@ -835,6 +867,18 @@ async function postToApi<TResponse>(path: string, body: unknown): Promise<TRespo
   }
 
   throw lastError ?? new Error("Request failed");
+}
+
+function createQueryString(params: Record<string, string | undefined>) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      query.set(key, value);
+    }
+  });
+
+  return query.toString();
 }
 
 function getDefaultLayers(view: DashboardView, citySlug: string) {
@@ -943,6 +987,10 @@ function formatPopulation(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
+function formatConfidence(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
 function normalizeCitySlug(value?: string) {
   if (!value) {
     return "";
@@ -964,6 +1012,20 @@ function featureMatchesCity(feature: GeoFeatureRecord, citySlug: string) {
   const candidates = [feature.properties.city, feature.title];
 
   return candidates.some((candidate) => cityTokens.has(normalizeCitySlug(String(candidate ?? ""))));
+}
+
+function featureMatchesDistrict(feature: GeoFeatureRecord, districtSlug: string) {
+  const explicitDistrict = normalizeCitySlug(String(feature.properties.districtSlug ?? ""));
+  if (explicitDistrict) {
+    return explicitDistrict === districtSlug;
+  }
+
+  const namedDistrict = normalizeCitySlug(String(feature.properties.district ?? ""));
+  if (namedDistrict) {
+    return namedDistrict === districtSlug;
+  }
+
+  return true;
 }
 
 function fillPromptTemplate(template: string, values: Record<string, string>) {
@@ -1003,10 +1065,12 @@ function useDashboardData(searchParams: URLSearchParams) {
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? "bangkok";
+  const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
   const layers = useMemo(() => parseLayerSet(rawLayers, view, city), [city, rawLayers, view]);
   const cityFilter = view === "national" ? "" : city;
+  const districtFilter = view === "national" ? "" : district;
   const queryString = new URLSearchParams(searchParams);
 
   queryString.set("view", view);
@@ -1019,6 +1083,11 @@ function useDashboardData(searchParams: URLSearchParams) {
   } else {
     queryString.delete("domain");
   }
+  if (districtFilter) {
+    queryString.set("district", districtFilter);
+  } else {
+    queryString.delete("district");
+  }
 
   const overviewFallback = createOverviewSnapshot({
     view,
@@ -1027,11 +1096,27 @@ function useDashboardData(searchParams: URLSearchParams) {
     domain: domain || undefined,
     layers
   });
-  const projectFallback = cloneSeed(projectSeed.filter((project) => !cityFilter || project.citySlug === cityFilter));
+  const districtFallback = cloneSeed(districtSeed.filter((item) => !cityFilter || item.citySlug === cityFilter));
+  const projectFallback = cloneSeed(
+    projectSeed.filter((project) => {
+      if (cityFilter && project.citySlug !== cityFilter) return false;
+      if (districtFilter && project.districtSlug && project.districtSlug !== districtFilter) return false;
+      return true;
+    })
+  );
   const newsFallback = cloneSeed(
     newsSeed.filter((item) => {
       if (cityFilter && item.citySlug && item.citySlug !== cityFilter) return false;
+      if (districtFilter && item.districtSlug && item.districtSlug !== districtFilter) return false;
       if (domain && item.domainSlug && item.domainSlug !== domain) return false;
+      return true;
+    })
+  );
+  const decisionFallback = cloneSeed(
+    decisionQueueSeed.filter((item) => {
+      if (cityFilter && item.citySlug !== cityFilter) return false;
+      if (districtFilter && item.districtSlug && item.districtSlug !== districtFilter) return false;
+      if (domain && item.domainSlug !== domain) return false;
       return true;
     })
   );
@@ -1054,10 +1139,14 @@ function useDashboardData(searchParams: URLSearchParams) {
   });
 
   const projectsQuery = useQuery({
-    queryKey: ["projects", city, domain],
+    queryKey: ["projects", city, districtFilter, domain],
     queryFn: () =>
       fetchFromApi<ProjectRecord[]>(
-        `/api/projects${cityFilter ? `?city=${cityFilter}` : "?"}${domain ? `${cityFilter ? "&" : ""}domain=${domain}` : ""}`,
+        `/api/projects?${createQueryString({
+          city: cityFilter || undefined,
+          district: districtFilter || undefined,
+          domain: domain || undefined
+        })}`,
         projectFallback,
         Array.isArray
       ),
@@ -1067,10 +1156,15 @@ function useDashboardData(searchParams: URLSearchParams) {
   });
 
   const newsQuery = useQuery({
-    queryKey: ["news", city, domain],
+    queryKey: ["news", city, districtFilter, domain],
     queryFn: () =>
       fetchFromApi<NewsItem[]>(
-        `/api/news?limit=8${cityFilter ? `&city=${cityFilter}` : ""}${domain ? `&domain=${domain}` : ""}`,
+        `/api/news?${createQueryString({
+          limit: "8",
+          city: cityFilter || undefined,
+          district: districtFilter || undefined,
+          domain: domain || undefined
+        })}`,
         newsFallback,
         Array.isArray
       ),
@@ -1112,6 +1206,35 @@ function useDashboardData(searchParams: URLSearchParams) {
   const activityQuery = useQuery({
     queryKey: ["activity"],
     queryFn: () => fetchFromApi<ActivityLogItem[]>("/api/activity?limit=6", activityFallback, Array.isArray),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
+  const districtsQuery = useQuery({
+    queryKey: ["districts", cityFilter],
+    queryFn: () =>
+      fetchFromApi<DistrictProfile[]>(
+        `/api/districts${cityFilter ? `?city=${cityFilter}` : ""}`,
+        districtFallback,
+        isDistrictProfilePayload
+      ),
+    staleTime: 60000
+  });
+
+  const decisionsQuery = useQuery({
+    queryKey: ["decisions", city, districtFilter, domain],
+    queryFn: () =>
+      fetchFromApi<DecisionQueueItem[]>(
+        `/api/decisions?${createQueryString({
+          limit: "8",
+          city: cityFilter || undefined,
+          district: districtFilter || undefined,
+          domain: domain || undefined
+        })}`,
+        decisionFallback,
+        isDecisionQueuePayload
+      ),
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
@@ -1202,9 +1325,12 @@ function useDashboardData(searchParams: URLSearchParams) {
     view,
     timeRange,
     city,
+    district,
     domain,
     layers,
     overview,
+    districts: safeArray(districtsQuery.data, districtFallback),
+    decisions: safeArray(decisionsQuery.data, decisionFallback),
     projects: safeArray(projectsQuery.data, projectFallback),
     news: safeArray(newsQuery.data, newsFallback),
     globalNews: safeArray(globalNewsQuery.data, globalNewsFallback),
@@ -1254,9 +1380,12 @@ function DashboardPage() {
     view,
     timeRange,
     city,
+    district,
     domain,
     layers,
     overview,
+    districts,
+    decisions,
     projects,
     news,
     globalNews,
@@ -1275,9 +1404,14 @@ function DashboardPage() {
 
   const copy = copyDeck[lang];
   const selectedCity = overview.cities.find((item) => item.slug === city) ?? overview.cities[0];
+  const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
+  const districtBySlug = new Map(cityDistricts.map((item) => [item.slug, item]));
+  const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
+  const knownDistrictSlugs = new Set(cityDistricts.map((item) => item.slug));
   const selectedDomain = overview.domains.find((item) => item.slug === domain);
   const knownCitySlugs = new Set(overview.cities.map((item) => item.slug));
   const knownCitySlugsKey = overview.cities.map((item) => item.slug).join(",");
+  const knownDistrictSlugsKey = cityDistricts.map((item) => item.slug).join(",");
   const normalizedSearch = deferredSearchText.trim().toLowerCase();
   const suggestedModelCityId =
     selectedCity.slug === "phuket"
@@ -1357,6 +1491,19 @@ function DashboardPage() {
     })
     : projects;
 
+  const filteredDecisions = normalizedSearch
+    ? decisions.filter((item) => {
+      return (
+        item.title.en.toLowerCase().includes(normalizedSearch) ||
+        item.title.th.includes(deferredSearchText) ||
+        item.summary.en.toLowerCase().includes(normalizedSearch) ||
+        item.summary.th.includes(deferredSearchText) ||
+        item.recommendedAction.en.toLowerCase().includes(normalizedSearch) ||
+        item.recommendedAction.th.includes(deferredSearchText)
+      );
+    })
+    : decisions;
+
   const filteredNews = normalizedSearch
     ? news.filter((item) => {
       return (
@@ -1378,6 +1525,7 @@ function DashboardPage() {
   const compactMedia = mediaFeeds.slice(0, 3);
   const activityItems = activity.slice(0, 6);
   const timeZones = time.zones.slice(0, 3);
+  const decisionItems = filteredDecisions.slice(0, 5);
   const topCityScores = [...selectedCity.scores]
     .sort((left, right) => right.score - left.score)
     .slice(0, 3)
@@ -1439,14 +1587,31 @@ function DashboardPage() {
     return mapFeatures
       .map((collection) => {
         if (collection.layerId === "bangkok-passages" || collection.layerId === "itic-traffic") {
-          return city === "bangkok" ? collection : { ...collection, features: [] };
+          if (city !== "bangkok") {
+            return { ...collection, features: [] };
+          }
+
+          const features = selectedDistrict
+            ? collection.features.filter((feature) => featureMatchesDistrict(feature, selectedDistrict.slug))
+            : collection.features;
+          return { ...collection, features };
         }
 
-        const features = collection.features.filter((feature) => featureMatchesCity(feature, city));
+        const features = collection.features.filter((feature) => {
+          if (!featureMatchesCity(feature, city)) {
+            return false;
+          }
+
+          if (selectedDistrict && !featureMatchesDistrict(feature, selectedDistrict.slug)) {
+            return false;
+          }
+
+          return true;
+        });
         return { ...collection, features };
       })
       .filter((collection) => collection.features.length > 0);
-  }, [city, mapFeatures, view]);
+  }, [city, mapFeatures, selectedDistrict, view]);
   const nextNewsCheckAt = (() => {
     if (!liveNewsSource) {
       return "";
@@ -1467,6 +1632,11 @@ function DashboardPage() {
     ? new Date(new Date(latestSyncSource.lastCheckedAt).getTime() + LIVE_POLL_INTERVAL_MS).toISOString()
     : "";
   const executiveSignal = (() => {
+    const leadDecision = filteredDecisions[0];
+    if (leadDecision) {
+      return localize(lang, leadDecision.title);
+    }
+
     if (topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
       if (topAqiFeature.title === "Chiang Mai") {
         return lang === "th" ? "ความเสี่ยงด้านอากาศเพิ่มขึ้นในเชียงใหม่" : "Air risk rising in Chiang Mai";
@@ -1763,17 +1933,20 @@ function DashboardPage() {
       view,
       citySlug: selectedCity.slug,
       cityName: selectedCity.name.en,
+      districtSlug: selectedDistrict?.slug,
+      districtName: selectedDistrict?.name.en,
       domainSlug: selectedDomain?.slug,
       domainLabel: selectedDomain?.title.en,
       activeLayers: layers,
       executiveSignal,
       watchpoints: [topAqiFeature?.title, hottestWeatherFeature?.title].filter(Boolean) as string[]
     }),
-    [view, selectedCity, selectedDomain, layers, executiveSignal, topAqiFeature, hottestWeatherFeature]
+    [view, selectedCity, selectedDistrict, selectedDomain, layers, executiveSignal, topAqiFeature, hottestWeatherFeature]
   );
   const assistantContextTags = [
     view,
     localize(lang, selectedCity.name),
+    selectedDistrict ? localize(lang, selectedDistrict.name) : "",
     selectedDomain ? localize(lang, selectedDomain.title) : "",
     ...layers.slice(0, 3)
   ].filter(Boolean) as string[];
@@ -1802,6 +1975,23 @@ function DashboardPage() {
     });
   }, [city, knownCitySlugsKey, selectedCity.slug, setSearchParams, view]);
 
+  useEffect(() => {
+    if (!district) {
+      return;
+    }
+
+    if (view === "national" || knownDistrictSlugs.has(district)) {
+      return;
+    }
+
+    const next = buildStableParams();
+    next.delete("district");
+
+    startTransition(() => {
+      setSearchParams(next, { replace: true });
+    });
+  }, [cityDistricts.length, district, knownDistrictSlugs, knownDistrictSlugsKey, setSearchParams, view]);
+
   function buildStableParams() {
     const next = new URLSearchParams();
     next.set("lang", lang);
@@ -1809,6 +1999,9 @@ function DashboardPage() {
     next.set("timeRange", timeRange);
     next.set("city", city);
     next.set("basemap", basemap);
+    if (district) {
+      next.set("district", district);
+    }
     if (domain) {
       next.set("domain", domain);
     }
@@ -1853,6 +2046,15 @@ function DashboardPage() {
       next.set(key, value);
     }
 
+    if (key === "city") {
+      next.delete("district");
+      next.set("view", "city");
+    }
+
+    if (key === "view" && value === "national") {
+      next.delete("district");
+    }
+
     startTransition(() => {
       setSearchParams(next);
     });
@@ -1883,11 +2085,35 @@ function DashboardPage() {
     const nextLayers = new Set(layers);
     nextLayers.add(layerId);
     next.set("layers", Array.from(nextLayers).join(","));
+    next.delete("district");
     if (knownCitySlugs.has(citySlug)) {
       next.set("city", citySlug);
       next.set("view", "city");
     } else {
       next.set("view", "national");
+    }
+
+    startTransition(() => {
+      setSearchParams(next);
+      setRecenterSignal((value) => value + 1);
+    });
+  }
+
+  function focusDecision(item: DecisionQueueItem) {
+    const next = buildStableParams();
+    const nextLayers = new Set(layers);
+
+    item.layerIds.forEach((layerId) => nextLayers.add(layerId));
+
+    next.set("layers", Array.from(nextLayers).join(","));
+    next.set("city", item.citySlug);
+    next.set("view", "city");
+    next.set("domain", item.domainSlug);
+
+    if (item.districtSlug) {
+      next.set("district", item.districtSlug);
+    } else {
+      next.delete("district");
     }
 
     startTransition(() => {
@@ -2129,6 +2355,24 @@ function DashboardPage() {
 
         <div className="side-section side-filter-group">
           <label className="stack-field">
+            <span className="eyebrow">{lang === "th" ? "เขต / อำเภอ" : "District / Zone"}</span>
+            <select
+              value={district}
+              onChange={(event) => updateParam("district", event.target.value)}
+              disabled={cityDistricts.length === 0 || view === "national"}
+            >
+              <option value="">{lang === "th" ? "ทั้งเมือง" : "Citywide"}</option>
+              {cityDistricts.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {localize(lang, item.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="side-section side-filter-group">
+          <label className="stack-field">
             <span className="eyebrow">Domain</span>
             <select value={domain} onChange={(event) => updateParam("domain", event.target.value)}>
               <option value="">All</option>
@@ -2334,6 +2578,7 @@ function DashboardPage() {
               locale={lang}
               view={view}
               citySlug={city}
+              district={selectedDistrict ?? undefined}
               domainSlug={domain || undefined}
               basemap={basemap}
               layers={layers}
@@ -2344,8 +2589,20 @@ function DashboardPage() {
             />
             <div className="map-overlay">
               <div className="map-caption">
-                <strong>{view === "national" ? "Thailand" : localize(lang, selectedCity.name)}</strong>
-                <span>{view === "national" ? "Smart City coverage footprint" : localize(lang, selectedCity.region)}</span>
+                <strong>
+                  {view === "national"
+                    ? "Thailand"
+                    : selectedDistrict
+                      ? `${localize(lang, selectedCity.name)} / ${localize(lang, selectedDistrict.name)}`
+                      : localize(lang, selectedCity.name)}
+                </strong>
+                <span>
+                  {view === "national"
+                    ? "Smart City coverage footprint"
+                    : selectedDistrict
+                      ? localize(lang, selectedDistrict.priority)
+                      : localize(lang, selectedCity.region)}
+                </span>
               </div>
               <span className="map-open-link">
                 {`${basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas} · ${activeSatelliteLayers.length} ${lang === "th" ? "ชั้นภาพ" : "overlays"}`}
@@ -2447,6 +2704,7 @@ function DashboardPage() {
                       const next = buildStableParams();
                       next.set("city", item.slug);
                       next.set("view", "city");
+                      next.delete("district");
                       startTransition(() => {
                         setSearchParams(next);
                         setRecenterSignal((v) => v + 1);
@@ -2473,8 +2731,8 @@ function DashboardPage() {
             </div>
             <span className="hero-note">
               {lang === "th"
-                ? `Ops room • ชั้นภาพดาวเทียม ${activeSatelliteLayers.length} ชั้น`
-                : `Ops room • ${activeSatelliteLayers.length} satellite layer${activeSatelliteLayers.length === 1 ? "" : "s"} active`}
+                ? `Ops room • ${selectedDistrict ? localize(lang, selectedDistrict.name) : localize(lang, selectedCity.name)} • ชั้นภาพดาวเทียม ${activeSatelliteLayers.length} ชั้น`
+                : `Ops room • ${selectedDistrict ? localize(lang, selectedDistrict.name) : localize(lang, selectedCity.name)} • ${activeSatelliteLayers.length} satellite layer${activeSatelliteLayers.length === 1 ? "" : "s"} active`}
             </span>
           </div>
 
@@ -2522,9 +2780,19 @@ function DashboardPage() {
                 <span className="eyebrow">{copy.region}</span>
                 <strong>{localize(lang, selectedCity.region)}</strong>
               </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{lang === "th" ? "เขตที่เลือก" : "District focus"}</span>
+                <strong>{selectedDistrict ? localize(lang, selectedDistrict.name) : (lang === "th" ? "ทั้งเมือง" : "Citywide")}</strong>
+                <small>{selectedDistrict ? selectedDistrict.riskLevel.toUpperCase() : (lang === "th" ? "ไม่มีการเจาะพื้นที่" : "No sub-city filter")}</small>
+              </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decision queue"}</span>
+                <strong>{decisionItems.length}</strong>
+                <small>{decisionItems[0] ? `${lang === "th" ? "ถัดไป" : "Next"} ${formatUtcClock(decisionItems[0].dueAt)} UTC` : (lang === "th" ? "ไม่มีรายการ" : "No queued actions")}</small>
+              </div>
               <div className="city-intel-focus">
                 <span className="eyebrow">{copy.smartFocus}</span>
-                <p>{localize(lang, selectedCity.focus)}</p>
+                <p>{selectedDistrict ? localize(lang, selectedDistrict.focus) : localize(lang, selectedCity.focus)}</p>
               </div>
               <div className="city-intel-focus">
                 <span className="eyebrow">{copy.leadingDomains}</span>
@@ -2536,6 +2804,16 @@ function DashboardPage() {
                   ))}
                 </div>
               </div>
+              {selectedDistrict ? (
+                <div className="city-intel-focus">
+                  <span className="eyebrow">{lang === "th" ? "พื้นที่ต้องจับตา" : "Watchpoints"}</span>
+                  <div className="terminal-list district-watch-list">
+                    {selectedDistrict.watchpoints.map((item, index) => (
+                      <p key={`${selectedDistrict.id}-${index}`}>{localize(lang, item)}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -2572,6 +2850,11 @@ function DashboardPage() {
                 <span className="eyebrow">City Focus</span>
                 <strong>{localize(lang, selectedCity.name)}</strong>
                 <p>{localize(lang, selectedCity.focus)}</p>
+              </div>
+              <div>
+                <span className="eyebrow">{lang === "th" ? "เขต / พื้นที่" : "District Focus"}</span>
+                <strong>{selectedDistrict ? localize(lang, selectedDistrict.name) : (lang === "th" ? "ทั้งเมือง" : "Citywide")}</strong>
+                <p>{selectedDistrict ? localize(lang, selectedDistrict.priority) : (lang === "th" ? "ยังไม่ได้เจาะลงพื้นที่ย่อย" : "No sub-city drilldown selected.")}</p>
               </div>
               <div>
                 <span className="eyebrow">Domain Focus</span>
@@ -2997,21 +3280,76 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card activity-card" id="activity">
+          <section className="card activity-card decision-card" id="decisions">
             <div className="card-header">
-              <span className="eyebrow">{copy.activity}</span>
-              <span className="status-pill">{activityItems.length}</span>
+              <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decision Queue"}</span>
+              <span className="status-pill">{decisionItems.length}</span>
             </div>
-            <div className="activity-list tile-scroll">
-              {activityItems.map((item) => (
-                <article key={item.id} className="activity-item">
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{lang === "th" ? "รายการนำ" : "Lead action"}</span>
+              <strong>
+                {decisionItems[0]
+                  ? localize(lang, decisionItems[0].title)
+                  : lang === "th"
+                    ? "ไม่มีรายการเร่งด่วนในคิว"
+                    : "No immediate actions in the queue"}
+              </strong>
+            </div>
+            <div className="decision-list tile-scroll">
+              {decisionItems.length > 0 ? (
+                decisionItems.map((item) => {
+                  const domainLabel = overview.domains.find((domainItem) => domainItem.slug === item.domainSlug);
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`decision-item severity-${item.severity}`}
+                      onClick={() => focusDecision(item)}
+                    >
+                      <div className="stack-title">
+                        <strong>{localize(lang, item.title)}</strong>
+                        <span className={`status-tag ${item.status}`}>{item.status}</span>
+                      </div>
+                      <div className="decision-meta">
+                        <span>
+                          {item.districtSlug && districtBySlug.get(item.districtSlug)
+                            ? localize(lang, districtBySlug.get(item.districtSlug)?.name ?? selectedCity.name)
+                            : localize(lang, selectedCity.name)}
+                        </span>
+                        <span>{domainLabel ? localize(lang, domainLabel.title) : item.domainSlug}</span>
+                        <span>{`${lang === "th" ? "เชื่อมั่น" : "Confidence"} ${formatConfidence(item.confidence)}`}</span>
+                      </div>
+                      <p>{localize(lang, item.summary)}</p>
+                      <small>{localize(lang, item.recommendedAction)}</small>
+                      <div className="decision-footer">
+                        <span>{localize(lang, item.owner)}</span>
+                        <span>{`${lang === "th" ? "ครบกำหนด" : "Due"} ${formatUtcClock(item.dueAt)} UTC`}</span>
+                      </div>
+                  </button>
+                );
+              })
+            ) : (
+                <article className="activity-item">
                   <div className="stack-title">
-                    <strong>{item.label}</strong>
-                    <span className={`status-tag ${item.status}`}>{item.status}</span>
+                    <strong>{lang === "th" ? "ไม่มีรายการค้าง" : "Queue clear"}</strong>
+                    <span className="status-tag live">live</span>
                   </div>
-                  <small>{formatUtcClock(item.timestamp)} UTC</small>
-                  <p>{item.detail}</p>
+                  <small>{formatUtcClock(time.updatedAt)} UTC</small>
+                  <p>
+                    {lang === "th"
+                      ? "ขณะนี้ยังไม่มีการตัดสินใจที่ต้องยกระดับสำหรับตัวกรองนี้"
+                      : "There are no escalated actions for the current city, district, and domain filters."}
+                  </p>
                 </article>
+              )}
+            </div>
+            <div className="decision-activity-strip">
+              {activityItems.slice(0, 2).map((item) => (
+                <div key={item.id} className="decision-activity-item">
+                  <span>{item.label}</span>
+                  <small>{formatUtcClock(item.timestamp)} UTC</small>
+                </div>
               ))}
             </div>
           </section>
@@ -3042,6 +3380,7 @@ function AdminConsolePage() {
   const [bodyEn, setBodyEn] = useState("Use this console to publish briefing updates and run source sync.");
   const [responseText, setResponseText] = useState("{ }");
   const [statusMessage, setStatusMessage] = useState("idle");
+  const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>(cloneSeed(auditTrailSeed).slice(0, 8));
   const copy = copyDeck[lang];
 
   async function adminFetch(path: string, init?: RequestInit) {
@@ -3115,6 +3454,19 @@ function AdminConsolePage() {
     }
   }
 
+  async function loadAudit() {
+    try {
+      const payload = await adminFetch("/api/admin/audit?limit=10");
+      if (Array.isArray(payload)) {
+        setAuditEvents(payload as AuditEventRecord[]);
+      }
+      setResponseText(JSON.stringify(payload, null, 2));
+      setStatusMessage("audit loaded");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "audit failed");
+    }
+  }
+
   return (
     <div className="admin-shell">
       <header className="admin-header">
@@ -3155,6 +3507,9 @@ function AdminConsolePage() {
             <button className="chip active" onClick={loadHealth}>
               {copy.refreshHealth}
             </button>
+            <button className="chip" onClick={loadAudit}>
+              Audit
+            </button>
           </div>
         </section>
 
@@ -3192,6 +3547,25 @@ function AdminConsolePage() {
             <span className="status-pill">json</span>
           </div>
           <pre className="response-panel">{responseText}</pre>
+        </section>
+
+        <section className="card">
+          <div className="card-header">
+            <span className="eyebrow">Audit Trail</span>
+            <span className="status-pill">{auditEvents.length}</span>
+          </div>
+          <div className="decision-list tile-scroll">
+            {auditEvents.map((item) => (
+              <article key={item.id} className="activity-item">
+                <div className="stack-title">
+                  <strong>{`${item.action} ${item.entityType}`}</strong>
+                  <span className={`status-tag ${item.status}`}>{item.status}</span>
+                </div>
+                <small>{`${item.actor} • ${formatUtcDateTime(item.timestamp)}`}</small>
+                <p>{item.detail}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </div>

@@ -852,6 +852,16 @@ textarea {
   color: var(--amber);
 }
 
+.status-tag.new,
+.status-tag.in-progress {
+  color: var(--amber);
+}
+
+.status-tag.ready,
+.status-tag.success {
+  color: var(--green);
+}
+
 .status-tag.delayed {
   color: var(--red);
 }
@@ -865,6 +875,10 @@ textarea {
 }
 
 .status-tag.stale {
+  color: var(--red);
+}
+
+.status-tag.failed {
   color: var(--red);
 }
 
@@ -931,7 +945,7 @@ textarea {
 
 .selection-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.6rem;
   padding-top: 0.25rem;
 }
@@ -1259,7 +1273,7 @@ textarea {
 
 .city-intel-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.55rem;
 }
 
@@ -1277,6 +1291,24 @@ textarea {
   margin: 0;
   font-size: 0.88rem;
   color: var(--muted);
+}
+
+.city-intel-stat small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.district-watch-list {
+  gap: 0.35rem;
+  padding: 0;
+  background: transparent;
+}
+
+.district-watch-list p {
+  padding: 0.42rem 0.48rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.52);
 }
 
 .coverage-filter {
@@ -1929,6 +1961,87 @@ textarea {
   gap: 0.25rem;
 }
 
+.decision-list {
+  min-height: 0;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.decision-item {
+  width: 100%;
+  padding: 0.72rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.64);
+  display: grid;
+  gap: 0.34rem;
+  text-align: left;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.decision-item:hover {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.decision-item.severity-urgent {
+  border-color: rgba(180, 35, 24, 0.2);
+}
+
+.decision-item.severity-watch {
+  border-color: rgba(168, 102, 0, 0.18);
+}
+
+.decision-item.severity-monitor {
+  border-color: rgba(12, 155, 99, 0.16);
+}
+
+.decision-item p,
+.decision-item small,
+.decision-footer,
+.decision-meta {
+  color: var(--muted);
+}
+
+.decision-meta,
+.decision-footer,
+.decision-activity-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+}
+
+.decision-meta,
+.decision-footer,
+.decision-activity-item {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.decision-footer {
+  justify-content: space-between;
+}
+
+.decision-activity-strip {
+  padding-top: 0.1rem;
+}
+
+.decision-activity-item {
+  flex: 1 1 180px;
+  padding: 0.46rem 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
 .candidate-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2571,8 +2684,22 @@ textarea:focus {
   color: var(--amber);
 }
 
+.status-tag.new,
+.status-tag.in-progress {
+  color: var(--amber);
+}
+
+.status-tag.ready,
+.status-tag.success {
+  color: var(--green);
+}
+
 .status-tag.delayed,
 .status-tag.stale {
+  color: var(--red);
+}
+
+.status-tag.failed {
   color: var(--red);
 }
 
@@ -2588,6 +2715,8 @@ textarea:focus {
 .api-watch-item,
 .slic-ranking-card,
 .activity-item,
+.decision-item,
+.decision-activity-item,
 .city-intel-stat,
 .city-intel-focus,
 .briefing-line,

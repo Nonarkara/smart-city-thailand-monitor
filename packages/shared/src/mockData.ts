@@ -1,9 +1,12 @@
 import type {
   ActivityLogItem,
+  AuditEventRecord,
   BriefingNote,
   CityProfile,
   ChangePulse,
   DashboardView,
+  DecisionQueueItem,
+  DistrictProfile,
   DomainScorecard,
   GeoFeatureRecord,
   Locale,
@@ -186,12 +189,341 @@ export const cities: CityProfile[] = [
   }
 ];
 
+export const districts: DistrictProfile[] = [
+  {
+    id: "district-bangkok-phra-nakhon",
+    slug: "phra-nakhon",
+    citySlug: "bangkok",
+    name: { th: "พระนคร", en: "Phra Nakhon" },
+    population: 53000,
+    focus: {
+      th: "แกนเมืองเก่า การเดินเท้า และการจัดการนักท่องเที่ยว",
+      en: "Historic core, walkability, and visitor-flow management."
+    },
+    priority: {
+      th: "ควบคุมการเดินเท้าและคุณภาพอากาศรอบแหล่งท่องเที่ยว",
+      en: "Keep pedestrian movement and air quality stable around heritage sites."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [100.4992, 13.7568],
+    bounds: [13.744, 100.488, 13.768, 100.511],
+    watchpoints: [
+      { th: "ฝุ่นช่วงเช้าในแนวการท่องเที่ยว", en: "Morning haze along the visitor corridor." },
+      { th: "แรงกดดันการสัญจรข้ามแม่น้ำ", en: "Cross-river traffic pressure." }
+    ],
+    recommendedLayers: ["pollution", "news", "bangkok-passages"],
+    source: seedMeta("Bangkok Operations Desk", "https://www.bangkok.go.th")
+  },
+  {
+    id: "district-bangkok-pathum-wan",
+    slug: "pathum-wan",
+    citySlug: "bangkok",
+    name: { th: "ปทุมวัน", en: "Pathum Wan" },
+    population: 47000,
+    focus: {
+      th: "โหนดคมนาคม ศูนย์การค้า และความร้อนเมือง",
+      en: "Transit interchange, retail footfall, and urban heat."
+    },
+    priority: {
+      th: "ลดความร้อนและคงความไหลลื่นของการเดินทางในช่วงบ่าย",
+      en: "Reduce daytime heat exposure while keeping interchange movement fluid."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [100.5287, 13.7444],
+    bounds: [13.731, 100.515, 13.757, 100.54],
+    watchpoints: [
+      { th: "จุดร้อนคนหนาแน่นใกล้แนวรถไฟฟ้า", en: "Heat-stress pockets near interchange stations." },
+      { th: "คอขวดทางเท้าในช่วงกิจกรรม", en: "Pedestrian bottlenecks during event peaks." }
+    ],
+    recommendedLayers: ["weather", "projects", "itic-traffic"],
+    source: seedMeta("Bangkok Operations Desk", "https://www.bangkok.go.th")
+  },
+  {
+    id: "district-bangkok-bang-na",
+    slug: "bang-na",
+    citySlug: "bangkok",
+    name: { th: "บางนา", en: "Bang Na" },
+    population: 99000,
+    focus: {
+      th: "ทางด่วน โลจิสติกส์ และการเชื่อมสนามบิน",
+      en: "Expressways, freight logistics, and airport-linked flows."
+    },
+    priority: {
+      th: "จับตาความหนาแน่นรถบรรทุกและจุดน้ำขังริมโครงข่ายหลัก",
+      en: "Watch freight pressure and drainage chokepoints along the main corridor."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [100.6121, 13.6678],
+    bounds: [13.645, 100.58, 13.7, 100.63],
+    watchpoints: [
+      { th: "เส้นทางขนส่งมีโอกาสติดขัดต่อเนื่อง", en: "Freight corridors can stay congested for long windows." },
+      { th: "พื้นที่ลุ่มต่ำใกล้แนวถนนหลัก", en: "Low-lying roadside drainage pockets." }
+    ],
+    recommendedLayers: ["itic-traffic", "water", "projects"],
+    source: seedMeta("Bangkok Operations Desk", "https://www.bangkok.go.th")
+  },
+  {
+    id: "district-bangkok-thon-buri",
+    slug: "thon-buri",
+    citySlug: "bangkok",
+    name: { th: "ธนบุรี", en: "Thon Buri" },
+    population: 73000,
+    focus: {
+      th: "คลอง การเข้าถึงบริการ และความเชื่อมโยงข้ามแม่น้ำ",
+      en: "Canal management, service access, and cross-river movement."
+    },
+    priority: {
+      th: "เร่งบริหารน้ำริมคลองและเส้นทางเชื่อมโรงพยาบาล",
+      en: "Keep canal response and hospital access routes stable."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [100.4845, 13.7246],
+    bounds: [13.708, 100.47, 13.744, 100.503],
+    watchpoints: [
+      { th: "จุดระบายน้ำริมคลอง", en: "Canal-edge drainage watchpoints." },
+      { th: "คอขวดสะพานช่วงพีค", en: "Bridge bottlenecks during commute peaks." }
+    ],
+    recommendedLayers: ["water", "bangkok-passages", "itic-traffic"],
+    source: seedMeta("Bangkok Operations Desk", "https://www.bangkok.go.th")
+  },
+  {
+    id: "district-phuket-mueang-phuket",
+    slug: "mueang-phuket",
+    citySlug: "phuket",
+    name: { th: "เมืองภูเก็ต", en: "Mueang Phuket" },
+    population: 79000,
+    focus: {
+      th: "ศูนย์ราชการ เมืองเก่า และการระบายน้ำ",
+      en: "Administrative core, old town, and drainage readiness."
+    },
+    priority: {
+      th: "คงการเข้าถึงเมืองเก่าและบริหารฝนกระทบการท่องเที่ยว",
+      en: "Keep old-town access open during rain-affected visitor periods."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [98.3923, 7.8804],
+    bounds: [7.79, 98.28, 8.05, 98.45],
+    watchpoints: [
+      { th: "น้ำท่วมขังจุดต่ำในเขตเมืองเก่า", en: "Surface flooding in low-lying old-town streets." },
+      { th: "แรงกดดันการจอดรถและรถรับส่ง", en: "Parking and shuttle pressure." }
+    ],
+    recommendedLayers: ["weather", "news", "projects"],
+    source: seedMeta("Phuket Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-phuket-kathu",
+    slug: "kathu",
+    citySlug: "phuket",
+    name: { th: "กะทู้", en: "Kathu" },
+    population: 54000,
+    focus: {
+      th: "โซนท่องเที่ยวหนาแน่นและเส้นทางขึ้นเขา",
+      en: "High-traffic tourism zone and hill corridor access."
+    },
+    priority: {
+      th: "เฝ้าระวังฝนหนัก การจราจร และความปลอดภัยนักท่องเที่ยว",
+      en: "Watch rain, traffic, and tourist safety at peak periods."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [98.3381, 7.9155],
+    bounds: [7.86, 98.3, 7.97, 98.37],
+    watchpoints: [
+      { th: "แรงกดดันรถรับส่งในย่านชายหาด", en: "Beach shuttle congestion." },
+      { th: "เสถียรภาพทางลาดชันช่วงฝน", en: "Slope stability during heavy rain." }
+    ],
+    recommendedLayers: ["weather", "itic-traffic", "news"],
+    source: seedMeta("Phuket Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-phuket-thalang",
+    slug: "thalang",
+    citySlug: "phuket",
+    name: { th: "ถลาง", en: "Thalang" },
+    population: 61000,
+    focus: {
+      th: "สนามบิน โลจิสติกส์ และชุมชนชายฝั่ง",
+      en: "Airport access, logistics, and coastal communities."
+    },
+    priority: {
+      th: "รักษาเสถียรภาพเส้นทางสนามบินและโครงสร้างพื้นฐานชายฝั่ง",
+      en: "Protect airport corridors and coastal infrastructure continuity."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [98.3344, 8.0315],
+    bounds: [7.98, 98.27, 8.16, 98.43],
+    watchpoints: [
+      { th: "ปริมาณรถเชื่อมสนามบิน", en: "Airport corridor volume." },
+      { th: "ความเสี่ยงลมแรงชายฝั่ง", en: "Coastal wind exposure." }
+    ],
+    recommendedLayers: ["weather", "water", "projects"],
+    source: seedMeta("Phuket Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-chiang-mai-mueang",
+    slug: "mueang-chiang-mai",
+    citySlug: "chiang-mai",
+    name: { th: "เมืองเชียงใหม่", en: "Mueang Chiang Mai" },
+    population: 240000,
+    focus: {
+      th: "ศูนย์กลางเมือง การท่องเที่ยว และ PM2.5",
+      en: "Urban core, tourism, and PM2.5 exposure."
+    },
+    priority: {
+      th: "รักษาการสื่อสารคุณภาพอากาศและเส้นทางบริการสำคัญ",
+      en: "Maintain daily AQI messaging and priority service routes."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [98.9853, 18.7883],
+    bounds: [18.73, 98.94, 18.84, 99.04],
+    watchpoints: [
+      { th: "ฝุ่นสะสมช่วงเช้า", en: "Morning PM2.5 accumulation." },
+      { th: "แรงกดดันนักท่องเที่ยวในคูเมือง", en: "Old-city visitor pressure." }
+    ],
+    recommendedLayers: ["pollution", "news", "weather"],
+    source: seedMeta("Chiang Mai Civic Data", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-chiang-mai-hang-dong",
+    slug: "hang-dong",
+    citySlug: "chiang-mai",
+    name: { th: "หางดง", en: "Hang Dong" },
+    population: 93000,
+    focus: {
+      th: "ชานเมืองเติบโตเร็วและการเข้าถึงบริการ",
+      en: "Fast-growing peri-urban services and access."
+    },
+    priority: {
+      th: "รองรับการขยายตัวที่อยู่อาศัยและการเดินทางเชื่อมเมือง",
+      en: "Manage growth pressure and city-bound mobility."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [98.919, 18.687],
+    bounds: [18.62, 98.87, 18.75, 98.98],
+    watchpoints: [
+      { th: "แรงกดดันเส้นทางเข้าเมือง", en: "Inbound commute pressure." },
+      { th: "พื้นที่เสี่ยงน้ำขังท้องถิ่น", en: "Localized standing-water pockets." }
+    ],
+    recommendedLayers: ["projects", "weather", "water"],
+    source: seedMeta("Chiang Mai Civic Data", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-chiang-mai-mae-rim",
+    slug: "mae-rim",
+    citySlug: "chiang-mai",
+    name: { th: "แม่ริม", en: "Mae Rim" },
+    population: 87000,
+    focus: {
+      th: "เชิงเขา พื้นที่สีเขียว และการท่องเที่ยวธรรมชาติ",
+      en: "Foothills, green cover, and nature-based tourism."
+    },
+    priority: {
+      th: "เฝ้าระวังไฟป่าและควันในแนวขอบเมือง",
+      en: "Watch wildfire smoke and urban-edge haze."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [98.961, 18.915],
+    bounds: [18.84, 98.89, 19.0, 99.03],
+    watchpoints: [
+      { th: "ควันและจุดความร้อนใกล้เชิงเขา", en: "Foothill smoke and hotspot risk." },
+      { th: "แรงกดดันเส้นทางท่องเที่ยวธรรมชาติ", en: "Nature-tourism route pressure." }
+    ],
+    recommendedLayers: ["eo-aerosol", "eo-vegetation", "pollution"],
+    source: seedMeta("Chiang Mai Civic Data", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-khon-kaen-mueang",
+    slug: "mueang-khon-kaen",
+    citySlug: "khon-kaen",
+    name: { th: "เมืองขอนแก่น", en: "Mueang Khon Kaen" },
+    population: 180000,
+    focus: {
+      th: "ศูนย์บริการเมือง การศึกษา และการเดินทางหลัก",
+      en: "Civic services, education clusters, and main mobility corridors."
+    },
+    priority: {
+      th: "เร่งดูเส้นทางโรงพยาบาล-มหาวิทยาลัยและความร้อนช่วงบ่าย",
+      en: "Protect hospital-university corridors and afternoon heat comfort."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [102.8236, 16.4322],
+    bounds: [16.37, 102.76, 16.5, 102.9],
+    watchpoints: [
+      { th: "ความร้อนในแกนมหาวิทยาลัย", en: "Heat exposure around university corridors." },
+      { th: "แรงกดดันการเดินทางในเมือง", en: "Inner-city mobility pressure." }
+    ],
+    recommendedLayers: ["weather", "projects", "pollution"],
+    source: seedMeta("Khon Kaen Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-khon-kaen-nam-phong",
+    slug: "nam-phong",
+    citySlug: "khon-kaen",
+    name: { th: "น้ำพอง", en: "Nam Phong" },
+    population: 54000,
+    focus: {
+      th: "โครงสร้างพื้นฐานพลังงานและพื้นที่ชานเมือง",
+      en: "Energy infrastructure and peri-urban growth."
+    },
+    priority: {
+      th: "ติดตามโครงข่ายสาธารณูปโภคและคุณภาพอากาศจากกิจกรรมอุตสาหกรรม",
+      en: "Track utility continuity and industry-linked air quality."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [102.865, 16.705],
+    bounds: [16.62, 102.8, 16.79, 102.93],
+    watchpoints: [
+      { th: "โหลดโครงข่ายพลังงานและสาธารณูปโภค", en: "Utility network load." },
+      { th: "ฝุ่นจากกิจกรรมอุตสาหกรรม", en: "Industrial dust exposure." }
+    ],
+    recommendedLayers: ["pollution", "projects", "economy"],
+    source: seedMeta("Khon Kaen Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-khon-kaen-ban-haet",
+    slug: "ban-haet",
+    citySlug: "khon-kaen",
+    name: { th: "บ้านแฮด", en: "Ban Haet" },
+    population: 42000,
+    focus: {
+      th: "เกษตร ดิจิทัลบริการ และการเชื่อมโลจิสติกส์",
+      en: "Agri-services, logistics links, and service access."
+    },
+    priority: {
+      th: "คงเสถียรภาพเส้นทางขนส่งสินค้าเกษตรและการเข้าถึงบริการ",
+      en: "Stabilize agri-logistics routes and service coverage."
+    },
+    riskLevel: "low",
+    updatedAt: seededAt,
+    center: [102.78, 16.22],
+    bounds: [16.15, 102.72, 16.29, 102.84],
+    watchpoints: [
+      { th: "เส้นทางขนส่งสินค้าเกษตร", en: "Agri-logistics corridor continuity." },
+      { th: "จุดบริการดิจิทัลชุมชน", en: "Community digital-service coverage." }
+    ],
+    recommendedLayers: ["projects", "economy", "agriculture"],
+    source: seedMeta("Khon Kaen Smart City", "https://www.citydata.in.th")
+  }
+];
+
 export const projects: ProjectRecord[] = [
   {
     id: "project-1",
     slug: "bangkok-flood-command",
     title: { th: "ศูนย์สั่งการน้ำท่วมกรุงเทพ", en: "Bangkok Flood Command Grid" },
     citySlug: "bangkok",
+    districtSlug: "thon-buri",
     domainSlug: "environment",
     status: "active",
     completionPercent: 81,
@@ -212,6 +544,7 @@ export const projects: ProjectRecord[] = [
     slug: "phuket-tourism-mobility-loop",
     title: { th: "Phuket Tourism Mobility Loop", en: "Phuket Tourism Mobility Loop" },
     citySlug: "phuket",
+    districtSlug: "kathu",
     domainSlug: "mobility",
     status: "watch",
     completionPercent: 58,
@@ -232,6 +565,7 @@ export const projects: ProjectRecord[] = [
     slug: "khon-kaen-civic-transit",
     title: { th: "Khon Kaen Civic Transit Pulse", en: "Khon Kaen Civic Transit Pulse" },
     citySlug: "khon-kaen",
+    districtSlug: "mueang-khon-kaen",
     domainSlug: "people",
     status: "active",
     completionPercent: 67,
@@ -293,9 +627,247 @@ export const news: NewsItem[] = [
     },
     kind: "external",
     citySlug: "chiang-mai",
+    districtSlug: "mueang-chiang-mai",
     domainSlug: "environment",
     publishedAt: seededAt,
     source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+  }
+];
+
+export const decisionQueue: DecisionQueueItem[] = [
+  {
+    id: "decision-bangkok-bang-na-drainage",
+    citySlug: "bangkok",
+    districtSlug: "bang-na",
+    domainSlug: "environment",
+    title: {
+      th: "ยืนยันทีมล้างท่อและปั๊มน้ำแนวบางนา",
+      en: "Confirm pump and drain crews for the Bang Na corridor"
+    },
+    summary: {
+      th: "พื้นที่แนวโลจิสติกส์มีความเสี่ยงน้ำขังและกระทบการเดินทางสินค้าในรอบบ่าย",
+      en: "Freight-facing drainage pockets could slow corridor movement through the afternoon."
+    },
+    severity: "urgent",
+    status: "new",
+    confidence: 0.84,
+    owner: { th: "สำนักการระบายน้ำ", en: "Drainage Operations" },
+    recommendedAction: {
+      th: "ยืนยันกำลังคน เครื่องสูบ และข้อความแจ้งเตือนเส้นทางสำรองภายใน 2 ชั่วโมง",
+      en: "Confirm crews, mobile pumps, and alternate-route messaging within 2 hours."
+    },
+    dueAt: "2026-03-12T09:00:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather", "itic-traffic"],
+    layerIds: ["water", "itic-traffic", "projects"]
+  },
+  {
+    id: "decision-bangkok-pathumwan-heat",
+    citySlug: "bangkok",
+    districtSlug: "pathum-wan",
+    domainSlug: "living",
+    title: {
+      th: "เปิดจุดพักร้อนในแกนปทุมวันช่วงบ่าย",
+      en: "Stage heat-relief support in Pathum Wan this afternoon"
+    },
+    summary: {
+      th: "จุดร้อนเมืองและปริมาณคนสูงทำให้โหนดเดินเท้าเสี่ยงต่อความไม่สบายและคอขวด",
+      en: "Urban heat plus heavy footfall raises comfort and crowding risk around interchange nodes."
+    },
+    severity: "watch",
+    status: "ready",
+    confidence: 0.78,
+    owner: { th: "สำนักอนามัยและเทศกิจ", en: "Health and field operations" },
+    recommendedAction: {
+      th: "จัดน้ำดื่ม จุดพัก และเจ้าหน้าที่ภาคสนามในแนวสถานีหลัก",
+      en: "Deploy water, shade, and field staff near the main stations."
+    },
+    dueAt: "2026-03-12T10:30:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather", "citydata"],
+    layerIds: ["weather", "projects", "bangkok-passages"]
+  },
+  {
+    id: "decision-bangkok-thonburi-bridge",
+    citySlug: "bangkok",
+    districtSlug: "thon-buri",
+    domainSlug: "mobility",
+    title: {
+      th: "จัดการคอขวดสะพานฝั่งธนบุรีช่วงชั่วโมงเร่งด่วน",
+      en: "Manage Thon Buri bridge bottlenecks before peak hour"
+    },
+    summary: {
+      th: "จุดตรวจการจราจรข้ามแม่น้ำเริ่มตึงและกระทบเส้นทางโรงพยาบาล",
+      en: "Cross-river bridge pressure is building and can affect hospital access."
+    },
+    severity: "watch",
+    status: "in-progress",
+    confidence: 0.81,
+    owner: { th: "จราจรและเทศกิจ", en: "Traffic and field control" },
+    recommendedAction: {
+      th: "จัดคนหน้างานและข้อความนำทางก่อนช่วงพีค",
+      en: "Position field officers and publish route guidance before the evening peak."
+    },
+    dueAt: "2026-03-12T11:15:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["itic-traffic"],
+    layerIds: ["itic-traffic", "water"]
+  },
+  {
+    id: "decision-chiangmai-aqi-schools",
+    citySlug: "chiang-mai",
+    districtSlug: "mueang-chiang-mai",
+    domainSlug: "environment",
+    title: {
+      th: "คงประกาศ PM2.5 รายวันและแนวทางโรงเรียนในเมืองเชียงใหม่",
+      en: "Maintain daily PM2.5 school guidance in Mueang Chiang Mai"
+    },
+    summary: {
+      th: "AQI ยังอยู่ในระดับต้องสื่อสารต่อเนื่องสำหรับเด็กและผู้เปราะบาง",
+      en: "AQI remains elevated enough to justify continued school-facing messaging."
+    },
+    severity: "urgent",
+    status: "ready",
+    confidence: 0.91,
+    owner: { th: "สาธารณสุขจังหวัด", en: "Provincial public health" },
+    recommendedAction: {
+      th: "ยืนยันข้อความรายวัน หน้ากาก และกิจกรรมกลางแจ้งตามช่วงเวลา",
+      en: "Confirm daily messaging, masks, and time-based outdoor activity guidance."
+    },
+    dueAt: "2026-03-12T08:30:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-air", "google-news-rss"],
+    layerIds: ["pollution", "news", "eo-aerosol"]
+  },
+  {
+    id: "decision-chiangmai-maerim-smoke",
+    citySlug: "chiang-mai",
+    districtSlug: "mae-rim",
+    domainSlug: "environment",
+    title: {
+      th: "ติดตามจุดควันเชิงเขาแม่ริมแบบครึ่งวัน",
+      en: "Track Mae Rim foothill smoke twice today"
+    },
+    summary: {
+      th: "พื้นที่ขอบเมืองยังต้องเฝ้าระวังควันและจุดความร้อนที่อาจไหลเข้าพื้นที่ชุมชน",
+      en: "Urban-edge smoke can still shift toward populated zones from foothill hotspots."
+    },
+    severity: "watch",
+    status: "new",
+    confidence: 0.73,
+    owner: { th: "สิ่งแวดล้อมและป้องกันภัย", en: "Environment and emergency watch" },
+    recommendedAction: {
+      th: "จัดรอบตรวจภาคสนามและเทียบ EO aerosol กับรายงานท้องถิ่น",
+      en: "Run a midday field check and compare EO aerosol with local reports."
+    },
+    dueAt: "2026-03-12T12:00:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-air", "nasa-gibs"],
+    layerIds: ["eo-aerosol", "eo-vegetation", "pollution"]
+  },
+  {
+    id: "decision-phuket-kathu-storm",
+    citySlug: "phuket",
+    districtSlug: "kathu",
+    domainSlug: "living",
+    title: {
+      th: "เตรียมแผนฝนหนักและ crowd control ในกะทู้",
+      en: "Prepare heavy-rain and crowd control response in Kathu"
+    },
+    summary: {
+      th: "พื้นที่ท่องเที่ยวหนาแน่นต้องพร้อมทั้งการจราจรและความปลอดภัยเมื่อฝนแรง",
+      en: "The tourism core needs coordinated traffic and safety response during heavy rain."
+    },
+    severity: "urgent",
+    status: "in-progress",
+    confidence: 0.79,
+    owner: { th: "เทศบาลและท่องเที่ยว", en: "Municipal and tourism operations" },
+    recommendedAction: {
+      th: "ยืนยันหน้างานจราจร แจ้งเตือนผู้ประกอบการ และเช็กเส้นทางรับส่ง",
+      en: "Confirm traffic crews, brief operators, and verify shuttle routing."
+    },
+    dueAt: "2026-03-12T09:45:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather", "google-news-rss"],
+    layerIds: ["weather", "news", "itic-traffic"]
+  },
+  {
+    id: "decision-phuket-thalang-airport",
+    citySlug: "phuket",
+    districtSlug: "thalang",
+    domainSlug: "mobility",
+    title: {
+      th: "คงช่องทางสนามบินและจุดต้อนรับในถลาง",
+      en: "Keep Thalang airport approaches and reception points stable"
+    },
+    summary: {
+      th: "ปริมาณเดินทางเข้าเมืองและสนามบินควรมีแผนรองรับแบบต่อเนื่อง",
+      en: "Airport-linked arrival flow needs steady corridor management."
+    },
+    severity: "monitor",
+    status: "ready",
+    confidence: 0.69,
+    owner: { th: "ขนส่งและเทศกิจ", en: "Transport and field operations" },
+    recommendedAction: {
+      th: "ประสานรถรับส่งและสื่อสารเส้นทางสำรองหากเกิดฝนแรง",
+      en: "Coordinate shuttle staging and alternate routing if rain intensifies."
+    },
+    dueAt: "2026-03-12T13:00:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather"],
+    layerIds: ["weather", "projects"]
+  },
+  {
+    id: "decision-khonkaen-core-heat",
+    citySlug: "khon-kaen",
+    districtSlug: "mueang-khon-kaen",
+    domainSlug: "living",
+    title: {
+      th: "จัดจุดพักร้อนบนแกนโรงพยาบาล-มหาวิทยาลัย",
+      en: "Stage heat relief on the hospital-university corridor"
+    },
+    summary: {
+      th: "อุณหภูมิและการเดินทางในแกนบริการหลักเริ่มกดดันผู้ใช้บริการ",
+      en: "Heat and movement pressure are rising along the main service corridor."
+    },
+    severity: "watch",
+    status: "new",
+    confidence: 0.74,
+    owner: { th: "สาธารณสุขเมือง", en: "City public health" },
+    recommendedAction: {
+      th: "เพิ่มน้ำดื่ม ร่มเงา และการสื่อสารกับสถานพยาบาล",
+      en: "Add water, shade, and hospital-facing advisories."
+    },
+    dueAt: "2026-03-12T10:00:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather"],
+    layerIds: ["weather", "projects"]
+  },
+  {
+    id: "decision-khonkaen-banhaet-logistics",
+    citySlug: "khon-kaen",
+    districtSlug: "ban-haet",
+    domainSlug: "economy",
+    title: {
+      th: "เช็กเส้นทางโลจิสติกส์เกษตรบ้านแฮดก่อนรอบขนส่งเย็น",
+      en: "Check Ban Haet agri-logistics routes before evening dispatch"
+    },
+    summary: {
+      th: "สินค้าการเกษตรควรมีเส้นทางสำรองและจุดบริการดิจิทัลพร้อมใช้งาน",
+      en: "Agri shipments need backup routing and reliable digital-service points."
+    },
+    severity: "monitor",
+    status: "ready",
+    confidence: 0.67,
+    owner: { th: "เกษตรและพาณิชย์จังหวัด", en: "Provincial agriculture and commerce" },
+    recommendedAction: {
+      th: "ยืนยันผู้ประสานงานขนส่งและแจ้งจุดบริการที่เปิดใช้งาน",
+      en: "Confirm route coordinators and active service points."
+    },
+    dueAt: "2026-03-12T14:00:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["data-go-th"],
+    layerIds: ["agriculture", "economy", "projects"]
   }
 ];
 
@@ -1323,6 +1895,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Shared public place record imported from the Google My Maps dataset.",
         properties: {
           city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           dataset: "shared-map"
         },
         source: bangkokPlaceMeta
@@ -1336,6 +1910,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Fallback marker used while the live My Maps source is syncing.",
         properties: {
           city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           dataset: "fallback"
         },
         source: bangkokPlaceMeta
@@ -1349,6 +1925,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "The default Bangkok focus derived from the shared map center.",
         properties: {
           city: "Bangkok",
+          district: "Bang Na",
+          districtSlug: "bang-na",
           dataset: "fallback"
         },
         source: bangkokPlaceMeta
@@ -1362,6 +1940,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Historic-core walking and public-space waypoint.",
         properties: {
           city: "Bangkok",
+          district: "Phra Nakhon",
+          districtSlug: "phra-nakhon",
           dataset: "curated"
         },
         source: bangkokPlaceMeta
@@ -1375,6 +1955,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "River-edge mobility and public-realm highlight.",
         properties: {
           city: "Bangkok",
+          district: "Thon Buri",
+          districtSlug: "thon-buri",
           dataset: "curated"
         },
         source: bangkokPlaceMeta
@@ -1388,6 +1970,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Transit-linked civic services cluster.",
         properties: {
           city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           dataset: "curated"
         },
         source: bangkokPlaceMeta
@@ -1401,6 +1985,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Eastern Bangkok learning and innovation waypoint.",
         properties: {
           city: "Bangkok",
+          district: "Bang Na",
+          districtSlug: "bang-na",
           dataset: "curated"
         },
         source: bangkokPlaceMeta
@@ -1414,6 +2000,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Canal-side community signal and local access node.",
         properties: {
           city: "Bangkok",
+          district: "Thon Buri",
+          districtSlug: "thon-buri",
           dataset: "curated"
         },
         source: bangkokPlaceMeta
@@ -1440,6 +2028,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Dense public-service modernization footprint for integrated city services.",
         properties: {
           city: "Bangkok",
+          district: "Thon Buri",
+          districtSlug: "thon-buri",
           status: "active",
           priority: "service-delivery"
         },
@@ -1478,6 +2068,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Regional food systems and civic logistics pilot footprint.",
         properties: {
           city: "Khon Kaen",
+          district: "Mueang Khon Kaen",
+          districtSlug: "mueang-khon-kaen",
           status: "active",
           focus: "agri-services"
         },
@@ -1492,6 +2084,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "University and city sandbox for livability and climate response pilots.",
         properties: {
           city: "Chiang Mai",
+          district: "Mueang Chiang Mai",
+          districtSlug: "mueang-chiang-mai",
           status: "watch",
           focus: "living-lab"
         },
@@ -1514,6 +2108,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "National policy, transport, and flood-management coverage remains concentrated here.",
         properties: {
           city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           mentions: 18,
           theme: "governance"
         },
@@ -1528,6 +2124,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Recurring environmental coverage spike around haze and livability.",
         properties: {
           city: "Chiang Mai",
+          district: "Mueang Chiang Mai",
+          districtSlug: "mueang-chiang-mai",
           mentions: 11,
           theme: "environment"
         },
@@ -1556,6 +2154,8 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Service-quality and visitor-flow stories remain active.",
         properties: {
           city: "Phuket",
+          district: "Kathu",
+          districtSlug: "kathu",
           mentions: 7,
           theme: "living"
         },
@@ -2022,6 +2622,9 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Rama IX inbound congestion watch",
         description: "Live probe-traffic watchpoint covering the Rama IX eastbound approach.",
         properties: {
+          city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           kind: "traffic",
           severity: "watch",
           speedKph: 18
@@ -2036,6 +2639,9 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Din Daeng junction traffic event",
         description: "Traffic incident cluster affecting interchange access and peak-hour delays.",
         properties: {
+          city: "Bangkok",
+          district: "Pathum Wan",
+          districtSlug: "pathum-wan",
           kind: "incident",
           severity: "high",
           speedKph: 12
@@ -2050,6 +2656,9 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Chao Phraya bridge flow check",
         description: "Bridge approach watchpoint used to track cross-river travel pressure.",
         properties: {
+          city: "Bangkok",
+          district: "Thon Buri",
+          districtSlug: "thon-buri",
           kind: "traffic",
           severity: "watch",
           speedKph: 21
@@ -2064,6 +2673,9 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Bang Na logistics corridor",
         description: "Freight and airport-linked corridor watchpoint for outbound cargo movement.",
         properties: {
+          city: "Bangkok",
+          district: "Bang Na",
+          districtSlug: "bang-na",
           kind: "freight",
           severity: "moderate",
           speedKph: 27
@@ -2528,6 +3140,49 @@ export const activityLog: ActivityLogItem[] = [
     label: "NASA EONET",
     detail: "Regional natural-event watch refreshed for the resilience layer.",
     status: "live"
+  }
+];
+
+export const auditTrail: AuditEventRecord[] = [
+  {
+    id: "audit-1",
+    timestamp: seededAt,
+    actor: "ops.console",
+    action: "publish",
+    entityType: "briefing",
+    entityId: "briefing-1",
+    detail: "Published the morning operating brief.",
+    status: "manual"
+  },
+  {
+    id: "audit-2",
+    timestamp: seededAt,
+    actor: "sync.scheduler",
+    action: "sync",
+    entityType: "source-sync",
+    entityId: "google-news-rss",
+    detail: "Completed news and signal sync without fallback.",
+    status: "success"
+  },
+  {
+    id: "audit-3",
+    timestamp: seededAt,
+    actor: "sync.scheduler",
+    action: "sync",
+    entityType: "source-sync",
+    entityId: "open-meteo-air",
+    detail: "Refreshed air-quality watch feeds for tracked cities.",
+    status: "success"
+  },
+  {
+    id: "audit-4",
+    timestamp: seededAt,
+    actor: "ops.editor",
+    action: "update",
+    entityType: "project",
+    entityId: "bangkok-flood-command",
+    detail: "Adjusted project milestone language for district rollout.",
+    status: "manual"
   }
 ];
 

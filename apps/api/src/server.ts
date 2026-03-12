@@ -73,7 +73,7 @@ export async function createServer() {
   });
 
   app.get("/api/projects", async (request) => {
-    const query = request.query as { city?: string; domain?: string; status?: string };
+    const query = request.query as { city?: string; district?: string; domain?: string; status?: string };
     return store.getProjects(query);
   });
 
@@ -88,9 +88,10 @@ export async function createServer() {
   });
 
   app.get("/api/news", async (request) => {
-    const query = request.query as { city?: string; domain?: string; kind?: string; limit?: string };
+    const query = request.query as { city?: string; district?: string; domain?: string; kind?: string; limit?: string };
     return store.getNews({
       city: query.city,
+      district: query.district,
       domain: query.domain,
       kind: query.kind,
       limit: query.limit ? Number(query.limit) : undefined
@@ -124,6 +125,11 @@ export async function createServer() {
 
   app.get("/api/cities", async () => store.getCities());
 
+  app.get("/api/districts", async (request) => {
+    const query = request.query as { city?: string };
+    return store.getDistricts(query);
+  });
+
   app.get("/api/cities/:slug", async (request, reply) => {
     const params = request.params as { slug: string };
     const city = store.getCity(params.slug);
@@ -153,6 +159,15 @@ export async function createServer() {
 
   app.get("/api/resilience", async () => store.getResilience());
   app.get("/api/changes", async () => store.getChangePulse());
+  app.get("/api/decisions", async (request) => {
+    const query = request.query as { city?: string; district?: string; domain?: string; limit?: string };
+    return store.getDecisionQueue({
+      city: query.city,
+      district: query.district,
+      domain: query.domain,
+      limit: query.limit ? Number(query.limit) : undefined
+    });
+  });
   app.get("/api/activity", async (request) => {
     const query = request.query as { limit?: string };
     return store.getActivityLog(query.limit ? Number(query.limit) : undefined);
@@ -313,6 +328,12 @@ export async function createServer() {
   app.get("/api/admin/sources/health", async (request, reply) => {
     if (!requireAdmin(request, reply)) return;
     return store.getSyncHealth();
+  });
+
+  app.get("/api/admin/audit", async (request, reply) => {
+    if (!requireAdmin(request, reply)) return;
+    const query = request.query as { limit?: string };
+    return store.getAuditTrail(query.limit ? Number(query.limit) : undefined);
   });
 
   app.post("/api/admin/map-sources/sync/:sourceId", async (request, reply) => {

@@ -1,11 +1,14 @@
 import {
   activityLog as activityLogSeed,
+  auditTrail as auditTrailSeed,
   briefing as briefingSeed,
   cities as citySeed,
   changePulse as changePulseSeed,
   cloneSeed,
   createTimeSnapshot,
+  decisionQueue as decisionQueueSeed,
   domains as domainSeed,
+  districts as districtSeed,
   mapFeatureCollections as mapFeatureSeed,
   mapLayers as layerSeed,
   marketSnapshot as marketSnapshotSeed,
@@ -20,9 +23,12 @@ import {
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
+  AuditEventRecord,
   BriefingNote,
   ChangePulse,
   DashboardView,
+  DecisionQueueItem,
+  DistrictProfile,
   MapFeatureCollection,
   MapLayerConfig,
   MarketSnapshot,
@@ -45,6 +51,9 @@ import { persistStoreSnapshot } from "./persistence.js";
 interface StoreState {
   projects: ProjectRecord[];
   news: NewsItem[];
+  districts: DistrictProfile[];
+  decisionQueue: DecisionQueueItem[];
+  auditTrail: AuditEventRecord[];
   sources: SourceRecord[];
   briefing: BriefingNote;
   resilience: ResilienceSnapshot;
@@ -121,6 +130,9 @@ function createState(): StoreState {
   return {
     projects: cloneSeed(projectSeed),
     news: cloneSeed(newsSeed),
+    districts: cloneSeed(districtSeed),
+    decisionQueue: cloneSeed(decisionQueueSeed),
+    auditTrail: cloneSeed(auditTrailSeed),
     sources: cloneSeed(sourceSeed),
     briefing: cloneSeed(briefingSeed),
     resilience: cloneSeed(resilienceSeed),
@@ -139,6 +151,19 @@ function createState(): StoreState {
 }
 
 const state = createState();
+
+function getDecisionSeverityRank(severity: DecisionQueueItem["severity"]) {
+  return severity === "urgent" ? 0 : severity === "watch" ? 1 : 2;
+}
+
+function pushAuditEvent(event: AuditEventRecord) {
+  state.auditTrail = [cloneSeed(event), ...state.auditTrail]
+    .filter(
+      (value, index, values) =>
+        values.findIndex((candidate) => candidate.id === value.id) === index
+    )
+    .slice(0, 40);
+}
 
 function mergeByKey<T>(seeded: T[], persisted: T[], getKey: (value: T) => string) {
   const merged = [...persisted, ...seeded];
@@ -186,6 +211,15 @@ export const store = {
     state.news = Array.isArray(snapshot.news)
       ? mergeByKey(seeded.news, snapshot.news, (item) => item.slug)
       : seeded.news;
+    state.districts = Array.isArray(snapshot.districts)
+      ? mergeByKey(seeded.districts, snapshot.districts, (district) => district.slug)
+      : seeded.districts;
+    state.decisionQueue = Array.isArray(snapshot.decisionQueue)
+      ? mergeByKey(seeded.decisionQueue, snapshot.decisionQueue, (item) => item.id)
+      : seeded.decisionQueue;
+    state.auditTrail = Array.isArray(snapshot.auditTrail)
+      ? mergeByKey(seeded.auditTrail, snapshot.auditTrail, (item) => item.id).slice(0, 40)
+      : seeded.auditTrail;
     state.sources = Array.isArray(snapshot.sources)
       ? mergeByKey(seeded.sources, snapshot.sources, (source) => source.id)
       : seeded.sources;
@@ -287,10 +321,11 @@ export const store = {
     };
   },
 
-  getProjects(filters?: { city?: string; domain?: string; status?: string }) {
+  getProjects(filters?: { city?: string; district?: string; domain?: string; status?: string }) {
     return cloneSeed(
       state.projects.filter((project) => {
         if (filters?.city && project.citySlug !== filters.city) return false;
+        if (filters?.district && project.districtSlug && project.districtSlug !== filters.district) return false;
         if (filters?.domain && project.domainSlug !== filters.domain) return false;
         if (filters?.status && project.status !== filters.status) return false;
         return true;
@@ -302,9 +337,10 @@ export const store = {
     return state.projects.find((project) => project.id === id || project.slug === id);
   },
 
-  getNews(filters?: { city?: string; domain?: string; kind?: string; limit?: number }) {
+  getNews(filters?: { city?: string; district?: string; domain?: string; kind?: string; limit?: number }) {
     const filtered = state.news.filter((item) => {
       if (filters?.city && item.citySlug && item.citySlug !== filters.city) return false;
+      if (filters?.district && item.districtSlug && item.districtSlug !== filters.district) return false;
       if (filters?.domain && item.domainSlug && item.domainSlug !== filters.domain) return false;
       if (filters?.kind && item.kind !== filters.kind) return false;
       return true;
@@ -323,6 +359,18 @@ export const store = {
 
   getCity(slug: string) {
     return citySeed.find((city) => city.slug === slug);
+  },
+
+  getDistricts(filters?: { city?: string }) {
+    return cloneSeed(
+      state.districts.filter((district) => {
+        if (filters?.city && district.citySlug !== filters.city) {
+          return false;
+        }
+
+        return true;
+      })
+    );
   },
 
   getDomains() {
@@ -351,8 +399,32 @@ export const store = {
     return cloneSeed(state.changePulse);
   },
 
+  getDecisionQueue(filters?: { city?: string; district?: string; domain?: string; limit?: number }) {
+    const filtered = state.decisionQueue
+      .filter((item) => {
+        if (filters?.city && item.citySlug !== filters.city) return false;
+        if (filters?.district && item.districtSlug && item.districtSlug !== filters.district) return false;
+        if (filters?.domain && item.domainSlug !== filters.domain) return false;
+        return true;
+      })
+      .sort((left, right) => {
+        const severityDelta = getDecisionSeverityRank(left.severity) - getDecisionSeverityRank(right.severity);
+        if (severityDelta !== 0) {
+          return severityDelta;
+        }
+
+        return new Date(left.dueAt).getTime() - new Date(right.dueAt).getTime();
+      });
+
+    return cloneSeed(filtered.slice(0, filters?.limit ?? filtered.length));
+  },
+
   getActivityLog(limit?: number) {
     return cloneSeed(state.activityLog.slice(0, limit ?? state.activityLog.length));
+  },
+
+  getAuditTrail(limit?: number) {
+    return cloneSeed(state.auditTrail.slice(0, limit ?? state.auditTrail.length));
   },
 
   getSocialListening() {
@@ -438,6 +510,16 @@ export const store = {
     };
 
     state.mediaFeeds.unshift(record);
+    pushAuditEvent({
+      id: `audit-media-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "admin.console",
+      action: "create",
+      entityType: "media-feed",
+      entityId: record.id,
+      detail: `Added media feed ${record.label}.`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(record);
   },
@@ -456,32 +538,64 @@ export const store = {
       }
     };
 
+    pushAuditEvent({
+      id: `audit-briefing-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "admin.console",
+      action: "publish",
+      entityType: "briefing",
+      entityId: state.briefing.id,
+      detail: `Published briefing "${state.briefing.headline.en}".`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(state.briefing);
   },
 
   createNews(input: Omit<NewsItem, "id" | "slug" | "publishedAt">) {
+    const createdAt = new Date().toISOString();
     const record: NewsItem = {
       ...input,
       id: `news-${Date.now()}`,
       slug: `news-${Date.now()}`,
-      publishedAt: new Date().toISOString()
+      publishedAt: createdAt
     };
 
     state.news.unshift(record);
+    pushAuditEvent({
+      id: `audit-news-${Date.now()}`,
+      timestamp: createdAt,
+      actor: "admin.console",
+      action: "create",
+      entityType: "news",
+      entityId: record.id,
+      detail: `Created news item "${record.title.en}".`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(record);
   },
 
   createProject(input: Omit<ProjectRecord, "id" | "slug" | "updatedAt">) {
+    const createdAt = new Date().toISOString();
     const record: ProjectRecord = {
       ...input,
       id: `project-${Date.now()}`,
       slug: `project-${Date.now()}`,
-      updatedAt: new Date().toISOString()
+      updatedAt: createdAt
     };
 
     state.projects.unshift(record);
+    pushAuditEvent({
+      id: `audit-project-${Date.now()}`,
+      timestamp: createdAt,
+      actor: "admin.console",
+      action: "create",
+      entityType: "project",
+      entityId: record.id,
+      detail: `Created project "${record.title.en}".`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(record);
   },
@@ -491,6 +605,16 @@ export const store = {
     if (!target) return null;
 
     Object.assign(target, patch, { updatedAt: new Date().toISOString() });
+    pushAuditEvent({
+      id: `audit-project-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "admin.console",
+      action: "update",
+      entityType: "project",
+      entityId: target.id,
+      detail: `Updated project "${target.title.en}".`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(target);
   },
@@ -500,6 +624,16 @@ export const store = {
     if (!target) return null;
 
     Object.assign(target, patch);
+    pushAuditEvent({
+      id: `audit-news-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      actor: "admin.console",
+      action: "update",
+      entityType: "news",
+      entityId: target.id,
+      detail: `Updated news item "${target.title.en}".`,
+      status: "manual"
+    });
     persistCurrentState();
     return cloneSeed(target);
   },
@@ -608,6 +742,17 @@ export const store = {
         })
       );
     }
+
+    pushAuditEvent({
+      id: `audit-sync-${Date.now()}`,
+      timestamp: syncTimestamp,
+      actor: "sync.scheduler",
+      action: "sync",
+      entityType: "source-sync",
+      entityId: results.map((result) => result.sourceId).join(","),
+      detail: `Processed ${results.length} source sync result${results.length === 1 ? "" : "s"}.`,
+      status: results.every((result) => result.status === "live" || result.status === "manual") ? "success" : "failed"
+    });
 
     const socialSignals = results
       .map((result) => result.socialSignal)

@@ -1,5 +1,13 @@
 import { localize } from "@smart-city/shared";
-import type { DashboardView, GeoFeatureRecord, Locale, MapFeatureCollection, NewsItem, ProjectRecord } from "@smart-city/shared";
+import type {
+  DashboardView,
+  DistrictProfile,
+  GeoFeatureRecord,
+  Locale,
+  MapFeatureCollection,
+  NewsItem,
+  ProjectRecord
+} from "@smart-city/shared";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -602,6 +610,7 @@ interface InteractiveMapProps {
   locale: Locale;
   view: DashboardView;
   citySlug: string;
+  district?: DistrictProfile;
   domainSlug?: string;
   basemap: "atlas" | "satellite";
   layers: string[];
@@ -615,6 +624,7 @@ export default function InteractiveMap({
   locale,
   view,
   citySlug,
+  district,
   domainSlug,
   basemap,
   layers,
@@ -642,6 +652,7 @@ export default function InteractiveMap({
     featureCollections.find((collection) => collection.layerId === "smart-city-thailand")?.bounds ?? null;
   const bangkokBoundsKey = bangkokFeatureBounds ? bangkokFeatureBounds.join(":") : "default";
   const nationalBoundsKey = nationalCoverageBounds ? nationalCoverageBounds.join(":") : "default";
+  const districtBoundsKey = district?.bounds ? district.bounds.join(":") : "";
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -733,6 +744,8 @@ export default function InteractiveMap({
     const nextViewportKey =
       view === "national"
         ? `national:${hasNationalCoverageLayer}:${nationalBoundsKey}`
+        : district
+          ? `district:${citySlug}:${district.slug}:${districtBoundsKey}`
         : citySlug === "bangkok"
           ? `city:${citySlug}:${bangkokBoundsKey}`
           : `city:${citySlug}`;
@@ -763,6 +776,24 @@ export default function InteractiveMap({
       return;
     }
 
+    if (district?.bounds) {
+      map.fitBounds(
+        [
+          [district.bounds[0], district.bounds[1]],
+          [district.bounds[2], district.bounds[3]]
+        ],
+        {
+          padding: [18, 18]
+        }
+      );
+      return;
+    }
+
+    if (district?.center) {
+      map.setView([district.center[1], district.center[0]], 12);
+      return;
+    }
+
     if (citySlug === "bangkok" && bangkokFeatureBounds) {
       map.fitBounds(
         [
@@ -787,7 +818,7 @@ export default function InteractiveMap({
     // For Muang Thong Thani, zoom out slightly to show Greater Bangkok context
     const zoom = citySlug === "muang-thong-thani" ? 11 : (view === "city" ? 10 : 8);
     map.setView([city.lat, city.lon], zoom);
-  }, [view, citySlug, layers, bangkokBoundsKey, nationalBoundsKey]);
+  }, [view, citySlug, district, layers, bangkokBoundsKey, districtBoundsKey, nationalBoundsKey]);
 
   useEffect(() => {
     const overlay = overlayRef.current;

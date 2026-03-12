@@ -61,6 +61,7 @@ export interface ProjectRecord {
   slug: string;
   title: LocalizedText;
   citySlug: string;
+  districtSlug?: string;
   domainSlug: string;
   status: "active" | "watch" | "delayed" | "planned";
   completionPercent: number;
@@ -78,9 +79,56 @@ export interface NewsItem {
   excerpt: LocalizedText;
   kind: "official" | "external";
   citySlug?: string;
+  districtSlug?: string;
   domainSlug?: string;
   publishedAt: string;
   source: SourceMeta;
+}
+
+export interface DistrictProfile {
+  id: string;
+  slug: string;
+  citySlug: string;
+  name: LocalizedText;
+  population: number;
+  focus: LocalizedText;
+  priority: LocalizedText;
+  riskLevel: "low" | "watch" | "high";
+  updatedAt: string;
+  center?: [number, number];
+  bounds?: [number, number, number, number];
+  watchpoints: LocalizedText[];
+  recommendedLayers: string[];
+  source: SourceMeta;
+}
+
+export interface DecisionQueueItem {
+  id: string;
+  citySlug: string;
+  districtSlug?: string;
+  domainSlug: string;
+  title: LocalizedText;
+  summary: LocalizedText;
+  severity: "monitor" | "watch" | "urgent";
+  status: "new" | "in-progress" | "ready";
+  confidence: number;
+  owner: LocalizedText;
+  recommendedAction: LocalizedText;
+  dueAt: string;
+  updatedAt: string;
+  sourceIds: string[];
+  layerIds: string[];
+}
+
+export interface AuditEventRecord {
+  id: string;
+  timestamp: string;
+  actor: string;
+  action: string;
+  entityType: "briefing" | "news" | "project" | "source-sync" | "media-feed";
+  entityId: string;
+  detail: string;
+  status: "manual" | "success" | "failed";
 }
 
 export interface MapLayerConfig {
@@ -241,6 +289,8 @@ export interface AssistantViewContext {
   view: DashboardView;
   citySlug?: string;
   cityName?: string;
+  districtSlug?: string;
+  districtName?: string;
   domainSlug?: string;
   domainLabel?: string;
   activeLayers: string[];
