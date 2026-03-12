@@ -235,6 +235,30 @@ const satelliteToggleOptions: ToggleOption[] = [
     color: "#0f8cff"
   },
   {
+    id: "satellite-surface-temp",
+    label: { th: "ความร้อนพื้นผิว", en: "Surface Temp" },
+    detail: { th: "อุณหภูมิพื้นผิวดินสำหรับจุดร้อนเมือง", en: "Land-surface temperature for urban heat" },
+    color: "#fb7185"
+  },
+  {
+    id: "satellite-thermal",
+    label: { th: "ความร้อนผิดปกติ", en: "Thermal Alerts" },
+    detail: { th: "จุดความร้อนและความเสี่ยงไฟ", en: "Thermal anomalies and fire hotspots" },
+    color: "#f97316"
+  },
+  {
+    id: "satellite-water-vapor",
+    label: { th: "ไอน้ำ", en: "Water Vapor" },
+    detail: { th: "ความชื้นบรรยากาศและแนวมรสุม", en: "Atmospheric moisture and monsoon flow" },
+    color: "#38bdf8"
+  },
+  {
+    id: "satellite-sea-surface-temp",
+    label: { th: "อุณหภูมิทะเล", en: "Sea Surface" },
+    detail: { th: "อุณหภูมิผิวน้ำทะเลสำหรับเมืองชายฝั่ง", en: "Sea-surface temperature for coastal cities" },
+    color: "#14b8a6"
+  },
+  {
     id: "satellite-night-lights",
     label: { th: "แสงกลางคืน", en: "Night Lights" },
     detail: { th: "ความหนาแน่นแสงเมืองยามค่ำ", en: "Night-time urban light intensity" },
@@ -813,9 +837,24 @@ async function postToApi<TResponse>(path: string, body: unknown): Promise<TRespo
   throw lastError ?? new Error("Request failed");
 }
 
-function parseLayerSet(raw: string | null) {
+function getDefaultLayers(view: DashboardView, citySlug: string) {
+  if (view === "national") {
+    return ["smart-city-thailand", "weather", "pollution", "projects", "resilience"];
+  }
+
+  return [
+    "weather",
+    "pollution",
+    "projects",
+    "itic-traffic",
+    "resilience",
+    ...(citySlug === "bangkok" ? ["bangkok-passages"] : [])
+  ];
+}
+
+function parseLayerSet(raw: string | null, view: DashboardView, citySlug: string) {
   if (!raw) {
-    return layerSeed.filter((item) => item.active).map((item) => item.id);
+    return getDefaultLayers(view, citySlug);
   }
   return raw
     .split(",")
@@ -912,6 +951,21 @@ function normalizeCitySlug(value?: string) {
   return value.toLowerCase().replace(/\s+/g, "-");
 }
 
+const cityFeatureAliases: Record<string, string[]> = {
+  bangkok: ["bangkok", "krung-thep"],
+  phuket: ["phuket"],
+  "khon-kaen": ["khon-kaen", "khonkaen"],
+  "chiang-mai": ["chiang-mai", "chiangmai"]
+};
+
+function featureMatchesCity(feature: GeoFeatureRecord, citySlug: string) {
+  const aliases = cityFeatureAliases[citySlug] ?? [citySlug];
+  const cityTokens = new Set(aliases);
+  const candidates = [feature.properties.city, feature.title];
+
+  return candidates.some((candidate) => cityTokens.has(normalizeCitySlug(String(candidate ?? ""))));
+}
+
 function fillPromptTemplate(template: string, values: Record<string, string>) {
   return Object.entries(values).reduce((result, [key, value]) => {
     return result.replaceAll(`{${key}}`, value);
@@ -951,7 +1005,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const city = searchParams.get("city") ?? "bangkok";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
-  const layers = useMemo(() => parseLayerSet(rawLayers), [rawLayers]);
+  const layers = useMemo(() => parseLayerSet(rawLayers, view, city), [city, rawLayers, view]);
   const cityFilter = view === "national" ? "" : city;
   const queryString = new URLSearchParams(searchParams);
 
@@ -1342,7 +1396,6 @@ function DashboardPage() {
   const globalWatchSources = sources.filter((source) =>
     ["gdelt-signals", "google-news-rss", "nasa-eonet", "youtube-signals", "undp-data"].includes(source.id)
   );
-  const satelliteToolbarOptions = satelliteToggleOptions.filter((item) => item.id !== "satellite-night-lights");
   const activeSatelliteLayers = satelliteToggleOptions.filter((item) => layers.includes(item.id));
   const satelliteLiveSources = sources.filter((source) => ["nasa-gibs", "jaxa-earth"].includes(source.id));
   const satelliteReadySources = sources.filter((source) =>
@@ -1378,6 +1431,22 @@ function DashboardPage() {
 
     return new Map<string, number>(entries);
   }, [nationalCoverageCollection, overview.domains]);
+  const mapFeaturesForView = useMemo(() => {
+    if (view === "national") {
+      return mapFeatures;
+    }
+
+    return mapFeatures
+      .map((collection) => {
+        if (collection.layerId === "bangkok-passages" || collection.layerId === "itic-traffic") {
+          return city === "bangkok" ? collection : { ...collection, features: [] };
+        }
+
+        const features = collection.features.filter((feature) => featureMatchesCity(feature, city));
+        return { ...collection, features };
+      })
+      .filter((collection) => collection.features.length > 0);
+  }, [city, mapFeatures, view]);
   const nextNewsCheckAt = (() => {
     if (!liveNewsSource) {
       return "";
@@ -1433,6 +1502,22 @@ function DashboardPage() {
     "satellite-imagery": lang === "th" ? "ภาพสีจริงจาก NASA GIBS" : "NASA GIBS true-color imagery",
     "satellite-vegetation": lang === "th" ? "ค่าพืชพรรณ NDVI จาก NASA GIBS" : "NASA GIBS NDVI vegetation index",
     "satellite-aerosol": lang === "th" ? "ดัชนีละอองลอยจาก NASA GIBS" : "NASA GIBS aerosol index",
+    "satellite-surface-temp":
+      lang === "th"
+        ? "อุณหภูมิพื้นผิวดินจาก NASA GIBS สำหรับความร้อนเมืองและพื้นที่แห้ง"
+        : "NASA GIBS land-surface temperature for urban heat and dry stress",
+    "satellite-thermal":
+      lang === "th"
+        ? "จุดความร้อนดาวเทียมจาก NASA GIBS สำหรับไฟและความร้อนผิดปกติ"
+        : "NASA GIBS thermal anomalies for fire and heat watch",
+    "satellite-water-vapor":
+      lang === "th"
+        ? "ไอน้ำในชั้นบรรยากาศจาก NASA GIBS สำหรับแนวชื้นและมรสุม"
+        : "NASA GIBS atmospheric water vapor for moisture and monsoon context",
+    "satellite-sea-surface-temp":
+      lang === "th"
+        ? "อุณหภูมิผิวน้ำทะเลจาก NASA GIBS สำหรับชายฝั่งและทะเล"
+        : "NASA GIBS sea-surface temperature for coastal context",
     "satellite-night-lights": lang === "th" ? "แสงเมืองยามค่ำจาก NASA GIBS" : "NASA GIBS night-light intensity",
     "smart-city-thailand": copy.coverageLegend,
     "bangkok-passages": copy.bangkokPlacesLegend
@@ -1470,8 +1555,8 @@ function DashboardPage() {
       lastCheckedAt: new Date().toISOString(),
       message:
         lang === "th"
-          ? "ภาพดาวเทียมจริง พืชพรรณ ละอองลอย และแสงกลางคืนพร้อมใช้งาน"
-          : "True color, vegetation, aerosol, and night-light satellite layers are online."
+          ? "ภาพจริง พืชพรรณ ละอองลอย ความร้อน ไอน้ำ ทะเล และแสงกลางคืนพร้อมใช้งาน"
+          : "True color, vegetation, aerosol, heat, water-vapor, sea-surface, and night-light layers are online."
     },
     {
       id: "slic-thailand",
@@ -1645,7 +1730,7 @@ function DashboardPage() {
   ];
   const satellitePresets = SATELLITE_PRESETS.map((preset) => ({
     ...preset,
-    active: preset.layers.every((layerId) => layers.includes(layerId))
+    active: preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId))
   }));
 
   const exportSnippets = useMemo(() => createDashboardScaffoldSnippets(), []);
@@ -1887,13 +1972,6 @@ function DashboardPage() {
 
   return (
     <div className="shell">
-      <div className="partner-bar">
-        <img src="/mdes.png" alt="MDES" className="partner-logo" />
-        <img src="/Logo depa-01.png" alt="depa" className="partner-logo" />
-        <img src="/for dark BG.png" alt="SLIC" className="partner-logo" />
-        <img src="/Smart City Logo-02.png" alt="Smart City Thailand Office" className="partner-logo" />
-        <img src="/Logo on White BG-01.jpg" alt="Smart City Thailand Monitor" className="partner-logo" />
-      </div>
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/Logo depa-01.png" alt="depa" className="brand-logo" />
@@ -2243,7 +2321,11 @@ function DashboardPage() {
           <div className="card-header">
             <span className="eyebrow">{copy.map}</span>
             <span className="status-pill">
-              {view === "national" && layers.includes("smart-city-thailand") ? "Thailand Coverage" : view === "national" ? "Thailand" : "Bangkok Passages"}
+              {view === "national"
+                ? layers.includes("smart-city-thailand")
+                  ? "Thailand Coverage"
+                  : "Thailand"
+                : localize(lang, selectedCity.name)}
             </span>
           </div>
 
@@ -2257,7 +2339,7 @@ function DashboardPage() {
               layers={layers}
               projects={projects}
               news={news}
-              featureCollections={mapFeatures}
+              featureCollections={mapFeaturesForView}
               recenterSignal={recenterSignal}
             />
             <div className="map-overlay">
@@ -2318,7 +2400,8 @@ function DashboardPage() {
                 <span className="eyebrow">{copy.focusPresets}</span>
                 <div className="pill-list compact">
                   {focusPresets.map((preset) => {
-                    const presetActive = preset.layers.every((item) => layers.includes(item));
+                    const presetActive =
+                      preset.layers.length === layers.length && preset.layers.every((item) => layers.includes(item));
 
                     return (
                       <button
@@ -2350,21 +2433,11 @@ function DashboardPage() {
                   >
                     {copy.mapSatellite}
                   </button>
-                  {satelliteToolbarOptions.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={layers.includes(item.id) ? "chip active" : "chip"}
-                      onClick={() => toggleSatelliteLayer(item.id)}
-                    >
-                      {localize(lang, item.label)}
-                    </button>
-                  ))}
+                  <button className="chip" type="button" onClick={() => setRecenterSignal((value) => value + 1)}>
+                    {copy.recenter}
+                  </button>
                 </div>
               </div>
-              <button className="chip" onClick={() => setRecenterSignal((value) => value + 1)}>
-                {copy.recenter}
-              </button>
               <div className="map-city-list">
                 {overview.cities.map((item) => (
                   <button
@@ -2399,7 +2472,9 @@ function DashboardPage() {
               ) : null}
             </div>
             <span className="hero-note">
-              {lang === "th" ? "Ops room • city signals • satellite overlays" : "Ops room • city signals • satellite overlays"}
+              {lang === "th"
+                ? `Ops room • ชั้นภาพดาวเทียม ${activeSatelliteLayers.length} ชั้น`
+                : `Ops room • ${activeSatelliteLayers.length} satellite layer${activeSatelliteLayers.length === 1 ? "" : "s"} active`}
             </span>
           </div>
 
@@ -2537,7 +2612,8 @@ function DashboardPage() {
               <span className="eyebrow">{copy.focusPresets}</span>
               <div className="pill-list compact">
                 {focusPresets.map((preset) => {
-                  const presetActive = preset.layers.every((item) => layers.includes(item));
+                  const presetActive =
+                    preset.layers.length === layers.length && preset.layers.every((item) => layers.includes(item));
 
                   return (
                     <button
@@ -2638,10 +2714,16 @@ function DashboardPage() {
                 <h3>{copy.official}</h3>
                 <div className="compact-list">
                   {officialNews.map((item) => (
-                    <article key={item.id} className="headline-item">
+                    <a
+                      key={item.id}
+                      className="headline-item"
+                      href={item.source.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <strong>{localize(lang, item.title)}</strong>
                       <small>{item.source.sourceName}</small>
-                    </article>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -2649,10 +2731,16 @@ function DashboardPage() {
                 <h3>{copy.external}</h3>
                 <div className="compact-list">
                   {externalNews.map((item) => (
-                    <article key={item.id} className="headline-item">
+                    <a
+                      key={item.id}
+                      className="headline-item"
+                      href={item.source.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <strong>{localize(lang, item.title)}</strong>
                       <small>{item.source.sourceName}</small>
-                    </article>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -2666,7 +2754,12 @@ function DashboardPage() {
             </div>
             <div className="stack-list tile-scroll">
               {compactProjects.map((project) => (
-                <article key={project.id} className="stack-item">
+                <button
+                  key={project.id}
+                  type="button"
+                  className="stack-item stack-item-button"
+                  onClick={() => focusCityWithLayer(project.citySlug, "projects")}
+                >
                   <div className="stack-title">
                     <strong>{localize(lang, project.title)}</strong>
                     <span className={`status-tag ${project.status}`}>{project.status}</span>
@@ -2674,12 +2767,12 @@ function DashboardPage() {
                   <p>{localize(lang, project.summary)}</p>
                   <div className="progress-row">
                     <div className="progress-track">
-                      <div className="progress-fill" style={{ width: `${project.completionPercent}%` }} />
-                    </div>
-                    <span>{project.completionPercent}%</span>
+                    <div className="progress-fill" style={{ width: `${project.completionPercent}%` }} />
+                  </div>
+                  <span>{project.completionPercent}%</span>
                   </div>
                   <small>{localize(lang, project.nextMilestone)}</small>
-                </article>
+                </button>
               ))}
             </div>
           </section>
@@ -2695,13 +2788,19 @@ function DashboardPage() {
             </div>
             <div className="api-watch-grid">
               {apiWatchSources.map((source) => (
-                <article key={source.id} className={`api-watch-item ${source.freshnessStatus}`}>
+                <a
+                  key={source.id}
+                  className={`api-watch-item ${source.freshnessStatus}`}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   <div className="stack-title">
                     <strong>{source.name}</strong>
                     <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
                   </div>
                   <small>{source.message}</small>
-                </article>
+                </a>
               ))}
             </div>
           </section>
@@ -2754,231 +2853,6 @@ function DashboardPage() {
               })}
             </div>
           </section>
-          
-          <section className="card time-card">
-            <div className="card-header">
-              <span className="eyebrow">{copy.time}</span>
-              <span className="status-pill">UTC</span>
-            </div>
-            <div className="time-zones">
-              {timeZones.map((zone) => (
-                <div key={zone.timeZone} className="time-zone">
-                  <span className="eyebrow">{zone.label}</span>
-                  <strong>{zone.localTime}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="card compare-card" id="compare">
-            <div className="card-header">
-              <span className="eyebrow">{copy.compare}</span>
-              <span className="eyebrow">{overview.cities.length}</span>
-            </div>
-            <div className="compare-table tile-scroll">
-              {compactCities.map((item) => (
-                <div key={item.slug} className={item.slug === city ? "compare-row active" : "compare-row"}>
-                  <button
-                    onClick={() => {
-                      const next = buildStableParams();
-                      next.set("city", item.slug);
-                      next.set("view", "city");
-                      startTransition(() => {
-                        setSearchParams(next);
-                        setRecenterSignal((v) => v + 1);
-                      });
-                    }}
-                  >
-                    {localize(lang, item.name)}
-                  </button>
-                  <span>{Math.round(item.scores.reduce((sum, score) => sum + score.score, 0) / item.scores.length)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="card trends-card" id="trends">
-            <div className="card-header">
-              <span className="eyebrow">{copy.trendWatch}</span>
-              <span className="status-pill">TH / 5Y</span>
-            </div>
-            <div className="trend-list tile-scroll">
-              {visibleTrends.map((item) => {
-                const stats = getTrendStats(item.values);
-
-                return (
-                  <a
-                    key={item.id}
-                    className="trend-row"
-                    href={createGoogleTrendsUrl(item.query)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="trend-term">
-                      <strong>{pickLocalized(lang, item.term)}</strong>
-                      <span className="status-pill">{pickLocalized(lang, item.category)}</span>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendNow}</span>
-                      <strong>{stats.latest}</strong>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendDelta}</span>
-                      <strong className={stats.delta >= 0 ? "trend-positive" : "trend-negative"}>
-                        {stats.delta >= 0 ? `+${stats.delta}` : stats.delta}
-                      </strong>
-                    </div>
-                    <div className="trend-stat">
-                      <span className="eyebrow">{copy.trendPeak}</span>
-                      <strong>{stats.peak}</strong>
-                    </div>
-                    <div className="trend-mini">
-                      <Sparkline values={item.values} />
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="card media-card" id="media">
-            <div className="card-header">
-              <span className="eyebrow">Live Media</span>
-              <span className="status-pill">{mediaFeeds.length}</span>
-            </div>
-            <div className="stack-list tile-scroll">
-              {compactMedia.map((item) => (
-                <a
-                  key={item.id}
-                  className="stack-item linked"
-                  href={item.externalUrl ?? item.embedUrl ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <div className="stack-title">
-                    <strong>{item.label}</strong>
-                    <span className={`status-tag ${item.status === "live" ? "live" : "manual"}`}>{item.status}</span>
-                  </div>
-                  <small>{item.region ?? item.kind}</small>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          <section className="card changes-card" id="changes">
-            <div className="card-header">
-              <span className="eyebrow">{copy.changes}</span>
-              <span className="status-pill">{changes.updatedAt.slice(11, 16)} UTC</span>
-            </div>
-            <div className="change-grid">
-              {changes.items.map((item) => (
-                <article key={item.id} className={`change-item tone-${item.tone}`}>
-                  <span className="eyebrow">{localize(lang, item.label)}</span>
-                  <strong>{item.value}</strong>
-                  <small>{localize(lang, item.detail)}</small>
-                </article>
-              ))}
-            </div>
-            <div className="threshold-strip">
-              <span className="eyebrow">{copy.thresholdWatch}</span>
-              <div className="threshold-list">
-                {changes.thresholds.map((threshold) => (
-                  <div key={threshold.id} className={`threshold-item ${threshold.state}`}>
-                    <strong>{localize(lang, threshold.label)}</strong>
-                    <small>{localize(lang, threshold.detail)}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card social-card" id="social">
-            <div className="card-header">
-              <span className="eyebrow">{copy.social}</span>
-              <span className="status-pill">{socialListening.source.freshnessStatus}</span>
-            </div>
-            <div className="social-stats">
-              <div className="social-stat">
-                <span className="eyebrow">{copy.mentions}</span>
-                <strong>{socialListening.mentionCount}</strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">{copy.sentiment}</span>
-                <strong className={socialListening.sentimentScore >= 0 ? "trend-positive" : "trend-negative"}>
-                  {socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}
-                </strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">{copy.sourceMix}</span>
-                <strong>{socialListening.sourceCount}</strong>
-              </div>
-              <div className="social-stat">
-                <span className="eyebrow">Positive</span>
-                <strong>{Math.round(socialListening.positiveShare * 100)}%</strong>
-              </div>
-            </div>
-            <div className="social-meta">
-              <span>{socialListening.dominantSource}</span>
-              <div className="pill-list compact">
-                {socialListening.topTerms.slice(0, 5).map((term) => (
-                  <span key={term} className="stack-pill">
-                    {term}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="card impact-card" id="impact">
-            <div className="card-header">
-              <span className="eyebrow">{copy.impact}</span>
-              <span className="status-pill">{impact.source.freshnessStatus}</span>
-            </div>
-            <div className="impact-list">
-              <div className="impact-row">
-                <span>{copy.official}</span>
-                <strong>{impact.officialUpdates}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Live</span>
-                <strong>{impact.liveSources}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Cities</span>
-                <strong>{impact.trackedCities}</strong>
-              </div>
-              <div className="impact-row">
-                <span>Signals</span>
-                <strong>{impact.publicSignals}</strong>
-              </div>
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">Latest</span>
-              <strong>{localize(lang, impact.latestHeadline)}</strong>
-            </div>
-          </section>
-        </section>
-
-        <section className="support-grid">
-          <section className="card market-card" id="markets">
-            <div className="card-header">
-              <span className="eyebrow">{copy.markets}</span>
-              <span className="status-pill">{markets.source.freshnessStatus}</span>
-            </div>
-            <div className="impact-list">
-              {markets.items.map((item) => (
-                <div key={item.id} className={`impact-row tone-${item.tone}`}>
-                  <span>{localize(lang, item.label)}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">Signal</span>
-              <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
-            </div>
-          </section>
-
           <section className="card satellite-card" id="satellite">
             <div className="card-header">
               <span className="eyebrow">{copy.satellite}</span>
@@ -2986,6 +2860,12 @@ function DashboardPage() {
             </div>
 
             <div className="satellite-shell">
+              <div className="impact-headline">
+                <span className="eyebrow">{copy.latestSignal}</span>
+                <strong>{satelliteNarrative}</strong>
+                <small>{satelliteDigest.status.message}</small>
+              </div>
+
               <div className="satellite-preset-grid">
                 {satellitePresets.map((preset) => (
                   <button
@@ -2999,80 +2879,6 @@ function DashboardPage() {
                     <small>{localize(lang, preset.detail)}</small>
                   </button>
                 ))}
-              </div>
-
-              <div className="impact-headline">
-                <span className="eyebrow">{copy.latestSignal}</span>
-                <strong>{satelliteNarrative}</strong>
-                <small>{satelliteDigest.status.message}</small>
-              </div>
-
-              <div className="satellite-section-label">{copy.satelliteLivePreviews}</div>
-              <div className="satellite-preview-grid">
-                {satellitePreviewCards.map((preview) => (
-                  <article key={preview.id} className="satellite-preview-card">
-                    <div className="satellite-preview-frame">
-                      <img
-                        src={buildApiUrl(preview.previewUrl)}
-                        alt={`${localize(lang, preview.title)} satellite preview`}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="satellite-preview-copy">
-                      <div className="stack-title">
-                        <strong>{localize(lang, preview.title)}</strong>
-                        <span className="status-pill">{preview.collectionId}</span>
-                      </div>
-                      <small>{localize(lang, preview.description)}</small>
-                      <small>{localize(lang, preview.legend)}</small>
-                      <small>
-                        {copy.satelliteSceneDate}: {formatUtcDateTime(preview.sceneDate)}
-                        {preview.cloudCover !== undefined ? ` • ${copy.satelliteCloudCover} ${Math.round(preview.cloudCover)}%` : ""}
-                      </small>
-                      {!preview.available ? <small>{copy.satelliteCredentialsNeeded}</small> : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              <div className="satellite-section-label">{copy.satelliteMetrics}</div>
-              <div className="satellite-metric-grid">
-                {satelliteMetrics.map((metric) => (
-                  <div key={metric.id} className="satellite-metric-item">
-                    <span className="eyebrow">{localize(lang, metric.title)}</span>
-                    <strong>{metric.displayValue}</strong>
-                    <small>{localize(lang, metric.description)}</small>
-                  </div>
-                ))}
-              </div>
-
-              <div className="satellite-scene-list">
-                <div className="card-header">
-                  <span className="eyebrow">{copy.satelliteRecentScenes}</span>
-                  <span className="status-pill">{satelliteStatusLabel}</span>
-                </div>
-                {satelliteRecentScenes.length > 0 ? (
-                  satelliteRecentScenes.map((scene) => (
-                    <a
-                      key={scene.id}
-                      className="headline-item satellite-source-item"
-                      href={scene.quicklookUrl ?? satelliteDigest.status.docsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <strong>{scene.title}</strong>
-                      <small>
-                        {formatUtcDateTime(scene.timestamp)}
-                        {scene.cloudCover !== undefined ? ` • ${copy.satelliteCloudCover} ${Math.round(scene.cloudCover)}%` : ""}
-                      </small>
-                    </a>
-                  ))
-                ) : (
-                  <div className="headline-item satellite-source-item">
-                    <strong>{copy.satelliteCredentialsNeeded}</strong>
-                    <small>{satelliteDigest.status.message}</small>
-                  </div>
-                )}
               </div>
 
               <div className="satellite-grid">
@@ -3117,6 +2923,50 @@ function DashboardPage() {
                 </div>
 
                 <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteMetrics}</span>
+                  <div className="satellite-metric-grid">
+                    {satelliteMetrics.map((metric) => (
+                      <div key={metric.id} className="satellite-metric-item">
+                        <span className="eyebrow">{localize(lang, metric.title)}</span>
+                        <strong>{metric.displayValue}</strong>
+                        <small>{localize(lang, metric.description)}</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
+                  <div className="stack-title">
+                    <span className="eyebrow">{copy.satelliteRecentScenes}</span>
+                    <span className="status-pill">{satelliteStatusLabel}</span>
+                  </div>
+                  <div className="satellite-source-list">
+                    {satelliteRecentScenes.length > 0 ? (
+                      satelliteRecentScenes.map((scene) => (
+                        <a
+                          key={scene.id}
+                          className="headline-item satellite-source-item"
+                          href={scene.quicklookUrl ?? satelliteDigest.status.docsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <strong>{scene.title}</strong>
+                          <small>
+                            {formatUtcDateTime(scene.timestamp)}
+                            {scene.cloudCover !== undefined ? ` • ${copy.satelliteCloudCover} ${Math.round(scene.cloudCover)}%` : ""}
+                          </small>
+                        </a>
+                      ))
+                    ) : (
+                      <div className="headline-item satellite-source-item">
+                        <strong>{copy.satelliteCredentialsNeeded}</strong>
+                        <small>{satelliteDigest.status.message}</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
                   <span className="eyebrow">{copy.satelliteReadySources}</span>
                   <div className="satellite-source-list">
                     {satelliteReadySources.map((source) => (
@@ -3147,134 +2997,6 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card global-card" id="global-signals">
-            <div className="card-header">
-              <span className="eyebrow">{copy.globalSignals}</span>
-              <span className="status-pill">{globalSignalNews.length}</span>
-            </div>
-            <div className="stack-list tile-scroll">
-              {globalSignalNews.length > 0 ? (
-                globalSignalNews.map((item) => (
-                  <a
-                    key={item.id}
-                    className="stack-item linked"
-                    href={item.source.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="stack-title">
-                      <strong>{localize(lang, item.title)}</strong>
-                      <span className="status-pill">{formatUtcClock(item.publishedAt)} UTC</span>
-                    </div>
-                    <small>{item.source.sourceName}</small>
-                  </a>
-                ))
-              ) : (
-                <div className="stack-item">
-                  <p>{copy.noExternalSignals}</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="card world-card" id="world-watch">
-            <div className="card-header">
-              <span className="eyebrow">{copy.worldWatch}</span>
-              <span className="status-pill">{globalWatchSources.length}</span>
-            </div>
-            <div className="stack-list">
-              <span className="eyebrow">{copy.sourceStatus}</span>
-              {globalWatchSources.map((source) => (
-                <div key={source.id} className="stack-item compact-source">
-                  <div className="stack-title">
-                    <strong>{source.name}</strong>
-                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
-                  </div>
-                  <small>{source.message}</small>
-                </div>
-              ))}
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">{copy.worldContext}</span>
-              <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
-            </div>
-            <div className="eo-watch-card">
-              <div className="stack-title">
-                <strong>{lang === "th" ? "Earth Observation Watch" : "Earth Observation Watch"}</strong>
-                <span className="status-pill">EO</span>
-              </div>
-              <div className="eo-watch-grid">
-                {eoWatchItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`eo-watch-item ${item.tone}`}
-                    onClick={() => {
-                      const next = buildStableParams();
-                      next.set("layers", item.targetLayers.join(","));
-                      if (
-                        item.targetLayers.includes("smart-city-thailand") ||
-                        item.targetLayers.includes("jaxa-rainfall") ||
-                        item.targetLayers.includes("eo-aerosol") ||
-                        item.targetLayers.includes("eo-precipitation") ||
-                        item.targetLayers.includes("eo-vegetation")
-                      ) {
-                        next.set("view", "national");
-                      }
-                      startTransition(() => {
-                        setSearchParams(next);
-                        setRecenterSignal((v) => v + 1);
-                      });
-                    }}
-                  >
-                    <span className="eyebrow">{item.title}</span>
-                    <small>{item.detail}</small>
-                  </button>
-                ))}
-              </div>
-              <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
-                {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
-              </a>
-            </div>
-            {undpDataSource ? (
-              <a className="stack-item linked compact-source" href={undpDataSource.url} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{undpDataSource.name}</strong>
-                  <span className={`status-tag ${undpDataSource.freshnessStatus}`}>{undpDataSource.freshnessStatus}</span>
-                </div>
-                <small>
-                  {lang === "th"
-                    ? "เปิด UNDP Data Hub เพื่อเข้าถึง development indicators, datasets, tiles, และ API URLs"
-                    : "Open UNDP Data Hub for development indicators, datasets, tiles, and dataset API URLs."}
-                </small>
-              </a>
-            ) : null}
-            <div className="compact-list">
-              {undpQuickLinks.map((item) => (
-                <a key={item.id} className="headline-item" href={item.href} target="_blank" rel="noreferrer">
-                  <strong>{localize(lang, item.title)}</strong>
-                  <small>{localize(lang, item.note)}</small>
-                </a>
-              ))}
-            </div>
-            {compactMedia.length > 0 ? (
-              <div className="compact-list">
-                {compactMedia.slice(0, 2).map((item) => (
-                  <a
-                    key={item.id}
-                    className="headline-item"
-                    href={item.externalUrl ?? item.embedUrl ?? "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <strong>{item.label}</strong>
-                    <small>{item.region ?? item.kind}</small>
-                  </a>
-                ))}
-              </div>
-            ) : null}
-          </section>
-
           <section className="card activity-card" id="activity">
             <div className="card-header">
               <span className="eyebrow">{copy.activity}</span>
@@ -3293,155 +3015,6 @@ function DashboardPage() {
               ))}
             </div>
           </section>
-
-          <section className="card research-card" id="candidate-compare">
-            <div className="card-header">
-              <span className="eyebrow">{copy.candidateCompare}</span>
-              <span className="status-pill">{selectedModelCity.name}</span>
-            </div>
-            <label className="stack-field">
-              <span className="eyebrow">{copy.modelCity}</span>
-              <select value={selectedModelCity.id} onChange={(event) => updateParam("modelCity", event.target.value)}>
-                {globalReferenceCities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {`${item.name}, ${item.country}`}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="candidate-grid">
-              <div className="candidate-panel">
-                <span className="eyebrow">{localize(lang, selectedCity.name)}</span>
-                <strong>{formatPopulation(selectedCity.population)}</strong>
-                <small>{localize(lang, selectedCity.region)}</small>
-                <p>{localize(lang, selectedCity.focus)}</p>
-              </div>
-              <div className="candidate-panel">
-                <span className="eyebrow">{`${selectedModelCity.name}, ${selectedModelCity.country}`}</span>
-                <strong>{selectedModelCity.approxPopulation}</strong>
-                <small>{`${copy.eiuRank}: ${selectedModelCity.eiuRank2025}`}</small>
-                <p>{pickLocalized(lang, selectedModelCity.modelLens)}</p>
-              </div>
-            </div>
-            <div className="impact-headline">
-              <span className="eyebrow">{copy.fitSignal}</span>
-              <strong>
-                {fitDomains.length > 0
-                  ? fitDomains.map((item) => localize(lang, item.title)).join(" • ")
-                  : pickLocalized(lang, selectedModelCity.modelLens)}
-              </strong>
-            </div>
-            <div className="stack-list">
-              <span className="eyebrow">{copy.transferIdeas}</span>
-              {selectedModelCity.innovationIdeas.map((item, index) => (
-                <div key={`${selectedModelCity.id}-${index}`} className="stack-item">
-                  <p>{pickLocalized(lang, item)}</p>
-                </div>
-              ))}
-            </div>
-            <a className="stack-item linked" href={selectedModelCity.href} target="_blank" rel="noreferrer">
-              <div className="stack-title">
-                <strong>{copy.livabilityLens}</strong>
-                <span className="status-pill">{copy.eiuRank}</span>
-              </div>
-              <p>
-                {lang === "th"
-                  ? "ใช้เมืองอันดับสูงของ EIU เป็นเมืองอ้างอิงเพื่อชี้ให้เห็นแนวทางที่ถ่ายโอนได้"
-                  : "Uses high-ranking EIU cities as reference models for transferable planning ideas."}
-              </p>
-            </a>
-          </section>
-
-          <section className="card toolkit-card" id="toolkit">
-            <div className="card-header">
-              <span className="eyebrow">{copy.toolkit}</span>
-              <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
-            </div>
-
-            <div className="toolkit-shell tile-scroll">
-              <div className="toolkit-block">
-                <h3>{copy.apiDirectory}</h3>
-                <div className="tool-link-grid">
-                  {toolkitLinks.map((tool) => (
-                    <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
-                      <strong>{tool.name}</strong>
-                      <span>{tool.kind}</span>
-                      <p>{pickLocalized(lang, tool.description)}</p>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div className="toolkit-block">
-                <h3>{copy.stack}</h3>
-                <div className="pill-list">
-                  {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
-                    <span key={item} className="stack-pill">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="export-panel">
-                  <div className="stack-title">
-                    <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
-                    <button className="share-button" onClick={copySkeleton}>
-                      {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
-                    </button>
-                  </div>
-                  <div className="export-tabs">
-                    {exportOptions.map((option) => {
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
-                          onClick={() => setExportLanguage(option.id)}
-                        >
-                          <span className="export-tab-mark">{option.mark}</span>
-                          <span className="export-tab-copy">
-                            <strong>{option.label}</strong>
-                            <small>{option.detail}</small>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <pre>{activeExportSnippet}</pre>
-                </div>
-              </div>
-            </div>
-          </section>
-        </section>
-
-        <section className="card footnote-card" id="fine-print">
-          <div className="card-header">
-            <span className="eyebrow">{copy.finePrint}</span>
-            <span className="status-pill">experimental</span>
-          </div>
-          <div className="footnote-grid">
-            <p>{copy.privacy}</p>
-            <p>{copy.experimental}</p>
-            <p>{copy.copyright}</p>
-            <div className="contact-card">
-              <div className="stack-title">
-                <strong>{copy.contactTitle}</strong>
-                <span className="status-pill">public</span>
-              </div>
-              <p className="contact-copy">{copy.contactLead}</p>
-              <p className="contact-copy">{copy.contactPrompt}</p>
-              <div className="contact-links">
-                <a href="mailto:non.ar@depa.or.th">
-                  <span className="eyebrow">{copy.contactEmailLabel}</span>
-                  <strong>non.ar@depa.or.th</strong>
-                </a>
-                <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noreferrer">
-                  <span className="eyebrow">{copy.contactLinkedInLabel}</span>
-                  <strong>linkedin.com/in/drnon</strong>
-                </a>
-              </div>
-            </div>
-          </div>
         </section>
       </main>
 

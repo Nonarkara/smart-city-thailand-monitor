@@ -49,6 +49,10 @@ type LayerId =
   | "satellite-imagery"
   | "satellite-vegetation"
   | "satellite-aerosol"
+  | "satellite-surface-temp"
+  | "satellite-thermal"
+  | "satellite-water-vapor"
+  | "satellite-sea-surface-temp"
   | "satellite-night-lights"
   | "disaster"
   | "itic-traffic";
@@ -58,6 +62,10 @@ type SatelliteLayerId =
   | "satellite-imagery"
   | "satellite-vegetation"
   | "satellite-aerosol"
+  | "satellite-surface-temp"
+  | "satellite-thermal"
+  | "satellite-water-vapor"
+  | "satellite-sea-surface-temp"
   | "satellite-night-lights";
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
@@ -142,6 +150,10 @@ const layerColors: Record<LayerId, string> = {
   "satellite-imagery": "#e2e8f0",
   "satellite-vegetation": "#4ade80",
   "satellite-aerosol": "#f59e0b",
+  "satellite-surface-temp": "#fb7185",
+  "satellite-thermal": "#f97316",
+  "satellite-water-vapor": "#38bdf8",
+  "satellite-sea-surface-temp": "#14b8a6",
   "satellite-night-lights": "#8b5cf6",
   disaster: "#cf5c00",
   "itic-traffic": "#ef4444"
@@ -170,6 +182,26 @@ const satelliteLayerDefinitions: Record<
     url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/OMPS_NOAA20_NadirMapper_AerosolIndex_360_v2_NRT/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",
     opacity: 0.52,
     maxZoom: 6
+  },
+  "satellite-surface-temp": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Land_Surface_Temp_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    opacity: 0.48,
+    maxZoom: 7
+  },
+  "satellite-thermal": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
+    opacity: 0.7,
+    maxZoom: 9
+  },
+  "satellite-water-vapor": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Water_Vapor_5km_Day/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",
+    opacity: 0.46,
+    maxZoom: 6
+  },
+  "satellite-sea-surface-temp": {
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    opacity: 0.54,
+    maxZoom: 7
   },
   "satellite-night-lights": {
     url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png",
