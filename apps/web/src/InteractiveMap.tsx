@@ -53,6 +53,11 @@ type LayerId =
   | "eo-aerosol"
   | "eo-precipitation"
   | "eo-vegetation"
+  | "eo-soil-moisture"
+  | "eo-cloud-phase"
+  | "eo-snow-cover"
+  | "eo-fire-thermal"
+  | "eo-chlorophyll"
   | "jaxa-rainfall"
   | "satellite-imagery"
   | "satellite-vegetation"
@@ -154,6 +159,11 @@ const layerColors: Record<LayerId, string> = {
   "eo-aerosol": "#9333ea",
   "eo-precipitation": "#2563eb",
   "eo-vegetation": "#65a30d",
+  "eo-soil-moisture": "#b45309",
+  "eo-cloud-phase": "#94a3b8",
+  "eo-snow-cover": "#e0f2fe",
+  "eo-fire-thermal": "#ef4444",
+  "eo-chlorophyll": "#059669",
   "jaxa-rainfall": "#0f8cff",
   "satellite-imagery": "#e2e8f0",
   "satellite-vegetation": "#4ade80",
@@ -167,13 +177,23 @@ const layerColors: Record<LayerId, string> = {
   "itic-traffic": "#ef4444"
 };
 
-const EO_LAYER_IDS: readonly EoLayerId[] = ["eo-aerosol", "eo-precipitation", "eo-vegetation"];
+const EO_LAYER_IDS: readonly EoLayerId[] = [
+  "eo-aerosol",
+  "eo-precipitation",
+  "eo-vegetation",
+  "eo-soil-moisture",
+  "eo-cloud-phase",
+  "eo-snow-cover",
+  "eo-fire-thermal",
+  "eo-chlorophyll"
+];
 const satelliteLayerDefinitions: Record<
   SatelliteLayerId,
   {
     url: string;
     opacity: number;
     maxZoom: number;
+    attribution?: string;
   }
 > = {
   "satellite-imagery": {
@@ -269,6 +289,40 @@ function applyGenericLayerVisuals(
     }
   }
 }
+
+/* International base map tile sources for terminal ops-center mode */
+const basemapSources = {
+  /* Dark vector tiles - primary for terminal mode */
+  darkMatter: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 20
+  },
+  /* Standard OSM fallback */
+  osm: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+  },
+  /* Esri satellite imagery */
+  esriSatellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri",
+    maxZoom: 18
+  },
+  /* Esri dark gray canvas - minimal labels */
+  esriDarkGray: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri",
+    maxZoom: 16
+  },
+  /* OpenTopoMap - elevation/terrain context */
+  topo: {
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17
+  }
+} as const;
 
 const coverageDomainKeywords: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -731,17 +785,14 @@ export default function InteractiveMap({
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    const atlasLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    const atlasLayer = L.tileLayer(basemapSources.darkMatter.url, {
+      maxZoom: basemapSources.darkMatter.maxZoom,
+      attribution: basemapSources.darkMatter.attribution
     }).addTo(map);
-    const satelliteLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 18,
-        attribution: "Tiles &copy; Esri"
-      }
-    );
+    const satelliteLayer = L.tileLayer(basemapSources.esriSatellite.url, {
+      maxZoom: basemapSources.esriSatellite.maxZoom,
+      attribution: basemapSources.esriSatellite.attribution
+    });
 
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;

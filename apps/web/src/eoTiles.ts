@@ -1,4 +1,12 @@
-export type EoLayerId = "eo-aerosol" | "eo-precipitation" | "eo-vegetation";
+export type EoLayerId =
+  | "eo-aerosol"
+  | "eo-precipitation"
+  | "eo-vegetation"
+  | "eo-soil-moisture"
+  | "eo-cloud-phase"
+  | "eo-snow-cover"
+  | "eo-fire-thermal"
+  | "eo-chlorophyll";
 
 export interface EoTileConfig {
   id: EoLayerId;
@@ -6,6 +14,8 @@ export interface EoTileConfig {
   opacity: number;
   maxNativeZoom: number;
   attribution: string;
+  /** Source agency / program for display in legend */
+  source?: string;
 }
 
 const gibsTileUrl = (
@@ -23,29 +33,169 @@ function isoDateOffset(days: number) {
 
 export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
   const yesterday = isoDateOffset(-1);
+  const twoDaysAgo = isoDateOffset(-2);
   const ndviDate = isoDateOffset(-10);
 
   return {
+    /* ── Core EO layers ── */
     "eo-aerosol": {
       id: "eo-aerosol",
       url: gibsTileUrl("MODIS_Combined_Value_Added_AOD", yesterday, "GoogleMapsCompatible_Level6"),
       opacity: 0.54,
       maxNativeZoom: 6,
-      attribution: "NASA GIBS / MODIS"
+      attribution: "NASA GIBS / MODIS",
+      source: "NASA MODIS (USA)"
     },
     "eo-precipitation": {
       id: "eo-precipitation",
       url: gibsTileUrl("IMERG_Precipitation_Rate", yesterday, "GoogleMapsCompatible_Level6"),
       opacity: 0.58,
       maxNativeZoom: 6,
-      attribution: "NASA GIBS / GPM IMERG"
+      attribution: "NASA GIBS / GPM IMERG",
+      source: "NASA-JAXA GPM (USA/Japan)"
     },
     "eo-vegetation": {
       id: "eo-vegetation",
       url: gibsTileUrl("MODIS_Terra_NDVI_8Day", ndviDate),
       opacity: 0.6,
       maxNativeZoom: 9,
-      attribution: "NASA GIBS / MODIS Terra"
+      attribution: "NASA GIBS / MODIS Terra",
+      source: "NASA MODIS Terra (USA)"
+    },
+
+    /* ── Extended international EO layers ── */
+
+    /* Soil moisture - SMAP (NASA/international ground-truth network) */
+    "eo-soil-moisture": {
+      id: "eo-soil-moisture",
+      url: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", twoDaysAgo, "GoogleMapsCompatible_Level6"),
+      opacity: 0.5,
+      maxNativeZoom: 6,
+      attribution: "NASA GIBS / SMAP",
+      source: "NASA SMAP (USA)"
+    },
+
+    /* Cloud phase infrared - MODIS Aqua (NASA, used by CMA/ISRO/Roshydromet) */
+    "eo-cloud-phase": {
+      id: "eo-cloud-phase",
+      url: gibsTileUrl("MODIS_Aqua_Cloud_Phase_Infrared_Day", yesterday, "GoogleMapsCompatible_Level6"),
+      opacity: 0.42,
+      maxNativeZoom: 6,
+      attribution: "NASA GIBS / MODIS Aqua",
+      source: "NASA MODIS Aqua (USA)"
+    },
+
+    /* Snow/ice cover - MODIS Terra (critical for Himalayan watershed monitoring) */
+    "eo-snow-cover": {
+      id: "eo-snow-cover",
+      url: gibsTileUrl("MODIS_Terra_Snow_Cover", yesterday, "GoogleMapsCompatible_Level6"),
+      opacity: 0.55,
+      maxNativeZoom: 6,
+      attribution: "NASA GIBS / MODIS Terra",
+      source: "NASA MODIS Terra (USA)"
+    },
+
+    /* Fire and thermal anomalies - VIIRS (used by Roscosmos FIRMS, CMA, ISRO) */
+    "eo-fire-thermal": {
+      id: "eo-fire-thermal",
+      url: gibsTileUrl("VIIRS_SNPP_Thermal_Anomalies_375m_Night", yesterday, "GoogleMapsCompatible_Level9"),
+      opacity: 0.65,
+      maxNativeZoom: 9,
+      attribution: "NASA GIBS / VIIRS SNPP",
+      source: "NASA-NOAA VIIRS (USA)"
+    },
+
+    /* Ocean chlorophyll concentration - MODIS Aqua (shared with ESA OC-CCI) */
+    "eo-chlorophyll": {
+      id: "eo-chlorophyll",
+      url: gibsTileUrl("MODIS_Aqua_Chlorophyll_A", twoDaysAgo, "GoogleMapsCompatible_Level7"),
+      opacity: 0.48,
+      maxNativeZoom: 7,
+      attribution: "NASA GIBS / MODIS Aqua",
+      source: "NASA MODIS Aqua (USA)"
     }
   };
 }
+
+/**
+ * International EO data source registry.
+ * These are publicly accessible satellite data programs from agencies worldwide.
+ * Tile endpoints listed here are either free/open or require registration.
+ *
+ * ── Russia (Roscosmos / Roshydromet) ──
+ * - Electro-L geostationary: Full-disk Earth imagery every 30 min
+ * - Meteor-M: Polar-orbiting weather satellite (LRPT data freely receivable)
+ * - ScanEx: Commercial EO data aggregator with some public previews
+ *   FIRMS integration: Uses NASA VIIRS data for fire monitoring in Siberia
+ *
+ * ── China (CMA / CNSA) ──
+ * - FengYun-4A/B: Geostationary meteorological, 1-min rapid scan
+ *   Tiles available via CMA Satellite Data Service (registration required)
+ * - GaoFen: High-resolution (sub-meter) optical series
+ * - HuanJing (HJ-1A/1B): Environment/disaster monitoring constellation
+ *
+ * ── India (ISRO / IMD) ──
+ * - INSAT-3D/3DR: Geostationary meteorological (Indian Ocean coverage)
+ * - Resourcesat-2: Medium-resolution land observation
+ * - Bhuvan portal: ISRO's public geoportal with tile services
+ *   URL pattern: https://bhuvan-vec2.nrsc.gov.in/bhuvan/wms
+ * - MOSDAC: Meteorological data archive with API access
+ *
+ * ── Japan (JAXA) ── [Already integrated via JAXA Earth API]
+ * - Himawari-8/9: Geostationary (JMA), rapid scan every 2.5 min
+ * - ALOS-2 PALSAR: L-band SAR for ground deformation/forest
+ * - GSMaP: Global rainfall map (integrated as jaxa-rainfall layer)
+ *
+ * ── South Korea (KMA / KARI) ──
+ * - GK-2A: Geostationary meteorological (East Asia rapid scan)
+ * - Arirang/KOMPSAT: High-resolution optical + SAR
+ *
+ * ── Europe (ESA / EUMETSAT) ── [Copernicus already integrated]
+ * - Sentinel-1/2/3/5P via Copernicus Data Space
+ * - Meteosat Third Generation: European geostationary weather
+ *
+ * Integration strategy: NASA GIBS provides standardized tile access to data
+ * from many international instruments (including MODIS, VIIRS, GPM, SMAP).
+ * The GPM IMERG precipitation product, for instance, incorporates data from
+ * JAXA, CMA FengYun, ISRO INSAT, EUMETSAT, and KARI instruments.
+ * This means many "NASA GIBS" layers already represent multi-agency
+ * international data fusion.
+ */
+export const internationalEoRegistry = {
+  russia: {
+    agency: "Roscosmos / Roshydromet",
+    instruments: ["Electro-L", "Meteor-M", "Kanopus-V"],
+    publicAccess: "Limited - FIRMS fire data via NASA VIIRS integration",
+    tileReady: false
+  },
+  china: {
+    agency: "CMA / CNSA",
+    instruments: ["FengYun-4A", "FengYun-4B", "GaoFen", "HuanJing"],
+    publicAccess: "Registration required at satellite.nsmc.org.cn",
+    tileReady: false
+  },
+  india: {
+    agency: "ISRO / IMD",
+    instruments: ["INSAT-3D", "INSAT-3DR", "Resourcesat-2", "Cartosat"],
+    publicAccess: "Bhuvan portal: bhuvan.nrsc.gov.in (free registration)",
+    tileReady: false
+  },
+  japan: {
+    agency: "JAXA / JMA",
+    instruments: ["Himawari-8/9", "ALOS-2", "GCOM-W"],
+    publicAccess: "Integrated via JAXA Earth API (jaxa-rainfall layer)",
+    tileReady: true
+  },
+  korea: {
+    agency: "KMA / KARI",
+    instruments: ["GK-2A", "KOMPSAT-5/6/7"],
+    publicAccess: "nmsc.kma.go.kr (registration required for API)",
+    tileReady: false
+  },
+  europe: {
+    agency: "ESA / EUMETSAT",
+    instruments: ["Sentinel-1/2/3/5P", "Meteosat-12", "Aeolus"],
+    publicAccess: "Integrated via Copernicus Data Space + NASA GIBS",
+    tileReady: true
+  }
+} as const;

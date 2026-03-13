@@ -318,6 +318,36 @@ const satelliteToggleOptions: ToggleOption[] = [
     label: { th: "แสงกลางคืน", en: "Night Lights" },
     detail: { th: "ความหนาแน่นแสงเมืองยามค่ำ", en: "Night-time urban light intensity" },
     color: "#8b5cf6"
+  },
+  {
+    id: "eo-soil-moisture",
+    label: { th: "ดินชื้น", en: "Soil Moisture" },
+    detail: { th: "ความชื้นดินจาก NASA SMAP สำหรับเกษตรและน้ำท่วม", en: "NASA SMAP soil moisture for agriculture and flood context" },
+    color: "#b45309"
+  },
+  {
+    id: "eo-fire-thermal",
+    label: { th: "ไฟป่า", en: "Fire Watch" },
+    detail: { th: "จุดความร้อนกลางคืนจาก VIIRS ใช้ร่วมกับ Roscosmos FIRMS", en: "VIIRS night thermal anomalies, shared with Roscosmos FIRMS network" },
+    color: "#ef4444"
+  },
+  {
+    id: "eo-snow-cover",
+    label: { th: "หิมะ", en: "Snow Cover" },
+    detail: { th: "พื้นที่หิมะปกคลุมจาก MODIS สำหรับลุ่มน้ำเอเชีย", en: "MODIS snow cover for Himalayan and Asian watershed monitoring" },
+    color: "#e0f2fe"
+  },
+  {
+    id: "eo-chlorophyll",
+    label: { th: "คลอโรฟิลล์", en: "Ocean Color" },
+    detail: { th: "ความเข้มข้นคลอโรฟิลล์ทะเลจาก MODIS Aqua ร่วมกับ ESA OC-CCI", en: "Ocean chlorophyll from MODIS Aqua, merged with ESA OC-CCI program" },
+    color: "#059669"
+  },
+  {
+    id: "eo-cloud-phase",
+    label: { th: "เฟสเมฆ", en: "Cloud Phase" },
+    detail: { th: "เฟสเมฆอินฟราเรดจาก MODIS Aqua สำหรับพยากรณ์", en: "Cloud phase infrared for weather forecasting context" },
+    color: "#94a3b8"
   }
 ];
 
@@ -793,6 +823,11 @@ const copyDeck = {
     disasterLegend: "สีส้มเข้ม = โซนเฝ้าระวังภัย",
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
     jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
+    soilMoistureLegend: "สีน้ำตาล = ความชื้นดินจาก NASA SMAP",
+    fireThermalLegend: "สีแดง = จุดความร้อนกลางคืนจาก VIIRS / Roscosmos FIRMS",
+    snowCoverLegend: "สีขาวฟ้า = พื้นที่หิมะปกคลุมจาก MODIS",
+    chlorophyllLegend: "สีเขียวเข้ม = คลอโรฟิลล์ทะเลจาก MODIS Aqua / ESA OC-CCI",
+    cloudPhaseLegend: "สีเทา = เฟสเมฆอินฟราเรดจาก MODIS Aqua",
     bangkokPlacesLegend: "สีเขียว = จุดฐานข้อมูลกรุงเทพฯ",
     thresholdWatch: "เกณฑ์เฝ้าระวัง",
     thisWeek: "ใหม่ในรอบนี้",
@@ -944,6 +979,11 @@ const copyDeck = {
     disasterLegend: "Deep orange = hazard watch zone",
     coverageLegend: "Red = nationwide smart city footprint",
     jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
+    soilMoistureLegend: "Brown = NASA SMAP soil moisture for agriculture and flood planning",
+    fireThermalLegend: "Red = VIIRS night thermal anomalies, shared with Roscosmos FIRMS network",
+    snowCoverLegend: "Ice blue = MODIS snow cover for Himalayan and Asian watershed monitoring",
+    chlorophyllLegend: "Teal = MODIS Aqua ocean chlorophyll, merged with ESA OC-CCI program",
+    cloudPhaseLegend: "Gray = MODIS Aqua cloud phase infrared for weather context",
     bangkokPlacesLegend: "Green = Bangkok shared places",
     thresholdWatch: "Threshold Watch",
     thisWeek: "New This Cycle",
@@ -1988,6 +2028,11 @@ function DashboardPage() {
         ? "อุณหภูมิผิวน้ำทะเลจาก NASA GIBS สำหรับชายฝั่งและทะเล"
         : "NASA GIBS sea-surface temperature for coastal context",
     "satellite-night-lights": lang === "th" ? "แสงเมืองยามค่ำจาก NASA GIBS" : "NASA GIBS night-light intensity",
+    "eo-soil-moisture": copy.soilMoistureLegend,
+    "eo-fire-thermal": copy.fireThermalLegend,
+    "eo-snow-cover": copy.snowCoverLegend,
+    "eo-chlorophyll": copy.chlorophyllLegend,
+    "eo-cloud-phase": copy.cloudPhaseLegend,
     "smart-city-thailand": copy.coverageLegend,
     "bangkok-passages": copy.bangkokPlacesLegend
   };
