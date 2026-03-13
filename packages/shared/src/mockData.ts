@@ -2,12 +2,18 @@ import type {
   ActivityLogItem,
   AuditEventRecord,
   BriefingNote,
+  CameraEventSample,
   CityProfile,
   ChangePulse,
+  CommandCenterSnapshot,
+  CommandConnector,
+  CommandCenterMetric,
   DashboardView,
   DecisionQueueItem,
   DistrictProfile,
   DomainScorecard,
+  ExpansionTrack,
+  FusionQueueItem,
   GeoFeatureRecord,
   Locale,
   MapLayerConfig,
@@ -18,12 +24,16 @@ import type {
   OfficialImpactSnapshot,
   OverviewSnapshot,
   ProjectRecord,
+  ReporterCaseSample,
   ResilienceSnapshot,
+  SensorFeedSample,
   SocialListeningSnapshot,
   SourceMeta,
   SourceRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  WorkflowBoardStatus,
+  PublicCctvCamera
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -1223,6 +1233,17 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "itic-traffic",
     legendLabel: "Traffic",
     zIndex: 45
+  },
+  {
+    id: "cctv-cameras",
+    label: { th: "กล้อง CCTV สาธารณะ", en: "Public CCTV" },
+    active: false,
+    color: "#34d399",
+    kind: "signal",
+    defaultViews: ["bangkok"],
+    sourceId: "pak-kret-cctv",
+    legendLabel: "CCTV",
+    zIndex: 50
   },
   {
     id: "water",
@@ -3235,6 +3256,575 @@ export const marketSnapshot: MarketSnapshot = {
   source: seedMeta("Market Context", "https://api.coingecko.com", "live")
 };
 
+export const commandCenterMetrics: CommandCenterMetric[] = [
+  {
+    id: "ops-live",
+    label: { th: "พื้นผิวปฏิบัติการสด", en: "Live Ops Surfaces" },
+    value: "18",
+    detail: {
+      th: "รวมแผนที่หลัก กล้อง เซนเซอร์ บอร์ด และชั้น EO ที่พร้อมใช้งานหรือพร้อมต่อ",
+      en: "Map layers, camera lanes, sensor rails, boards, and EO surfaces ready now or staged for connection."
+    },
+    tone: "positive"
+  },
+  {
+    id: "connectors",
+    label: { th: "ตัวเชื่อม API", en: "API Connectors" },
+    value: "10",
+    detail: {
+      th: "ดึงแนวคิดและ endpoint จาก Smart City, Phuket, Geopolitics, และ Tech Monitor",
+      en: "Pulls endpoint ideas from the Smart City, Phuket, Geopolitics, and Tech Monitor projects."
+    },
+    tone: "positive"
+  },
+  {
+    id: "field-signals",
+    label: { th: "สัญญาณภาคสนาม", en: "Field Signals" },
+    value: "9",
+    detail: {
+      th: "กล้อง จราจร คนเดิน และ drainage watch ถูกจัดเป็น schema เดียวกัน",
+      en: "Camera, traffic, pedestrian, and drainage watch signals share one operational schema."
+    },
+    tone: "warning"
+  },
+  {
+    id: "reporting-loop",
+    label: { th: "วงรอบรายงาน", en: "Reporting Loop" },
+    value: "4",
+    detail: {
+      th: "เปิดทางให้ citizen reporting, dispatch, analytics, และ executive reporting เชื่อมต่อในสายเดียว",
+      en: "Leaves room for citizen reporting, dispatch, analytics, and executive reporting in the same loop."
+    },
+    tone: "neutral"
+  }
+];
+
+export const commandConnectors: CommandConnector[] = [
+  {
+    id: "smart-city-overview",
+    title: "Overview snapshot",
+    project: "Muang Thong Thani Monitor",
+    category: "platform",
+    status: "live",
+    route: "/api/overview",
+    cadence: "5 min",
+    auth: "internal",
+    detail: {
+      th: "แกนสรุปภาพรวมของหน้าจอหลัก ใช้สำหรับ pulse, city focus, และ command narration",
+      en: "Core summary surface for pulse, city focus, and command narration."
+    },
+    systems: ["map", "briefing", "command"]
+  },
+  {
+    id: "smart-city-satellite",
+    title: "Satellite digest",
+    project: "Muang Thong Thani Monitor",
+    category: "earth-observation",
+    status: "live",
+    route: "/api/satellite/digest",
+    cadence: "5 min",
+    auth: "oauth-ready",
+    detail: {
+      th: "ใช้เป็นฐาน EO สำหรับฝน ความร้อน พืชพรรณ และ scene freshness",
+      en: "EO backbone for rainfall, heat, vegetation, and scene freshness."
+    },
+    systems: ["eo", "weather", "resilience"]
+  },
+  {
+    id: "smart-city-media",
+    title: "Media feeds",
+    project: "Muang Thong Thani Monitor",
+    category: "media",
+    status: "live",
+    route: "/api/media/feeds",
+    cadence: "5 min",
+    auth: "internal",
+    detail: {
+      th: "ช่องทางถ่ายทอดและ feed ภายนอกสำหรับอ่านผลกระทบด้าน narrative",
+      en: "Broadcast and external feed surface for narrative pressure and public attention."
+    },
+    systems: ["media", "signal wall"]
+  },
+  {
+    id: "phuket-convergence",
+    title: "Convergence engine",
+    project: "Phuket Dashboard",
+    category: "analytics",
+    status: "ready",
+    route: "/api/intelligence/convergence",
+    cadence: "2 min",
+    auth: "server-side",
+    detail: {
+      th: "logic รวม incident, weather, movement, และ markets แบบ corridor-aware พร้อมย้ายมาปรับใช้",
+      en: "Corridor-aware intelligence logic that fuses incidents, weather, movement, and markets."
+    },
+    systems: ["fusion", "alerts"]
+  },
+  {
+    id: "phuket-flights",
+    title: "Flight paths",
+    project: "Phuket Dashboard",
+    category: "mobility",
+    status: "ready",
+    route: "/api/flights",
+    cadence: "30 s",
+    auth: "server-side",
+    detail: {
+      th: "pattern การดึงข้อมูล OpenSky พร้อมใช้กับ traffic and event ingress ของพื้นที่จัดงาน",
+      en: "OpenSky-driven traffic ingress logic ready to adapt for event and venue access."
+    },
+    systems: ["mobility", "arrival watch"]
+  },
+  {
+    id: "phuket-movements",
+    title: "Movement traces",
+    project: "Phuket Dashboard",
+    category: "mobility",
+    status: "ready",
+    route: "/api/movements",
+    cadence: "2 min",
+    auth: "server-side",
+    detail: {
+      th: "movement heatline สำหรับ hub-to-hub flows และ crowd redistribution",
+      en: "Movement trace surface for hub-to-hub flows and crowd redistribution."
+    },
+    systems: ["crowd", "routing"]
+  },
+  {
+    id: "geopolitics-live-tv",
+    title: "Live TV bridge",
+    project: "Geopolitics Dashboard",
+    category: "media",
+    status: "pilot",
+    route: "/api/live-tv",
+    cadence: "on demand",
+    auth: "server-side",
+    detail: {
+      th: "โมเดลสำหรับดึงช่องถ่ายทอดสดเข้ามาเป็น media wall ใน command center",
+      en: "Bridge pattern for turning live channels into a media wall inside the command center."
+    },
+    systems: ["media wall", "executive brief"]
+  },
+  {
+    id: "geopolitics-data-catalog",
+    title: "Data catalog browser",
+    project: "Geopolitics Dashboard",
+    category: "platform",
+    status: "pilot",
+    route: "/api/data/catalog",
+    cadence: "manual",
+    auth: "internal",
+    detail: {
+      th: "ฐาน browse-able catalog สำหรับเปิด table และ export data ภายหลัง",
+      en: "Browseable data catalog pattern for opening tables and exports later."
+    },
+    systems: ["catalog", "reporting"]
+  },
+  {
+    id: "tech-copernicus-preview",
+    title: "Copernicus preview",
+    project: "Tech Monitor",
+    category: "earth-observation",
+    status: "ready",
+    route: "/api/copernicus/preview",
+    cadence: "on demand",
+    auth: "server-side",
+    detail: {
+      th: "preview pipeline สำหรับ live EO thumbnails และ source switching",
+      en: "Preview pipeline for live EO thumbnails and runtime source switching."
+    },
+    systems: ["eo", "thumbnail rail"]
+  },
+  {
+    id: "city-reporter-bridge",
+    title: "Reporter bridge",
+    project: "City Reporter Bot",
+    category: "reporting",
+    status: "planned",
+    cadence: "event driven",
+    auth: "token bridge",
+    detail: {
+      th: "สงวนช่องทางไว้ให้เชื่อม ticket intake, assignment, SLA, และ field closure ในภายหลัง",
+      en: "Reserved for ticket intake, assignment, SLA, and field closure when the reporter bridge is wired in."
+    },
+    systems: ["tickets", "dispatch", "reporting"]
+  }
+];
+
+export const cameraEvents: CameraEventSample[] = [
+  {
+    id: "camera-impact-dropoff",
+    cameraId: "MTT-CAM-01",
+    zone: { th: "Impact Challenger drop-off", en: "Impact Challenger drop-off" },
+    detection: { th: "จอดแช่ผิดกฎหมาย", en: "Illegal Parking" },
+    detail: {
+      th: "รถจอดค้างในช่องรับส่งเกินเวลาที่กำหนดและเริ่มกีดขวางรถรับส่ง",
+      en: "Vehicle dwell time passed the curb limit and is blocking the shuttle loop."
+    },
+    severity: "alert",
+    status: { th: "ส่งต่อทีมจราจร", en: "Escalate to traffic team" },
+    model: "Parking Vision v0.8",
+    minutesAgo: 2,
+    confidence: 0.97,
+    targetLayers: ["itic-traffic", "projects"]
+  },
+  {
+    id: "camera-beehive-incident",
+    cameraId: "MTT-CAM-02",
+    zone: { th: "Beehive connector", en: "Beehive connector" },
+    detection: { th: "เหตุเฉี่ยวชนเล็กน้อย", en: "Minor Incident" },
+    detail: {
+      th: "พบการหยุดรถผิดปกติหลังฝนและ crowd movement เริ่มสะสม",
+      en: "Short stop and spillback pattern suggest a minor roadside incident after rain."
+    },
+    severity: "watch",
+    status: { th: "รอตรวจภาพย้อนหลัง", en: "Review clip" },
+    model: "Incident Sense v0.5",
+    minutesAgo: 6,
+    confidence: 0.88,
+    targetLayers: ["itic-traffic", "weather"]
+  },
+  {
+    id: "camera-cosmo-sidewalk",
+    cameraId: "MTT-CAM-03",
+    zone: { th: "Cosmo Bazaar frontage", en: "Cosmo Bazaar frontage" },
+    detection: { th: "คนล้นทางเท้า", en: "Pedestrian Spillover" },
+    detail: {
+      th: "พื้นที่ขายของล้นลงมาที่ทางเท้าและ crowd lane เริ่มเบียดแนวจอดรถ",
+      en: "Pedestrian spillover is compressing the walkway and pushing movement into the curb lane."
+    },
+    severity: "watch",
+    status: { th: "เตรียมผูกกับ reporter", en: "Match with reporter feed" },
+    model: "Crowd Flow v0.4",
+    minutesAgo: 11,
+    confidence: 0.9,
+    targetLayers: ["bangkok-passages", "itic-traffic"]
+  },
+  {
+    id: "camera-p2-wrong-way",
+    cameraId: "MTT-CAM-04",
+    zone: { th: "P2 feeder road", en: "P2 feeder road" },
+    detection: { th: "รถย้อนศร", en: "Wrong-way Vehicle" },
+    detail: {
+      th: "รถจักรยานยนต์เข้าผิดทิศในช่วงสัญญาณจราจรชะลอตัว",
+      en: "Motorbike entered the feeder road against flow during a congestion wave."
+    },
+    severity: "alert",
+    status: { th: "ส่งเข้าบอร์ดเหตุการณ์", en: "Send to incident board" },
+    model: "Road Behavior v0.6",
+    minutesAgo: 18,
+    confidence: 0.95,
+    targetLayers: ["itic-traffic", "weather", "disaster"]
+  },
+  {
+    id: "camera-lakefront-smoke",
+    cameraId: "MTT-CAM-05",
+    zone: { th: "Lakefront gate", en: "Lakefront gate" },
+    detection: { th: "ควัน / ความร้อนผิดปกติ", en: "Smoke / Thermal Alert" },
+    detail: {
+      th: "กลุ่มควันบางและแหล่งความร้อนเล็กถูกตั้งเป็น watch sample สำหรับเชื่อมระบบ EO ภายหลัง",
+      en: "Light smoke and a small heat signature are staged as a future EO-linked watch sample."
+    },
+    severity: "stable",
+    status: { th: "ตัวอย่างสำหรับต่อ EO", en: "EO-ready sample" },
+    model: "Thermal Watch v0.3",
+    minutesAgo: 27,
+    confidence: 0.81,
+    targetLayers: ["weather", "resilience", "disaster"]
+  }
+];
+
+export const sensorFeeds: SensorFeedSample[] = [
+  {
+    id: "sensor-traffic-loop",
+    label: { th: "ทางเข้า Challenger", en: "Challenger ingress" },
+    zone: { th: "วงวนหน้า Challenger", en: "Challenger loop" },
+    category: "traffic",
+    status: "live",
+    value: "84% load",
+    detail: {
+      th: "ใช้เป็นต้นแบบ traffic occupancy rail สำหรับรถรับส่งและ event ingress",
+      en: "Prototype traffic occupancy rail for shuttle circulation and event ingress."
+    },
+    cadence: "30 s",
+    sourceLabel: "ITIC / route watch",
+    targetLayers: ["itic-traffic"]
+  },
+  {
+    id: "sensor-parking-p2",
+    label: { th: "P2 parking stack", en: "P2 parking stack" },
+    zone: { th: "P2 feeder + queue", en: "P2 feeder + queue" },
+    category: "parking",
+    status: "ready",
+    value: "61% full",
+    detail: {
+      th: "สงวน slot สำหรับนับ occupancy และรถค้างในลานจอด",
+      en: "Reserved slot for occupancy counts and dwell detection in the parking field."
+    },
+    cadence: "60 s",
+    sourceLabel: "ANPR / parking bus",
+    targetLayers: ["itic-traffic", "projects"]
+  },
+  {
+    id: "sensor-crowd-cosmo",
+    label: { th: "Cosmo footfall", en: "Cosmo footfall" },
+    zone: { th: "ทางเท้า Cosmo", en: "Cosmo frontage" },
+    category: "crowd",
+    status: "pilot",
+    value: "1.4x baseline",
+    detail: {
+      th: "ใช้เป็นจุดวาง logic สำหรับ crowd density และ spillover alerts",
+      en: "Staging point for crowd density and spillover alerts."
+    },
+    cadence: "45 s",
+    sourceLabel: "Vision counter",
+    targetLayers: ["bangkok-passages", "itic-traffic"]
+  },
+  {
+    id: "sensor-rain-drain",
+    label: { th: "Drainage watch", en: "Drainage watch" },
+    zone: { th: "แนวถนนรับน้ำ", en: "Primary drainage corridor" },
+    category: "water",
+    status: "ready",
+    value: "12 mm / hr",
+    detail: {
+      th: "เตรียมรับ sensor น้ำ ฝน และ low-point alarms ให้อ่านคู่กับ EO ฝน",
+      en: "Prepared for rainfall, water-level, and low-point alarms alongside EO rain context."
+    },
+    cadence: "5 min",
+    sourceLabel: "Drain / weather bus",
+    targetLayers: ["weather", "water", "jaxa-rainfall"]
+  },
+  {
+    id: "sensor-air-lakefront",
+    label: { th: "Lakefront air watch", en: "Lakefront air watch" },
+    zone: { th: "Lakefront gate", en: "Lakefront gate" },
+    category: "air",
+    status: "planned",
+    value: "AQI slot",
+    detail: {
+      th: "ช่องว่างสำหรับ air node ระดับพื้นที่และ thermal correlation",
+      en: "Reserved slot for local air nodes and thermal correlation."
+    },
+    cadence: "5 min",
+    sourceLabel: "Air node / thermal bus",
+    targetLayers: ["weather", "resilience", "eo-aerosol"]
+  }
+];
+
+export const reporterCases: ReporterCaseSample[] = [
+  {
+    id: "report-road",
+    ticketNumber: "SCTH-4921",
+    problemType: { th: "ถนน", en: "Road" },
+    description: {
+      th: "หลุมถนนตรงแนวรถรับส่งหน้า Challenger Hall ทำให้รถเบี่ยงหลบกะทันหัน",
+      en: "Road surface damage near the Challenger shuttle lane is causing sudden swerves."
+    },
+    locationText: "Impact Challenger service lane",
+    urgency: "high",
+    status: "assigned",
+    teamName: "Road Ops",
+    staffName: "Field Team A",
+    aiSummary: {
+      th: "AI summary: พื้นผิวเสียหายและมีความเสี่ยงต่อรถที่ชะลอรับส่ง",
+      en: "AI summary: damaged pavement with elevated risk for drop-off traffic."
+    },
+    minutesAgo: 14,
+    targetLayers: ["itic-traffic", "projects"]
+  },
+  {
+    id: "report-flood",
+    ticketNumber: "SCTH-4927",
+    problemType: { th: "น้ำท่วมขัง", en: "Standing Water" },
+    description: {
+      th: "น้ำเริ่มขังตรงแนวทางเดินระหว่าง Hall กับ Beehive หลังฝนช่วงเย็น",
+      en: "Water is beginning to pool along the walkway between the hall and Beehive after the evening rain."
+    },
+    locationText: "Beehive pedestrian connector",
+    urgency: "high",
+    status: "received",
+    teamName: "Drainage Ops",
+    staffName: "Pending assignment",
+    aiSummary: {
+      th: "AI summary: เสี่ยงต่อการลื่นล้มและ slow-moving crowd lane",
+      en: "AI summary: slip risk and slowing pedestrian flow."
+    },
+    minutesAgo: 9,
+    targetLayers: ["weather", "water", "jaxa-rainfall"]
+  },
+  {
+    id: "report-sidewalk",
+    ticketNumber: "SCTH-4932",
+    problemType: { th: "ทางเท้า", en: "Sidewalk" },
+    description: {
+      th: "แผงค้าชั่วคราวเบียดทางเดินและทำให้คนลงมาใช้ไหล่ทาง",
+      en: "Temporary vending is reducing sidewalk width and forcing pedestrians into the curb lane."
+    },
+    locationText: "Cosmo Bazaar frontage",
+    urgency: "medium",
+    status: "in_progress",
+    teamName: "Public Space Ops",
+    staffName: "Field Team C",
+    aiSummary: {
+      th: "AI summary: ควรจับคู่กับ crowd detection และ curbside loading",
+      en: "AI summary: should be matched with crowd detection and curbside loading."
+    },
+    matchedCameraId: "MTT-CAM-03",
+    minutesAgo: 22,
+    targetLayers: ["bangkok-passages", "itic-traffic"]
+  },
+  {
+    id: "report-lighting",
+    ticketNumber: "SCTH-4939",
+    problemType: { th: "แสงสว่าง", en: "Lighting" },
+    description: {
+      th: "ไฟส่องสว่างแนวทางเดินด้านทะเลสาบดับเป็นช่วง",
+      en: "Walkway lighting along the lakefront is intermittently out."
+    },
+    locationText: "Lakefront gate",
+    urgency: "low",
+    status: "completed",
+    teamName: "Facilities",
+    staffName: "Night Team",
+    aiSummary: {
+      th: "AI summary: ปิดงานแล้วแต่ควรเก็บเป็น baseline สำหรับ safety audit",
+      en: "AI summary: closed, but useful as baseline for future safety audits."
+    },
+    minutesAgo: 38,
+    targetLayers: ["projects", "resilience"]
+  }
+];
+
+export const workflowBoards: WorkflowBoardStatus[] = [
+  {
+    id: "vision-board",
+    title: { th: "Vision inference board", en: "Vision Inference Board" },
+    status: "live",
+    metric: "5 lanes",
+    detail: {
+      th: "illegal parking, wrong-way, crowd spillover, และ thermal watch พร้อมต่อ inference service",
+      en: "Illegal parking, wrong-way, crowd spillover, and thermal watch lanes are ready for inference-service wiring."
+    }
+  },
+  {
+    id: "reporter-board",
+    title: { th: "City reporter intake", en: "City Reporter Intake" },
+    status: "watch",
+    metric: "4 tickets",
+    detail: {
+      th: "ยึด status model เดียวกับ city-reporter workflow: received, assigned, in_progress, completed",
+      en: "Uses the same status model as the city-reporter workflow: received, assigned, in_progress, completed."
+    }
+  },
+  {
+    id: "merge-board",
+    title: { th: "Cross-system match board", en: "Cross-System Match Board" },
+    status: "pilot",
+    metric: "1 match",
+    detail: {
+      th: "เตรียมรวม camera events, sensors, และ citizen reports เป็นเคสเดียว",
+      en: "Prepared to merge camera events, sensors, and citizen reports into one operational case."
+    }
+  },
+  {
+    id: "dispatch-board",
+    title: { th: "Command dispatch board", en: "Command Dispatch Board" },
+    status: "stable",
+    metric: "handoff",
+    detail: {
+      th: "ปลายทางสำหรับส่ง action queue ไปทีม field ops และ reporting layer",
+      en: "Destination handoff for action queues into field ops and reporting."
+    }
+  }
+];
+
+export const fusionQueue: FusionQueueItem[] = [
+  {
+    id: "fusion-crowd",
+    title: { th: "Crowd obstruction + reporter ticket", en: "Crowd obstruction + reporter ticket" },
+    detail: {
+      th: "SCTH-4932 จับคู่กับ MTT-CAM-03 เพื่อทำเคสทางเท้าเดียวกัน",
+      en: "SCTH-4932 is matched with MTT-CAM-03 as one sidewalk case."
+    },
+    confidence: 0.94
+  },
+  {
+    id: "fusion-water",
+    title: { th: "Drainage alert + citizen flood report", en: "Drainage alert + citizen flood report" },
+    detail: {
+      th: "ช่องทางเดิน Beehive ถูกรวมเข้า event bundle เดียวกับ rain watch",
+      en: "The Beehive walkway report is bundled with the same rain watch event."
+    },
+    confidence: 0.88
+  },
+  {
+    id: "fusion-thermal",
+    title: { th: "Thermal watch + safety audit", en: "Thermal watch + safety audit" },
+    detail: {
+      th: "ใช้ smoke / thermal sample เป็น baseline ก่อนต่อระบบ EO และ field audit",
+      en: "Uses the smoke and thermal sample as a baseline ahead of EO and field-audit integration."
+    },
+    confidence: 0.83
+  }
+];
+
+export const expansionTracks: ExpansionTrack[] = [
+  {
+    id: "track-ingest",
+    title: { th: "Ingest backbone", en: "Ingest Backbone" },
+    stage: "base",
+    detail: {
+      th: "ฐานกลางสำหรับกล้อง เซนเซอร์ map overlays และ API connectors ที่มี schema เดียวกัน",
+      en: "Shared backbone for cameras, sensor buses, map overlays, and API connectors using one schema."
+    },
+    systems: ["camera bus", "sensor bus", "source registry"]
+  },
+  {
+    id: "track-reporting",
+    title: { th: "Reporting + dispatch", en: "Reporting + Dispatch" },
+    stage: "next",
+    detail: {
+      th: "ต่อ ticket bridge, assignment queue, และ SLA reporting ให้ใช้ data fabric เดียวกับ command screen",
+      en: "Wire the ticket bridge, assignment queue, and SLA reporting to the same command-screen data fabric."
+    },
+    systems: ["reporter bridge", "dispatch", "sla board"]
+  },
+  {
+    id: "track-analytics",
+    title: { th: "Analytics + executive room", en: "Analytics + Executive Room" },
+    stage: "future",
+    detail: {
+      th: "ขยายไปสู่ automated reporting, boardroom summaries, และ cross-city benchmarking",
+      en: "Expand into automated reporting, boardroom summaries, and cross-city benchmarking."
+    },
+    systems: ["report generator", "executive brief", "cross-city compare"]
+  }
+];
+
+export function createCommandCenterSnapshot(): CommandCenterSnapshot {
+  return {
+    updatedAt: new Date().toISOString(),
+    zoneLabel: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    mission: {
+      th: "Command center สำหรับพื้นที่จัดงาน เมือง และระบบภาคสนามที่ต้องต่อขยายได้",
+      en: "A command center for venue-scale city operations with room to grow into field-system integration."
+    },
+    screenMode: {
+      th: "ออกแบบให้ข้อมูลแน่น อ่านจากระยะไกล และขยายต่อไปยังกล้อง เซนเซอร์ และระบบรายงานได้",
+      en: "Designed for dense long-distance readability with space for cameras, sensors, and future reporting systems."
+    },
+    metrics: cloneSeed(commandCenterMetrics),
+    connectors: cloneSeed(commandConnectors),
+    cameraEvents: cloneSeed(cameraEvents),
+    sensorFeeds: cloneSeed(sensorFeeds),
+    reporterCases: cloneSeed(reporterCases),
+    workflowBoards: cloneSeed(workflowBoards),
+    fusionQueue: cloneSeed(fusionQueue),
+    expansionTracks: cloneSeed(expansionTracks)
+  };
+}
+
 export function createOverviewSnapshot(options?: {
   view?: DashboardView;
   timeRange?: TimeRange;
@@ -3294,6 +3884,39 @@ export function createTimeSnapshot(): TimeSnapshot {
     ]
   };
 }
+
+export const publicCctvCameras: PublicCctvCamera[] = [
+  { id: "pk-001", cameraId: "CAMPK001", label: { th: "แจ้งวัฒนะ - จัสมินบิลด์ 1", en: "Chaeng Watthana - Jasmine Bldg 1" }, source: "Pak Kret Municipality", lat: 13.905518, lon: 100.521136, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK001_thumb.jpg", status: "live", zone: "chaeng-watthana" },
+  { id: "pk-002", cameraId: "CAMPK002", label: { th: "แจ้งวัฒนะ - จัสมินบิลด์ 2", en: "Chaeng Watthana - Jasmine Bldg 2" }, source: "Pak Kret Municipality", lat: 13.905687, lon: 100.521404, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK002_thumb.jpg", status: "live", zone: "chaeng-watthana" },
+  { id: "pk-003", cameraId: "CAMPK003", label: { th: "สี่แยกปากเกร็ด 1", en: "Pak Kret 5-Way Intersection 1" }, source: "Pak Kret Municipality", lat: 13.907712, lon: 100.503948, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK003_thumb.jpg", status: "live", zone: "pak-kret-junction" },
+  { id: "pk-004", cameraId: "CAMPK004", label: { th: "สี่แยกปากเกร็ด 2", en: "Pak Kret 5-Way Intersection 2" }, source: "Pak Kret Municipality", lat: 13.907757, lon: 100.504076, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK004_thumb.jpg", status: "live", zone: "pak-kret-junction" },
+  { id: "pk-005", cameraId: "CAMPK005", label: { th: "สะพานพระราม 4", en: "Rama IV Bridge" }, source: "Pak Kret Municipality", lat: 13.912293, lon: 100.497643, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK005_thumb.jpg", status: "live", zone: "riverside" },
+  { id: "pk-006", cameraId: "CAMPK006", label: { th: "แจ้งวัฒนะ - เทศบาลปากเกร็ด", en: "Chaeng Watthana - Pak Kret Municipality" }, source: "Pak Kret Municipality", lat: 13.912173, lon: 100.497877, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK006_thumb.jpg", status: "live", zone: "pak-kret-office" },
+  { id: "pk-007", cameraId: "CAMPK007", label: { th: "ศูนย์ CCTV ตลาด", en: "Market Area CCTV Center" }, source: "Pak Kret Municipality", lat: 13.912308, lon: 100.497447, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK007_thumb.jpg", status: "live", zone: "market" },
+  { id: "pk-008", cameraId: "CAMPK008", label: { th: "ป้อม ตร. สวนสมเด็จ 1", en: "Suan Somdet Police Booth 1" }, source: "Pak Kret Municipality", lat: 13.939757, lon: 100.541733, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK008_thumb.jpg", status: "live", zone: "suan-somdet" },
+  { id: "pk-009", cameraId: "CAMPK009", label: { th: "ป้อม ตร. สวนสมเด็จ 2", en: "Suan Somdet Police Booth 2" }, source: "Pak Kret Municipality", lat: 13.939959, lon: 100.542080, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK009_thumb.jpg", status: "live", zone: "suan-somdet" },
+  { id: "pk-010", cameraId: "CAMPK010", label: { th: "ป้อม ตร. สวนสมเด็จ 3", en: "Suan Somdet Police Booth 3" }, source: "Pak Kret Municipality", lat: 13.940246, lon: 100.542535, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK010_thumb.jpg", status: "live", zone: "suan-somdet" },
+  { id: "pk-011", cameraId: "CAMPK011", label: { th: "แยกคลองประปา 1", en: "Khlong Prapa Intersection 1" }, source: "Pak Kret Municipality", lat: 13.895543, lon: 100.554028, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK011_thumb.jpg", status: "live", zone: "khlong-prapa" },
+  { id: "pk-012", cameraId: "CAMPK012", label: { th: "แยกคลองประปา 2", en: "Khlong Prapa Intersection 2" }, source: "Pak Kret Municipality", lat: 13.895543, lon: 100.554135, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK012_thumb.jpg", status: "live", zone: "khlong-prapa" },
+  { id: "pk-013", cameraId: "CAMPK013", label: { th: "แยกคลองประปา 3", en: "Khlong Prapa Intersection 3" }, source: "Pak Kret Municipality", lat: 13.895544, lon: 100.554242, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK013_thumb.jpg", status: "live", zone: "khlong-prapa" },
+  { id: "pk-014", cameraId: "CAMPK014", label: { th: "ศูนย์รีไซเคิลชุมชน 1", en: "Community Recycling Center 1" }, source: "Pak Kret Municipality", lat: 13.889616, lon: 100.517738, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK014_thumb.jpg", status: "live", zone: "community" },
+  { id: "pk-015", cameraId: "CAMPK015", label: { th: "ศูนย์รีไซเคิลชุมชน 2", en: "Community Recycling Center 2" }, source: "Pak Kret Municipality", lat: 13.889700, lon: 100.517800, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK015_thumb.jpg", status: "live", zone: "community" },
+  { id: "pk-016", cameraId: "CAMPK016", label: { th: "ถ.ภูมิเวท โรงเรียน 1", en: "Phumivet Road School 1" }, source: "Pak Kret Municipality", lat: 13.904638, lon: 100.492249, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK016_thumb.jpg", status: "live", zone: "school" },
+  { id: "pk-017", cameraId: "CAMPK017", label: { th: "ถ.ภูมิเวท โรงเรียน 2", en: "Phumivet Road School 2" }, source: "Pak Kret Municipality", lat: 13.904761, lon: 100.492255, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK017_thumb.jpg", status: "live", zone: "school" },
+  { id: "pk-018", cameraId: "CAMPK018", label: { th: "สะพานเมืองทองธานี 1", en: "Muang Thong Thani Bridge 1" }, source: "Pak Kret Municipality", lat: 13.900662, lon: 100.537181, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK018_thumb.jpg", status: "live", zone: "mtt-bridge" },
+  { id: "pk-019", cameraId: "CAMPK019", label: { th: "สะพานเมืองทองธานี 2", en: "Muang Thong Thani Bridge 2" }, source: "Pak Kret Municipality", lat: 13.900991, lon: 100.537920, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK019_thumb.jpg", status: "live", zone: "mtt-bridge" },
+  { id: "pk-020", cameraId: "CAMPK020", label: { th: "สะพานเมืองทองธานี 3", en: "Muang Thong Thani Bridge 3" }, source: "Pak Kret Municipality", lat: 13.901321, lon: 100.538659, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK020_thumb.jpg", status: "live", zone: "mtt-bridge" },
+  { id: "pk-021", cameraId: "CAMPK021", label: { th: "ถ.ศรีสมาน 1", en: "Srisaman Road 1" }, source: "Pak Kret Municipality", lat: 13.934229, lon: 100.563837, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK021_thumb.jpg", status: "live", zone: "srisaman" },
+  { id: "pk-022", cameraId: "CAMPK022", label: { th: "ถ.ศรีสมาน 2", en: "Srisaman Road 2" }, source: "Pak Kret Municipality", lat: 13.934531, lon: 100.563139, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK022_thumb.jpg", status: "live", zone: "srisaman" },
+  { id: "pk-023", cameraId: "CAMPK023", label: { th: "ศูนย์เรียนรู้สิ่งแวดล้อม", en: "Environmental Learning Center" }, source: "Pak Kret Municipality", lat: 13.918865, lon: 100.501040, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK023_thumb.jpg", status: "live", zone: "environment" },
+  { id: "pk-024", cameraId: "CAMPK024", label: { th: "วัดสนามเหนือ ท่าเรือ", en: "Wat Sanam Nua Pier" }, source: "Pak Kret Municipality", lat: 13.921400, lon: 100.498200, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK024_thumb.jpg", status: "live", zone: "riverside" },
+  { id: "pk-025", cameraId: "CAMPK025", label: { th: "ถ.แจ้งวัฒนะ ปากซอย 14", en: "Chaeng Watthana Soi 14" }, source: "Pak Kret Municipality", lat: 13.903200, lon: 100.518900, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK025_thumb.jpg", status: "live", zone: "chaeng-watthana" },
+  { id: "pk-026", cameraId: "CAMPK026", label: { th: "ถ.ติวานนท์ แยกปากเกร็ด", en: "Tiwanon Rd - Pak Kret Junction" }, source: "Pak Kret Municipality", lat: 13.910500, lon: 100.510300, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK026_thumb.jpg", status: "live", zone: "tiwanon" },
+  { id: "pk-027", cameraId: "CAMPK027", label: { th: "ถ.ป๊อปปูล่า เมืองทอง", en: "Popular Rd - MTT" }, source: "Pak Kret Municipality", lat: 13.908300, lon: 100.537500, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK027_thumb.jpg", status: "live", zone: "mtt-popular" },
+  { id: "pk-028", cameraId: "CAMPK028", label: { th: "IMPACT Arena ด้านหน้า", en: "IMPACT Arena Front" }, source: "Pak Kret Municipality", lat: 13.913400, lon: 100.553000, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK028_thumb.jpg", status: "live", zone: "impact" },
+  { id: "pk-029", cameraId: "CAMPK029", label: { th: "ถ.แจ้งวัฒนะ แยกเมืองทอง", en: "Chaeng Watthana - MTT Junction" }, source: "Pak Kret Municipality", lat: 13.906100, lon: 100.530200, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK029_thumb.jpg", status: "live", zone: "mtt-junction" },
+  { id: "pk-030", cameraId: "CAMPK030", label: { th: "ทางเข้าเมืองทอง ถ.แจ้งวัฒนะ", en: "MTT Entrance - Chaeng Watthana" }, source: "Pak Kret Municipality", lat: 13.905800, lon: 100.540100, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK030_thumb.jpg", status: "live", zone: "mtt-entrance" }
+];
 
 export function localize(locale: Locale, value: { th: string; en: string }): string {
   return value[locale];

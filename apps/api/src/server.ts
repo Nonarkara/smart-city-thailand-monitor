@@ -176,6 +176,7 @@ export async function createServer() {
   app.get("/api/impact", async () => store.getOfficialImpact());
   app.get("/api/markets", async () => store.getMarketSnapshot());
   app.get("/api/sources", async () => store.getSources());
+  app.get("/api/command-center", async () => store.getCommandCenter());
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
   app.get("/api/satellite/search", async (request) => {

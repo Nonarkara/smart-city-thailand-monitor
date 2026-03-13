@@ -419,3 +419,120 @@ export interface SatelliteDigest {
   metrics: SatelliteMetric[];
   scenes: SatelliteSceneRecord[];
 }
+
+export type CommandConnectorStatus = "live" | "ready" | "pilot" | "planned";
+export type CommandSignalStatus = "live" | "ready" | "pilot" | "planned";
+
+export interface CommandCenterMetric {
+  id: string;
+  label: LocalizedText;
+  value: string;
+  detail: LocalizedText;
+  tone: "positive" | "neutral" | "warning";
+}
+
+export interface CommandConnector {
+  id: string;
+  title: string;
+  project: string;
+  category: "mobility" | "environment" | "earth-observation" | "reporting" | "media" | "analytics" | "platform";
+  status: CommandConnectorStatus;
+  route?: string;
+  cadence: string;
+  auth: string;
+  detail: LocalizedText;
+  systems: string[];
+}
+
+export interface CameraEventSample {
+  id: string;
+  cameraId: string;
+  zone: LocalizedText;
+  detection: LocalizedText;
+  detail: LocalizedText;
+  severity: "watch" | "alert" | "stable";
+  status: LocalizedText;
+  model: string;
+  minutesAgo: number;
+  confidence: number;
+  targetLayers: string[];
+}
+
+export interface SensorFeedSample {
+  id: string;
+  label: LocalizedText;
+  zone: LocalizedText;
+  category: "traffic" | "parking" | "crowd" | "weather" | "water" | "air";
+  status: CommandSignalStatus;
+  value: string;
+  detail: LocalizedText;
+  cadence: string;
+  sourceLabel: string;
+  targetLayers: string[];
+}
+
+export interface ReporterCaseSample {
+  id: string;
+  ticketNumber: string;
+  problemType: LocalizedText;
+  description: LocalizedText;
+  locationText: string;
+  urgency: "low" | "medium" | "high";
+  status: "received" | "assigned" | "in_progress" | "completed";
+  teamName: string;
+  staffName: string;
+  aiSummary: LocalizedText;
+  matchedCameraId?: string;
+  minutesAgo: number;
+  targetLayers: string[];
+}
+
+export interface WorkflowBoardStatus {
+  id: string;
+  title: LocalizedText;
+  status: "live" | "watch" | "pilot" | "stable";
+  metric: string;
+  detail: LocalizedText;
+}
+
+export interface FusionQueueItem {
+  id: string;
+  title: LocalizedText;
+  detail: LocalizedText;
+  confidence: number;
+}
+
+export interface ExpansionTrack {
+  id: string;
+  title: LocalizedText;
+  stage: "base" | "next" | "future";
+  detail: LocalizedText;
+  systems: string[];
+}
+
+export interface PublicCctvCamera {
+  id: string;
+  cameraId: string;
+  label: LocalizedText;
+  source: string;
+  lat: number;
+  lon: number;
+  imageUrl: string;
+  status: "live" | "offline" | "unknown";
+  zone: string;
+}
+
+export interface CommandCenterSnapshot {
+  updatedAt: string;
+  zoneLabel: LocalizedText;
+  mission: LocalizedText;
+  screenMode: LocalizedText;
+  metrics: CommandCenterMetric[];
+  connectors: CommandConnector[];
+  cameraEvents: CameraEventSample[];
+  sensorFeeds: SensorFeedSample[];
+  reporterCases: ReporterCaseSample[];
+  workflowBoards: WorkflowBoardStatus[];
+  fusionQueue: FusionQueueItem[];
+  expansionTracks: ExpansionTrack[];
+}

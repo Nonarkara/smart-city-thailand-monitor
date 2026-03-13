@@ -5,6 +5,7 @@ import {
   cities as citySeed,
   changePulse as changePulseSeed,
   cloneSeed,
+  createCommandCenterSnapshot,
   createTimeSnapshot,
   decisionQueue as decisionQueueSeed,
   domains as domainSeed,
@@ -25,6 +26,7 @@ import type {
   ActivityLogItem,
   AuditEventRecord,
   BriefingNote,
+  CommandCenterSnapshot,
   ChangePulse,
   DashboardView,
   DecisionQueueItem,
@@ -68,6 +70,7 @@ interface StoreState {
   syncHealth: SyncHealthRecord[];
   lastSyncAt: string;
   latestTime: TimeSnapshot;
+  commandCenter: CommandCenterSnapshot;
 }
 
 export type StoreSnapshot = StoreState;
@@ -146,7 +149,8 @@ function createState(): StoreState {
     mediaFeeds: cloneSeed(mediaFeedSeed),
     syncHealth: [],
     lastSyncAt: new Date().toISOString(),
-    latestTime: createTimeSnapshot()
+    latestTime: createTimeSnapshot(),
+    commandCenter: createCommandCenterSnapshot()
   };
 }
 
@@ -235,6 +239,7 @@ export const store = {
     state.syncHealth = Array.isArray(snapshot.syncHealth) ? cloneSeed(snapshot.syncHealth) : [];
     state.lastSyncAt = typeof snapshot.lastSyncAt === "string" ? snapshot.lastSyncAt : seeded.lastSyncAt;
     state.latestTime = snapshot.latestTime ? cloneSeed(snapshot.latestTime) : seeded.latestTime;
+    state.commandCenter = snapshot.commandCenter ? cloneSeed(snapshot.commandCenter) : seeded.commandCenter;
     state.briefing = mergeSourceBacked(seeded.briefing, snapshot.briefing);
     state.resilience = mergeSourceBacked(seeded.resilience, snapshot.resilience);
     state.changePulse = snapshot.changePulse ? cloneSeed(snapshot.changePulse) : seeded.changePulse;
@@ -441,6 +446,13 @@ export const store = {
 
   getSources() {
     return cloneSeed(state.sources);
+  },
+
+  getCommandCenter() {
+    return cloneSeed({
+      ...state.commandCenter,
+      updatedAt: new Date().toISOString()
+    });
   },
 
   getMapLayers(filters?: { layers?: string[] }) {

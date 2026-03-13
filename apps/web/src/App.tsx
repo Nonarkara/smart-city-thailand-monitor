@@ -4,6 +4,7 @@ import {
   auditTrail as auditTrailSeed,
   changePulse as changePulseSeed,
   cloneSeed,
+  createCommandCenterSnapshot,
   createOverviewSnapshot,
   createTimeSnapshot,
   decisionQueue as decisionQueueSeed,
@@ -26,12 +27,14 @@ import type {
   AssistantQueryRequest,
   AssistantResponse,
   AssistantStatus,
+  CommandCenterSnapshot,
   ChangePulse,
   DashboardView,
   DecisionQueueItem,
   DistrictProfile,
   GeoFeatureRecord,
   Locale,
+  LocalizedText,
   MapFeatureCollection,
   MarketSnapshot,
   MediaFeedItem,
@@ -242,9 +245,366 @@ interface SlicThailandSnapshot {
   topCities: SlicThailandCity[];
 }
 
+interface ImportedLayerReference {
+  id: string;
+  label: LocalizedText;
+  detail: LocalizedText;
+  family: LocalizedText;
+  sourceProject: string;
+  sourceLabel: string;
+  status: "ready" | "planned";
+  color: string;
+}
+
+interface CctvSampleTemplate {
+  id: string;
+  cameraId: string;
+  zone: LocalizedText;
+  detection: LocalizedText;
+  detail: LocalizedText;
+  severity: "watch" | "alert" | "stable";
+  status: LocalizedText;
+  model: string;
+  minutesAgo: number;
+  targetLayers: string[];
+}
+
+interface ReporterSampleTemplate {
+  id: string;
+  ticketNumber: string;
+  problemType: LocalizedText;
+  description: LocalizedText;
+  locationText: string;
+  urgency: "low" | "medium" | "high";
+  status: "received" | "assigned" | "in_progress" | "completed";
+  teamName: string;
+  staffName: string;
+  aiSummary: LocalizedText;
+  matchedCameraId?: string;
+  minutesAgo: number;
+  targetLayers: string[];
+}
+
+const importedLayerReferences: ImportedLayerReference[] = [
+  {
+    id: "phuket-false-color",
+    label: { th: "False color", en: "False Color" },
+    detail: {
+      th: "ชั้นภาพ MODIS false-color จาก Phuket Dashboard สำหรับดูภูมิประเทศและพืชพรรณ",
+      en: "MODIS false-color terrain and vegetation contrast from the Phuket Dashboard overlay catalog."
+    },
+    family: { th: "ฐานภาพ", en: "Base imagery" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "NASA GIBS / MODIS",
+    status: "ready",
+    color: "#8b5cf6"
+  },
+  {
+    id: "phuket-relief",
+    label: { th: "Relief", en: "Relief" },
+    detail: {
+      th: "Blue Marble relief สำหรับอ่านแนวถนน เนิน และขอบเมืองแบบกว้าง",
+      en: "Blue Marble relief framing for roads, ridgelines, and city-edge orientation."
+    },
+    family: { th: "ฐานภาพ", en: "Base imagery" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "NASA GIBS / Blue Marble",
+    status: "ready",
+    color: "#6b7280"
+  },
+  {
+    id: "phuket-signal-heatmap",
+    label: { th: "Signal heatmap", en: "Signal Heatmap" },
+    detail: {
+      th: "heatmap สำหรับจุดสัญญาณและเหตุการณ์ที่ Phuket Dashboard ใช้ในพื้นที่ท่องเที่ยว",
+      en: "Clustered signal heatmap pattern reused from the Phuket Dashboard operations map."
+    },
+    family: { th: "ปฏิบัติการ", en: "Operations" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Incident / reference feeds",
+    status: "ready",
+    color: "#ef4444"
+  },
+  {
+    id: "phuket-thermal-hotspots",
+    label: { th: "Thermal hotspots", en: "Thermal Hotspots" },
+    detail: {
+      th: "จุดความร้อนและ active fire detections จาก overlay catalog ของ Phuket Dashboard",
+      en: "Thermal anomaly and active-fire layer carried over from the Phuket Dashboard catalog."
+    },
+    family: { th: "สิ่งแวดล้อม", en: "Environment" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "NASA FIRMS",
+    status: "ready",
+    color: "#f97316"
+  },
+  {
+    id: "phuket-aqi-heatmap",
+    label: { th: "AQI heatmap", en: "AQI Heatmap" },
+    detail: {
+      th: "surface AQI ที่ทำไว้ใน Phuket Dashboard สำหรับดูแรงกดดันอากาศแบบเชิงพื้นที่",
+      en: "AQI surface carried over from the Phuket Dashboard for spatial air-quality context."
+    },
+    family: { th: "คุณภาพอากาศ", en: "Air quality" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Open-Meteo",
+    status: "ready",
+    color: "#0ea5e9"
+  },
+  {
+    id: "phuket-pm25-heatmap",
+    label: { th: "PM2.5 heatmap", en: "PM2.5 Heatmap" },
+    detail: {
+      th: "overlay PM2.5 hotspot จาก Phuket Dashboard สำหรับ smoke pressure และ roadside pollution",
+      en: "PM2.5 hotspot surface from the Phuket Dashboard for smoke pressure and roadside pollution."
+    },
+    family: { th: "คุณภาพอากาศ", en: "Air quality" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Open-Meteo",
+    status: "ready",
+    color: "#7c3aed"
+  },
+  {
+    id: "phuket-rainfall-shifts",
+    label: { th: "Rainfall shifts", en: "Rainfall Shifts" },
+    detail: {
+      th: "จุด anomaly ฝนเฉพาะพื้นที่สำหรับการตีความน้ำขังและการเดินทาง",
+      en: "Localized rainfall anomaly layer for standing water and mobility interpretation."
+    },
+    family: { th: "อากาศ", en: "Weather" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Rainfall cache",
+    status: "ready",
+    color: "#2563eb"
+  },
+  {
+    id: "phuket-movement",
+    label: { th: "Visitor movement", en: "Visitor Movement" },
+    detail: {
+      th: "trace การเคลื่อนที่ผู้ใช้งาน / นักท่องเที่ยวจาก Phuket Dashboard",
+      en: "Movement traces between hubs and venues reused from the Phuket Dashboard."
+    },
+    family: { th: "การเดินทาง", en: "Mobility" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Movement cache",
+    status: "ready",
+    color: "#14b8a6"
+  },
+  {
+    id: "phuket-province-labels",
+    label: { th: "Province labels", en: "Province Labels" },
+    detail: {
+      th: "ป้ายจังหวัดและ boundary markers สำหรับใช้เป็น reference layer",
+      en: "Province labels and boundary markers for quick geographic orientation."
+    },
+    family: { th: "อ้างอิง", en: "Reference" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "Reference data",
+    status: "ready",
+    color: "#475569"
+  },
+  {
+    id: "phuket-flight-paths",
+    label: { th: "Flight paths", en: "Flight Paths" },
+    detail: {
+      th: "flight path และ aircraft position layer ที่พร้อมนำ logic มาปรับใช้",
+      en: "Flight-path and aircraft-position logic ready to adapt into this monitor."
+    },
+    family: { th: "การเดินทาง", en: "Mobility" },
+    sourceProject: "Phuket Dashboard",
+    sourceLabel: "OpenSky",
+    status: "planned",
+    color: "#f59e0b"
+  }
+];
+
+const cctvSampleTemplates: CctvSampleTemplate[] = [
+  {
+    id: "cctv-impact-dropoff",
+    cameraId: "MTT-CAM-01",
+    zone: { th: "Impact Challenger drop-off", en: "Impact Challenger drop-off" },
+    detection: { th: "จอดแช่ผิดกฎหมาย", en: "Illegal Parking" },
+    detail: {
+      th: "รถจอดค้างในช่องรับส่งเกินเวลาที่กำหนดและเริ่มกีดขวางรถรับส่ง",
+      en: "Vehicle dwell time passed the curb limit and is blocking the shuttle loop."
+    },
+    severity: "alert",
+    status: { th: "ส่งต่อทีมจราจร", en: "Escalate to traffic team" },
+    model: "Parking Vision v0.8",
+    minutesAgo: 2,
+    targetLayers: ["itic-traffic", "projects"]
+  },
+  {
+    id: "cctv-beehive-incident",
+    cameraId: "MTT-CAM-02",
+    zone: { th: "Beehive connector", en: "Beehive connector" },
+    detection: { th: "เหตุเฉี่ยวชนเล็กน้อย", en: "Minor Incident" },
+    detail: {
+      th: "พบการหยุดรถผิดปกติหลังฝนและ crowd movement เริ่มสะสม",
+      en: "Short stop and spillback pattern suggest a minor roadside incident after rain."
+    },
+    severity: "watch",
+    status: { th: "รอตรวจภาพย้อนหลัง", en: "Review clip" },
+    model: "Incident Sense v0.5",
+    minutesAgo: 6,
+    targetLayers: ["itic-traffic", "weather"]
+  },
+  {
+    id: "cctv-cosmo-sidewalk",
+    cameraId: "MTT-CAM-03",
+    zone: { th: "Cosmo Bazaar frontage", en: "Cosmo Bazaar frontage" },
+    detection: { th: "คนล้นทางเท้า", en: "Pedestrian Spillover" },
+    detail: {
+      th: "พื้นที่ขายของล้นลงมาที่ทางเท้าและ crowd lane เริ่มเบียดแนวจอดรถ",
+      en: "Pedestrian spillover is compressing the walkway and pushing movement into the curb lane."
+    },
+    severity: "watch",
+    status: { th: "เตรียมผูกกับ reporter", en: "Match with reporter feed" },
+    model: "Crowd Flow v0.4",
+    minutesAgo: 11,
+    targetLayers: ["bangkok-passages", "itic-traffic"]
+  },
+  {
+    id: "cctv-p2-wrong-way",
+    cameraId: "MTT-CAM-04",
+    zone: { th: "P2 feeder road", en: "P2 feeder road" },
+    detection: { th: "รถย้อนศร", en: "Wrong-way Vehicle" },
+    detail: {
+      th: "รถจักรยานยนต์เข้าผิดทิศในช่วงสัญญาณจราจรชะลอตัว",
+      en: "Motorbike entered the feeder road against flow during a congestion wave."
+    },
+    severity: "alert",
+    status: { th: "ส่งเข้าบอร์ดเหตุการณ์", en: "Send to incident board" },
+    model: "Road Behavior v0.6",
+    minutesAgo: 18,
+    targetLayers: ["itic-traffic", "weather", "disaster"]
+  },
+  {
+    id: "cctv-lakefront-smoke",
+    cameraId: "MTT-CAM-05",
+    zone: { th: "Lakefront gate", en: "Lakefront gate" },
+    detection: { th: "ควัน / ความร้อนผิดปกติ", en: "Smoke / Thermal Alert" },
+    detail: {
+      th: "กลุ่มควันบางและแหล่งความร้อนเล็กถูกตั้งเป็น watch sample สำหรับเชื่อมระบบ EO ภายหลัง",
+      en: "Light smoke and a small heat signature are staged as a future EO-linked watch sample."
+    },
+    severity: "stable",
+    status: { th: "ตัวอย่างสำหรับต่อ EO", en: "EO-ready sample" },
+    model: "Thermal Watch v0.3",
+    minutesAgo: 27,
+    targetLayers: ["weather", "resilience", "disaster"]
+  }
+];
+
+const reporterSampleTemplates: ReporterSampleTemplate[] = [
+  {
+    id: "report-road",
+    ticketNumber: "SCTH-4921",
+    problemType: { th: "ถนน", en: "Road" },
+    description: {
+      th: "หลุมถนนตรงแนวรถรับส่งหน้า Challenger Hall ทำให้รถเบี่ยงหลบกะทันหัน",
+      en: "Road surface damage near the Challenger shuttle lane is causing sudden swerves."
+    },
+    locationText: "Impact Challenger service lane",
+    urgency: "high",
+    status: "assigned",
+    teamName: "Road Ops",
+    staffName: "Field Team A",
+    aiSummary: {
+      th: "AI summary: พื้นผิวเสียหายและมีความเสี่ยงต่อรถที่ชะลอรับส่ง",
+      en: "AI summary: damaged pavement with elevated risk for drop-off traffic."
+    },
+    minutesAgo: 14,
+    targetLayers: ["itic-traffic", "projects"]
+  },
+  {
+    id: "report-flood",
+    ticketNumber: "SCTH-4927",
+    problemType: { th: "น้ำท่วม", en: "Flooding" },
+    description: {
+      th: "น้ำขังหน้าท่อระบายน้ำฝั่ง lakefront หลังฝน ทำให้รถสองแถวเลี่ยงเส้นทาง",
+      en: "Standing water near the lakefront drain is diverting local shuttle movement."
+    },
+    locationText: "Lakefront drain pocket",
+    urgency: "high",
+    status: "received",
+    teamName: "Drainage Ops",
+    staffName: "Pending assignment",
+    aiSummary: {
+      th: "AI summary: จุดน้ำขังสัมพันธ์กับฝนสะสมและท่อระบายช้า",
+      en: "AI summary: drainage chokepoint likely linked to recent rainfall accumulation."
+    },
+    matchedCameraId: "MTT-CAM-05",
+    minutesAgo: 22,
+    targetLayers: ["water", "weather", "resilience"]
+  },
+  {
+    id: "report-sidewalk",
+    ticketNumber: "SCTH-4930",
+    problemType: { th: "ทางเท้า", en: "Sidewalk" },
+    description: {
+      th: "พื้นที่ขายของล้นลงทางเท้าเชื่อม Beehive ทำให้คนต้องลงมาเดินที่ขอบถนน",
+      en: "Vendor spillover is pushing pedestrians from the Beehive walkway into the curb lane."
+    },
+    locationText: "Beehive connector walkway",
+    urgency: "medium",
+    status: "in_progress",
+    teamName: "Public Space",
+    staffName: "Officer Nicha",
+    aiSummary: {
+      th: "AI summary: crowding and obstruction align with walkway pinch point",
+      en: "AI summary: crowding and obstruction align with a walkway pinch point."
+    },
+    matchedCameraId: "MTT-CAM-03",
+    minutesAgo: 36,
+    targetLayers: ["bangkok-passages", "itic-traffic"]
+  },
+  {
+    id: "report-lighting",
+    ticketNumber: "SCTH-4933",
+    problemType: { th: "ไฟฟ้า", en: "Lighting" },
+    description: {
+      th: "ไฟส่องสว่างดับเป็นช่วงบริเวณที่จอดรถด้าน Cosmo ทำให้มองเห็นป้ายยากตอนค่ำ",
+      en: "Intermittent lighting outage at the Cosmo parking edge is reducing nighttime visibility."
+    },
+    locationText: "Cosmo parking edge",
+    urgency: "medium",
+    status: "received",
+    teamName: "Electrical Unit",
+    staffName: "Pending assignment",
+    aiSummary: {
+      th: "AI summary: lighting coverage gap, likely maintenance issue",
+      en: "AI summary: lighting coverage gap with likely maintenance root cause."
+    },
+    minutesAgo: 58,
+    targetLayers: ["projects", "news"]
+  },
+  {
+    id: "report-waste",
+    ticketNumber: "SCTH-4918",
+    problemType: { th: "ขยะ", en: "Waste" },
+    description: {
+      th: "ถังขยะล้นในจุดรวมอาหารริมทะเลสาบแต่ทีมเก็บกวาดเข้าจัดการแล้ว",
+      en: "Overflowing waste near the lakeside food cluster has already been cleared."
+    },
+    locationText: "Lake food cluster",
+    urgency: "low",
+    status: "completed",
+    teamName: "Sanitation",
+    staffName: "Night Shift Crew",
+    aiSummary: {
+      th: "AI summary: sanitation issue resolved after peak-hour cleanup",
+      en: "AI summary: sanitation issue resolved after peak-hour cleanup."
+    },
+    minutesAgo: 94,
+    targetLayers: ["projects", "news"]
+  }
+];
+
 const operationalLayerToggleIds = [
   "smart-city-thailand",
   "bangkok-passages",
+  "cctv-cameras",
   "weather",
   "pollution",
   "itic-traffic",
@@ -1365,7 +1725,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? "bangkok";
+  const city = searchParams.get("city") ?? "muang-thong-thani";
   const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
@@ -1428,6 +1788,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     mapFeatureSeed.filter((collection) => layers.includes(collection.layerId) || collection.layerId === "bangkok-passages")
   );
   const mediaFeedsFallback = cloneSeed(mediaFeedSeed);
+  const commandCenterFallback = createCommandCenterSnapshot();
   const timeFallback = createTimeSnapshot();
 
   const overviewQuery = useQuery({
@@ -1613,6 +1974,19 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const commandCenterQuery = useQuery({
+    queryKey: ["command-center"],
+    queryFn: () =>
+      fetchFromApi<CommandCenterSnapshot>(
+        "/api/command-center",
+        commandCenterFallback,
+        (value) => isObject(value) && Array.isArray(value.connectors) && Array.isArray(value.cameraEvents)
+      ),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const timeQuery = useQuery({
     queryKey: ["time"],
     queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", timeFallback, isTimeSnapshotPayload),
@@ -1645,6 +2019,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     satelliteDigest: satelliteDigestQuery.data ?? createSatelliteDigestFallback(),
     mapFeatures: safeArray(mapFeaturesQuery.data, mapFeaturesFallback),
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
+    commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback)
   };
 }
@@ -1707,6 +2082,7 @@ function DashboardPage() {
     satelliteDigest,
     mapFeatures,
     mediaFeeds,
+    commandCenter,
     time
   } = useDashboardData(searchParams);
 
@@ -2471,6 +2847,145 @@ function DashboardPage() {
       }
     }
   ];
+  const workspaceTitle = lang === "th" ? "Muang Thong Thani Command Center" : "Muang Thong Thani Command Center";
+  const workspaceNarrative =
+    localize(lang, commandCenter.screenMode);
+  const reporterStatusMeta = {
+    received: {
+      label: lang === "th" ? "Received" : "Received",
+      tone: "watch",
+      detail: lang === "th" ? "รอทีมรับเรื่อง" : "Waiting for ownership"
+    },
+    assigned: {
+      label: lang === "th" ? "Assigned" : "Assigned",
+      tone: "pilot",
+      detail: lang === "th" ? "มีเจ้าของแล้ว" : "Owner assigned"
+    },
+    in_progress: {
+      label: lang === "th" ? "In progress" : "In Progress",
+      tone: "live",
+      detail: lang === "th" ? "กำลังลงพื้นที่" : "Fieldwork underway"
+    },
+    completed: {
+      label: lang === "th" ? "Completed" : "Completed",
+      tone: "stable",
+      detail: lang === "th" ? "ปิดงานแล้ว" : "Closed loop"
+    }
+  } as const;
+  const cctvSamples = commandCenter.cameraEvents.map((item) => ({
+    ...item,
+    capturedAt: new Date(Date.now() - item.minutesAgo * 60000).toISOString()
+  }));
+  const reporterSamples = commandCenter.reporterCases.map((item) => ({
+    ...item,
+    createdAt: new Date(Date.now() - item.minutesAgo * 60000).toISOString()
+  }));
+  const sensorFeeds = commandCenter.sensorFeeds;
+  const openReporterCount = reporterSamples.filter((item) => item.status !== "completed").length;
+  const escalatedCctvCount = cctvSamples.filter((item) => item.severity === "alert").length;
+  const integrationBoards = commandCenter.workflowBoards.map((item) => ({
+    ...item,
+    title: localize(lang, item.title),
+    detail: localize(lang, item.detail)
+  }));
+  const mergeQueue = commandCenter.fusionQueue.map((item) => ({
+    ...item,
+    title: localize(lang, item.title),
+    detail: localize(lang, item.detail)
+  }));
+  const commandConnectors = commandCenter.connectors;
+  const connectorReadyCount = commandConnectors.filter((item) => item.status === "live" || item.status === "ready").length;
+  const expansionTracks = commandCenter.expansionTracks;
+  const layerRailSections = [
+    {
+      id: "base",
+      title: lang === "th" ? "Map views" : "Map Views",
+      note: lang === "th" ? "ถนน ภาพถ่าย และฐานภาพที่เปิดใช้ได้ทันที" : "Roads, aerial, and base imagery you can switch immediately.",
+      items: [
+        {
+          id: "base-roads",
+          label: lang === "th" ? "Roads" : "Roads",
+          detail: lang === "th" ? "OpenStreetMap labels และโครงข่ายถนน" : "OpenStreetMap labels and road network.",
+          source: "Built in",
+          state: basemap === "atlas" ? "active" : "live",
+          color: "#6b7280",
+          onClick: () => updateParam("basemap", "atlas")
+        },
+        {
+          id: "base-aerial",
+          label: lang === "th" ? "Aerial" : "Aerial",
+          detail: lang === "th" ? "ภาพถ่ายทางอากาศสำหรับบริบทพื้นที่จริง" : "Aerial imagery for built-form and terrain context.",
+          source: "ArcGIS",
+          state: basemap === "satellite" ? "active" : "live",
+          color: "#94a3b8",
+          onClick: () => updateParam("basemap", "satellite")
+        },
+        {
+          id: "base-true-color",
+          label: lang === "th" ? "True Color" : "True Color",
+          detail: lang === "th" ? "ภาพจริงจาก NASA GIBS" : "NASA GIBS true-color imagery.",
+          source: "Smart City Monitor",
+          state: layers.includes("satellite-imagery") ? "active" : "live",
+          color: "#cbd5e1",
+          onClick: () => toggleSatelliteLayer("satellite-imagery")
+        },
+        {
+          id: "base-night-lights",
+          label: lang === "th" ? "Night Lights" : "Night Lights",
+          detail: lang === "th" ? "ความหนาแน่นแสงกลางคืน" : "Night-light density for urban activity.",
+          source: "Smart City Monitor",
+          state: layers.includes("satellite-night-lights") ? "active" : "live",
+          color: "#8b5cf6",
+          onClick: () => toggleSatelliteLayer("satellite-night-lights")
+        }
+      ]
+    },
+    {
+      id: "operations",
+      title: lang === "th" ? "Live operations layers" : "Live Operations Layers",
+      note: lang === "th" ? "ชั้นข้อมูลหลักที่ผู้ใช้เปิดดูได้ตอนนี้" : "Core layers already wired into this monitor.",
+      items: operationalLayerOptions.map((item) => ({
+        id: item.id,
+        label: localize(lang, item.label),
+        detail: item.kind === "signal" ? (lang === "th" ? "สัญญาณปฏิบัติการสด" : "Live operational signal.") : (lang === "th" ? "ข้อมูลอ้างอิงบนแผนที่" : "Reference layer on the map."),
+        source: "Smart City Monitor",
+        state: layers.includes(item.id) ? "active" : "live",
+        color: item.color,
+        onClick: () => toggleLayer(item.id)
+      }))
+    },
+    {
+      id: "earth-observation",
+      title: lang === "th" ? "Earth observation" : "Earth Observation",
+      note: lang === "th" ? "พืชพรรณ ฝน ละอองลอย และบริบทดาวเทียม" : "Vegetation, rainfall, aerosol, and satellite context.",
+      items: satelliteToggleOptions.map((item) => ({
+        id: item.id,
+        label: localize(lang, item.label),
+        detail: localize(lang, item.detail),
+        source: "Smart City Monitor",
+        state: layers.includes(item.id) ? "active" : "live",
+        color: item.color,
+        onClick: () => toggleSatelliteLayer(item.id)
+      }))
+    },
+    {
+      id: "imported",
+      title: lang === "th" ? "Imported from other projects" : "Imported From Other Projects",
+      note:
+        lang === "th"
+          ? "layer vocab ที่หยิบมาจาก Phuket Dashboard เพื่อให้ right rail เป็น shared catalog"
+          : "Overlay vocabulary brought in from the Phuket Dashboard so this right rail becomes a shared catalog.",
+      items: importedLayerReferences.map((item) => ({
+        id: item.id,
+        label: localize(lang, item.label),
+        detail: localize(lang, item.detail),
+        source: `${item.sourceProject} • ${item.sourceLabel}`,
+        state: item.status,
+        color: item.color
+      }))
+    }
+  ] as const;
+  const catalogedLayerCount = layerRailSections.reduce((total, section) => total + section.items.length, 0);
   const drawerCity = overview.cities.find((item) => item.slug === opsDrawerState?.citySlug) ?? selectedCity;
   const drawerProjects = projects.filter((project) => project.citySlug === drawerCity.slug).slice(0, 3);
   const drawerNews = news
@@ -2927,7 +3442,7 @@ function DashboardPage() {
           <img src="/mdes.png" alt="MDES" className="brand-logo secondary" />
           <div className="brand-copy">
             <p className="eyebrow">{copy.brandEyebrow}</p>
-            <h1>{copy.title}</h1>
+            <h1>{workspaceTitle}</h1>
             <p className="brand-subline">{copy.subtitle}</p>
           </div>
         </div>
@@ -3507,7 +4022,7 @@ function DashboardPage() {
         </>
       ) : null}
 
-      <main className="dashboard-shell">
+      <main className="dashboard-shell workspace-shell">
         <section className="card command-card" id="command-bar">
           <div className="card-header">
             <span className="eyebrow">{uiText.commandBar}</span>
@@ -3863,6 +4378,321 @@ function DashboardPage() {
             </div>
           </div>
         </section>
+
+        <section className="card workspace-story command-center-hero">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "Command fabric" : "Command Fabric"}</span>
+            <span className="status-pill">{formatUtcClock(commandCenter.updatedAt)} UTC</span>
+          </div>
+          <div className="command-center-lead">
+            <div className="workspace-story-copy command-center-copy">
+              <h2>{workspaceTitle}</h2>
+              <p>{localize(lang, commandCenter.mission)}</p>
+              <p>{workspaceNarrative}</p>
+              <div className="pill-list compact">
+                <span className="stack-pill">{localize(lang, commandCenter.zoneLabel)}</span>
+                <span className="stack-pill">{`${connectorReadyCount}/${commandConnectors.length} ${lang === "th" ? "connectors ready" : "connectors ready"}`}</span>
+                <span className="stack-pill">{`${sensorFeeds.length} ${lang === "th" ? "sensor slots" : "sensor slots"}`}</span>
+                <span className="stack-pill">{`${openReporterCount} ${lang === "th" ? "open reports" : "open reports"}`}</span>
+              </div>
+            </div>
+            <div className="workspace-stat-grid command-metric-grid">
+              {commandCenter.metrics.map((metric) => (
+                <article key={metric.id} className={`workspace-stat command-metric-card tone-${metric.tone}`}>
+                  <span className="eyebrow">{localize(lang, metric.label)}</span>
+                  <strong>{metric.value}</strong>
+                  <small>{localize(lang, metric.detail)}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="runway-grid">
+            {expansionTracks.map((track) => (
+              <article key={track.id} className={`runway-card stage-${track.stage}`}>
+                <div className="stack-title">
+                  <strong>{localize(lang, track.title)}</strong>
+                  <span className={`status-tag ${track.stage === "base" ? "live" : track.stage === "next" ? "pilot" : "manual"}`}>
+                    {track.stage}
+                  </span>
+                </div>
+                <p>{localize(lang, track.detail)}</p>
+                <div className="pill-list compact">
+                  {track.systems.map((item) => (
+                    <span key={`${track.id}-${item}`} className="stack-pill">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <div className="workspace-grid command-center-grid">
+          <section className="card workspace-module camera-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "CCTV AI samples" : "CCTV AI Samples"}</span>
+              <span className="status-pill">{lang === "th" ? "camera lanes" : "camera lanes"}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "ตัวอย่างกล้องพร้อม schema ที่ต่อสู่ระบบจริงได้ทันที" : "Camera lanes staged with contracts ready for the live feed"}</strong>
+              <small>
+                {lang === "th"
+                  ? "แต่ละการ์ดมี camera id, model, confidence, event time และ target layers เพื่อให้ต่อเข้ากับ inference service ได้ภายหลัง"
+                  : "Each card carries camera id, model, confidence, event time, and target layers so we can wire it into an inference service later."}
+              </small>
+            </div>
+            <div className="cctv-grid">
+              {cctvSamples.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`cctv-card severity-${item.severity}`}
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.detail), item.targetLayers);
+                  }}
+                >
+                  <div className="cctv-head">
+                    <div>
+                      <span className="eyebrow">{item.cameraId}</span>
+                      <strong>{localize(lang, item.detection)}</strong>
+                    </div>
+                    <span className={`status-tag ${item.severity === "alert" ? "delayed" : item.severity === "watch" ? "watch" : "live"}`}>
+                      {item.severity}
+                    </span>
+                  </div>
+                  <div className="signal-thumb">
+                    <span>{localize(lang, item.zone)}</span>
+                  </div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="signal-meta">
+                    <span>{`${uiText.confidence} ${formatConfidence(item.confidence)}`}</span>
+                    <span>{item.model}</span>
+                    <span>{`${formatUtcClock(item.capturedAt)} UTC`}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    <span className="stack-pill">{localize(lang, item.status)}</span>
+                    {item.targetLayers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                        layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                      return (
+                        <span key={`${item.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module sensor-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "Sensor spine" : "Sensor Spine"}</span>
+              <span className="status-pill">{lang === "th" ? "field slots" : "field slots"}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "จัดพื้นที่สำหรับ traffic, crowd, parking, water, และ air nodes" : "Reserved space for traffic, crowd, parking, water, and air nodes"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ส่วนนี้คือฐานหลังบ้านสำหรับรับ sensor buses และอ่านคู่กับ layers บนแผนที่"
+                  : "This is the backend-facing spine for sensor buses that should read directly against the map layers."}
+              </small>
+            </div>
+            <div className="sensor-feed-list">
+              {sensorFeeds.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`sensor-feed-card status-${item.status}`}
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: item.category === "water" ? "satellite" : "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.detail), item.targetLayers);
+                  }}
+                >
+                  <div className="sensor-feed-head">
+                    <div>
+                      <span className="eyebrow">{item.sourceLabel}</span>
+                      <strong>{localize(lang, item.label)}</strong>
+                    </div>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "ready" ? "pilot" : item.status === "pilot" ? "watch" : "manual"}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <div className="sensor-feed-value">{item.value}</div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="signal-meta">
+                    <span>{localize(lang, item.zone)}</span>
+                    <span>{item.cadence}</span>
+                    <span>{item.category}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    {item.targetLayers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                        layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                      return (
+                        <span key={`${item.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module reporter-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "City reporter issues" : "City Reporter Issues"}</span>
+              <span className="status-pill">city-reporter-line-bot</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "ดึง status model และ ticket vocabulary มาจาก city reporter bot" : "Status model and ticket vocabulary brought over from the city reporter bot"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ใช้ received, assigned, in_progress, completed เหมือน dashboard ต้นทาง เพื่อให้สองระบบอ่านสถานะตรงกัน"
+                  : "Using `received`, `assigned`, `in_progress`, and `completed` so both systems share the same operational language."}
+              </small>
+            </div>
+            <div className="report-list">
+              {reporterSamples.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="report-card"
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.aiSummary), item.targetLayers);
+                  }}
+                >
+                  <div className="report-top">
+                    <div>
+                      <span className="eyebrow">{item.ticketNumber}</span>
+                      <strong>{localize(lang, item.problemType)}</strong>
+                    </div>
+                    <span className={`status-tag ${reporterStatusMeta[item.status].tone}`}>{reporterStatusMeta[item.status].label}</span>
+                  </div>
+                  <p>{localize(lang, item.description)}</p>
+                  <div className="report-meta">
+                    <span>{item.locationText}</span>
+                    <span>{item.teamName}</span>
+                    <span>{item.staffName}</span>
+                    <span>{`${formatUtcClock(item.createdAt)} UTC`}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    <span className={`urgency-pill urgency-${item.urgency}`}>{item.urgency}</span>
+                    <span className="stack-pill">{reporterStatusMeta[item.status].detail}</span>
+                    {item.matchedCameraId ? <span className="stack-pill">{item.matchedCameraId}</span> : null}
+                  </div>
+                  <small>{localize(lang, item.aiSummary)}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module integration-fabric-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "Imported API fabric" : "Imported API Fabric"}</span>
+              <span className="status-pill">{`${connectorReadyCount}/${commandConnectors.length}`}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "สรุป endpoint และ logic ที่ยกมาจากโปรเจกต์อื่น" : "Endpoint and logic inventory brought in from your other projects"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ชั้นนี้ทำให้ command center มีที่เผื่อสำหรับการเชื่อมต่อระยะยาว ไม่ใช่แค่ mock cards"
+                  : "This turns the command center into a long-lived integration surface, not just a set of mock cards."}
+              </small>
+            </div>
+            <div className="connector-grid">
+              {commandConnectors.map((item) => (
+                <article key={item.id} className={`connector-card status-${item.status}`}>
+                  <div className="connector-head">
+                    <div>
+                      <span className="eyebrow">{item.project}</span>
+                      <strong>{item.title}</strong>
+                    </div>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "ready" ? "pilot" : item.status === "pilot" ? "watch" : "manual"}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="connector-meta">
+                    <span>{item.route ?? (lang === "th" ? "reserved bridge" : "reserved bridge")}</span>
+                    <span>{item.cadence}</span>
+                    <span>{item.auth}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    {item.systems.map((system) => (
+                      <span key={`${item.id}-${system}`} className="stack-pill">
+                        {system}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module boards-lane">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "AI board status" : "AI Board Status"}</span>
+              <span className="status-pill">{lang === "th" ? "integration layer" : "integration layer"}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "บอร์ดสถานะที่เตรียมรวม CCTV กับ city reporter เข้าด้วยกัน" : "Board states staged to unify CCTV and city-reporter workflows"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ส่วนนี้ทำหน้าที่เป็น bridge ระหว่าง AI detections, public reports, และ command decisions"
+                  : "This lane acts as the bridge between AI detections, public reports, and command decisions."}
+              </small>
+            </div>
+            <div className="board-list">
+              {integrationBoards.map((item) => (
+                <article key={item.id} className={`board-card ${item.status}`}>
+                  <div className="stack-title">
+                    <strong>{item.title}</strong>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "watch" ? "watch" : item.status === "pilot" ? "active" : "manual"}`}>{item.status}</span>
+                  </div>
+                  <div className="board-metric">{item.metric}</div>
+                  <small>{item.detail}</small>
+                </article>
+              ))}
+            </div>
+            <div className="merge-list">
+              <div className="stack-title">
+                <strong>{lang === "th" ? "Merge queue" : "Merge Queue"}</strong>
+                <span className="status-pill">{mergeQueue.length}</span>
+              </div>
+              {mergeQueue.map((item) => (
+                <div key={item.id} className="merge-item">
+                  <strong>{item.title}</strong>
+                  <p>{item.detail}</p>
+                  <small>{`${uiText.confidence} ${formatConfidence(item.confidence)}`}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="dashboard-board">
           <section className="card hero-card" id="pulse">
@@ -5098,6 +5928,63 @@ function DashboardPage() {
           </div>
         </section>
       </main>
+
+      <aside className="context-rail" aria-label={lang === "th" ? "Layer catalog" : "Layer catalog"}>
+        <div className="context-rail-header">
+          <span className="eyebrow">{lang === "th" ? "Layer catalog" : "Layer Catalog"}</span>
+          <strong>{lang === "th" ? "Right rail for roads, vegetation, traffic, and imported overlays" : "Right rail for roads, vegetation, traffic, and imported overlays"}</strong>
+          <small>
+            {lang === "th"
+              ? `${layers.length} live now • ${catalogedLayerCount} cataloged`
+              : `${layers.length} live now • ${catalogedLayerCount} cataloged`}
+          </small>
+        </div>
+
+        {layerRailSections.map((section) => (
+          <section key={section.id} className="context-rail-section">
+            <div className="context-rail-section-head">
+              <div>
+                <span className="eyebrow">{section.title}</span>
+                <small>{section.note}</small>
+              </div>
+              <span className="status-pill">{section.items.length}</span>
+            </div>
+            <div className="layer-rail-list">
+              {section.items.map((item) => {
+                const interactive = "onClick" in item && typeof item.onClick === "function";
+                const content = (
+                  <>
+                    <div className="layer-rail-title">
+                      <div className="side-toggle-row">
+                        <span className="swatch" style={{ background: item.color }} />
+                        <strong>{item.label}</strong>
+                      </div>
+                      <span className={`layer-state state-${item.state}`}>{item.state === "active" ? "ON" : item.state}</span>
+                    </div>
+                    <p>{item.detail}</p>
+                    <small className="layer-source">{item.source}</small>
+                  </>
+                );
+
+                return interactive ? (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={item.state === "active" ? "layer-rail-item active" : "layer-rail-item"}
+                    onClick={item.onClick}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <article key={item.id} className="layer-rail-item passive">
+                    {content}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </aside>
 
       <footer className="bottombar">
         <div className="ticker">

@@ -1,4 +1,4 @@
-import { localize } from "@smart-city/shared";
+import { localize, publicCctvCameras } from "@smart-city/shared";
 import type {
   DashboardView,
   DistrictProfile,
@@ -6,7 +6,8 @@ import type {
   Locale,
   MapFeatureCollection,
   NewsItem,
-  ProjectRecord
+  ProjectRecord,
+  PublicCctvCamera
 } from "@smart-city/shared";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
@@ -68,7 +69,8 @@ type LayerId =
   | "satellite-sea-surface-temp"
   | "satellite-night-lights"
   | "disaster"
-  | "itic-traffic";
+  | "itic-traffic"
+  | "cctv-cameras";
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
 type SatelliteLayerId =
@@ -174,7 +176,8 @@ const layerColors: Record<LayerId, string> = {
   "satellite-sea-surface-temp": "#14b8a6",
   "satellite-night-lights": "#8b5cf6",
   disaster: "#cf5c00",
-  "itic-traffic": "#ef4444"
+  "itic-traffic": "#ef4444",
+  "cctv-cameras": "#34d399"
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = [
@@ -448,6 +451,44 @@ function renderDisaster(target: L.LayerGroup, locale: Locale) {
 
   polygon.bindTooltip(locale === "th" ? "โซนเฝ้าระวังภัยพิบัติ" : "Disaster monitoring zone");
   polygon.addTo(target);
+}
+
+function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: PublicCctvCamera[]) {
+  cameras.forEach((cam) => {
+    const icon = L.divIcon({
+      className: "cctv-marker-dot",
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    const marker = L.marker([cam.lat, cam.lon], { icon });
+
+    const label = localize(locale, cam.label);
+    marker.bindTooltip(label, { direction: "top", offset: [0, -10] });
+
+    const popupHtml = `
+      <div style="display:grid;gap:6px;min-width:220px;max-width:280px;">
+        <strong style="font-size:13px;">${label}</strong>
+        <img
+          src="${cam.imageUrl}"
+          alt="${label}"
+          style="width:100%;border-radius:6px;aspect-ratio:16/9;object-fit:cover;background:#111;"
+          loading="lazy"
+          onerror="this.style.display='none'"
+        />
+        <div style="display:flex;gap:8px;align-items:center;font-size:11px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cam.status === "live" ? "#34d399" : cam.status === "offline" ? "#f87171" : "#fbbf24"};"></span>
+          <span>${cam.status === "live" ? (locale === "th" ? "สด" : "Live") : cam.status === "offline" ? (locale === "th" ? "ออฟไลน์" : "Offline") : (locale === "th" ? "ไม่ทราบ" : "Unknown")}</span>
+          <span style="opacity:0.5;">•</span>
+          <span>${cam.source}</span>
+        </div>
+        <small style="opacity:0.6;">${cam.cameraId} • ${cam.zone}</small>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 300, minWidth: 220 });
+    marker.addTo(target);
+  });
 }
 
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
@@ -929,8 +970,7 @@ export default function InteractiveMap({
     }
 
     const city = cityCenters[citySlug] ?? cityCenters.bangkok;
-    // For Muang Thong Thani, zoom out slightly to show Greater Bangkok context
-    const zoom = citySlug === "muang-thong-thani" ? 11 : (view === "city" ? 10 : 8);
+    const zoom = citySlug === "muang-thong-thani" ? 14 : (view === "city" ? 10 : 8);
     map.setView([city.lat, city.lon], zoom);
   }, [view, citySlug, district, layers, bangkokBoundsKey, districtBoundsKey, nationalBoundsKey]);
 
@@ -944,6 +984,10 @@ export default function InteractiveMap({
     const activeLayers = new Set(layers as LayerId[]);
 
     renderFeatureCollections(overlay, activeLayers, featureCollections, domainSlug);
+
+    if (activeLayers.has("cctv-cameras")) {
+      renderCctvCameras(overlay, locale, publicCctvCameras);
+    }
 
     const map = mapRef.current;
     if (map) {
@@ -969,7 +1013,7 @@ export default function InteractiveMap({
         }
       });
     }
-  }, [domainSlug, featureCollections, layerKey, overlayStyleKey, overlayStyles]);
+  }, [domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles]);
 
   useEffect(() => {
     const map = mapRef.current;
