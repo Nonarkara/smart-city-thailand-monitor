@@ -3337,16 +3337,6 @@ textarea:focus {
   border-top: 1px solid var(--line);
 }
 
-.copyright-links a {
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.copyright-links a:hover {
-  color: var(--ink);
-  text-decoration: underline;
-}
-
 .admin-shell {
   background: var(--bg);
 }
@@ -3961,6 +3951,10 @@ textarea:focus {
   .bottomstrip-row.actions {
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .bottomstrip-row.actions {
+    min-width: max-content;
   }
 
   .bottomstrip-row.metrics::-webkit-scrollbar,
@@ -5065,9 +5059,48 @@ textarea:focus {
 }
 
 .bottomstrip-row.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.bottomstrip-actions {
+  min-width: 0;
+  display: grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
-  justify-content: end;
+  gap: 0.32rem;
+}
+
+.bottomstrip-attribution {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.48rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.bottomstrip-attribution-copy {
+  color: var(--muted);
+}
+
+.bottomstrip-attribution-link {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.bottomstrip-attribution-link:hover {
+  color: var(--green);
+  border-color: rgba(34, 197, 94, 0.28);
 }
 
 .bottomstrip-metric {

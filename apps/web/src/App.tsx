@@ -88,11 +88,17 @@ const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 // Lock the public-facing identity to the nationwide Smart City Thailand dashboard.
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Monitor",
+  title: "Smart City Thailand Super Dashboard",
   eyebrow: {
-    th: "เมืองทองธานี มอนิเตอร์",
-    en: "Muang Thong Thani"
+    th: "สมาร์ตซิตี้ไทยแลนด์",
+    en: "Smart City Thailand"
   }
+});
+const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
+  copyright: "Copyright Dr Non Arkaraprasertkul, Digital Economy Promotion Agency (depa), Thailand 2026",
+  email: "non.ar@depa.or.th",
+  linkedInUrl: "https://www.linkedin.com/in/drnon/",
+  linkedInHandle: "/in/drnon"
 });
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
@@ -4377,31 +4383,36 @@ function DashboardPage() {
             <strong>{coverageFeatureCount}</strong>
           </div>
         </div>
-        <div className="bottomstrip-row metrics">
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "โครงการ" : "Projects"}</span>
-            <strong>{filteredProjects.length}</strong>
+        <div className="bottomstrip-row actions">
+          <div className="bottomstrip-actions">
+            {footerQuickActions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
+                onClick={() => {
+                  action.onClick?.();
+                  setActiveTab("map");
+                }}
+              >
+                {action.label}
+              </button>
+            ))}
           </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "ข่าว" : "News"}</span>
-            <strong>{filteredNews.length}</strong>
+          <div className="bottomstrip-attribution">
+            <span className="bottomstrip-attribution-copy">{PUBLIC_DASHBOARD_ATTRIBUTION.copyright}</span>
+            <a className="bottomstrip-attribution-link" href={`mailto:${PUBLIC_DASHBOARD_ATTRIBUTION.email}`}>
+              {copy.contactEmailLabel}: {PUBLIC_DASHBOARD_ATTRIBUTION.email}
+            </a>
+            <a
+              className="bottomstrip-attribution-link"
+              href={PUBLIC_DASHBOARD_ATTRIBUTION.linkedInUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {copy.contactLinkedInLabel}: {PUBLIC_DASHBOARD_ATTRIBUTION.linkedInHandle}
+            </a>
           </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather"}</span>
-            <strong>{localize(lang, resilience.weatherSummary).slice(0, 20)}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "มลพิษ" : "Pollution"}</span>
-            <strong>{localize(lang, resilience.pollutionSummary).slice(0, 20)}</strong>
-          </div>
-        </div>
-        <div className="bottomstrip-row copyright">
-          <span>&copy; 2026 Dr Non Arkaraprasertkul, Digital Economy Promotion Agency (depa), Thailand</span>
-          <span className="copyright-links">
-            <a href="mailto:non.ar@depa.or.th">non.ar@depa.or.th</a>
-            {" · "}
-            <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-          </span>
         </div>
       </footer>
     </div>
