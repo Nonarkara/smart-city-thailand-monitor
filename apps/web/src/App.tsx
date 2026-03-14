@@ -88,10 +88,10 @@ const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 // Lock the public-facing identity to the nationwide Smart City Thailand dashboard.
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: "Smart City Thailand Super Dashboard",
+  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Monitor",
   eyebrow: {
-    th: "สมาร์ตซิตี้ไทยแลนด์",
-    en: "Smart City Thailand"
+    th: "เมืองทองธานี มอนิเตอร์",
+    en: "Muang Thong Thani"
   }
 });
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
