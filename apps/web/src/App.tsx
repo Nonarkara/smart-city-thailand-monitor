@@ -607,6 +607,7 @@ const operationalLayerToggleIds = [
   "smart-city-thailand",
   "bangkok-passages",
   "cctv-cameras",
+  "mtt-grid",
   "weather",
   "pollution",
   "itic-traffic",

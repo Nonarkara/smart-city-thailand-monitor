@@ -4274,6 +4274,34 @@ textarea:focus {
   background: var(--amber);
 }
 
+.cctv-marker-dot.source-pak-kret {
+  background: #34d399;
+}
+
+.cctv-marker-dot.source-bma {
+  background: #60a5fa;
+}
+
+.cctv-marker-dot.source-doh {
+  background: #f59e0b;
+}
+
+.cctv-marker-dot.source-nonthaburi {
+  background: #a78bfa;
+}
+
+.cctv-marker-dot.source-exat {
+  background: #f472b6;
+}
+
+.grid-label {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  color: rgba(148, 163, 184, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .cctv-popup {
   min-width: 220px;
   max-width: 300px;
