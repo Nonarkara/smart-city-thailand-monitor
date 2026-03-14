@@ -2,8 +2,12 @@ services:
   - type: web
     name: mtt-smart-city-monitor-web
     runtime: static
-    buildCommand: npm ci && npm run build -w packages/shared && npm run build -w apps/web
+    buildCommand: set -e && npm ci && npm run build -w packages/shared && npm run build -w apps/web && ls -la apps/web/dist/assets/
     staticPublishPath: ./apps/web/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
     envVars:
       - key: VITE_API_BASE_URL
         value: https://smart-city-monitor-api.onrender.com
