@@ -1756,7 +1756,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
   const view = (searchParams.get("view") as DashboardView) || "city";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? "muang-thong-thani";
+  const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
   const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");

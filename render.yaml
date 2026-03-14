@@ -13,6 +13,29 @@ services:
         value: 20.18.0
       - key: VITE_API_BASE_URL
         value: https://smart-city-monitor-api.onrender.com
+      - key: VITE_DEFAULT_CITY
+        value: muang-thong-thani
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: smart-city-monitor-web
+    runtime: static
+    buildCommand: set -e && npm ci && npm run build -w packages/shared && npm run build -w apps/web && ls -la apps/web/dist/assets/
+    staticPublishPath: ./apps/web/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: VITE_API_BASE_URL
+        value: https://smart-city-monitor-api.onrender.com
+      - key: VITE_DEFAULT_CITY
+        value: bangkok
     routes:
       - type: rewrite
         source: /*
