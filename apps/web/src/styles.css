@@ -2676,7 +2676,39 @@ textarea {
   overflow: auto;
 }
 
-:root {
+/* === OPS THEME (national Smart City Thailand dashboard — dark ops-center) === */
+[data-theme="ops"] {
+  color-scheme: dark;
+  --topbar-height: 40px;
+  --bottomstrip-height: 60px;
+  --tab-height: 36px;
+  --bg: #050507;
+  --panel: #0a0a0d;
+  --panel-strong: #101014;
+  --panel-soft: #08080a;
+  --line: rgba(255, 255, 255, 0.05);
+  --line-strong: rgba(255, 255, 255, 0.10);
+  --ink: #d4d4d8;
+  --muted: #52525b;
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --focus: rgba(59, 130, 246, 0.18);
+  --shadow: none;
+  --radius: 1px;
+  --glow-blue: rgba(59, 130, 246, 0.06);
+  --glow-green: rgba(34, 197, 94, 0.04);
+  --sidebar-width: 0px;
+  --context-width: 0px;
+  --footer-height: var(--bottomstrip-height);
+  --heading-font: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  --body-font: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
+  --mono-font: "IBM Plex Mono", monospace;
+}
+
+/* === EDITORIAL THEME (MTT Muang Thong Thani — Monocle magazine) === */
+[data-theme="editorial"] {
   color-scheme: light;
   --topbar-height: 44px;
   --bottomstrip-height: 52px;
@@ -2706,11 +2738,18 @@ textarea {
   --mono-font: "IBM Plex Mono", monospace;
 }
 
-html,
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--body-font);
+[data-theme="ops"],
+[data-theme="ops"] html,
+[data-theme="ops"] body {
+  background: #050507;
+  color: #d4d4d8;
+}
+
+[data-theme="editorial"],
+[data-theme="editorial"] html,
+[data-theme="editorial"] body {
+  background: #f5f0e8;
+  color: #1a1a1a;
   font-size: 14px;
   line-height: 1.45;
 }
@@ -5450,4 +5489,288 @@ textarea:focus {
 
 .board-card.stable {
   border-left-color: var(--line-strong);
+}
+
+/* ===================================================================
+   OPS THEME OVERRIDES — dark ops-center for national dashboard
+   =================================================================== */
+
+/* Topbar: thin border, no heavy editorial rule */
+[data-theme="ops"] .topbar {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* Cards: no editorial 2px ink top border */
+[data-theme="ops"] .card {
+  border-top: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+[data-theme="ops"] .workspace-stat,
+[data-theme="ops"] .module-summary,
+[data-theme="ops"] .cctv-card,
+[data-theme="ops"] .report-card,
+[data-theme="ops"] .board-card,
+[data-theme="ops"] .merge-item,
+[data-theme="ops"] .layer-rail-item {
+  border-top: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+[data-theme="ops"] .command-metric-card {
+  border-top: 1px solid var(--line-strong);
+}
+
+[data-theme="ops"] .runway-card {
+  border-top: 1px solid var(--line-strong);
+  border-radius: 2px;
+}
+
+/* Command center hero: no red top border in ops, use green glow */
+[data-theme="ops"] .command-center-hero {
+  border-top: 1px solid rgba(34, 197, 94, 0.15);
+  background: var(--panel);
+}
+
+/* Bottom bar: thin top border */
+[data-theme="ops"] .bottombar {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* Map tab bar: dark translucent background */
+[data-theme="ops"] .map-tab-bar {
+  background: rgba(5, 5, 7, 0.94);
+}
+
+/* Map tab active: green instead of red */
+[data-theme="ops"] .map-tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+/* AI status line: dark */
+[data-theme="ops"] .ai-status-line {
+  background: rgba(5, 5, 7, 0.92);
+}
+
+/* AI dot: green pulse */
+[data-theme="ops"] .ai-dot {
+  background: var(--green);
+}
+
+/* Layer palette and floating controls: dark */
+[data-theme="ops"] .layer-palette-toggle {
+  background: rgba(5, 5, 7, 0.92);
+}
+
+[data-theme="ops"] .layer-palette {
+  background: rgba(5, 5, 7, 0.96);
+}
+
+[data-theme="ops"] .map-float-btn {
+  background: rgba(5, 5, 7, 0.92);
+}
+
+[data-theme="ops"] .map-float-btn.active {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* Map caption / open link: dark */
+[data-theme="ops"] .map-caption,
+[data-theme="ops"] .map-open-link {
+  background: rgba(5, 5, 7, 0.92);
+}
+
+/* Map alert chips: dark */
+[data-theme="ops"] .map-alert-chip {
+  background: rgba(5, 5, 7, 0.9);
+}
+
+/* Satellite tile label: dark */
+[data-theme="ops"] .sat-tile-label {
+  background: rgba(5, 5, 7, 0.9);
+}
+
+/* Palette toggle active: green */
+[data-theme="ops"] .palette-toggle.active .palette-state {
+  color: var(--green);
+}
+
+/* Progress fill: gradient instead of solid red */
+[data-theme="ops"] .progress-fill {
+  background: linear-gradient(90deg, var(--green), var(--blue));
+}
+
+/* SLIC score and hero note: green for ops */
+[data-theme="ops"] .slic-score,
+[data-theme="ops"] .hero-note {
+  color: var(--green);
+}
+
+/* Terminal callout: green left accent */
+[data-theme="ops"] .terminal-callout {
+  border-left-color: var(--green);
+}
+
+/* Map zone background */
+[data-theme="ops"] .map-zone {
+  background: #050507;
+}
+
+/* Hover states: dark subtle glow */
+[data-theme="ops"] .side-ai-launcher:hover,
+[data-theme="ops"] .side-watch:hover,
+[data-theme="ops"] .side-nav a:hover,
+[data-theme="ops"] .side-button:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="ops"] .side-toggle:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="ops"] .decision-item:hover,
+[data-theme="ops"] .trend-row:hover,
+[data-theme="ops"] .stack-item.linked:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="ops"] .command-alert:hover,
+[data-theme="ops"] .compare-city-card:hover,
+[data-theme="ops"] .map-compare-card:hover,
+[data-theme="ops"] .manual-scene-card:hover,
+[data-theme="ops"] .utility-link-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="ops"] .tool-link:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* AI panel input: dark */
+[data-theme="ops"] .ai-panel-input textarea {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ===================================================================
+   EDITORIAL THEME OVERRIDES — light Monocle for MTT dashboard
+   =================================================================== */
+
+/* Map zone: light background */
+[data-theme="editorial"] .map-zone {
+  background: #f5f0e8;
+}
+
+/* Leaflet popups: light for editorial */
+[data-theme="editorial"] .leaflet-popup-content-wrapper {
+  background: #fff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #d6cfc2 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+
+[data-theme="editorial"] .leaflet-popup-tip {
+  background: #fff !important;
+}
+
+[data-theme="editorial"] .leaflet-popup-close-button {
+  color: #6b6358 !important;
+}
+
+[data-theme="editorial"] .leaflet-popup-close-button:hover {
+  color: #1a1a1a !important;
+}
+
+[data-theme="editorial"] .leaflet-tooltip {
+  background: #fff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #d6cfc2 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="editorial"] .leaflet-tooltip-top::before {
+  border-top-color: #fff !important;
+}
+
+[data-theme="editorial"] .leaflet-tooltip-bottom::before {
+  border-bottom-color: #fff !important;
+}
+
+/* CCTV popup frame: light bg */
+[data-theme="editorial"] .cctv-popup-frame {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Satellite preview frame: light */
+[data-theme="editorial"] .satellite-preview-frame {
+  background: #efe9dd;
+}
+
+/* Hover states: warm subtle */
+[data-theme="editorial"] .side-ai-launcher:hover,
+[data-theme="editorial"] .side-watch:hover,
+[data-theme="editorial"] .side-nav a:hover,
+[data-theme="editorial"] .side-button:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="editorial"] .side-toggle:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="editorial"] .decision-item:hover,
+[data-theme="editorial"] .trend-row:hover,
+[data-theme="editorial"] .stack-item.linked:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="editorial"] .command-alert:hover,
+[data-theme="editorial"] .compare-city-card:hover,
+[data-theme="editorial"] .map-compare-card:hover,
+[data-theme="editorial"] .manual-scene-card:hover,
+[data-theme="editorial"] .utility-link-card:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="editorial"] .tool-link:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* AI panel input: light */
+[data-theme="editorial"] .ai-panel-input textarea {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Bottom strip metric: light subtle */
+[data-theme="editorial"] .bottomstrip-metric {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+/* AI panel border: red accent for editorial */
+[data-theme="editorial"] .ai-panel {
+  border-top: 1px solid rgba(200, 16, 46, 0.2);
+}
+
+[data-theme="editorial"] .ai-prompt-pill:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+[data-theme="editorial"] .ai-panel-input button {
+  border-color: rgba(200, 16, 46, 0.3);
+  background: rgba(200, 16, 46, 0.08);
+  color: var(--red);
+}
+
+[data-theme="editorial"] .ai-panel-input button:hover {
+  background: rgba(200, 16, 46, 0.15);
+}
+
+/* Sitrep header: red for editorial */
+[data-theme="editorial"] .sitrep-header {
+  color: var(--red);
+  border-bottom-color: rgba(200, 16, 46, 0.15);
 }

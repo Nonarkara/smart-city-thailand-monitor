@@ -295,11 +295,16 @@ function applyGenericLayerVisuals(
   }
 }
 
-/* International base map tile sources for terminal ops-center mode */
+/* Detect site theme from env var */
+const siteTheme = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani") === "muang-thong-thani" ? "editorial" : "ops";
+
+/* International base map tile sources */
 const basemapSources = {
-  /* Light vector tiles - editorial mode */
+  /* CARTO tiles — dark for ops, light for editorial */
   darkMatter: {
-    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    url: siteTheme === "editorial"
+      ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 20
   },
