@@ -1,4 +1,4 @@
-# Smart City Thailand Monitor
+# Smart City Thailand Super Dashboard
 
 Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a private editorial/sync back office.
 
