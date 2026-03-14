@@ -9,6 +9,8 @@ services:
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
     envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
       - key: VITE_API_BASE_URL
         value: https://smart-city-monitor-api.onrender.com
     routes:
