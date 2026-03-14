@@ -3876,7 +3876,7 @@ textarea:focus {
   grid-column: 1 / -1;
 }
 
-.map-zone .thai-map {
+.map-zone .leaflet-map-shell {
   position: relative;
   z-index: 0; /* contain Leaflet's internal z-indexes (up to 1000) */
   height: 100%;
