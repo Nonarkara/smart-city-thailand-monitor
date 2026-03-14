@@ -4395,6 +4395,14 @@ function DashboardPage() {
             <strong>{localize(lang, resilience.pollutionSummary).slice(0, 20)}</strong>
           </div>
         </div>
+        <div className="bottomstrip-row copyright">
+          <span>&copy; 2026 Dr Non Arkaraprasertkul, Digital Economy Promotion Agency (depa), Thailand</span>
+          <span className="copyright-links">
+            <a href="mailto:non.ar@depa.or.th">non.ar@depa.or.th</a>
+            {" · "}
+            <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          </span>
+        </div>
       </footer>
     </div>
   );

@@ -3315,17 +3315,36 @@ textarea:focus {
 .bottombar {
   grid-column: 1 / -1;
   min-height: var(--bottomstrip-height);
-  max-height: var(--bottomstrip-height);
   display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 0.18rem;
-  padding: 0.22rem 1rem 0.26rem;
+  grid-template-rows: auto auto auto;
+  gap: 0.1rem;
+  padding: 0.2rem 1rem 0.2rem;
   border-top: 2px solid var(--ink);
   background: var(--panel-strong);
   font-family: var(--mono-font);
   font-size: 0.6rem;
   color: var(--muted);
   overflow: hidden;
+}
+
+.bottomstrip-row.copyright {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.54rem;
+  color: var(--muted);
+  padding-top: 0.08rem;
+  border-top: 1px solid var(--line);
+}
+
+.copyright-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.copyright-links a:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .admin-shell {
