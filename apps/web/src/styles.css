@@ -2677,36 +2677,42 @@ textarea {
 }
 
 :root {
-  color-scheme: dark;
-  --topbar-height: 40px;
-  --bottomstrip-height: 60px;
+  color-scheme: light;
+  --topbar-height: 44px;
+  --bottomstrip-height: 52px;
   --tab-height: 36px;
-  --bg: #050507;
-  --panel: #0a0a0d;
-  --panel-strong: #101014;
-  --panel-soft: #08080a;
-  --line: rgba(255, 255, 255, 0.05);
-  --line-strong: rgba(255, 255, 255, 0.10);
-  --ink: #d4d4d8;
-  --muted: #52525b;
-  --blue: #3b82f6;
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --focus: rgba(59, 130, 246, 0.18);
-  --shadow: none;
-  --radius: 1px;
-  --glow-blue: rgba(59, 130, 246, 0.06);
-  --glow-green: rgba(34, 197, 94, 0.04);
+  --bg: #f5f0e8;
+  --panel: #faf7f0;
+  --panel-strong: #fff;
+  --panel-soft: #efe9dd;
+  --line: #d6cfc2;
+  --line-strong: #b8b0a0;
+  --ink: #1a1a1a;
+  --muted: #6b6358;
+  --blue: #1a3a6e;
+  --green: #2a5f3f;
+  --amber: #8a6a1a;
+  --red: #c8102e;
+  --focus: rgba(200, 16, 46, 0.14);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --radius: 0px;
+  --glow-blue: transparent;
+  --glow-green: transparent;
   --sidebar-width: 0px;
   --context-width: 0px;
   --footer-height: var(--bottomstrip-height);
+  --heading-font: "Playfair Display", "Source Serif 4", Georgia, serif;
+  --body-font: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
+  --mono-font: "IBM Plex Mono", monospace;
 }
 
 html,
 body {
-  background: #050507;
+  background: var(--bg);
   color: var(--ink);
+  font-family: var(--body-font);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .shell {
@@ -2720,9 +2726,9 @@ body {
 .topbar {
   min-height: var(--topbar-height);
   max-height: var(--topbar-height);
-  padding: 0 0.75rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  padding: 0 1rem;
+  border-bottom: 2px solid var(--ink);
+  background: var(--panel-strong);
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
@@ -2733,25 +2739,26 @@ body {
 
 .brand-cluster {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 0.6rem;
 }
 
 .brand-cluster .brand-logo {
-  height: 22px;
+  height: 20px;
   width: auto;
 }
 
 .topbar h1,
 .admin-header h1 {
-  font-family: "IBM Plex Mono", "Space Grotesk", monospace;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--heading-font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--ink);
 }
 
 .brand-logo {
@@ -2771,24 +2778,25 @@ body {
   border-color: var(--line);
   background: transparent;
   color: var(--muted);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono-font);
   font-size: 0.72rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .chip:hover,
 .share-button:hover,
 .layer-chip:hover {
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--ink);
+  background: transparent;
   color: var(--ink);
 }
 
 .chip.active,
 .layer-chip.active {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.24);
-  color: var(--ink);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--panel-strong);
 }
 
 .share-button {
@@ -2803,11 +2811,12 @@ body {
 input,
 select,
 textarea {
-  border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--line-strong);
+  background: var(--panel-strong);
   color: var(--ink);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
+  font-family: var(--body-font);
+  font-size: 0.82rem;
+  border-radius: 0;
 }
 
 .search-input:focus,
@@ -2815,11 +2824,11 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: var(--ink);
 }
 
 .search-input::placeholder {
-  color: rgba(113, 113, 122, 0.6);
+  color: var(--muted);
 }
 
 .side-ai-launcher,
@@ -2919,13 +2928,13 @@ textarea:focus {
 .assistant-edge-tab {
   left: var(--sidebar-width);
   border-color: var(--line);
-  background: #0e0e10;
+  background: var(--panel-strong);
   box-shadow: none;
 }
 
 .assistant-scrim {
   inset: var(--topbar-height) 0 var(--footer-height) var(--sidebar-width);
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .assistant-drawer {
@@ -2933,7 +2942,7 @@ textarea:focus {
   left: var(--sidebar-width);
   bottom: var(--footer-height);
   border-right: 1px solid var(--line);
-  background: #0e0e10;
+  background: var(--panel-strong);
 }
 
 .assistant-header,
@@ -2966,10 +2975,11 @@ textarea:focus {
 }
 
 .card {
-  background: var(--panel);
+  background: var(--panel-strong);
   border: 1px solid var(--line);
+  border-top: 2px solid var(--ink);
   box-shadow: none;
-  border-radius: 2px;
+  border-radius: 0;
   padding: 0.75rem;
 }
 
@@ -3020,14 +3030,18 @@ textarea:focus {
 
 .status-pill,
 .status-tag {
-  border-color: var(--line);
+  border-color: var(--line-strong);
   background: transparent;
-  color: var(--ink);
+  color: var(--muted);
+  font-family: var(--mono-font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-tag.active,
 .status-tag.live {
   color: var(--green);
+  border-color: var(--green);
 }
 
 .status-tag.pilot {
@@ -3040,7 +3054,8 @@ textarea:focus {
 
 .status-tag.new,
 .status-tag.in-progress {
-  color: var(--amber);
+  color: var(--red);
+  border-color: var(--red);
 }
 
 .status-tag.ready,
@@ -3055,6 +3070,7 @@ textarea:focus {
 
 .status-tag.failed {
   color: var(--red);
+  border-color: var(--red);
 }
 
 .metric-card,
@@ -3081,7 +3097,7 @@ textarea:focus {
 .map-caption,
 .map-open-link {
   border-color: var(--line);
-  background: transparent;
+  background: var(--panel-strong);
 }
 
 .stack-item-button {
@@ -3103,9 +3119,10 @@ textarea:focus {
   display: grid;
   gap: 0.3rem;
   padding: 0.7rem;
-  border-radius: 2px;
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  background: rgba(59, 130, 246, 0.04);
+  border-radius: 0;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--red);
+  background: var(--panel-soft);
 }
 
 .terminal-callout.compact {
@@ -3143,11 +3160,13 @@ textarea:focus {
 .metric-value,
 .slic-score,
 .time-zone strong {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--heading-font);
+  color: var(--ink);
 }
 
 .metric-value {
   font-size: clamp(1.6rem, 2.5vw, 2.5rem);
+  font-weight: 700;
 }
 
 .map-hero .thai-map {
@@ -3166,13 +3185,15 @@ textarea:focus {
 
 .thai-map {
   border-color: var(--line-strong);
-  background: #0d1117;
+  background: var(--panel-soft);
 }
 
 .leaflet-map .leaflet-control-attribution,
 .leaflet-map .leaflet-control-zoom a {
-  background: rgba(16, 20, 28, 0.9) !important;
+  background: var(--panel-strong) !important;
   color: var(--ink) !important;
+  font-family: var(--mono-font) !important;
+  font-size: 0.65rem !important;
 }
 
 .leaflet-map .leaflet-control-zoom a {
@@ -3181,12 +3202,13 @@ textarea:focus {
 
 .leaflet-map .leaflet-control-zoom,
 .leaflet-map .leaflet-control-attribution {
-  border-color: var(--line) !important;
+  border-color: var(--line-strong) !important;
+  border-radius: 0 !important;
 }
 
 .map-layer-status {
   border-color: var(--line-strong);
-  background: rgba(16, 20, 28, 0.92);
+  background: var(--panel-strong);
   color: var(--ink);
   box-shadow: none;
 }
@@ -3207,7 +3229,7 @@ textarea:focus {
 .map-open-link {
   color: var(--ink);
   box-shadow: none;
-  background: rgba(16, 20, 28, 0.88);
+  background: rgba(250, 247, 240, 0.92);
 }
 
 .legend-chip,
@@ -3232,24 +3254,24 @@ textarea:focus {
 .map-city-button.active,
 .slic-ranking-card.action:hover,
 .satellite-preset.active {
-  border-color: rgba(91, 140, 255, 0.3);
-  background: rgba(91, 140, 255, 0.1);
-  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--panel-strong);
 }
 
 .hotspot-chip:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--panel-soft);
 }
 
 .hotspot-chip.warning,
 .threshold-item.alert,
 .api-watch-item.stale,
 .api-watch-item.delayed {
-  border-color: rgba(248, 113, 113, 0.3);
+  border-color: var(--red);
 }
 
 .api-watch-item.live {
-  border-color: rgba(52, 211, 153, 0.3);
+  border-color: var(--green);
 }
 
 .news-columns h3,
@@ -3258,11 +3280,11 @@ textarea:focus {
 }
 
 .progress-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel-soft);
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, var(--green), var(--blue));
+  background: var(--red);
 }
 
 .satellite-shell,
@@ -3285,7 +3307,9 @@ textarea:focus {
 
 .slic-score,
 .hero-note {
-  color: var(--green);
+  color: var(--red);
+  font-family: var(--heading-font);
+  font-weight: 700;
 }
 
 .bottombar {
@@ -3295,28 +3319,28 @@ textarea:focus {
   display: grid;
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 0.18rem;
-  padding: 0.22rem 0.55rem 0.26rem;
-  border-top: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(10, 10, 13, 0.95), rgba(5, 5, 7, 0.99));
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.58rem;
+  padding: 0.22rem 1rem 0.26rem;
+  border-top: 2px solid var(--ink);
+  background: var(--panel-strong);
+  font-family: var(--mono-font);
+  font-size: 0.6rem;
   color: var(--muted);
   overflow: hidden;
 }
 
 .admin-shell {
-  background: #09090b;
+  background: var(--bg);
 }
 
 .response-panel,
 .export-panel {
   border: 1px solid var(--line);
-  background: #0e0e10;
+  background: var(--panel-strong);
   color: var(--ink);
 }
 
 .export-panel pre {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--panel-soft);
 }
 
 .brand-subline {
@@ -3358,8 +3382,9 @@ textarea:focus {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(420px, 0.95fr);
-  gap: 1px;
-  background: var(--line);
+  gap: 0;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -3394,9 +3419,12 @@ textarea:focus {
 }
 
 .workspace-story-copy h2 {
+  font-family: var(--heading-font);
   font-size: clamp(1.35rem, 2vw, 1.7rem);
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .workspace-story-copy p,
@@ -3426,8 +3454,9 @@ textarea:focus {
 .merge-item,
 .layer-rail-item {
   border: 1px solid var(--line);
-  background: transparent;
-  border-radius: 2px;
+  border-top: 2px solid var(--line-strong);
+  background: var(--panel-strong);
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -3445,9 +3474,11 @@ textarea:focus {
 
 .workspace-stat strong,
 .board-metric {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--heading-font);
   font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-weight: 700;
   line-height: 1;
+  color: var(--ink);
 }
 
 .workspace-grid {
@@ -3483,21 +3514,21 @@ textarea:focus {
 .cctv-card:hover,
 .report-card:hover,
 .layer-rail-item:hover {
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateY(-1px);
+  border-color: var(--ink);
+  background: var(--panel-soft);
+  transform: none;
 }
 
 .cctv-card.severity-alert {
-  border-color: rgba(248, 113, 113, 0.3);
+  border-top-color: var(--red);
 }
 
 .cctv-card.severity-watch {
-  border-color: rgba(251, 191, 36, 0.3);
+  border-top-color: var(--amber);
 }
 
 .cctv-card.severity-stable {
-  border-color: rgba(52, 211, 153, 0.22);
+  border-top-color: var(--green);
 }
 
 .layer-rail-item.passive:hover {
@@ -3517,9 +3548,9 @@ textarea:focus {
 .signal-thumb {
   min-height: 72px;
   padding: 0.8rem;
-  border-radius: 2px;
+  border-radius: 0;
   border: 1px dashed var(--line-strong);
-  background: transparent;
+  background: var(--panel-soft);
   display: grid;
   place-items: center;
   text-align: center;
@@ -3637,8 +3668,9 @@ textarea:focus {
 }
 
 .layer-rail-item.active {
-  border-color: rgba(52, 211, 153, 0.28);
-  background: rgba(52, 211, 153, 0.06);
+  border-color: var(--green);
+  border-top-color: var(--green);
+  background: var(--panel-soft);
 }
 
 .layer-state {
@@ -3666,8 +3698,9 @@ textarea:focus {
 }
 
 .command-center-hero {
-  background: #0e0e10;
-  border-color: rgba(59, 130, 246, 0.15);
+  background: var(--panel-strong);
+  border-color: var(--line);
+  border-top: 3px solid var(--red);
   box-shadow: none;
   color: var(--ink);
 }
@@ -3676,19 +3709,19 @@ textarea:focus {
 .command-center-hero p,
 .command-center-hero small,
 .command-center-hero .stack-pill {
-  color: rgba(225, 234, 244, 0.78);
+  color: var(--muted);
 }
 
 .command-center-hero .status-pill,
 .command-center-hero .status-tag,
 .runway-card .status-tag {
-  border-color: rgba(141, 179, 230, 0.2);
+  border-color: var(--line-strong);
   background: transparent;
-  color: #eef5ff;
+  color: var(--ink);
 }
 
 .command-center-hero .stack-pill {
-  border-color: rgba(141, 179, 230, 0.18);
+  border-color: var(--line);
   background: transparent;
 }
 
@@ -3700,10 +3733,13 @@ textarea:focus {
 }
 
 .command-center-copy h2 {
+  font-family: var(--heading-font);
   font-size: clamp(1.6rem, 2.4vw, 2.3rem);
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-  max-width: 16ch;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  max-width: 18ch;
+  color: var(--ink);
 }
 
 .command-metric-grid {
@@ -3712,21 +3748,24 @@ textarea:focus {
 
 .command-metric-card {
   min-height: 150px;
-  border-color: rgba(141, 179, 230, 0.18);
-  background: transparent;
+  border-color: var(--line);
+  border-top: 2px solid var(--line-strong);
+  background: var(--panel-strong);
 }
 
 .command-metric-card strong {
-  color: #f8fbff;
+  color: var(--ink);
+  font-family: var(--heading-font);
   font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 700;
 }
 
 .command-metric-card.tone-positive {
-  border-color: rgba(77, 197, 163, 0.28);
+  border-top-color: var(--green);
 }
 
 .command-metric-card.tone-warning {
-  border-color: rgba(255, 179, 71, 0.28);
+  border-top-color: var(--amber);
 }
 
 .runway-grid {
@@ -3739,25 +3778,26 @@ textarea:focus {
   display: grid;
   gap: 0.4rem;
   padding: 0.75rem;
-  border-radius: 2px;
+  border-radius: 0;
   border: 1px solid var(--line);
-  background: transparent;
+  border-top: 2px solid var(--line-strong);
+  background: var(--panel-strong);
 }
 
 .runway-card.stage-base {
-  border-color: rgba(77, 197, 163, 0.28);
+  border-top-color: var(--green);
 }
 
 .runway-card.stage-next {
-  border-color: rgba(80, 172, 255, 0.28);
+  border-top-color: var(--blue);
 }
 
 .runway-card.stage-future {
-  border-color: rgba(255, 179, 71, 0.24);
+  border-top-color: var(--amber);
 }
 
 .runway-card p {
-  color: rgba(225, 234, 244, 0.76);
+  color: var(--muted);
   line-height: 1.42;
 }
 
@@ -3961,9 +4001,10 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0.55rem;
-  background: var(--bg);
+  gap: 0;
+  padding: 0;
+  background: var(--panel-strong);
+  border-left: 1px solid var(--line);
   min-height: 0;
   overflow: hidden;
   align-content: stretch;
@@ -3973,6 +4014,10 @@ textarea:focus {
   min-height: 0;
   padding: 0.58rem;
   overflow: hidden;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0;
 }
 
 .overview-card.hero {
@@ -4205,11 +4250,11 @@ textarea:focus {
   height: var(--tab-height);
   display: flex;
   align-items: stretch;
-  background: rgba(5, 5, 7, 0.92);
+  background: rgba(250, 247, 240, 0.94);
   backdrop-filter: blur(6px);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-strong);
   z-index: 15;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono-font);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4238,8 +4283,8 @@ textarea:focus {
 }
 
 .map-tab.active {
-  color: var(--green);
-  border-bottom-color: var(--green);
+  color: var(--red);
+  border-bottom-color: var(--red);
 }
 
 .map-tab .tab-dot {
@@ -4258,13 +4303,13 @@ textarea:focus {
   max-width: 520px;
   width: calc(100% - 24px);
   padding: 0.32rem 0.65rem;
-  background: rgba(5, 5, 7, 0.88);
+  background: rgba(250, 247, 240, 0.92);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(34, 197, 94, 0.15);
-  border-radius: var(--radius);
-  font-family: "IBM Plex Mono", monospace;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  font-family: var(--mono-font);
   font-size: 0.68rem;
-  color: var(--green);
+  color: var(--ink);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -4277,14 +4322,14 @@ textarea:focus {
 }
 
 .ai-status-line:hover {
-  border-color: rgba(34, 197, 94, 0.35);
+  border-color: var(--ink);
 }
 
 .ai-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--green);
+  background: var(--red);
   flex-shrink: 0;
   animation: pulse-dot 2s infinite;
 }
@@ -4300,7 +4345,7 @@ textarea:focus {
   bottom: calc(var(--tab-height) + 10px);
   left: 10px;
   padding: 0.35rem 0.6rem;
-  background: rgba(5, 5, 7, 0.88);
+  background: rgba(250, 247, 240, 0.92);
   backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4325,7 +4370,7 @@ textarea:focus {
   width: 260px;
   max-height: calc(100% - var(--tab-height) - 80px);
   overflow-y: auto;
-  background: rgba(5, 5, 7, 0.94);
+  background: rgba(250, 247, 240, 0.96);
   backdrop-filter: blur(8px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4366,7 +4411,7 @@ textarea:focus {
 }
 
 .palette-toggle:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel-soft);
 }
 
 .palette-toggle .palette-dot {
@@ -4385,7 +4430,7 @@ textarea:focus {
 }
 
 .palette-toggle.active .palette-state {
-  color: var(--green);
+  color: var(--red);
 }
 
 /* -- Floating map controls (bottom-right) -- */
@@ -4400,7 +4445,7 @@ textarea:focus {
 
 .map-float-btn {
   padding: 0.3rem 0.55rem;
-  background: rgba(5, 5, 7, 0.88);
+  background: rgba(250, 247, 240, 0.92);
   backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4419,8 +4464,8 @@ textarea:focus {
 }
 
 .map-float-btn.active {
-  color: var(--green);
-  border-color: rgba(34, 197, 94, 0.24);
+  color: var(--red);
+  border-color: var(--red);
 }
 
 /* -- Floating alert chips on map -- */
@@ -4436,7 +4481,7 @@ textarea:focus {
 
 .map-alert-chip {
   padding: 0.25rem 0.5rem;
-  background: rgba(5, 5, 7, 0.85);
+  background: rgba(250, 247, 240, 0.9);
   border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: var(--radius);
   font-family: "IBM Plex Mono", monospace;
@@ -4490,7 +4535,7 @@ textarea:focus {
   position: relative;
   cursor: pointer;
   transition: border-color 0.15s;
-  background: #0d1117;
+  background: var(--panel-soft);
 }
 
 .sat-preview-tile:hover {
@@ -4514,7 +4559,7 @@ textarea:focus {
   left: 0;
   right: 0;
   padding: 0.3rem 0.5rem;
-  background: rgba(5, 5, 7, 0.85);
+  background: rgba(250, 247, 240, 0.9);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.62rem;
   color: var(--ink);
@@ -5054,7 +5099,7 @@ textarea:focus {
 
 .bottomstrip-action:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel-soft);
   color: var(--ink);
 }
 

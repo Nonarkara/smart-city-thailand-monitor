@@ -3617,11 +3617,7 @@ function DashboardPage() {
               {lang === "th" ? "เมือง" : "City"}
             </button>
           </div>
-          <select className="topbar-select" value={city} onChange={(event) => selectCity(event.target.value)}>
-            {overview.cities.map((item) => (
-              <option key={item.slug} value={item.slug}>{localize(lang, item.name)}</option>
-            ))}
-          </select>
+          <span className="chip active" style={{ cursor: "default" }}>{localize(lang, selectedCity.name)}</span>
           <div className="compact-group">
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
             <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
@@ -4381,20 +4377,23 @@ function DashboardPage() {
             <strong>{coverageFeatureCount}</strong>
           </div>
         </div>
-        <div className="bottomstrip-row actions">
-          {footerQuickActions.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
-              onClick={() => {
-                action.onClick?.();
-                setActiveTab("map");
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
+        <div className="bottomstrip-row metrics">
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "โครงการ" : "Projects"}</span>
+            <strong>{filteredProjects.length}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "ข่าว" : "News"}</span>
+            <strong>{filteredNews.length}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather"}</span>
+            <strong>{localize(lang, resilience.weatherSummary).slice(0, 20)}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "มลพิษ" : "Pollution"}</span>
+            <strong>{localize(lang, resilience.pollutionSummary).slice(0, 20)}</strong>
+          </div>
         </div>
       </footer>
     </div>
