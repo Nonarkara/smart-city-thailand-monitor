@@ -3596,8 +3596,10 @@ function DashboardPage() {
     }
   }
 
+  const siteTheme = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani") === "muang-thong-thani" ? "editorial" : "ops";
+
   return (
-    <div className="shell">
+    <div className="shell" data-theme={siteTheme}>
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/mtt-logo.svg" alt="MTT" className="brand-logo" />
