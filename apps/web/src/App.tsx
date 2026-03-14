@@ -20,9 +20,7 @@ import {
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
-  sources as sourceSeed,
-  impactArenaEvents as impactArenaEventsSeed,
-  mttTrafficSnapshot as mttTrafficSnapshotSeed
+  sources as sourceSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -51,10 +49,7 @@ import type {
   SocialListeningSnapshot,
   SourceRecord,
   TimeRange,
-  TimeSnapshot,
-  ImpactArenaEvent,
-  MttTrafficSnapshot,
-  TrendKeyword
+  TimeSnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -89,22 +84,8 @@ function getApiBaseCandidates() {
 
 const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
-const LIVE_POLL_INTERVAL_MS = 180000;
+const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
-// Lock the public-facing identity — MTT is its own independent dashboard.
-const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Super Dashboard",
-  eyebrow: {
-    th: "เมืองทองธานี มอนิเตอร์",
-    en: "Muang Thong Thani"
-  }
-});
-const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
-  copyright: "Copyright Dr Non Arkaraprasertkul, Digital Economy Promotion Agency (depa), Thailand 2026",
-  email: "non.ar@depa.or.th",
-  linkedInUrl: "https://www.linkedin.com/in/drnon/",
-  linkedInHandle: "/in/drnon"
-});
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
   economy: ["economy", "industrial", "trade", "tourism", "innovation", "growth", "logistics"],
@@ -305,193 +286,6 @@ interface ReporterSampleTemplate {
   minutesAgo: number;
   targetLayers: string[];
 }
-
-interface MttCameraCoverageDefinition {
-  id: string;
-  label: LocalizedText;
-  detail: LocalizedText;
-  watch: LocalizedText;
-  zones: string[];
-  tone: "alert" | "watch" | "stable";
-  targetLayers: string[];
-}
-
-interface MttCameraRecipeDefinition {
-  sampleId: string;
-  zones: string[];
-  objects: LocalizedText[];
-  prompt: LocalizedText;
-  targetLayers: string[];
-}
-
-const MTT_CAMERA_CORE = Object.freeze({
-  lat: 13.912,
-  lon: 100.548
-});
-
-const MTT_CAMERA_ZONE_PRIORITY = [
-  "impact",
-  "mtt-entrance",
-  "mtt-central",
-  "mtt-lake",
-  "mtt-popular",
-  "mtt-bridge",
-  "mtt-junction",
-  "mtt-bond-street",
-  "expressway-udonrat",
-  "chaeng-watthana"
-] as const;
-
-const MTT_STREAM_PRIORITY_CAMERA_IDS = ["CAMPK028", "CAMPK033", "CAMPK037", "CAMPK019", "CAMPK058", "CAMPK032"] as const;
-
-const MTT_CAMERA_ZONE_LABELS: Record<string, LocalizedText> = {
-  impact: { th: "โซน IMPACT", en: "IMPACT campus" },
-  "mtt-entrance": { th: "ประตูเข้าเมืองทอง", en: "Muang Thong gates" },
-  "mtt-central": { th: "แกนกลางเมืองทอง", en: "Muang Thong core" },
-  "mtt-lake": { th: "ริมทะเลสาบ", en: "Lakefront edge" },
-  "mtt-popular": { th: "ถ.ป๊อปปูล่า", en: "Popular Road" },
-  "mtt-bridge": { th: "สะพานเมืองทอง", en: "Muang Thong bridges" },
-  "mtt-junction": { th: "แยกหน้าเมืองทอง", en: "Muang Thong junction" },
-  "mtt-bond-street": { th: "ถ.บอนด์สตรีท", en: "Bond Street" },
-  "expressway-udonrat": { th: "ทางด่วนอุดรรัถยา", en: "Udon Ratthaya expressway" },
-  "chaeng-watthana": { th: "แนวแจ้งวัฒนะ", en: "Chaeng Watthana approach" }
-};
-
-const MTT_CAMERA_COVERAGE_DEFS: MttCameraCoverageDefinition[] = [
-  {
-    id: "event-ingress",
-    label: { th: "Ingress / Drop-off", en: "Ingress / Drop-off" },
-    detail: {
-      th: "IMPACT, วงเวียน, และประตู T1/T2 ต้องอ่าน queue กับ dwell time พร้อมกัน",
-      en: "IMPACT frontage, the roundabout, and T1/T2 gates should be read together for queue and dwell time."
-    },
-    watch: {
-      th: "นับรถจอดแช่ รถรับส่งค้าง และการคืนตัวของ lane",
-      en: "Track curb dwell, shuttle blockage, and lane recovery."
-    },
-    zones: ["impact", "mtt-entrance", "mtt-central"],
-    tone: "alert",
-    targetLayers: ["cctv-cameras", "itic-traffic", "projects", "mtt-grid"]
-  },
-  {
-    id: "bridge-fabric",
-    label: { th: "Bridge / Popular", en: "Bridge / Popular" },
-    detail: {
-      th: "สะพานเมืองทอง, Popular, Bond Street และจุดต่อเชื่อมคือผืนเดียวกัน",
-      en: "The bridge ramps, Popular Road, Bond Street, and the junction behave like one operational fabric."
-    },
-    watch: {
-      th: "จับรถย้อนศร, spillback, และมอเตอร์ไซค์ weaving",
-      en: "Catch wrong-way moves, spillback, and motorcycle weaving."
-    },
-    zones: ["mtt-bridge", "mtt-popular", "mtt-junction", "mtt-bond-street"],
-    tone: "watch",
-    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
-  },
-  {
-    id: "lake-edge",
-    label: { th: "Lake Edge", en: "Lake Edge" },
-    detail: {
-      th: "ขอบทะเลสาบต้องดูน้ำขัง, ควัน, และการเดินเท้าตอนกลางคืนร่วมกัน",
-      en: "The lake edge should read standing water, smoke, and night-time pedestrian movement together."
-    },
-    watch: {
-      th: "มองน้ำขัง, plume ควัน, และจุดอับแสงรอบทางเดิน",
-      en: "Watch pooling, smoke plumes, and low-light walkway conflicts."
-    },
-    zones: ["mtt-lake"],
-    tone: "stable",
-    targetLayers: ["cctv-cameras", "water", "weather", "resilience", "mtt-grid"]
-  },
-  {
-    id: "regional-arrival",
-    label: { th: "Regional Arrival", en: "Regional Arrival" },
-    detail: {
-      th: "แจ้งวัฒนะและทางด่วนคือสัญญาณล่วงหน้าก่อนคอขวดในพื้นที่จัดงาน",
-      en: "Chaeng Watthana and the expressway are the lead indicators before venue bottlenecks materialize."
-    },
-    watch: {
-      th: "ดู toll discharge, queue build-up, และ inbound surge ก่อนชน gate",
-      en: "Read toll discharge, queue build-up, and inbound surges before they hit the gates."
-    },
-    zones: ["expressway-udonrat", "chaeng-watthana"],
-    tone: "watch",
-    targetLayers: ["cctv-cameras", "itic-traffic", "projects"]
-  }
-];
-
-const MTT_CAMERA_RECIPE_DEFS: MttCameraRecipeDefinition[] = [
-  {
-    sampleId: "camera-impact-dropoff",
-    zones: ["impact", "mtt-entrance"],
-    objects: [
-      { th: "รถจอดแช่", en: "Long-dwell vehicles" },
-      { th: "รถรับส่ง", en: "Shuttle buses" },
-      { th: "ช่อง curb", en: "Curb lane occupancy" }
-    ],
-    prompt: {
-      th: "ตัวอย่าง AI สำหรับนับ dwell time หน้า Hall และเตือนก่อนรถล้นลูป",
-      en: "AI sample for curb dwell timing and pre-queue alerts at the hall frontage."
-    },
-    targetLayers: ["cctv-cameras", "itic-traffic", "projects", "mtt-grid"]
-  },
-  {
-    sampleId: "camera-beehive-incident",
-    zones: ["mtt-bond-street", "mtt-popular", "mtt-junction"],
-    objects: [
-      { th: "รถหยุดผิดปกติ", en: "Abnormal stop" },
-      { th: "ขอบ crowd", en: "Crowd edge" },
-      { th: "จุดชนเล็ก", en: "Minor crash signature" }
-    ],
-    prompt: {
-      th: "ใช้กล้องต่อเนื่องเพื่อตรวจ stop pattern และ crowd spillback หลังฝน",
-      en: "Use continuous camera reads to catch stop patterns and crowd spillback after rain."
-    },
-    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
-  },
-  {
-    sampleId: "camera-cosmo-sidewalk",
-    zones: ["mtt-central", "impact"],
-    objects: [
-      { th: "คนล้นทางเท้า", en: "Pedestrian spillover" },
-      { th: "ร้านล้ำแนวเดิน", en: "Vendor overspill" },
-      { th: "แนวจอดรถ", en: "Curb conflict" }
-    ],
-    prompt: {
-      th: "ตัวอย่าง AI เพื่ออ่านความหนาแน่นคนและ lane conflict รอบหน้าศูนย์กิจกรรม",
-      en: "AI sample for reading pedestrian density and curb conflict around event frontage."
-    },
-    targetLayers: ["cctv-cameras", "itic-traffic", "mtt-grid"]
-  },
-  {
-    sampleId: "camera-p2-wrong-way",
-    zones: ["mtt-bridge", "mtt-junction", "mtt-popular"],
-    objects: [
-      { th: "รถย้อนศร", en: "Wrong-way movement" },
-      { th: "คิวสะพาน", en: "Bridge queue" },
-      { th: "ช่อง feeder", en: "Feeder lane flow" }
-    ],
-    prompt: {
-      th: "ตัวอย่าง AI สำหรับจับพฤติกรรมรถย้อนศรและ spillback จากสะพานกลับเข้า Popular",
-      en: "AI sample for wrong-way behavior and spillback from the bridge back into Popular."
-    },
-    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
-  },
-  {
-    sampleId: "camera-lakefront-smoke",
-    zones: ["mtt-lake"],
-    objects: [
-      { th: "ควัน", en: "Smoke plume" },
-      { th: "น้ำขัง", en: "Water pooling" },
-      { th: "จุดร้อน", en: "Heat source" }
-    ],
-    prompt: {
-      th: "ตัวอย่าง AI สำหรับ smoke / water / thermal watch ริมทะเลสาบและทางเดิน",
-      en: "AI sample for smoke, water, and thermal watch along the lake edge and walkways."
-    },
-    targetLayers: ["cctv-cameras", "water", "weather", "resilience", "mtt-grid"]
-  }
-];
 
 const importedLayerReferences: ImportedLayerReference[] = [
   {
@@ -813,7 +607,6 @@ const operationalLayerToggleIds = [
   "smart-city-thailand",
   "bangkok-passages",
   "cctv-cameras",
-  "mtt-grid",
   "weather",
   "pollution",
   "itic-traffic",
@@ -833,24 +626,6 @@ const satelliteToggleOptions: ToggleOption[] = [
     label: { th: "ภาพจริง", en: "True Color" },
     detail: { th: "ภาพดาวเทียมสีจริง", en: "NASA true-color imagery" },
     color: "#d5e7ff"
-  },
-  {
-    id: "satellite-cloudless",
-    label: { th: "คลาวด์เลส", en: "Cloudless" },
-    detail: { th: "โมเสก Sentinel-2 ความละเอียดสูงแบบไร้เมฆ", en: "High-resolution Sentinel-2 cloudless mosaic" },
-    color: "#93c5fd"
-  },
-  {
-    id: "satellite-surface-water",
-    label: { th: "น้ำผิวดิน", en: "Surface Water" },
-    detail: { th: "ความถี่การเกิดน้ำผิวดินสำหรับ floodplain และพื้นที่ชุ่มน้ำ", en: "Surface-water occurrence for floodplain and wetland context" },
-    color: "#0ea5e9"
-  },
-  {
-    id: "satellite-bathymetry",
-    label: { th: "ความลึกทะเล", en: "Bathymetry" },
-    detail: { th: "ความลึกทะเลและภูมิประเทศชายฝั่งสำหรับเมืองชายทะเล", en: "Ocean depth and coastal terrain context" },
-    color: "#14b8a6"
   },
   {
     id: "eo-vegetation",
@@ -879,13 +654,13 @@ const satelliteToggleOptions: ToggleOption[] = [
   {
     id: "satellite-surface-temp",
     label: { th: "ความร้อนพื้นผิว", en: "Surface Temp" },
-    detail: { th: "อุณหภูมิพื้นผิวดินจาก MODIS Aqua สำหรับความร้อนเมือง", en: "MODIS Aqua land-surface temperature for urban heat" },
+    detail: { th: "อุณหภูมิพื้นผิวดินสำหรับจุดร้อนเมือง", en: "Land-surface temperature for urban heat" },
     color: "#fb7185"
   },
   {
     id: "satellite-thermal",
-    label: { th: "แผนที่ความร้อน", en: "Thermal Band" },
-    detail: { th: "แถบอินฟราเรดความร้อนจาก MODIS Terra สำหรับอ่านลายเซ็นความร้อน", en: "MODIS Terra thermal infrared band for heat signatures" },
+    label: { th: "ความร้อนผิดปกติ", en: "Thermal Alerts" },
+    detail: { th: "จุดความร้อนและความเสี่ยงไฟ", en: "Thermal anomalies and fire hotspots" },
     color: "#f97316"
   },
   {
@@ -914,8 +689,8 @@ const satelliteToggleOptions: ToggleOption[] = [
   },
   {
     id: "eo-fire-thermal",
-    label: { th: "เฝ้าระวังความร้อน", en: "Heat Watch" },
-    detail: { th: "แถบอินฟราเรด MODIS Aqua สำหรับเฝ้าระวังภาวะร้อนจัด", en: "MODIS Aqua thermal infrared watch for elevated heat stress" },
+    label: { th: "ไฟป่า", en: "Fire Watch" },
+    detail: { th: "จุดความร้อนกลางคืนจาก VIIRS ใช้ร่วมกับ Roscosmos FIRMS", en: "VIIRS night thermal anomalies, shared with Roscosmos FIRMS network" },
     color: "#ef4444"
   },
   {
@@ -1105,24 +880,12 @@ function getDefaultOverlayOpacity(id: string) {
   switch (id) {
     case "satellite-imagery":
       return 0.92;
-    case "satellite-cloudless":
-      return 0.78;
-    case "satellite-surface-water":
-      return 0.58;
-    case "satellite-bathymetry":
-      return 0.54;
-    case "satellite-surface-temp":
-      return 0.68;
-    case "satellite-thermal":
-      return 0.7;
     case "eo-vegetation":
       return 0.6;
     case "eo-aerosol":
       return 0.54;
     case "eo-precipitation":
       return 0.58;
-    case "eo-fire-thermal":
-      return 0.68;
     case "jaxa-rainfall":
       return 0.42;
     case "satellite-night-lights":
@@ -1135,15 +898,8 @@ function getDefaultOverlayOpacity(id: string) {
 function getDefaultBlendMode(id: string): BlendModeOption {
   switch (id) {
     case "satellite-imagery":
-    case "satellite-cloudless":
       return "normal";
     case "satellite-night-lights":
-      return "screen";
-    case "satellite-surface-water":
-      return "overlay";
-    case "satellite-surface-temp":
-    case "satellite-thermal":
-    case "eo-fire-thermal":
       return "screen";
     case "eo-aerosol":
       return "multiply";
@@ -1341,8 +1097,8 @@ function createSatelliteDigestFallback(): SatelliteDigest {
 
 const copyDeck = {
   th: {
-    title: PUBLIC_DASHBOARD_BRAND.title,
-    brandEyebrow: PUBLIC_DASHBOARD_BRAND.eyebrow.th,
+    title: "Smart City Thailand Super Dashboard",
+    brandEyebrow: "สมาร์ตซิตี้ไทยแลนด์",
     subtitle: "แดชบอร์ดปฏิบัติการสำหรับติดตามสัญญาณเมืองอัจฉริยะไทย",
     view: "มุมมอง",
     range: "ช่วงเวลา",
@@ -1407,7 +1163,6 @@ const copyDeck = {
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
     focusAirRisk: "ความเสี่ยงอากาศ",
-    focusMonsoonWatch: "ฝน / มรสุม",
     focusCandidates: "เมืองผู้สมัคร",
     focusMediaWatch: "จับตาสื่อ",
     focusEconomyContext: "บริบทเศรษฐกิจ",
@@ -1416,7 +1171,7 @@ const copyDeck = {
     activeLayersLegend: "เลเยอร์ที่เปิดอยู่",
     clickToFocus: "กดเพื่อโฟกัสบนแผนที่",
     mediaHotspot: "สัญญาณสื่อ",
-    weatherLegend: "วงกลมสีฟ้า = อุณหภูมิ / ลม / ฝน",
+    weatherLegend: "วงกลมสีฟ้า = อุณหภูมิ / ความชื้น",
     projectLegend: "สีน้ำเงิน = ความหนาแน่นของโครงการ",
     newsLegend: "สีเขียว = จุดความเคลื่อนไหวข่าว",
     resilienceLegend: "สีส้ม = พื้นที่เฝ้าระวัง",
@@ -1431,7 +1186,7 @@ const copyDeck = {
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
     jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
     soilMoistureLegend: "สีน้ำตาล = ความชื้นดินจาก NASA SMAP",
-    fireThermalLegend: "สีแดง = แถบความร้อนอินฟราเรดจาก MODIS Aqua สำหรับเฝ้าระวังความร้อน",
+    fireThermalLegend: "สีแดง = จุดความร้อนกลางคืนจาก VIIRS / Roscosmos FIRMS",
     snowCoverLegend: "สีขาวฟ้า = พื้นที่หิมะปกคลุมจาก MODIS",
     chlorophyllLegend: "สีเขียวเข้ม = คลอโรฟิลล์ทะเลจาก MODIS Aqua / ESA OC-CCI",
     cloudPhaseLegend: "สีเทา = เฟสเมฆอินฟราเรดจาก MODIS Aqua",
@@ -1497,8 +1252,8 @@ const copyDeck = {
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
   en: {
-    title: PUBLIC_DASHBOARD_BRAND.title,
-    brandEyebrow: PUBLIC_DASHBOARD_BRAND.eyebrow.en,
+    title: "Smart City Thailand Super Dashboard",
+    brandEyebrow: "Smart City Thailand",
     subtitle: "Live operations dashboard for Thailand's smart city intelligence",
     view: "View",
     range: "Time Range",
@@ -1564,7 +1319,6 @@ const copyDeck = {
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
     focusAirRisk: "Air Risk",
-    focusMonsoonWatch: "Rain / Monsoon",
     focusCandidates: "Candidate Cities",
     focusMediaWatch: "Media Watch",
     focusEconomyContext: "Economic Context",
@@ -1573,7 +1327,7 @@ const copyDeck = {
     activeLayersLegend: "Active Layers",
     clickToFocus: "Click to focus on the map",
     mediaHotspot: "Media Spike",
-    weatherLegend: "Blue circles = temperature / wind / rain",
+    weatherLegend: "Teal circles = temperature / humidity",
     projectLegend: "Blue = project density",
     newsLegend: "Green = news signal points",
     resilienceLegend: "Amber = watch areas",
@@ -1588,7 +1342,7 @@ const copyDeck = {
     coverageLegend: "Red = nationwide smart city footprint",
     jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
     soilMoistureLegend: "Brown = NASA SMAP soil moisture for agriculture and flood planning",
-    fireThermalLegend: "Red = MODIS Aqua thermal infrared watch for elevated heat stress",
+    fireThermalLegend: "Red = VIIRS night thermal anomalies, shared with Roscosmos FIRMS network",
     snowCoverLegend: "Ice blue = MODIS snow cover for Himalayan and Asian watershed monitoring",
     chlorophyllLegend: "Teal = MODIS Aqua ocean chlorophyll, merged with ESA OC-CCI program",
     cloudPhaseLegend: "Gray = MODIS Aqua cloud phase infrared for weather context",
@@ -1824,7 +1578,6 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
   }
 
   return [
-    ...(citySlug === "muang-thong-thani" ? ["mtt-grid"] : []),
     "weather",
     "pollution",
     "projects",
@@ -1929,16 +1682,6 @@ function formatConfidence(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
-function formatSignalLabel(value?: string) {
-  if (!value) {
-    return "";
-  }
-
-  return value
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
 function normalizeCitySlug(value?: string) {
   if (!value) {
     return "";
@@ -1947,71 +1690,11 @@ function normalizeCitySlug(value?: string) {
   return value.toLowerCase().replace(/\s+/g, "-");
 }
 
-function titleCaseSlug(value: string) {
-  return value
-    .split("-")
-    .filter(Boolean)
-    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
-    .join(" ");
-}
-
-function getMttZoneLabel(zone: string): LocalizedText {
-  return MTT_CAMERA_ZONE_LABELS[zone] ?? {
-    th: titleCaseSlug(zone),
-    en: titleCaseSlug(zone)
-  };
-}
-
-function getMttCameraDistanceKm(lat: number, lon: number) {
-  const latDiffKm = (lat - MTT_CAMERA_CORE.lat) * 111;
-  const lonDiffKm = (lon - MTT_CAMERA_CORE.lon) * 107;
-  return Math.hypot(latDiffKm, lonDiffKm);
-}
-
-function formatDistanceLabel(distanceKm: number, locale: Locale) {
-  if (!Number.isFinite(distanceKm)) {
-    return locale === "th" ? "ระยะไม่ทราบ" : "Distance unknown";
-  }
-
-  if (distanceKm < 1) {
-    return locale === "th"
-      ? `${Math.round(distanceKm * 1000)} ม.`
-      : `${Math.round(distanceKm * 1000)} m`;
-  }
-
-  return locale === "th" ? `${distanceKm.toFixed(1)} กม.` : `${distanceKm.toFixed(1)} km`;
-}
-
-function getPublicCameraPreviewFallbackUrl(camera: PublicCctvCamera) {
-  if (camera.cameraId.startsWith("CAMPK")) {
-    return `https://camera1.iticfoundation.org/jpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
-  }
-
-  return camera.imageUrl;
-}
-
-function getPublicCameraFeedUrl(camera: PublicCctvCamera) {
-  if (camera.cameraId.startsWith("CAMPK")) {
-    return `https://camera1.iticfoundation.org/mjpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
-  }
-
-  return camera.previewUrl ?? camera.imageUrl;
-}
-
-function getPublicCameraLiveImageUrl(camera: PublicCctvCamera) {
-  if (camera.cameraId.startsWith("CAMPK")) {
-    return `https://camera1.iticfoundation.org/mjpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
-  }
-
-  return camera.previewUrl ?? camera.imageUrl;
-}
-
 const cityFeatureAliases: Record<string, string[]> = {
   bangkok: ["bangkok", "krung-thep"],
   phuket: ["phuket"],
   "khon-kaen": ["khon-kaen", "khonkaen"],
-  "chiang-mai": ["chiang-mai", "chiangmai"],
-  "muang-thong-thani": ["muang-thong-thani", "muangthongthani"]
+  "chiang-mai": ["chiang-mai", "chiangmai"]
 };
 
 function featureMatchesCity(feature: GeoFeatureRecord, citySlug: string) {
@@ -2047,16 +1730,6 @@ function numericProperty(feature: GeoFeatureRecord, key: string) {
   return typeof raw === "number" ? raw : Number(raw ?? 0);
 }
 
-function stringProperty(feature: GeoFeatureRecord, key: string) {
-  const raw = feature.properties[key];
-  return raw === null || raw === undefined ? "" : String(raw);
-}
-
-function timeValue(value?: string) {
-  const parsed = new Date(value ?? "").getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
   if (!domainSlug) {
     return true;
@@ -2080,10 +1753,9 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "national") as DashboardView;
-  const view = (searchParams.get("view") as DashboardView) || defaultView;
+  const view: DashboardView = searchParams.get("view") === "city" ? "city" : "national";
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
+  const city = searchParams.get("city") ?? "bangkok";
   const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
@@ -2401,8 +2073,6 @@ function DashboardPage() {
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"map" | "satellite" | "cctv" | "insights" | "data">("map");
-  const [layerPaletteOpen, setLayerPaletteOpen] = useState(false);
   const [opsDrawerState, setOpsDrawerState] = useState<OpsDrawerState | null>(null);
   const [timeCompareEnabled, setTimeCompareEnabled] = useState(false);
   const [compareSelection, setCompareSelection] = useState<string[]>(["bangkok", "chiang-mai", "phuket"]);
@@ -2427,10 +2097,6 @@ function DashboardPage() {
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
   const basemap = searchParams.get("basemap") === "satellite" ? "satellite" : "atlas";
-
-  useEffect(() => {
-    document.title = PUBLIC_DASHBOARD_BRAND.title;
-  }, []);
 
   const {
     lang,
@@ -2464,8 +2130,6 @@ function DashboardPage() {
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
-  const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
-  const mttGridActive = layers.includes("mtt-grid");
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -2572,7 +2236,6 @@ function DashboardPage() {
       ? slicThailandQuery.data
       : slicThailandFallback;
   const operationalLayerOptions = operationalLayerToggleIds
-    .filter((id) => id !== "mtt-grid" || isMuangThongCityView)
     .map((id) => layerSeed.find((layer) => layer.id === id))
     .filter((item): item is (typeof layerSeed)[number] => Boolean(item));
 
@@ -2611,11 +2274,8 @@ function DashboardPage() {
     })
     : news;
 
-  const sortedFilteredNews = [...filteredNews].sort(
-    (left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime()
-  );
-  const officialNews = sortedFilteredNews.filter((item) => item.kind === "official").slice(0, 2);
-  const externalNews = sortedFilteredNews.filter((item) => item.kind === "external").slice(0, 3);
+  const officialNews = filteredNews.filter((item) => item.kind === "official").slice(0, 2);
+  const externalNews = filteredNews.filter((item) => item.kind === "external").slice(0, 3);
   const globalSignalNews = globalNews.slice(0, 4);
   const compactProjects = filteredProjects.slice(0, 3);
   const visibleTrends = trendWatchItems.slice(0, 3);
@@ -2675,7 +2335,6 @@ function DashboardPage() {
   const undpDataSource = sources.find((source) => source.id === "undp-data") ?? null;
   const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
   const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
-  const trafficCollection = mapFeatures.find((collection) => collection.layerId === "itic-traffic");
   const topAqiFeature =
     pollutionCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
       return !best || numericProperty(feature, "aqi") > numericProperty(best, "aqi") ? feature : best;
@@ -2684,54 +2343,7 @@ function DashboardPage() {
     weatherCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
       return !best || numericProperty(feature, "temperatureC") > numericProperty(best, "temperatureC") ? feature : best;
     }, null) ?? null;
-  const wettestWeatherFeature =
-    weatherCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
-      const precipitationScore =
-        numericProperty(feature, "precipitationMm") * 100 + numericProperty(feature, "precipitationProbability");
-      const bestScore = best
-        ? numericProperty(best, "precipitationMm") * 100 + numericProperty(best, "precipitationProbability")
-        : -1;
-
-      return !best || precipitationScore > bestScore ? feature : best;
-    }, null) ?? null;
-  const weatherLeadFeature =
-    wettestWeatherFeature &&
-    (numericProperty(wettestWeatherFeature, "precipitationMm") > 0 ||
-      numericProperty(wettestWeatherFeature, "precipitationProbability") >= 40 ||
-      numericProperty(wettestWeatherFeature, "windKph") >= 18)
-      ? wettestWeatherFeature
-      : hottestWeatherFeature;
-  const topTrafficFeature =
-    trafficCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
-      const priority = numericProperty(feature, "priorityScore");
-      const bestPriority = best ? numericProperty(best, "priorityScore") : -1;
-
-      if (!best || priority > bestPriority) {
-        return feature;
-      }
-
-      if (priority === bestPriority) {
-        const featureTime = timeValue(stringProperty(feature, "startedAt") || feature.source.publishedAt);
-        const bestTime = timeValue(stringProperty(best, "startedAt") || best.source.publishedAt);
-        return featureTime > bestTime ? feature : best;
-      }
-
-      return best;
-    }, null) ?? null;
-  const trafficWatchItems = [...(trafficCollection?.features ?? [])]
-    .sort((left, right) => {
-      const priorityDelta = numericProperty(right, "priorityScore") - numericProperty(left, "priorityScore");
-      if (priorityDelta !== 0) {
-        return priorityDelta;
-      }
-
-      return (
-        timeValue(stringProperty(right, "startedAt") || right.source.publishedAt) -
-        timeValue(stringProperty(left, "startedAt") || left.source.publishedAt)
-      );
-    })
-    .slice(0, 4);
-  const latestExternalSignal = sortedFilteredNews.find((item) => item.kind === "external") ?? null;
+  const latestExternalSignal = news.find((item) => item.kind === "external") ?? null;
   const latestExternalSignalCity = latestExternalSignal?.citySlug ? cityBySlug.get(latestExternalSignal.citySlug) ?? null : null;
   const nationalCoverageCollection = mapFeatures.find((collection) => collection.layerId === "smart-city-thailand");
   const coverageFeatureCount = nationalCoverageCollection?.features.length ?? 0;
@@ -2748,9 +2360,9 @@ function DashboardPage() {
       return mapFeatures;
     }
 
-      return mapFeatures
+    return mapFeatures
       .map((collection) => {
-        if (collection.layerId === "bangkok-passages") {
+        if (collection.layerId === "bangkok-passages" || collection.layerId === "itic-traffic") {
           if (city !== "bangkok") {
             return { ...collection, features: [] };
           }
@@ -2817,41 +2429,13 @@ function DashboardPage() {
   const hottestCitySlug = normalizeCitySlug(
     String(hottestWeatherFeature?.properties.city ?? hottestWeatherFeature?.title ?? "")
   );
-  const weatherLeadSummary = weatherLeadFeature
-    ? (() => {
-        const rain = numericProperty(weatherLeadFeature, "precipitationMm");
-        const rainChance = numericProperty(weatherLeadFeature, "precipitationProbability");
-        const wind = numericProperty(weatherLeadFeature, "windKph");
-        const temperature = numericProperty(weatherLeadFeature, "temperatureC");
-        const humidity = numericProperty(weatherLeadFeature, "humidity");
-
-        if (rain > 0 || rainChance >= 40 || wind >= 18) {
-          return lang === "th"
-            ? `ลม ${wind} กม./ชม. · ฝน ${rain.toFixed(1)} มม. · โอกาสฝน ${rainChance}%`
-            : `wind ${wind} km/h · rain ${rain.toFixed(1)} mm · chance ${rainChance}%`;
-        }
-
-        return lang === "th" ? `${temperature}°C · ความชื้น ${humidity}%` : `${temperature}°C · ${humidity}% humidity`;
-      })()
-    : "";
-  const topTrafficCitySlug = normalizeCitySlug(
-    String(topTrafficFeature?.properties.citySlug ?? topTrafficFeature?.properties.city ?? "")
-  );
-  const topTrafficSummary = topTrafficFeature
-    ? [formatSignalLabel(stringProperty(topTrafficFeature, "eventClass")), formatSignalLabel(stringProperty(topTrafficFeature, "status"))]
-        .filter(Boolean)
-        .join(" · ")
-    : "";
   const layerLegendDetails: Record<string, string> = {
     pollution: copy.clickToFocus,
     weather: copy.weatherLegend,
     projects: copy.projectLegend,
     news: copy.newsLegend,
     resilience: copy.resilienceLegend,
-    "itic-traffic":
-      lang === "th"
-        ? "สีแดง = อุบัติเหตุ การปิดถนน และเหตุจราจรสด"
-        : "Red = live accidents, road closures, and traffic incidents",
+    "itic-traffic": lang === "th" ? "สีแดง = จุดจราจรและเหตุการณ์จราจรสด" : "Red = live traffic watchpoints and incidents",
     economy: copy.economyLegend,
     agriculture: copy.agricultureLegend,
     water: copy.waterLegend,
@@ -2862,28 +2446,16 @@ function DashboardPage() {
     disaster: copy.disasterLegend,
     "jaxa-rainfall": copy.jaxaLegend,
     "satellite-imagery": lang === "th" ? "ภาพสีจริงจาก NASA GIBS" : "NASA GIBS true-color imagery",
-    "satellite-cloudless":
-      lang === "th"
-        ? "โมเสก Sentinel-2 แบบไร้เมฆจาก EOX สำหรับมุมมองภาพจริงความละเอียดสูง"
-        : "EOX Sentinel-2 cloudless mosaic for a high-resolution visual baseline",
-    "satellite-surface-water":
-      lang === "th"
-        ? "ชั้นข้อมูลน้ำผิวดินจาก JRC สำหรับ floodplain และพื้นที่ชุ่มน้ำ"
-        : "JRC Global Surface Water occurrence for floodplain and wetland context",
-    "satellite-bathymetry":
-      lang === "th"
-        ? "ความลึกทะเลและภูมิประเทศชายฝั่งจาก EMODnet Bathymetry"
-        : "EMODnet bathymetry and coastal terrain context",
     "satellite-vegetation": lang === "th" ? "ค่าพืชพรรณ NDVI จาก NASA GIBS" : "NASA GIBS NDVI vegetation index",
     "satellite-aerosol": lang === "th" ? "ดัชนีละอองลอยจาก NASA GIBS" : "NASA GIBS aerosol index",
     "satellite-surface-temp":
       lang === "th"
-        ? "อุณหภูมิพื้นผิวดินจาก MODIS Aqua สำหรับความร้อนเมืองและความแห้ง"
-        : "MODIS Aqua land-surface temperature for urban heat and dry stress",
+        ? "อุณหภูมิพื้นผิวดินจาก NASA GIBS สำหรับความร้อนเมืองและพื้นที่แห้ง"
+        : "NASA GIBS land-surface temperature for urban heat and dry stress",
     "satellite-thermal":
       lang === "th"
-        ? "แถบอินฟราเรดความร้อนจาก MODIS Terra สำหรับอ่านลายเซ็นความร้อน"
-        : "MODIS Terra thermal infrared band for heat signatures",
+        ? "จุดความร้อนดาวเทียมจาก NASA GIBS สำหรับไฟและความร้อนผิดปกติ"
+        : "NASA GIBS thermal anomalies for fire and heat watch",
     "satellite-water-vapor":
       lang === "th"
         ? "ไอน้ำในชั้นบรรยากาศจาก NASA GIBS สำหรับแนวชื้นและมรสุม"
@@ -2899,11 +2471,7 @@ function DashboardPage() {
     "eo-chlorophyll": copy.chlorophyllLegend,
     "eo-cloud-phase": copy.cloudPhaseLegend,
     "smart-city-thailand": copy.coverageLegend,
-    "bangkok-passages": copy.bangkokPlacesLegend,
-    "mtt-grid":
-      lang === "th"
-        ? "กริดอ้างอิง 1 x 1 กม. สำหรับอ่านระยะและการกระจายของเหตุในเมืองทองธานี"
-        : "1 x 1 km reference grid for reading distance and incident spacing in Muang Thong Thani."
+    "bangkok-passages": copy.bangkokPlacesLegend
   };
   const activeLegendItems = [
     ...layerSeed.map((item) => ({
@@ -3047,36 +2615,16 @@ function DashboardPage() {
     {
       id: "air-risk",
       label: copy.focusAirRisk,
-      layers: ["pollution", "weather", "eo-aerosol", "resilience"],
+      layers: ["pollution", "weather", "resilience"],
       run: () => {
         const next = new URLSearchParams(searchParams);
-        next.set("layers", ["pollution", "weather", "eo-aerosol", "resilience"].join(","));
-        next.set("basemap", "satellite");
-        next.delete("district");
-        next.delete("domain");
+        next.set("layers", ["pollution", "weather", "resilience"].join(","));
         if (topAqiCitySlug && knownCitySlugs.has(topAqiCitySlug)) {
           next.set("city", topAqiCitySlug);
           next.set("view", "city");
         } else {
           next.set("view", "national");
         }
-        startTransition(() => {
-          setSearchParams(next);
-          setRecenterSignal((value) => value + 1);
-        });
-      }
-    },
-    {
-      id: "monsoon-watch",
-      label: copy.focusMonsoonWatch,
-      layers: ["eo-precipitation", "jaxa-rainfall", "water", "resilience"],
-      run: () => {
-        const next = new URLSearchParams(searchParams);
-        next.set("layers", ["eo-precipitation", "jaxa-rainfall", "water", "resilience"].join(","));
-        next.set("basemap", "satellite");
-        next.set("view", "national");
-        next.delete("district");
-        next.delete("domain");
         startTransition(() => {
           setSearchParams(next);
           setRecenterSignal((value) => value + 1);
@@ -3131,58 +2679,6 @@ function DashboardPage() {
       }
     }
   ];
-  const activeFocusPresetId =
-    focusPresets.find((preset) => preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId)))?.id ??
-    null;
-  const airRiskPreset = focusPresets.find((preset) => preset.id === "air-risk");
-  const monsoonPreset = focusPresets.find((preset) => preset.id === "monsoon-watch");
-  const candidatePreset = focusPresets.find((preset) => preset.id === "candidate-cities");
-  const mediaPreset = focusPresets.find((preset) => preset.id === "media-watch");
-  const economyPreset = focusPresets.find((preset) => preset.id === "economic-context");
-  const footerQuickActions = [
-    {
-      id: "air-risk",
-      label: lang === "th" ? "อากาศ" : "Air",
-      active: activeFocusPresetId === "air-risk",
-      onClick: airRiskPreset?.run
-    },
-    {
-      id: "monsoon-watch",
-      label: lang === "th" ? "ฝน" : "Rain",
-      active: activeFocusPresetId === "monsoon-watch",
-      onClick: monsoonPreset?.run
-    },
-    {
-      id: "candidate-cities",
-      label: lang === "th" ? "เมืองเด่น" : "Candidates",
-      active: activeFocusPresetId === "candidate-cities",
-      onClick: candidatePreset?.run
-    },
-    {
-      id: "media-watch",
-      label: lang === "th" ? "สื่อ" : "Media",
-      active: activeFocusPresetId === "media-watch",
-      onClick: mediaPreset?.run
-    },
-    {
-      id: "economic-context",
-      label: lang === "th" ? "เศรษฐกิจ" : "Economy",
-      active: activeFocusPresetId === "economic-context",
-      onClick: economyPreset?.run
-    },
-    {
-      id: "basemap",
-      label: basemap === "satellite" ? copy.mapAtlas : copy.mapSatellite,
-      active: false,
-      onClick: () => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")
-    },
-    {
-      id: "recenter",
-      label: lang === "th" ? "จัดกึ่งกลาง" : "Recenter",
-      active: false,
-      onClick: () => setRecenterSignal((value) => value + 1)
-    }
-  ];
   const satellitePresets = SATELLITE_PRESETS.map((preset) => ({
     ...preset,
     active: preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId))
@@ -3224,30 +2720,6 @@ function DashboardPage() {
       previewUrl:
         "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/6/31/52.jpg",
       action: () => toggleSatelliteLayer("satellite-imagery")
-    },
-    {
-      id: "satellite-cloudless",
-      title: { th: "คลาวด์เลส", en: "Cloudless" },
-      detail: { th: "ฐานภาพ Sentinel-2 แบบไร้เมฆ", en: "Sentinel-2 cloudless high-resolution base." },
-      active: layers.includes("satellite-cloudless"),
-      previewUrl: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/6/31/52.jpg",
-      action: () => toggleSatelliteLayer("satellite-cloudless")
-    },
-    {
-      id: "satellite-surface-water",
-      title: { th: "น้ำผิวดิน", en: "Surface Water" },
-      detail: { th: "ดูแนวพื้นที่ชุ่มน้ำและ floodplain", en: "Wetland and floodplain occurrence context." },
-      active: layers.includes("satellite-surface-water"),
-      previewUrl: "https://storage.googleapis.com/global-surface-water/tiles2021/occurrence/6/52/31.png",
-      action: () => toggleSatelliteLayer("satellite-surface-water")
-    },
-    {
-      id: "satellite-bathymetry",
-      title: { th: "ความลึกทะเล", en: "Bathymetry" },
-      detail: { th: "ภูมิประเทศชายฝั่งและความลึกทะเล", en: "Coastal depth and seabed terrain context." },
-      active: layers.includes("satellite-bathymetry"),
-      previewUrl: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/6/52/31.png",
-      action: () => toggleSatelliteLayer("satellite-bathymetry")
     },
     {
       id: "eo-vegetation",
@@ -3389,26 +2861,91 @@ function DashboardPage() {
     confidence: number;
     freshness: string;
   }>;
-  const primaryScopeLabel = view === "national" ? (lang === "th" ? "ประเทศไทย" : "Thailand") : localize(lang, selectedCity.name);
-  const primaryScopeDetail =
+  const scopeTitle = view === "national" ? (lang === "th" ? "ประเทศไทย" : "Thailand") : localize(lang, selectedCity.name);
+  const scopeLookupEyebrow = view === "national" ? (lang === "th" ? "ภาพรวมประเทศ" : "National Outlook") : copy.placeLookup;
+  const scopeStatusLabel = view === "national" ? (lang === "th" ? "ทั่วประเทศ" : "Nationwide") : localize(lang, selectedCity.name);
+  const scopePopulationLabel = view === "national" ? (lang === "th" ? "ประชากรเมืองที่ติดตาม" : "Tracked population") : copy.population;
+  const scopePopulationValue = view === "national" ? formatPopulation(trackedPopulation) : formatPopulation(selectedCity.population);
+  const scopePopulationDetail =
+    view === "national"
+      ? lang === "th"
+        ? `${overview.cities.length} เมืองในแดชบอร์ด`
+        : `${overview.cities.length} cities in the dashboard`
+      : "";
+  const scopeRegionLabel = view === "national" ? (lang === "th" ? "ขอบเขต" : "Coverage") : copy.region;
+  const scopeRegionValue = view === "national" ? (lang === "th" ? "ประเทศไทย" : "Thailand") : localize(lang, selectedCity.region);
+  const scopeRegionDetail =
     view === "national"
       ? selectedDomain
         ? localize(lang, selectedDomain.description)
         : lang === "th"
-          ? `${overview.cities.length} เมืองที่ติดตาม • ${coverageFeatureCount} จุดครอบคลุม`
-          : `${overview.cities.length} tracked cities • ${coverageFeatureCount} coverage footprints`
+          ? "ครอบคลุมเมืองอัจฉริยะที่ติดตามทั่วประเทศ"
+          : "Covers tracked smart-city signals across Thailand."
+      : "";
+  const scopeFootprintLabel =
+    view === "national" ? (lang === "th" ? "รอยเท้า smart city" : "Smart city coverage") : (lang === "th" ? "เขตที่เลือก" : "District focus");
+  const scopeFootprintValue =
+    view === "national"
+      ? `${coverageFeatureCount} ${lang === "th" ? "จุด" : "footprints"}`
+      : selectedDistrict
+        ? localize(lang, selectedDistrict.name)
+        : (lang === "th" ? "ทั้งเมือง" : "Citywide");
+  const scopeFootprintDetail =
+    view === "national"
+      ? selectedDomain
+        ? `${localize(lang, selectedDomain.title)} ${lang === "th" ? "ที่กรองอยู่" : "filtered"}`
+        : `${overview.domains.length} ${lang === "th" ? "โดเมนที่ติดตาม" : "tracked domains"}`
+      : selectedDistrict
+        ? selectedDistrict.riskLevel.toUpperCase()
+        : (lang === "th" ? "ไม่มีการเจาะพื้นที่" : "No sub-city filter");
+  const scopeQueueLabel =
+    view === "national" ? (lang === "th" ? "คิวตัดสินใจระดับประเทศ" : "National decision queue") : (lang === "th" ? "คิวตัดสินใจ" : "Decision queue");
+  const scopeFocusEyebrow = view === "national" ? (lang === "th" ? "โจทย์ระดับประเทศ" : "National focus") : copy.smartFocus;
+  const scopeFocusBody =
+    view === "national"
+      ? localize(lang, overview.briefing.body)
+      : selectedDistrict
+        ? localize(lang, selectedDistrict.focus)
+        : localize(lang, selectedCity.focus);
+  const scopeLeadingScores = view === "national" ? nationalTopDomains : topCityScores;
+  const scopeWatchpoints =
+    view === "national"
+      ? commandAlerts.slice(0, 3).map((item) => item.reason)
+      : selectedDistrict?.watchpoints.map((item) => localize(lang, item)) ?? [];
+  const selectionPrimaryEyebrow = view === "national" ? (lang === "th" ? "โฟกัสระดับประเทศ" : "National focus") : "City Focus";
+  const selectionPrimaryTitle = scopeTitle;
+  const selectionPrimaryBody = view === "national" ? localize(lang, overview.briefing.body) : localize(lang, selectedCity.focus);
+  const selectionSecondaryEyebrow = view === "national" ? (lang === "th" ? "โหมดการครอบคลุม" : "Coverage mode") : (lang === "th" ? "เขต / พื้นที่" : "District Focus");
+  const selectionSecondaryTitle =
+    view === "national"
+      ? (selectedDomain ? localize(lang, selectedDomain.title) : scopeStatusLabel)
+      : selectedDistrict
+        ? localize(lang, selectedDistrict.name)
+        : (lang === "th" ? "ทั้งเมือง" : "Citywide");
+  const selectionSecondaryBody =
+    view === "national"
+      ? selectedDomain
+        ? localize(lang, selectedDomain.description)
+        : lang === "th"
+          ? "อ่านสัญญาณข้ามเมืองและข้ามโดเมนจากจุดเดียว"
+          : "Read cross-city and cross-domain signals from one national view."
       : selectedDistrict
         ? localize(lang, selectedDistrict.priority)
-        : localize(lang, selectedCity.focus);
-  const scopePopulationLabel = view === "national" ? (lang === "th" ? "ประชากรเมืองที่ติดตาม" : "Tracked population") : copy.population;
-  const scopePopulationValue = view === "national" ? formatPopulation(trackedPopulation) : formatPopulation(selectedCity.population);
-  const scopeDomainScores = view === "national" ? nationalTopDomains : topCityScores;
-  const overviewWarnings = resilience.warnings.slice(0, 3);
-  const overviewQueue = decisionItems.slice(0, 3);
-  const overviewOfficialNews = officialNews.slice(0, 2);
-  const overviewExternalNews = externalNews.slice(0, 2);
-  const overviewProjects = compactProjects.slice(0, 3);
-  const overviewSources = apiWatchSources.slice(0, 4);
+        : (lang === "th" ? "ยังไม่ได้เจาะลงพื้นที่ย่อย" : "No sub-city drilldown selected.");
+  const selectionDomainTitle =
+    selectedDomain
+      ? localize(lang, selectedDomain.title)
+      : scopeLeadingScores[0]?.domain
+        ? localize(lang, scopeLeadingScores[0].domain.title)
+        : copy.topLine;
+  const selectionDomainBody =
+    selectedDomain
+      ? localize(lang, selectedDomain.description)
+      : view === "national"
+        ? lang === "th"
+          ? "โดเมนนำจากคะแนนเฉลี่ยของเมืองที่ติดตามทั่วประเทศ"
+          : "Leading domain based on average scores across tracked Thai cities."
+        : localize(lang, overview.briefing.body);
   const compareRows = [
     {
       id: "population",
@@ -3456,7 +2993,7 @@ function DashboardPage() {
       }
     }
   ];
-  const workspaceTitle = PUBLIC_DASHBOARD_BRAND.title;
+  const workspaceTitle = lang === "th" ? "Smart City Thailand Super Dashboard" : "Smart City Thailand Super Dashboard";
   const workspaceNarrative =
     localize(lang, commandCenter.screenMode);
   const reporterStatusMeta = {
@@ -3492,105 +3029,6 @@ function DashboardPage() {
   const sensorFeeds = commandCenter.sensorFeeds;
   const openReporterCount = reporterSamples.filter((item) => item.status !== "completed").length;
   const escalatedCctvCount = cctvSamples.filter((item) => item.severity === "alert").length;
-  const mttCameraFocus = useMemo(() => {
-    const zoneRank = new Map<string, number>(MTT_CAMERA_ZONE_PRIORITY.map((zone, index) => [zone, index]));
-
-    const orderedCameras = publicCctvCameras
-      .map((camera) => {
-        const coverage =
-          MTT_CAMERA_COVERAGE_DEFS.find((definition) => definition.zones.includes(camera.zone)) ?? null;
-
-        return {
-          ...camera,
-          distanceKm: getMttCameraDistanceKm(camera.lat, camera.lon),
-          zoneLabel: getMttZoneLabel(camera.zone),
-          targetLayers: coverage?.targetLayers ?? ["cctv-cameras", "itic-traffic", "mtt-grid"]
-        };
-      })
-      .sort((left, right) => {
-        const leftStatusRank = left.status === "live" ? 0 : left.status === "unknown" ? 1 : 2;
-        const rightStatusRank = right.status === "live" ? 0 : right.status === "unknown" ? 1 : 2;
-
-        if (leftStatusRank !== rightStatusRank) {
-          return leftStatusRank - rightStatusRank;
-        }
-
-        const leftZoneRank = zoneRank.get(left.zone) ?? 99;
-        const rightZoneRank = zoneRank.get(right.zone) ?? 99;
-        if (leftZoneRank !== rightZoneRank) {
-          return leftZoneRank - rightZoneRank;
-        }
-
-        return left.distanceKm - right.distanceKm;
-      });
-
-    const relevant = orderedCameras.filter((camera) => zoneRank.has(camera.zone) || camera.distanceKm <= 6);
-    const cameras = (relevant.length > 0 ? relevant : orderedCameras).slice(0, 16);
-    const liveCount = cameras.filter((camera) => camera.status === "live").length;
-    const sourceCount = new Set(cameras.map((camera) => camera.source)).size;
-    const zoneCount = new Set(cameras.map((camera) => camera.zone)).size;
-    const lastCheckedAt =
-      [...cameras]
-        .map((camera) => camera.lastCheckedAt)
-        .filter((value): value is string => Boolean(value))
-        .sort((left, right) => right.localeCompare(left))[0] ?? "";
-
-    const coverageBoards = MTT_CAMERA_COVERAGE_DEFS.map((definition) => {
-      const groupedCameras = cameras.filter((camera) => definition.zones.includes(camera.zone));
-
-      return {
-        ...definition,
-        cameras: groupedCameras,
-        liveCount: groupedCameras.filter((camera) => camera.status === "live").length,
-        sourceCount: new Set(groupedCameras.map((camera) => camera.source)).size,
-        primaryCamera: groupedCameras[0] ?? null
-      };
-    }).filter((board) => board.cameras.length > 0);
-
-    const recipeCards = MTT_CAMERA_RECIPE_DEFS.flatMap((definition) => {
-      const sample = cctvSamples.find((item) => item.id === definition.sampleId);
-      if (!sample) {
-        return [];
-      }
-
-      const camera =
-        cameras.find((candidate) => definition.zones.includes(candidate.zone)) ??
-        cameras[0] ??
-        null;
-
-      return [
-        {
-          sample,
-          camera,
-          objects: definition.objects,
-          prompt: definition.prompt,
-          targetLayers: Array.from(new Set(["cctv-cameras", "mtt-grid", ...sample.targetLayers, ...definition.targetLayers]))
-        }
-      ];
-    });
-
-    const heroCameras = MTT_STREAM_PRIORITY_CAMERA_IDS.map((cameraId) =>
-      cameras.find((camera) => camera.cameraId === cameraId && camera.status === "live")
-    )
-      .filter((camera): camera is (typeof cameras)[number] => Boolean(camera))
-      .slice(0, 4);
-
-    const resolvedHeroCameras =
-      heroCameras.length > 0
-        ? heroCameras
-        : cameras.filter((camera) => camera.status === "live").slice(0, 4);
-
-    return {
-      cameras,
-      heroCameras: resolvedHeroCameras,
-      liveCount,
-      sourceCount,
-      zoneCount,
-      lastCheckedAt,
-      coverageBoards,
-      recipeCards
-    };
-  }, [cctvSamples, publicCctvCameras]);
   const integrationBoards = commandCenter.workflowBoards.map((item) => ({
     ...item,
     title: localize(lang, item.title),
@@ -3604,15 +3042,6 @@ function DashboardPage() {
   const commandConnectors = commandCenter.connectors;
   const connectorReadyCount = commandConnectors.filter((item) => item.status === "live" || item.status === "ready").length;
   const expansionTracks = commandCenter.expansionTracks;
-  const focusMttScene = (targetLayers: string[]) => {
-    applyDashboardScene({
-      view: "city",
-      city: "muang-thong-thani",
-      basemap: "atlas",
-      layers: Array.from(new Set([...layers, "cctv-cameras", "mtt-grid", ...targetLayers]))
-    });
-    setActiveTab("map");
-  };
   const layerRailSections = [
     {
       id: "base",
@@ -3944,19 +3373,6 @@ function DashboardPage() {
     });
   }
 
-  function selectCity(citySlug: string) {
-    const next = buildStableParams();
-    next.set("city", citySlug);
-    next.set("view", "city");
-    next.delete("district");
-
-    startTransition(() => {
-      setSearchParams(next);
-      setActiveTab("map");
-      setRecenterSignal((value) => value + 1);
-    });
-  }
-
   function toggleLayer(id: string) {
     const next = buildStableParams();
     const nextLayers = new Set(layers);
@@ -4045,10 +3461,6 @@ function DashboardPage() {
     }
 
     toggleLayer(id);
-  }
-
-  function toggleMttGrid() {
-    toggleLayer("mtt-grid");
   }
 
   function openOpsDrawer(state: OpsDrawerState) {
@@ -4167,257 +3579,1427 @@ function DashboardPage() {
     }
   }
 
-  const siteTheme = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani") === "muang-thong-thani" ? "editorial" : "ops";
-
   return (
-    <div className="shell" data-theme={siteTheme}>
+    <div className="shell">
       <header className="topbar">
         <div className="brand-cluster">
-          <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
+          <img src="/Logo depa-01.png" alt="depa" className="brand-logo" />
+          <img src="/Smart City Logo-02.png" alt="Smart City Thailand Office" className="brand-logo smart-city-logo" />
+          <img src="/mdes.png" alt="MDES" className="brand-logo secondary" />
           <div className="brand-copy">
+            <p className="eyebrow">{copy.brandEyebrow}</p>
             <h1>{workspaceTitle}</h1>
-            <small className="brand-subline">{primaryScopeDetail}</small>
+            <p className="brand-subline">{copy.subtitle}</p>
           </div>
         </div>
+
         <div className="top-controls">
-          <div className="compact-group scope-toggle">
-            <button
-              className={view === "national" ? "chip active" : "chip"}
-              onClick={() =>
-                applyDashboardScene({
-                  view: "national",
-                  layers: Array.from(new Set([...layers, "smart-city-thailand"]))
-                })
-              }
-            >
-              {lang === "th" ? "ประเทศ" : "Thailand"}
-            </button>
-            <button className={view === "city" ? "chip active" : "chip"} onClick={() => applyDashboardScene({ view: "city", city })}>
-              {lang === "th" ? "เมือง" : "City"}
-            </button>
-          </div>
-          <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
+          <nav className="compact-group">
+            <NavLink className={({ isActive }) => (isActive ? "chip active" : "chip")} to="/">
+              {copy.publicView}
+            </NavLink>
+            <NavLink className={({ isActive }) => (isActive ? "chip active" : "chip")} to="/admin">
+              {copy.admin}
+            </NavLink>
+          </nav>
+
           <div className="compact-group">
-            <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
-            <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
+            <span className="eyebrow">{copy.view}</span>
+            {(["national", "city", "domain"] as DashboardView[]).map((option) => (
+              <button
+                key={option}
+                className={option === view ? "chip active" : "chip"}
+                onClick={() => updateParam("view", option)}
+              >
+                {option}
+              </button>
+            ))}
           </div>
-          <button className="share-button" onClick={copyLink}>{copiedLink ? copy.copied : copy.share}</button>
+
+          <div className="compact-group">
+            <span className="eyebrow">{copy.range}</span>
+            {TIME_RANGE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                className={option === timeRange ? "chip active" : "chip"}
+                onClick={() => updateParam("timeRange", option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="compact-group">
+            <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>
+              EN
+            </button>
+            <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>
+              TH
+            </button>
+          </div>
+
+          <button
+            className="share-button"
+            onClick={() => {
+              setManualOpen(false);
+              openCityOpsDrawer(
+                selectedCity.slug,
+                lang === "th"
+                  ? "ใช้ drawer นี้เพื่ออธิบายมุมมองปัจจุบัน พร้อมโครงการ ข่าว และชั้นภาพที่เกี่ยวข้อง"
+                  : "Use this drawer to explain the current view with supporting projects, news, and layers.",
+                layers
+              );
+            }}
+          >
+            {uiText.explainView}
+          </button>
+
+          <button
+            className="share-button"
+            onClick={() => {
+              setOpsDrawerState(null);
+              setManualOpen(true);
+            }}
+          >
+            {uiText.screenshotManual}
+          </button>
+
+          <button className="share-button" onClick={copyLink}>
+            {copiedLink ? copy.copied : copy.share}
+          </button>
         </div>
       </header>
 
-      {/* Sidebar and assistant drawer removed — content moved to floating panels and tabs */}
-
-      {/* Manual and ops panels removed — content consolidated into tabs */}
-
-      <div className="dashboard-stage">
-        <div className="map-zone">
-        {/* AI Status Line - floating at top of map */}
-        <button type="button" className="ai-status-line" onClick={() => setActiveTab("insights")}>
-          <span className="ai-dot" />
-          <span>{executiveSignal}</span>
-        </button>
-
-        {/* The Map (always mounted) */}
-        <InteractiveMap
-          locale={lang}
-          view={view}
-          citySlug={city}
-          district={selectedDistrict ?? undefined}
-          domainSlug={domain || undefined}
-          basemap={basemap}
-          layers={layers}
-          overlayStyles={overlayStudioSettings}
-          projects={projects}
-          news={news}
-          featureCollections={mapFeaturesForView}
-          publicCctvCameras={publicCctvCameras}
-          recenterSignal={recenterSignal}
-        />
-
-        {/* Floating Layer Palette Toggle */}
-        <button
-          type="button"
-          className="layer-palette-toggle"
-          onClick={() => setLayerPaletteOpen((v) => !v)}
-        >
-          {`Layers (${layers.length})`}
-        </button>
-
-        {/* Floating Layer Palette */}
-        {layerPaletteOpen ? (
-          <div className="layer-palette">
-            <div className="palette-header">
-              <strong>{lang === "th" ? "ชั้นข้อมูล" : "Layers"}</strong>
-              <button type="button" className="chip" onClick={() => setLayerPaletteOpen(false)}>&times;</button>
-            </div>
-            <div className="palette-section">
-              <span className="palette-title">{lang === "th" ? "แผนที่ฐาน" : "Base Map"}</span>
-              <button type="button" className={basemap === "atlas" ? "palette-toggle active" : "palette-toggle"} onClick={() => updateParam("basemap", "atlas")}>
-                <span className="palette-dot" style={{ background: "#22c55e" }} />
-                <span>{lang === "th" ? "ถนน" : "Street"}</span>
-                <span className="palette-state">{basemap === "atlas" ? "ON" : "OFF"}</span>
-              </button>
-              <button type="button" className={basemap === "satellite" ? "palette-toggle active" : "palette-toggle"} onClick={() => updateParam("basemap", "satellite")}>
-                <span className="palette-dot" style={{ background: "#3b82f6" }} />
-                <span>{lang === "th" ? "ภาพถ่ายทางอากาศ" : "Aerial"}</span>
-                <span className="palette-state">{basemap === "satellite" ? "ON" : "OFF"}</span>
-              </button>
-            </div>
-            <div className="palette-section">
-              <span className="palette-title">{lang === "th" ? "ปฏิบัติการ" : "Operational"}</span>
-              {operationalLayerOptions.map((layer) => {
-                const active = layers.includes(layer.id);
-                return (
-                  <button key={layer.id} type="button" className={active ? "palette-toggle active" : "palette-toggle"} onClick={() => toggleLayer(layer.id)}>
-                    <span className="palette-dot" style={{ background: layer.color }} />
-                    <span>{localize(lang, layer.label)}</span>
-                    <span className="palette-state">{active ? "ON" : "OFF"}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="palette-section">
-              <span className="palette-title">{lang === "th" ? "ดาวเทียม" : "Satellite Overlays"}</span>
-              {satelliteToggleOptions.map((item) => {
-                const active = layers.includes(item.id);
-                return (
-                  <button key={item.id} type="button" className={active ? "palette-toggle active" : "palette-toggle"} onClick={() => toggleSatelliteLayer(item.id)}>
-                    <span className="palette-dot" style={{ background: item.color }} />
-                    <span>{localize(lang, item.label)}</span>
-                    <span className="palette-state">{active ? "ON" : "OFF"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Floating Map Controls */}
-        <div className="map-floating-controls">
-          <button type="button" className="map-float-btn" onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")}>
-            {basemap === "satellite" ? "Atlas" : "Sat"}
-          </button>
-          <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)}>
-            {copy.recenter}
-          </button>
-          {isMuangThongCityView ? (
-            <button
-              type="button"
-              className={mttGridActive ? "map-float-btn active" : "map-float-btn"}
-              onClick={toggleMttGrid}
-            >
-              {lang === "th" ? "กริด 1 กม." : "1 km grid"}
-            </button>
-          ) : null}
+      <aside className="sidebar">
+        <div className="side-section side-search">
+          <input
+            type="search"
+            className="search-input"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder={copy.search}
+          />
         </div>
 
-        {/* Floating Alert Chips */}
-        {activeTab === "map" ? (
-          <div className="map-alerts-strip">
+        <div className="side-section side-assistant-launch">
+          <button type="button" className="side-ai-launcher" onClick={() => setAssistantOpen(true)}>
+            <span className="eyebrow">{copy.askAssistant}</span>
+            <strong>{copy.askLead}</strong>
+            <small>{assistantResponse ? `${assistantResponse.documentCount} docs` : assistantStatus?.documentCount ? `${assistantStatus.documentCount} docs` : copy.askLocalOnly}</small>
+          </button>
+        </div>
+
+        <div className="side-section">
+          <span className="eyebrow">{lang === "th" ? "ชั้นข้อมูลปฏิบัติการ" : "Operational Layers"}</span>
+          <div className="toggle-stack">
+            {operationalLayerOptions.map((layer) => {
+              const active = layers.includes(layer.id);
+              const detail =
+                layer.kind === "signal"
+                  ? lang === "th"
+                    ? "สัญญาณตัดสินใจ"
+                    : "Decision signal"
+                  : lang === "th"
+                    ? "ข้อมูลอ้างอิง"
+                    : "Reference layer";
+
+              return (
+                <button
+                  key={layer.id}
+                  type="button"
+                  aria-pressed={active}
+                  className={active ? "side-toggle active" : "side-toggle"}
+                  onClick={() => toggleLayer(layer.id)}
+                >
+                  <div className="side-toggle-row">
+                    <span className="swatch" style={{ background: layer.color }} />
+                    <strong>{localize(lang, layer.label)}</strong>
+                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                  </div>
+                  <small>{detail}</small>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="side-section">
+          <span className="eyebrow">{lang === "th" ? "ภาพดาวเทียม" : "Satellite Feeds"}</span>
+          <div className="toggle-stack">
+            {satelliteToggleOptions.map((item) => {
+              const active = layers.includes(item.id);
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={active}
+                  className={active ? "side-toggle active satellite" : "side-toggle satellite"}
+                  onClick={() => toggleSatelliteLayer(item.id)}
+                >
+                  <div className="side-toggle-row">
+                    <span className="swatch" style={{ background: item.color }} />
+                    <strong>{localize(lang, item.label)}</strong>
+                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                  </div>
+                  <small>{localize(lang, item.detail)}</small>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="side-section side-filter-group">
+          <label className="stack-field">
+            <span className="eyebrow">City</span>
+            <select value={city} onChange={(event) => updateParam("city", event.target.value)}>
+              {overview.cities.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {localize(lang, item.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="side-section side-filter-group">
+          <label className="stack-field">
+            <span className="eyebrow">{lang === "th" ? "เขต / อำเภอ" : "District / Zone"}</span>
+            <select
+              value={district}
+              onChange={(event) => updateParam("district", event.target.value)}
+              disabled={cityDistricts.length === 0 || view === "national"}
+            >
+              <option value="">{lang === "th" ? "ทั้งเมือง" : "Citywide"}</option>
+              {cityDistricts.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {localize(lang, item.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="side-section side-filter-group">
+          <label className="stack-field">
+            <span className="eyebrow">Domain</span>
+            <select value={domain} onChange={(event) => updateParam("domain", event.target.value)}>
+              <option value="">All</option>
+              {overview.domains.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {localize(lang, item.title)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="side-section side-live-rail">
+          <span className="eyebrow">{copy.liveWatch}</span>
+
+          {topAqiFeature ? (
+            <button
+              type="button"
+              className="side-watch"
+              onClick={() =>
+                focusCityWithLayer(String(topAqiFeature.properties.city).toLowerCase().replace(/\s+/g, "-"), "pollution")
+              }
+            >
+              <span className="eyebrow">{copy.airHotspot}</span>
+              <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+              <small>{`${numericProperty(topAqiFeature, "pm25")} PM2.5 | ${numericProperty(topAqiFeature, "pm10")} PM10`}</small>
+            </button>
+          ) : null}
+
+          {hottestWeatherFeature ? (
+            <button
+              type="button"
+              className="side-watch"
+              onClick={() =>
+                focusCityWithLayer(String(hottestWeatherFeature.properties.city).toLowerCase().replace(/\s+/g, "-"), "weather")
+              }
+            >
+              <span className="eyebrow">{copy.weatherHotspot}</span>
+              <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+              <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
+            </button>
+          ) : null}
+
+          {latestExternalSignal ? (
+            <a
+              className="side-watch linked"
+              href={latestExternalSignal.source.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="eyebrow">{copy.latestSignal}</span>
+              <strong>{localize(lang, latestExternalSignal.title)}</strong>
+              <small>{latestExternalSignal.source.sourceName}</small>
+            </a>
+          ) : null}
+
+          <div className="side-watch">
+            <span className="eyebrow">{copy.syncWindow}</span>
+            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+            <small>{`Next ${formatUtcClock(nextGlobalSyncAt)} UTC`}</small>
+          </div>
+        </div>
+      </aside>
+
+      {!assistantOpen ? (
+        <button type="button" className="assistant-edge-tab" onClick={() => setAssistantOpen(true)}>
+          <span>AI</span>
+          <small>{copy.askAssistant}</small>
+        </button>
+      ) : null}
+
+      {assistantOpen ? (
+        <>
+          <button
+            type="button"
+            className="assistant-scrim"
+            aria-label={copy.askClose}
+            onClick={() => setAssistantOpen(false)}
+          />
+          <aside className="assistant-drawer" aria-label={copy.askAssistant}>
+            <div className="assistant-header">
+              <div>
+                <span className="eyebrow">{copy.askAssistant}</span>
+                <strong>{copy.askGrounding}</strong>
+              </div>
+              <button type="button" className="chip" onClick={() => setAssistantOpen(false)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="assistant-context">
+              <span className="eyebrow">{copy.askContext}</span>
+              <div className="pill-list compact">
+                {assistantContextTags.map((item) => (
+                  <span key={item} className="stack-pill">
+                    {item}
+                  </span>
+                ))}
+                <span className="stack-pill subdued">
+                  {(assistantResponse?.geminiReady || assistantStatus?.geminiReady) ? copy.askGeminiReady : copy.askLocalOnly}
+                </span>
+              </div>
+            </div>
+
+            <div className="assistant-question-map">
+              <div className="assistant-map-header">
+                <span className="eyebrow">{copy.askQuestionMap}</span>
+                <p>{copy.askQuestionMapNote}</p>
+              </div>
+              <div className="assistant-cluster-list tile-scroll">
+                {resolvedQuestionClusters.map((cluster) => (
+                  <section key={cluster.id} className="assistant-cluster">
+                    <div className="assistant-cluster-head">
+                      <strong>{cluster.title}</strong>
+                      <small>{cluster.sourceNote}</small>
+                    </div>
+                    <div className="assistant-prompt-list">
+                      {cluster.prompts.map((prompt) => (
+                        <button
+                          key={`${cluster.id}-${prompt}`}
+                          type="button"
+                          className="assistant-prompt-chip"
+                          onClick={() => setAssistantQuestion(prompt)}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+
+            <div className="assistant-form">
+              <textarea
+                value={assistantQuestion}
+                onChange={(event) => setAssistantQuestion(event.target.value)}
+                placeholder={copy.askPlaceholder}
+                rows={4}
+              />
+              <button
+                type="button"
+                className="share-button"
+                onClick={() => void askAssistant()}
+                disabled={assistantLoading || assistantQuestion.trim() === ""}
+              >
+                {assistantLoading ? "…" : copy.askSubmit}
+              </button>
+            </div>
+
+            <div className="assistant-panel tile-scroll">
+              {assistantError ? <p className="assistant-error">{assistantError}</p> : null}
+
+              {assistantResponse ? (
+                <>
+                  <div className="assistant-answer">
+                    <p className="eyebrow">{assistantResponse.provider}</p>
+                    <p>{localize(lang, assistantResponse.contextSummary)}</p>
+                    <strong>{localize(lang, assistantResponse.answer)}</strong>
+                  </div>
+
+                  <div className="assistant-citations">
+                    <span className="eyebrow">{copy.askSources}</span>
+                    {assistantResponse.citations.length > 0 ? (
+                      assistantResponse.citations.map((citation) => (
+                        <article key={citation.id} className="assistant-citation">
+                          <div className="stack-title">
+                            <strong>{citation.documentTitle}</strong>
+                            <span className="status-pill">{citation.pageLabel ?? "doc"}</span>
+                          </div>
+                          <p>{citation.excerpt}</p>
+                          <small>{citation.fileName}</small>
+                        </article>
+                      ))
+                    ) : (
+                      <p className="assistant-empty">{copy.askNoAnswer}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="assistant-empty">{copy.askNoAnswer}</p>
+              )}
+            </div>
+          </aside>
+        </>
+      ) : null}
+
+      {manualOpen ? (
+        <>
+          <button
+            type="button"
+            className="utility-scrim"
+            aria-label={uiText.screenshotManual}
+            onClick={() => setManualOpen(false)}
+          />
+          <aside className="utility-panel manual-panel" aria-label={uiText.screenshotManual}>
+            <div className="utility-panel-header">
+              <div>
+                <span className="eyebrow">{uiText.screenshotManual}</span>
+                <strong>{lang === "th" ? "คู่มือสำหรับเดโมและสไลด์" : "Manual for demos and slides"}</strong>
+              </div>
+              <button type="button" className="chip" onClick={() => setManualOpen(false)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="utility-panel-note">
+              <p>
+                {lang === "th"
+                  ? "ใช้ปุ่มด้านล่างเพื่อจัดฉากภาพที่อ่านง่ายและพร้อมสำหรับสกรีนช็อต โดยระบบจะเปลี่ยน basemap, layers, และช่วงเวลาให้ทันที"
+                  : "Use the scene buttons below to stage clean demo screenshots. The dashboard will switch the basemap, layers, and time window automatically."}
+              </p>
+            </div>
+
+            <div className="manual-scene-list tile-scroll">
+              {screenshotManualScenes.map((scene) => (
+                <article key={scene.id} className="manual-scene-card">
+                  <div className="stack-title">
+                    <strong>{localize(lang, scene.title)}</strong>
+                    <span className="status-pill">{scene.state.timeRange}</span>
+                  </div>
+                  <p>{localize(lang, scene.detail)}</p>
+                  <small>
+                    {uiText.shot}: {localize(lang, scene.shot)}
+                  </small>
+                  <div className="pill-list compact">
+                    {scene.state.layers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((item) => item.id === layerId)?.label ??
+                        layerSeed.find((item) => item.id === layerId)?.label;
+                      return (
+                        <span key={`${scene.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    className="share-button"
+                    onClick={() => {
+                      applyDashboardScene(scene.state);
+                      setManualOpen(false);
+                    }}
+                  >
+                    {uiText.applyScene}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </aside>
+        </>
+      ) : null}
+
+      {opsDrawerState ? (
+        <>
+          <button
+            type="button"
+            className="utility-scrim"
+            aria-label={uiText.openDrawer}
+            onClick={() => setOpsDrawerState(null)}
+          />
+          <aside className="utility-panel ops-panel" aria-label={uiText.openDrawer}>
+            <div className="utility-panel-header">
+              <div>
+                <span className="eyebrow">{uiText.openDrawer}</span>
+                <strong>{opsDrawerState.title}</strong>
+                <small>{opsDrawerState.subtitle}</small>
+              </div>
+              <button type="button" className="chip" onClick={() => setOpsDrawerState(null)}>
+                {copy.askClose}
+              </button>
+            </div>
+
+            <div className="utility-panel-note">
+              <p>{opsDrawerState.reason}</p>
+              <div className="pill-list compact">
+                <span className="stack-pill">{`${uiText.confidence} ${Math.round(opsDrawerState.confidence * 100)}%`}</span>
+                <span className="stack-pill">{opsDrawerState.sourceLabel}</span>
+                <span className="stack-pill">{`${uiText.liveWindow}: ${timeRange}`}</span>
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <div className="card-header">
+                <span className="eyebrow">{copy.placeLookup}</span>
+                <span className="status-pill">{localize(lang, drawerCity.name)}</span>
+              </div>
+              <div className="utility-stat-grid">
+                <div className="utility-stat">
+                  <span className="eyebrow">{copy.population}</span>
+                  <strong>{formatPopulation(drawerCity.population)}</strong>
+                </div>
+                <div className="utility-stat">
+                  <span className="eyebrow">{copy.region}</span>
+                  <strong>{localize(lang, drawerCity.region)}</strong>
+                </div>
+                <div className="utility-stat">
+                  <span className="eyebrow">{uiText.compareMode}</span>
+                  <strong>{timeCompareEnabled ? uiText.compareWindow : uiText.compareWindowOff}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerSatellite}</span>
+              <div className="pill-list compact">
+                <span className="stack-pill">{basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas}</span>
+                {drawerSatelliteLayers.map((item) => (
+                  <span key={`drawer-layer-${item.id}`} className="stack-pill">
+                    {localize(lang, item.label)}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerProjects}</span>
+              <div className="utility-link-list">
+                {drawerProjects.length > 0 ? (
+                  drawerProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      className="utility-link-card"
+                      onClick={() => applyDashboardScene({ view: "city", city: project.citySlug, layers: ["projects", "news", "weather"] })}
+                    >
+                      <strong>{localize(lang, project.title)}</strong>
+                      <small>{localize(lang, project.nextMilestone)}</small>
+                    </button>
+                  ))
+                ) : (
+                  <div className="utility-link-card static">
+                    <strong>{lang === "th" ? "ยังไม่มีโครงการเฉพาะเมือง" : "No city-specific projects yet"}</strong>
+                    <small>{localize(lang, drawerCity.focus)}</small>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.drawerNews}</span>
+              <div className="utility-link-list">
+                {drawerNews.length > 0 ? (
+                  drawerNews.map((item) => (
+                    <a key={item.id} className="utility-link-card" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{item.source.sourceName}</small>
+                    </a>
+                  ))
+                ) : (
+                  <div className="utility-link-card static">
+                    <strong>{lang === "th" ? "ยังไม่มีข่าวเฉพาะเมือง" : "No city-specific news yet"}</strong>
+                    <small>{lang === "th" ? "ใช้ global signals เป็นบริบทเสริม" : "Use global signals as supporting context."}</small>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.sourceFreshness}</span>
+              <div className="utility-link-list">
+                {drawerSources.map((source) => (
+                  <a key={source.id} className="utility-link-card" href={source.url} target="_blank" rel="noreferrer">
+                    <strong>{source.name}</strong>
+                    <small>{`${source.freshnessStatus} • ${formatUtcClock(source.lastCheckedAt)} UTC`}</small>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="utility-section">
+              <span className="eyebrow">{uiText.groundTruth}</span>
+              <div className="utility-link-list">
+                {drawerGroundTruthLinks.map((item) => (
+                  <a key={item.id} className="utility-link-card" href={item.url} target="_blank" rel="noreferrer">
+                    <strong>{localize(lang, item.label)}</strong>
+                    <small>{localize(lang, item.note)}</small>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </>
+      ) : null}
+
+      <main className="dashboard-shell workspace-shell">
+        <section className="card command-card" id="command-bar">
+          <div className="card-header">
+            <span className="eyebrow">{uiText.commandBar}</span>
+            <span className="status-pill">{`${commandAlerts.length} ${lang === "th" ? "รายการ" : "alerts"}`}</span>
+          </div>
+          <div className="command-grid">
+            {commandAlerts.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="command-alert"
+                onClick={() => {
+                  applyDashboardScene({
+                    view:
+                      item.layers.includes("eo-precipitation") ||
+                      item.layers.includes("jaxa-rainfall") ||
+                      item.layers.includes("smart-city-thailand")
+                        ? "national"
+                        : "city",
+                    city: item.citySlug,
+                    basemap: item.basemap,
+                    layers: item.layers
+                  });
+                  openOpsDrawer({
+                    title: item.title,
+                    subtitle: item.location,
+                    citySlug: item.citySlug,
+                    reason: item.reason,
+                    layers: item.layers,
+                    sourceLabel: item.freshness,
+                    confidence: item.confidence
+                  });
+                }}
+              >
+                <div className="command-alert-head">
+                  <span className="eyebrow">{item.location}</span>
+                  <span className="status-pill">{item.freshness}</span>
+                </div>
+                <strong>{item.title}</strong>
+                <p>{item.reason}</p>
+                <div className="pill-list compact">
+                  {item.layers.map((layerId) => {
+                    const layerLabel =
+                      satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                      layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                    return (
+                      <span key={`${item.id}-${layerId}`} className="stack-pill">
+                        {layerLabel ? localize(lang, layerLabel) : layerId}
+                      </span>
+                    );
+                  })}
+                  <span className="stack-pill">{`${uiText.confidence} ${Math.round(item.confidence * 100)}%`}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="card map-hero" id="map">
+          <div className="card-header">
+            <span className="eyebrow">{copy.map}</span>
+            <span className="status-pill">
+              {view === "national"
+                ? layers.includes("smart-city-thailand")
+                  ? "Thailand Coverage"
+                  : "Thailand"
+                : localize(lang, selectedCity.name)}
+            </span>
+          </div>
+
+          <div className="thai-map">
+            <InteractiveMap
+              locale={lang}
+              view={view}
+              citySlug={city}
+              district={selectedDistrict ?? undefined}
+              domainSlug={domain || undefined}
+              basemap={basemap}
+              layers={layers}
+              overlayStyles={overlayStudioSettings}
+              projects={projects}
+              news={news}
+              featureCollections={mapFeaturesForView}
+              publicCctvCameras={publicCctvCameras}
+              recenterSignal={recenterSignal}
+            />
+            <div className="map-overlay">
+              <div className="map-caption">
+                <strong>
+                  {view === "national"
+                    ? "Thailand"
+                    : selectedDistrict
+                      ? `${localize(lang, selectedCity.name)} / ${localize(lang, selectedDistrict.name)}`
+                      : localize(lang, selectedCity.name)}
+                </strong>
+                <span>
+                  {view === "national"
+                    ? "Smart City coverage footprint"
+                    : selectedDistrict
+                      ? localize(lang, selectedDistrict.priority)
+                      : localize(lang, selectedCity.region)}
+                </span>
+              </div>
+              <span className="map-open-link">
+                {`${basemap === "satellite" ? copy.mapSatellite : copy.mapAtlas} · ${activeSatelliteLayers.length} ${lang === "th" ? "ชั้นภาพ" : "overlays"}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="hotspot-strip">
             {topAqiFeature ? (
               <button
                 type="button"
-                className="map-alert-chip warning"
+                className="hotspot-chip warning"
                 onClick={() => {
-                  if (airRiskPreset?.run) {
-                    airRiskPreset.run();
-                    return;
-                  }
                   focusCityWithLayer(topAqiCitySlug || city, "pollution");
+                  openCityOpsDrawer(
+                    topAqiCitySlug || city,
+                    lang === "th"
+                      ? "จุดนี้เป็น AQI hotspot ที่ควรอ่านคู่กับ aerosol และ weather"
+                      : "This hotspot should be read together with aerosol and weather.",
+                    ["pollution", "weather", "eo-aerosol"]
+                  );
                 }}
               >
-                {`AQI ${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}
+                <span className="eyebrow">{copy.airHotspot}</span>
+                <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+                <small>{copy.clickToFocus}</small>
               </button>
             ) : null}
-            <button
-              type="button"
-              className="map-alert-chip"
-              onClick={() => {
-                monsoonPreset?.run?.();
-              }}
-            >
-              {lang === "th" ? "ฝน + มรสุม" : "Rain + Monsoon"}
-            </button>
+
             {hottestWeatherFeature ? (
-              <button type="button" className="map-alert-chip" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
-                {`${numericProperty(hottestWeatherFeature, "temperatureC")}°C ${hottestWeatherFeature.title}`}
+              <button
+                type="button"
+                className="hotspot-chip"
+                onClick={() => {
+                  focusCityWithLayer(hottestCitySlug || city, "weather");
+                  openCityOpsDrawer(
+                    hottestCitySlug || city,
+                    lang === "th"
+                      ? "จุดนี้เป็น heat watch และควรเทียบกับชั้น vegetation"
+                      : "This heat watch should be compared with vegetation context.",
+                    ["weather", "eo-vegetation", "resilience"]
+                  );
+                }}
+              >
+                <span className="eyebrow">{copy.weatherHotspot}</span>
+                <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+                <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
               </button>
             ) : null}
-            {socialListening.mentionCount > 0 ? (
-              <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
-                {`${socialListening.mentionCount} mentions`}
+
+            {latestExternalSignal ? (
+              <button
+                type="button"
+                className="hotspot-chip"
+                onClick={() => {
+                  const preset = focusPresets.find((item) => item.id === "media-watch");
+                  preset?.run();
+                }}
+              >
+                <span className="eyebrow">{copy.mediaHotspot}</span>
+                <strong>{socialListening.mentionCount} mentions</strong>
+                <small>{socialListening.dominantSource}</small>
               </button>
             ) : null}
           </div>
-        ) : null}
 
-        {/* === TAB OVERLAY PANELS === */}
+          <div className="hero-toolbar">
+            <div className="hero-toolbar-group">
+              <div className="focus-preset-group">
+                <span className="eyebrow">{copy.focusPresets}</span>
+                <div className="pill-list compact">
+                  {focusPresets.map((preset) => {
+                    const presetActive =
+                      preset.layers.length === layers.length && preset.layers.every((item) => layers.includes(item));
 
-        {/* SATELLITE TAB */}
-        {activeTab === "satellite" ? (
-          <div className="tab-overlay satellite-gallery">
-            {/* ── BASE MAP (single-select) ── */}
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "แผนที่ฐาน" : "Base Map"}</strong>
-              <small>{lang === "th" ? "เลือกได้ 1 ชั้น" : "Select one"}</small>
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={presetActive ? "chip active" : "chip"}
+                        onClick={preset.run}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="map-stack-group">
+                <span className="eyebrow">{copy.satelliteMapStack}</span>
+                <div className="pill-list compact">
+                  <button
+                    type="button"
+                    className={basemap === "atlas" ? "chip active" : "chip"}
+                    onClick={() => updateParam("basemap", "atlas")}
+                  >
+                    {copy.mapAtlas}
+                  </button>
+                  <button
+                    type="button"
+                    className={basemap === "satellite" ? "chip active" : "chip"}
+                    onClick={() => updateParam("basemap", "satellite")}
+                  >
+                    {copy.mapSatellite}
+                  </button>
+                  <button className="chip" type="button" onClick={() => setRecenterSignal((value) => value + 1)}>
+                    {copy.recenter}
+                  </button>
+                </div>
+              </div>
+              <div className="map-city-list">
+                {overview.cities.map((item) => (
+                  <button
+                    key={item.slug}
+                    className={item.slug === city ? "map-city-button active" : "map-city-button"}
+                    onClick={() => {
+                      const next = buildStableParams();
+                      next.set("city", item.slug);
+                      next.set("view", "city");
+                      next.delete("district");
+                      startTransition(() => {
+                        setSearchParams(next);
+                        setRecenterSignal((v) => v + 1);
+                      });
+                      openCityOpsDrawer(
+                        item.slug,
+                        lang === "th"
+                          ? "เปิด drawer นี้เพื่ออธิบายเมืองที่เลือกพร้อมข่าว โครงการ และชั้นภาพที่เกี่ยวข้อง"
+                          : "Open this drawer for the selected city with related projects, news, and map layers.",
+                        layers
+                      );
+                    }}
+                  >
+                    {localize(lang, item.name)}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="chip"
+                onClick={() =>
+                  openCityOpsDrawer(
+                    selectedCity.slug,
+                    lang === "th"
+                      ? "คำอธิบายนี้สรุปว่าทำไมมุมมองปัจจุบันจึงสำคัญ"
+                      : "This explanation summarizes why the current view matters.",
+                    layers
+                  )
+                }
+              >
+                {uiText.openDrawer}
+              </button>
+              {layers.includes("smart-city-thailand") ? (
+                <label className="coverage-filter">
+                  <span className="eyebrow">Coverage Domain</span>
+                  <select value={domain} onChange={(event) => updateParam("domain", event.target.value)}>
+                    <option value="">{`All (${coverageFeatureCount})`}</option>
+                    {overview.domains.map((item) => (
+                      <option key={item.slug} value={item.slug}>
+                        {`${localize(lang, item.title)} (${coverageCountsByDomain.get(item.slug) ?? 0})`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </div>
-            <div className="sat-tile-grid">
-              {mapCompareCards.filter((c) => c.id === "street" || c.id === "aerial").map((card) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  className={card.active ? "sat-preview-tile active" : "sat-preview-tile"}
-                  onClick={card.action}
-                >
-                  <img src={card.previewUrl} alt={localize(lang, card.title)} loading="lazy" />
-                  <span className="sat-tile-label">
-                    {localize(lang, card.title)}
-                    <span className="sat-toggle-dot" />
+            <span className="hero-note">
+              {view === "national"
+                ? lang === "th"
+                  ? `Thailand ops • ${coverageFeatureCount} จุดครอบคลุม • ชั้นภาพดาวเทียม ${activeSatelliteLayers.length} ชั้น`
+                  : `Thailand ops • ${coverageFeatureCount} coverage footprints • ${activeSatelliteLayers.length} satellite layer${activeSatelliteLayers.length === 1 ? "" : "s"} active`
+                : lang === "th"
+                  ? `Ops room • ${selectedDistrict ? localize(lang, selectedDistrict.name) : localize(lang, selectedCity.name)} • ชั้นภาพดาวเทียม ${activeSatelliteLayers.length} ชั้น`
+                  : `Ops room • ${selectedDistrict ? localize(lang, selectedDistrict.name) : localize(lang, selectedCity.name)} • ${activeSatelliteLayers.length} satellite layer${activeSatelliteLayers.length === 1 ? "" : "s"} active`}
+            </span>
+          </div>
+
+          <div className="map-legend">
+            <div className="legend-inline-group">
+              <span className="eyebrow">{copy.aqiScale}</span>
+              <div className="legend-scale">
+                {[
+                  { label: "Good", color: "#16a34a" },
+                  { label: "Watch", color: "#f59e0b" },
+                  { label: "High", color: "#dc2626" },
+                  { label: "Severe", color: "#b91c1c" }
+                ].map((item) => (
+                  <div key={item.label} className="legend-chip">
+                    <span className="legend-swatch" style={{ background: item.color }} />
+                    <small>{item.label}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="legend-inline-group">
+              <span className="eyebrow">{copy.activeLayersLegend}</span>
+              <div className="active-layer-pills">
+                {activeLegendItems.map((item) => (
+                  <div key={item.id} className="active-layer-pill" title={item.detail}>
+                    <span className="legend-swatch" style={{ background: item.color }} />
+                    <small>{item.label}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="city-intel">
+            <div className="card-header">
+              <span className="eyebrow">{scopeLookupEyebrow}</span>
+              <span className="status-pill">{scopeStatusLabel}</span>
+            </div>
+            <div className="city-intel-grid">
+              <div className="city-intel-stat">
+                <span className="eyebrow">{scopePopulationLabel}</span>
+                <strong>{scopePopulationValue}</strong>
+                {scopePopulationDetail ? <small>{scopePopulationDetail}</small> : null}
+              </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{scopeRegionLabel}</span>
+                <strong>{scopeRegionValue}</strong>
+                {scopeRegionDetail ? <small>{scopeRegionDetail}</small> : null}
+              </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{scopeFootprintLabel}</span>
+                <strong>{scopeFootprintValue}</strong>
+                <small>{scopeFootprintDetail}</small>
+              </div>
+              <div className="city-intel-stat">
+                <span className="eyebrow">{scopeQueueLabel}</span>
+                <strong>{decisionItems.length}</strong>
+                <small>{decisionItems[0] ? `${lang === "th" ? "ถัดไป" : "Next"} ${formatUtcClock(decisionItems[0].dueAt)} UTC` : (lang === "th" ? "ไม่มีรายการ" : "No queued actions")}</small>
+              </div>
+              <div className="city-intel-focus">
+                <span className="eyebrow">{scopeFocusEyebrow}</span>
+                <p>{scopeFocusBody}</p>
+              </div>
+              <div className="city-intel-focus">
+                <span className="eyebrow">{copy.leadingDomains}</span>
+                <div className="pill-list compact">
+                  {scopeLeadingScores.map((item) => (
+                    <span key={item.domainSlug} className="stack-pill">
+                      {item.domain ? `${localize(lang, item.domain.title)} ${item.score}` : `${item.domainSlug} ${item.score}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {scopeWatchpoints.length > 0 ? (
+                <div className="city-intel-focus">
+                  <span className="eyebrow">{lang === "th" ? "พื้นที่ต้องจับตา" : "Watchpoints"}</span>
+                  <div className="terminal-list district-watch-list">
+                    {scopeWatchpoints.map((item, index) => (
+                      <p key={`watchpoint-${index}`}>{item}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section className="card workspace-story command-center-hero">
+          <div className="card-header">
+            <span className="eyebrow">
+              {view === "national"
+                ? lang === "th"
+                  ? "National command fabric"
+                  : "National Command Fabric"
+                : lang === "th"
+                  ? "Command fabric"
+                  : "Command Fabric"}
+            </span>
+            <span className="status-pill">{formatUtcClock(commandCenter.updatedAt)} UTC</span>
+          </div>
+          <div className="command-center-lead">
+            <div className="workspace-story-copy command-center-copy">
+              <h2>{workspaceTitle}</h2>
+              <p>{localize(lang, commandCenter.mission)}</p>
+              <p>{workspaceNarrative}</p>
+              <div className="pill-list compact">
+                <span className="stack-pill">{localize(lang, commandCenter.zoneLabel)}</span>
+                <span className="stack-pill">{`${connectorReadyCount}/${commandConnectors.length} ${lang === "th" ? "connectors ready" : "connectors ready"}`}</span>
+                <span className="stack-pill">{`${sensorFeeds.length} ${lang === "th" ? "sensor slots" : "sensor slots"}`}</span>
+                <span className="stack-pill">{`${openReporterCount} ${lang === "th" ? "open reports" : "open reports"}`}</span>
+              </div>
+            </div>
+            <div className="workspace-stat-grid command-metric-grid">
+              {commandCenter.metrics.map((metric) => (
+                <article key={metric.id} className={`workspace-stat command-metric-card tone-${metric.tone}`}>
+                  <span className="eyebrow">{localize(lang, metric.label)}</span>
+                  <strong>{metric.value}</strong>
+                  <small>{localize(lang, metric.detail)}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="runway-grid">
+            {expansionTracks.map((track) => (
+              <article key={track.id} className={`runway-card stage-${track.stage}`}>
+                <div className="stack-title">
+                  <strong>{localize(lang, track.title)}</strong>
+                  <span className={`status-tag ${track.stage === "base" ? "live" : track.stage === "next" ? "pilot" : "manual"}`}>
+                    {track.stage}
                   </span>
+                </div>
+                <p>{localize(lang, track.detail)}</p>
+                <div className="pill-list compact">
+                  {track.systems.map((item) => (
+                    <span key={`${track.id}-${item}`} className="stack-pill">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <div className="workspace-grid command-center-grid">
+          <section className="card workspace-module camera-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "CCTV AI samples" : "CCTV AI Samples"}</span>
+              <span className="status-pill">{lang === "th" ? "camera lanes" : "camera lanes"}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "ตัวอย่างกล้องพร้อม schema ที่ต่อสู่ระบบจริงได้ทันที" : "Camera lanes staged with contracts ready for the live feed"}</strong>
+              <small>
+                {lang === "th"
+                  ? "แต่ละการ์ดมี camera id, model, confidence, event time และ target layers เพื่อให้ต่อเข้ากับ inference service ได้ภายหลัง"
+                  : "Each card carries camera id, model, confidence, event time, and target layers so we can wire it into an inference service later."}
+              </small>
+            </div>
+            <div className="cctv-grid">
+              {cctvSamples.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`cctv-card severity-${item.severity}`}
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.detail), item.targetLayers);
+                  }}
+                >
+                  <div className="cctv-head">
+                    <div>
+                      <span className="eyebrow">{item.cameraId}</span>
+                      <strong>{localize(lang, item.detection)}</strong>
+                    </div>
+                    <span className={`status-tag ${item.severity === "alert" ? "delayed" : item.severity === "watch" ? "watch" : "live"}`}>
+                      {item.severity}
+                    </span>
+                  </div>
+                  <div className="signal-thumb">
+                    <span>{localize(lang, item.zone)}</span>
+                  </div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="signal-meta">
+                    <span>{`${uiText.confidence} ${formatConfidence(item.confidence)}`}</span>
+                    <span>{item.model}</span>
+                    <span>{`${formatUtcClock(item.capturedAt)} UTC`}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    <span className="stack-pill">{localize(lang, item.status)}</span>
+                    {item.targetLayers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                        layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                      return (
+                        <span key={`${item.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </button>
               ))}
             </div>
+          </section>
 
-            {/* ── OVERLAY LAYERS (multi-select, stacked on top) ── */}
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "ชั้นข้อมูลซ้อนทับ" : "Overlay Layers"}</strong>
-              <small>{activeSatelliteLayers.length > 0 ? `${activeSatelliteLayers.length} active` : lang === "th" ? "เลือกได้หลายชั้น" : "Select multiple"}</small>
+          <section className="card workspace-module sensor-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "Sensor spine" : "Sensor Spine"}</span>
+              <span className="status-pill">{lang === "th" ? "field slots" : "field slots"}</span>
             </div>
-            <div className="satellite-metrics-strip">
-              {satelliteMetrics.map((metric) => (
-                <div key={metric.id} className="sat-metric">
-                  <span className="eyebrow">{localize(lang, metric.title)}</span>
-                  <strong>{metric.displayValue}</strong>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "จัดพื้นที่สำหรับ traffic, crowd, parking, water, และ air nodes" : "Reserved space for traffic, crowd, parking, water, and air nodes"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ส่วนนี้คือฐานหลังบ้านสำหรับรับ sensor buses และอ่านคู่กับ layers บนแผนที่"
+                  : "This is the backend-facing spine for sensor buses that should read directly against the map layers."}
+              </small>
+            </div>
+            <div className="sensor-feed-list">
+              {sensorFeeds.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`sensor-feed-card status-${item.status}`}
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: item.category === "water" ? "satellite" : "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.detail), item.targetLayers);
+                  }}
+                >
+                  <div className="sensor-feed-head">
+                    <div>
+                      <span className="eyebrow">{item.sourceLabel}</span>
+                      <strong>{localize(lang, item.label)}</strong>
+                    </div>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "ready" ? "pilot" : item.status === "pilot" ? "watch" : "manual"}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <div className="sensor-feed-value">{item.value}</div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="signal-meta">
+                    <span>{localize(lang, item.zone)}</span>
+                    <span>{item.cadence}</span>
+                    <span>{item.category}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    {item.targetLayers.map((layerId) => {
+                      const layerLabel =
+                        satelliteToggleOptions.find((candidate) => candidate.id === layerId)?.label ??
+                        layerSeed.find((candidate) => candidate.id === layerId)?.label;
+                      return (
+                        <span key={`${item.id}-${layerId}`} className="stack-pill">
+                          {layerLabel ? localize(lang, layerLabel) : layerId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module reporter-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "City reporter issues" : "City Reporter Issues"}</span>
+              <span className="status-pill">city-reporter-line-bot</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "ดึง status model และ ticket vocabulary มาจาก city reporter bot" : "Status model and ticket vocabulary brought over from the city reporter bot"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ใช้ received, assigned, in_progress, completed เหมือน dashboard ต้นทาง เพื่อให้สองระบบอ่านสถานะตรงกัน"
+                  : "Using `received`, `assigned`, `in_progress`, and `completed` so both systems share the same operational language."}
+              </small>
+            </div>
+            <div className="report-list">
+              {reporterSamples.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="report-card"
+                  onClick={() => {
+                    applyDashboardScene({
+                      view: "city",
+                      city: selectedCity.slug,
+                      basemap: "atlas",
+                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
+                    });
+                    openCityOpsDrawer(selectedCity.slug, localize(lang, item.aiSummary), item.targetLayers);
+                  }}
+                >
+                  <div className="report-top">
+                    <div>
+                      <span className="eyebrow">{item.ticketNumber}</span>
+                      <strong>{localize(lang, item.problemType)}</strong>
+                    </div>
+                    <span className={`status-tag ${reporterStatusMeta[item.status].tone}`}>{reporterStatusMeta[item.status].label}</span>
+                  </div>
+                  <p>{localize(lang, item.description)}</p>
+                  <div className="report-meta">
+                    <span>{item.locationText}</span>
+                    <span>{item.teamName}</span>
+                    <span>{item.staffName}</span>
+                    <span>{`${formatUtcClock(item.createdAt)} UTC`}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    <span className={`urgency-pill urgency-${item.urgency}`}>{item.urgency}</span>
+                    <span className="stack-pill">{reporterStatusMeta[item.status].detail}</span>
+                    {item.matchedCameraId ? <span className="stack-pill">{item.matchedCameraId}</span> : null}
+                  </div>
+                  <small>{localize(lang, item.aiSummary)}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module integration-fabric-module">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "Imported API fabric" : "Imported API Fabric"}</span>
+              <span className="status-pill">{`${connectorReadyCount}/${commandConnectors.length}`}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "สรุป endpoint และ logic ที่ยกมาจากโปรเจกต์อื่น" : "Endpoint and logic inventory brought in from your other projects"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ชั้นนี้ทำให้ command center มีที่เผื่อสำหรับการเชื่อมต่อระยะยาว ไม่ใช่แค่ mock cards"
+                  : "This turns the command center into a long-lived integration surface, not just a set of mock cards."}
+              </small>
+            </div>
+            <div className="connector-grid">
+              {commandConnectors.map((item) => (
+                <article key={item.id} className={`connector-card status-${item.status}`}>
+                  <div className="connector-head">
+                    <div>
+                      <span className="eyebrow">{item.project}</span>
+                      <strong>{item.title}</strong>
+                    </div>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "ready" ? "pilot" : item.status === "pilot" ? "watch" : "manual"}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                  <p>{localize(lang, item.detail)}</p>
+                  <div className="connector-meta">
+                    <span>{item.route ?? (lang === "th" ? "reserved bridge" : "reserved bridge")}</span>
+                    <span>{item.cadence}</span>
+                    <span>{item.auth}</span>
+                  </div>
+                  <div className="pill-list compact">
+                    {item.systems.map((system) => (
+                      <span key={`${item.id}-${system}`} className="stack-pill">
+                        {system}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="card workspace-module boards-lane">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "AI board status" : "AI Board Status"}</span>
+              <span className="status-pill">{lang === "th" ? "integration layer" : "integration layer"}</span>
+            </div>
+            <div className="module-summary">
+              <strong>{lang === "th" ? "บอร์ดสถานะที่เตรียมรวม CCTV กับ city reporter เข้าด้วยกัน" : "Board states staged to unify CCTV and city-reporter workflows"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ส่วนนี้ทำหน้าที่เป็น bridge ระหว่าง AI detections, public reports, และ command decisions"
+                  : "This lane acts as the bridge between AI detections, public reports, and command decisions."}
+              </small>
+            </div>
+            <div className="board-list">
+              {integrationBoards.map((item) => (
+                <article key={item.id} className={`board-card ${item.status}`}>
+                  <div className="stack-title">
+                    <strong>{item.title}</strong>
+                    <span className={`status-tag ${item.status === "live" ? "live" : item.status === "watch" ? "watch" : item.status === "pilot" ? "active" : "manual"}`}>{item.status}</span>
+                  </div>
+                  <div className="board-metric">{item.metric}</div>
+                  <small>{item.detail}</small>
+                </article>
+              ))}
+            </div>
+            <div className="merge-list">
+              <div className="stack-title">
+                <strong>{lang === "th" ? "Merge queue" : "Merge Queue"}</strong>
+                <span className="status-pill">{mergeQueue.length}</span>
+              </div>
+              {mergeQueue.map((item) => (
+                <div key={item.id} className="merge-item">
+                  <strong>{item.title}</strong>
+                  <p>{item.detail}</p>
+                  <small>{`${uiText.confidence} ${formatConfidence(item.confidence)}`}</small>
                 </div>
               ))}
             </div>
-            <div className="sat-tile-grid">
-              {mapCompareCards.filter((c) => c.id !== "street" && c.id !== "aerial").map((card) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  className={card.active ? "sat-preview-tile active" : "sat-preview-tile"}
-                  onClick={card.action}
-                >
-                  <img src={card.previewUrl} alt={localize(lang, card.title)} loading="lazy" />
-                  <span className="sat-tile-label">
-                    {localize(lang, card.title)}
-                    <span className="sat-toggle-dot" />
-                  </span>
-                </button>
+          </section>
+        </div>
+
+        <section className="dashboard-board">
+          <section className="card hero-card" id="pulse">
+            <div className="card-header">
+              <span className="eyebrow">{copy.topLine}</span>
+              <span className="status-pill">
+                {copy.sync}: {overview.updatedAt.slice(11, 19)} UTC
+              </span>
+            </div>
+            <div className="terminal-callout">
+              <span className="eyebrow">Decision Signal</span>
+              <strong>{executiveSignal}</strong>
+            </div>
+            <div className="metric-grid">
+              {overview.metrics.map((metric, index) => (
+                <article key={metric.id} className={`metric-card tone-${metric.tone}`}>
+                  <div>
+                    <p className="metric-label">{localize(lang, metric.label)}</p>
+                    <p className="metric-value">
+                      {metric.displayValue}
+                      {metric.unit ? ` ${metric.unit}` : ""}
+                    </p>
+                  </div>
+                  <p className="metric-delta">{localize(lang, metric.deltaText)}</p>
+                  <Sparkline values={[24 + index * 8, 42 + index * 4, 38 + index * 6, 70 - index * 4]} />
+                </article>
               ))}
             </div>
-
-            {/* ── EO PRESETS ── */}
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "ชุดเฝ้าระวัง" : "Watch Presets"}</strong>
+            <div className="selection-strip">
+              <div>
+                <span className="eyebrow">{selectionPrimaryEyebrow}</span>
+                <strong>{selectionPrimaryTitle}</strong>
+                <p>{selectionPrimaryBody}</p>
+              </div>
+              <div>
+                <span className="eyebrow">{selectionSecondaryEyebrow}</span>
+                <strong>{selectionSecondaryTitle}</strong>
+                <p>{selectionSecondaryBody}</p>
+              </div>
+              <div>
+                <span className="eyebrow">Domain Focus</span>
+                <strong>{selectionDomainTitle}</strong>
+                <p>{selectionDomainBody}</p>
+              </div>
             </div>
-            <div className="sat-tile-grid">
+            <div className="change-grid">
+              {changes.items.map((item) => (
+                <article key={item.id} className={`change-item tone-${item.tone}`}>
+                  <span className="eyebrow">{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                  <small>{localize(lang, item.detail)}</small>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="card briefing-card" id="briefing">
+            <div className="card-header">
+              <span className="eyebrow">{copy.briefing}</span>
+              <span className="status-pill">{view}</span>
+            </div>
+            <h2>{localize(lang, overview.briefing.headline)}</h2>
+            <p>{localize(lang, overview.briefing.body)}</p>
+            <div className="briefing-cycle">
+              <span className="eyebrow">{copy.thisWeek}</span>
+              <div className="briefing-list">
+                {thisCycleItems.map((item) => (
+                  <div key={item.id} className="briefing-line">
+                    <strong>{localize(lang, item.label)}</strong>
+                    <span>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="focus-preset-group">
+              <span className="eyebrow">{copy.focusPresets}</span>
+              <div className="pill-list compact">
+                {focusPresets.map((preset) => {
+                  const presetActive =
+                    preset.layers.length === layers.length && preset.layers.every((item) => layers.includes(item));
+
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={presetActive ? "chip active" : "chip"}
+                      onClick={preset.run}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="card resilience-card" id="resilience">
+            <div className="card-header">
+              <span className="eyebrow">{copy.resilience}</span>
+              <span className="status-pill">{resilience.source.freshnessStatus}</span>
+            </div>
+            <div className="resilience-grid">
+              <div className="city-intel-stat">
+                <p className="eyebrow">Weather</p>
+                <strong>{localize(lang, resilience.weatherSummary)}</strong>
+              </div>
+              <div className="city-intel-stat">
+                <p className="eyebrow">Pollution</p>
+                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+              </div>
+              <div className="warning-list terminal-list">
+                {resilience.warnings.map((warning, index) => (
+                  <p key={index}>{localize(lang, warning)}</p>
+                ))}
+              </div>
+            </div>
+            <div className="hotspot-strip compact">
+              {topAqiFeature ? (
+                <button
+                  type="button"
+                  className="hotspot-chip warning"
+                  onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}
+                >
+                  <span className="eyebrow">{copy.airHotspot}</span>
+                  <strong>{`${topAqiFeature.title} AQI ${numericProperty(topAqiFeature, "aqi")}`}</strong>
+                  <small>{copy.clickToFocus}</small>
+                </button>
+              ) : null}
+              {hottestWeatherFeature ? (
+                <button
+                  type="button"
+                  className="hotspot-chip"
+                  onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}
+                >
+                  <span className="eyebrow">{copy.weatherHotspot}</span>
+                  <strong>{`${hottestWeatherFeature.title} ${numericProperty(hottestWeatherFeature, "temperatureC")}C`}</strong>
+                  <small>{`${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</small>
+                </button>
+              ) : null}
+            </div>
+            <div className="eo-watch-grid">
               {eoWatchItems.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className={`sat-preview-tile eo ${item.tone}`}
+                  className={`eo-watch-item ${item.tone}`}
                   onClick={() => {
                     const next = buildStableParams();
                     next.set("layers", item.targetLayers.join(","));
@@ -4428,887 +5010,1152 @@ function DashboardPage() {
                       setSearchParams(next);
                       setRecenterSignal((v) => v + 1);
                     });
-                    setActiveTab("map");
                   }}
                 >
-                  <span className="sat-tile-label">{item.title}</span>
+                  <span className="eyebrow">{item.title}</span>
                   <small>{item.detail}</small>
                 </button>
               ))}
             </div>
-            {satelliteRecentScenes.length > 0 ? (
-              <>
-                <div className="sat-section-header">
-                  <strong>{lang === "th" ? "ฉากล่าสุด" : "Recent Scenes"}</strong>
-                  <span className="status-pill">{satelliteStatusLabel}</span>
-                </div>
-                <div className="sat-scene-list">
-                  {satelliteRecentScenes.map((scene) => (
-                    <a key={scene.id} className="sat-scene-item" href={scene.quicklookUrl ?? satelliteDigest.status.docsUrl} target="_blank" rel="noreferrer">
-                      <strong>{scene.title}</strong>
-                      <small>
-                        {formatUtcDateTime(scene.timestamp)}
-                        {scene.cloudCover !== undefined ? ` · Cloud ${Math.round(scene.cloudCover)}%` : ""}
-                      </small>
+          </section>
+
+          <section className="card news-card" id="news">
+            <div className="card-header">
+              <span className="eyebrow">{copy.news}</span>
+              <span className="status-pill">{liveNewsSource ? `${liveNewsSource.freshnessStatus} / 5m` : "5m"}</span>
+            </div>
+            <div className="news-monitor">
+              <span>Items {filteredNews.length}</span>
+              <span>Last {formatUtcClock(liveNewsSource?.lastCheckedAt)} UTC</span>
+              <span>Next {formatUtcClock(nextNewsCheckAt)} UTC</span>
+            </div>
+            <div className="news-columns tile-scroll">
+              <div>
+                <h3>{copy.official}</h3>
+                <div className="compact-list">
+                  {officialNews.map((item) => (
+                    <a
+                      key={item.id}
+                      className="headline-item"
+                      href={item.source.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{item.source.sourceName}</small>
                     </a>
                   ))}
                 </div>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* CCTV TAB */}
-        {activeTab === "cctv" ? (
-          <div className="tab-overlay cctv-gallery">
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "เครือข่ายกล้องสาธารณะ เมืองทองธานี" : "Muang Thong Public Camera Grid"}</strong>
-              <small>
-                {lang === "th"
-                  ? `${mttCameraFocus.liveCount}/${mttCameraFocus.cameras.length} ออนไลน์ · ${mttCameraFocus.sourceCount} แหล่งข้อมูล`
-                  : `${mttCameraFocus.liveCount}/${mttCameraFocus.cameras.length} live · ${mttCameraFocus.sourceCount} public sources`}
-              </small>
-            </div>
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "ฟีดเคลื่อนไหวตอนนี้" : "Live Streams Now"}</strong>
-              <small>
-                {lang === "th"
-                  ? "ฟีด MJPEG จากกล้องสาธารณะในพื้นที่เมืองทองจริง"
-                  : "Actual MJPEG public-camera feeds from the Muang Thong area."}
-              </small>
-            </div>
-            <div className="cctv-stream-grid">
-              {mttCameraFocus.heroCameras.map((cam) => (
-                <article key={cam.id} className="cctv-stream-card">
-                  <div className="cctv-stream-frame">
-                    <img
-                      src={getPublicCameraLiveImageUrl(cam)}
-                      alt={localize(lang, cam.label)}
-                      loading="eager"
-                      referrerPolicy="no-referrer"
-                      data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
-                      onError={(event) => {
-                        const next = event.currentTarget.dataset.fallback ?? "";
-                        if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
-                          event.currentTarget.classList.add("is-failed");
-                          return;
-                        }
-
-                        event.currentTarget.dataset.fallbackApplied = "true";
-                        event.currentTarget.src = next;
-                      }}
-                    />
-                  </div>
-                  <div className="cctv-stream-body">
-                    <div className="cctv-event-head">
-                      <span className="eyebrow">{cam.cameraId}</span>
-                      <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
-                    </div>
-                    <strong>{localize(lang, cam.label)}</strong>
-                    <small>{`${localize(lang, cam.zoneLabel)} · ${formatDistanceLabel(cam.distanceKm, lang)}`}</small>
-                    <a className="cctv-inline-link" href={getPublicCameraFeedUrl(cam)} target="_blank" rel="noreferrer">
-                      {lang === "th" ? "เปิดฟีดเต็ม" : "Open full feed"}
+              </div>
+              <div>
+                <h3>{copy.external}</h3>
+                <div className="compact-list">
+                  {externalNews.map((item) => (
+                    <a
+                      key={item.id}
+                      className="headline-item"
+                      href={item.source.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{item.source.sourceName}</small>
                     </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <div className="cctv-metrics-strip">
-              <div className="cctv-metric">
-                <span className="eyebrow">LIVE NOW</span>
-                <strong>{mttCameraFocus.liveCount}</strong>
-                <small>{lang === "th" ? "ฟีดที่ probe แล้วพร้อมใช้งาน" : "Feeds that probed live."}</small>
-              </div>
-              <div className="cctv-metric">
-                <span className="eyebrow">ZONES</span>
-                <strong>{mttCameraFocus.zoneCount}</strong>
-                <small>{lang === "th" ? "ครอบคลุมทางเข้า สะพาน และริมทะเลสาบ" : "Ingress, bridge, and lake edge covered."}</small>
-              </div>
-              <div className="cctv-metric">
-                <span className="eyebrow">AI SAMPLES</span>
-                <strong>{mttCameraFocus.recipeCards.length}</strong>
-                <small>{lang === "th" ? "ตัวอย่าง object tracking พร้อมใช้" : "Object-tracking samples ready to demo."}</small>
-              </div>
-              <div className="cctv-metric">
-                <span className="eyebrow">LAST CHECK</span>
-                <strong>{formatUtcClock(mttCameraFocus.lastCheckedAt)} UTC</strong>
-                <small>{lang === "th" ? "probe ล่าสุดของชุดกล้องเมืองทอง" : "Latest probe across the Muang Thong set."}</small>
-              </div>
-            </div>
-
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "ตัวอย่าง AI watchlist" : "AI Watch Samples"}</strong>
-              <small>
-                {lang === "th"
-                  ? "จับวัตถุและพฤติกรรมที่มีผลต่อคอขวดในพื้นที่จริง"
-                  : "Track the objects and behaviors that matter in the actual venue fabric."}
-              </small>
-            </div>
-            <div className="cctv-ai-grid">
-              {mttCameraFocus.recipeCards.map((recipe) => (
-                <article key={recipe.sample.id} className={`cctv-ai-card severity-${recipe.sample.severity}`}>
-                  <div className="cctv-event-head">
-                    <span className="eyebrow">{recipe.camera ? recipe.camera.cameraId : recipe.sample.cameraId}</span>
-                    <span className={`status-tag ${recipe.sample.severity === "alert" ? "delayed" : recipe.sample.severity === "watch" ? "watch" : "live"}`}>
-                      {recipe.sample.severity}
-                    </span>
-                  </div>
-                  <strong>{localize(lang, recipe.sample.detection)}</strong>
-                  <small>
-                    {recipe.camera
-                      ? `${localize(lang, recipe.camera.label)} · ${localize(lang, recipe.camera.zoneLabel)}`
-                      : localize(lang, recipe.sample.zone)}
-                  </small>
-                  <p>{localize(lang, recipe.prompt)}</p>
-                  <div className="signal-meta">
-                    <span>{formatConfidence(recipe.sample.confidence)}</span>
-                    <span>{recipe.sample.model}</span>
-                    <span>{localize(lang, recipe.sample.status)}</span>
-                  </div>
-                  <div className="cctv-ai-tags">
-                    {recipe.objects.map((item) => (
-                      <span key={`${recipe.sample.id}-${item.en}`}>{localize(lang, item)}</span>
-                    ))}
-                  </div>
-                  <div className="cctv-action-row">
-                    <button type="button" onClick={() => focusMttScene(recipe.targetLayers)}>
-                      {lang === "th" ? "เปิดบนแผนที่" : "Map context"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "บอร์ดครอบคลุมพื้นที่" : "Coverage Boards"}</strong>
-              <small>
-                {lang === "th"
-                  ? "จับกล้องเป็นชุดตาม logic หน้างานจริง"
-                  : "Group cameras by the operational logic that matters on the ground."}
-              </small>
-            </div>
-            <div className="cctv-summary-grid">
-              {mttCameraFocus.coverageBoards.map((board) => (
-                <article key={board.id} className={`cctv-summary-card tone-${board.tone}`}>
-                  <div className="cctv-event-head">
-                    <span className="eyebrow">{`${board.liveCount}/${board.cameras.length} live`}</span>
-                    <span className={`status-tag ${board.tone === "alert" ? "delayed" : board.tone === "watch" ? "watch" : "live"}`}>{board.tone}</span>
-                  </div>
-                  <strong>{localize(lang, board.label)}</strong>
-                  <p>{localize(lang, board.detail)}</p>
-                  <div className="cctv-summary-meta">
-                    <span>{localize(lang, board.watch)}</span>
-                    <span>
-                      {board.primaryCamera
-                        ? localize(lang, board.primaryCamera.label)
-                        : lang === "th"
-                          ? "รอกล้อง"
-                          : "Awaiting camera"}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {mttCameraFocus.cameras.length > 0 ? (
-              <>
-                <div className="sat-section-header">
-                  <strong>{lang === "th" ? "กล้องสดในวงแหวนเมืองทอง" : "Live Cameras Around Muang Thong"}</strong>
-                  <small>
-                    {lang === "th"
-                      ? `${mttCameraFocus.sourceCount} แหล่งสาธารณะ · พร้อมเดโม object tracking`
-                      : `${mttCameraFocus.sourceCount} public sources · ready for object-tracking demos`}
-                  </small>
-                </div>
-                <div className="cctv-live-grid">
-                  {mttCameraFocus.cameras.slice(0, 12).map((cam) => (
-                    <article key={cam.id} className={`cctv-live-card cam-status-${cam.status}`}>
-                      <div className="cctv-live-frame">
-                        <img
-                          src={cam.previewUrl ?? cam.imageUrl}
-                          alt={localize(lang, cam.label)}
-                          loading="lazy"
-                          data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
-                          onError={(event) => {
-                            const next = event.currentTarget.dataset.fallback ?? "";
-                            if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
-                              event.currentTarget.classList.add("is-failed");
-                              return;
-                            }
-
-                            event.currentTarget.dataset.fallbackApplied = "true";
-                            event.currentTarget.src = next;
-                          }}
-                        />
-                      </div>
-                      <div className="cctv-live-body">
-                        <div className="cctv-event-head">
-                          <span className="eyebrow">{cam.cameraId}</span>
-                          <span className={`status-tag ${cam.status === "live" ? "live" : cam.status === "offline" ? "delayed" : "manual"}`}>{cam.status}</span>
-                        </div>
-                        <strong>{localize(lang, cam.label)}</strong>
-                        <small>{cam.source}</small>
-                        <div className="cctv-live-meta">
-                          <span>{localize(lang, cam.zoneLabel)}</span>
-                          <span>{formatDistanceLabel(cam.distanceKm, lang)}</span>
-                          <span>
-                            {cam.lastCheckedAt
-                              ? `${lang === "th" ? "เช็ก" : "Checked"} ${formatUtcClock(cam.lastCheckedAt)} UTC`
-                              : lang === "th"
-                                ? "รอ probe"
-                                : "Probe pending"}
-                          </span>
-                        </div>
-                        <div className="cctv-action-row">
-                          <a href={getPublicCameraFeedUrl(cam)} target="_blank" rel="noreferrer">
-                            {lang === "th" ? "เปิดฟีด" : "Open feed"}
-                          </a>
-                          <button type="button" onClick={() => focusMttScene(cam.targetLayers)}>
-                            {lang === "th" ? "ดูบนแผนที่" : "Map"}
-                          </button>
-                        </div>
-                      </div>
-                    </article>
                   ))}
                 </div>
-              </>
-            ) : (
-              <div className="cctv-empty-state">
-                <strong>{lang === "th" ? "ยังไม่มีกล้องที่โหลดได้" : "No public cameras loaded yet"}</strong>
-                <small>
-                  {lang === "th"
-                    ? "ระบบจะ fallback ไปที่ seed และ probe ใหม่เมื่อ API พร้อม"
-                    : "The dashboard will fall back to the seeded set and probe again when the API is ready."}
-                </small>
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {/* AI INSIGHTS TAB */}
-        {activeTab === "insights" ? (
-          <div className="tab-overlay ai-panel open">
-            <div className="sitrep">
-              <div className="sitrep-header">
-                <strong>{lang === "th" ? "สถานการณ์ปัจจุบัน" : "SITUATION REPORT"}</strong>
-                <span className="eyebrow">{primaryScopeLabel} · {formatUtcClock(overview.updatedAt)} UTC</span>
-              </div>
-              <div className="sitrep-row"><span className="eyebrow">SIGNAL</span><strong>{executiveSignal}</strong></div>
-              {topTrafficFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">TRAFFIC</span><strong>{`${topTrafficSummary || "Traffic"} · ${topTrafficFeature.title}`}</strong></div>
-              ) : null}
-              {topAqiFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">AQI</span><strong>{`${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}</strong></div>
-              ) : null}
-              {weatherLeadFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">WEATHER</span><strong>{`${weatherLeadFeature.title} · ${weatherLeadSummary}`}</strong></div>
-              ) : null}
-              <div className="sitrep-row"><span className="eyebrow">DECISIONS</span><strong>{`${decisionItems.length} pending`}</strong></div>
-              <div className="sitrep-row"><span className="eyebrow">SOCIAL</span><strong>{`${socialListening.mentionCount} mentions · ${Math.round(socialListening.positiveShare * 100)}% positive`}</strong></div>
-              <div className="sitrep-row"><span className="eyebrow">SATELLITE</span><strong>{`${activeSatelliteLayers.length} layers · ${satelliteDigest.status.mode}`}</strong></div>
-            </div>
-
-            <div className="ai-panel-prompts">
-              <span className="eyebrow">{copy.askQuestionMap}</span>
-              <div className="ai-prompt-pills">
-                {resolvedQuestionClusters.slice(0, 2).flatMap((cluster) =>
-                  cluster.prompts.slice(0, 3).map((prompt) => (
-                    <button key={`${cluster.id}-${prompt}`} type="button" className="assistant-prompt-chip" onClick={() => setAssistantQuestion(prompt)}>
-                      {prompt}
-                    </button>
-                  ))
-                )}
               </div>
             </div>
+          </section>
 
-            <div className="ai-panel-input">
-              <textarea
-                value={assistantQuestion}
-                onChange={(event) => setAssistantQuestion(event.target.value)}
-                placeholder={copy.askPlaceholder}
-                rows={2}
-                onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void askAssistant(); } }}
-              />
-              <button type="button" className="chip active" onClick={() => void askAssistant()} disabled={assistantLoading || assistantQuestion.trim() === ""}>
-                {assistantLoading ? "..." : copy.askSubmit}
-              </button>
+          <section className="card projects-card" id="projects">
+            <div className="card-header">
+              <span className="eyebrow">{copy.projects}</span>
+              <span className="eyebrow">{filteredProjects.length}</span>
             </div>
-
-            {assistantError ? <p className="assistant-error">{assistantError}</p> : null}
-
-            {assistantResponse ? (
-              <div className="ai-panel-body">
-                <div className="ai-answer">
-                  <span className="eyebrow">{assistantResponse.provider} · {assistantResponse.documentCount} docs</span>
-                  <p>{localize(lang, assistantResponse.contextSummary)}</p>
-                  <strong>{localize(lang, assistantResponse.answer)}</strong>
-                </div>
-                {assistantResponse.citations.length > 0 ? (
-                  <div className="ai-citations">
-                    <span className="eyebrow">{copy.askSources}</span>
-                    {assistantResponse.citations.map((citation) => (
-                      <div key={citation.id} className="ai-citation">
-                        <strong>{citation.documentTitle}</strong>
-                        <small>{citation.excerpt}</small>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* DATA TAB */}
-        {activeTab === "data" ? (
-          <div className="tab-overlay data-panel">
-            {/* Decision Queue */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{lang === "th" ? "คิวตัดสินใจ" : "Decision Queue"}</strong>
-                <span className="status-pill">{decisionItems.length}</span>
-              </div>
-              {decisionItems.length > 0 ? decisionItems.map((item) => (
-                <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => { focusDecision(item); setActiveTab("map"); }}>
-                  <div className="stack-title">
-                    <strong>{localize(lang, item.title)}</strong>
-                    <span className={`status-tag ${item.status}`}>{item.status}</span>
-                  </div>
-                  <small>{localize(lang, item.recommendedAction)}</small>
-                </button>
-              )) : (
-                <div className="data-item"><strong>{lang === "th" ? "ไม่มีรายการค้าง" : "Queue clear"}</strong></div>
-              )}
-            </div>
-
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic Ops"}</strong>
-                <span className="status-pill">{trafficWatchItems.length}</span>
-              </div>
-              {trafficWatchItems.length > 0 ? trafficWatchItems.map((feature) => {
-                const mappedCitySlug = normalizeCitySlug(
-                  stringProperty(feature, "citySlug") || stringProperty(feature, "city")
-                );
-                const trafficStamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
-
-                return (
-                  <button
-                    key={feature.id}
-                    type="button"
-                    className="data-item"
-                    onClick={() => {
-                      focusCityWithLayer(mappedCitySlug, "itic-traffic");
-                      setActiveTab("map");
-                    }}
-                  >
-                    <div className="stack-title">
-                      <strong>{feature.title}</strong>
-                      <span className="status-pill">{topTrafficSummary && feature.id === topTrafficFeature?.id ? topTrafficSummary : [formatSignalLabel(stringProperty(feature, "eventClass")), formatSignalLabel(stringProperty(feature, "status"))].filter(Boolean).join(" · ")}</span>
-                    </div>
-                    <small>{[stringProperty(feature, "city"), formatUtcDateTime(trafficStamp)].filter(Boolean).join(" · ")}</small>
-                  </button>
-                );
-              }) : (
-                <div className="data-item"><strong>{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</strong></div>
-              )}
-            </div>
-
-            {/* News */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.news}</strong>
-                <span className="status-pill">{filteredNews.length}</span>
-              </div>
-              {officialNews.map((item) => (
-                <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
-                  <strong>{localize(lang, item.title)}</strong>
-                  <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
-                </a>
-              ))}
-              {externalNews.map((item) => (
-                <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
-                  <strong>{localize(lang, item.title)}</strong>
-                  <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
-                </a>
-              ))}
-            </div>
-
-            {/* Projects */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.projects}</strong>
-                <span className="status-pill">{filteredProjects.length}</span>
-              </div>
+            <div className="stack-list tile-scroll">
               {compactProjects.map((project) => (
-                <button key={project.id} type="button" className="data-item" onClick={() => { focusCityWithLayer(project.citySlug, "projects"); setActiveTab("map"); }}>
+                <button
+                  key={project.id}
+                  type="button"
+                  className="stack-item stack-item-button"
+                  onClick={() => focusCityWithLayer(project.citySlug, "projects")}
+                >
                   <div className="stack-title">
                     <strong>{localize(lang, project.title)}</strong>
                     <span className={`status-tag ${project.status}`}>{project.status}</span>
                   </div>
+                  <p>{localize(lang, project.summary)}</p>
                   <div className="progress-row">
-                    <div className="progress-track"><div className="progress-fill" style={{ width: `${project.completionPercent}%` }} /></div>
-                    <span>{project.completionPercent}%</span>
+                    <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${project.completionPercent}%` }} />
                   </div>
+                  <span>{project.completionPercent}%</span>
+                  </div>
+                  <small>{localize(lang, project.nextMilestone)}</small>
                 </button>
               ))}
             </div>
+          </section>
 
-            {/* Resilience & Weather */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.resilience}</strong>
-                <span className="status-pill">{resilience.source.freshnessStatus}</span>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">Weather</span>
-                <strong>{localize(lang, resilience.weatherSummary)}</strong>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">Pollution</span>
-                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
-              </div>
-              {resilience.warnings.map((warning, index) => (
-                <div key={index} className="data-item"><small>{localize(lang, warning)}</small></div>
+          <section className="card sources-card" id="sources">
+            <div className="card-header">
+              <span className="eyebrow">{copy.apiWatch}</span>
+              <span className={`status-pill api-${apiStatusLabel.toLowerCase()}`}>{apiStatusLabel}</span>
+            </div>
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{copy.sourceStatus}</span>
+              <strong>{`${apiReadyCount}/${apiWatchSources.length} operational`}</strong>
+            </div>
+            <div className="api-watch-grid">
+              {apiWatchSources.map((source) => (
+                <a
+                  key={source.id}
+                  className={`api-watch-item ${source.freshnessStatus}`}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div className="stack-title">
+                    <strong>{source.name}</strong>
+                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                  </div>
+                  <small>{source.message}</small>
+                </a>
               ))}
             </div>
+          </section>
 
-            {/* Command Center Metrics */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{lang === "th" ? "Command Center" : "Command Center"}</strong>
-                <span className="status-pill">{`${connectorReadyCount}/${commandConnectors.length}`}</span>
+          <section className="card slic-card" id="slic-thailand">
+            <div className="card-header">
+              <span className="eyebrow">SLIC Thailand</span>
+              <span className={`status-pill ${slicThailand.source.freshnessStatus}`}>{formatUtcClock(slicThailand.updatedAt)} UTC</span>
+            </div>
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{lang === "th" ? "จัดอันดับล่าสุด" : "Live ranking"}</span>
+              <strong>{lang === "th" ? "เมืองไทยที่ขึ้นมานำ" : "Top Thai cities right now"}</strong>
+            </div>
+            <div className="slic-ranking-list">
+              {slicTopCities.map((item) => {
+                const mappedCitySlug = slicCitySlugMap[item.id];
+                const actionable = Boolean(mappedCitySlug && knownCitySlugs.has(mappedCitySlug));
+                const rankingCard = (
+                  <>
+                    <div className="slic-ranking-head">
+                      <span className="status-pill">#{item.rank}</span>
+                      <div>
+                        <strong>{lang === "th" ? item.nameTh || item.nameEn : item.nameEn}</strong>
+                        <small>{item.region}</small>
+                      </div>
+                      <strong className="slic-score">{item.overall}</strong>
+                    </div>
+                    <p>{item.tagline}</p>
+                    <div className="slic-ranking-meta">
+                      <span>{item.avgMonthlyIncome > 0 ? `${item.avgMonthlyIncome.toLocaleString("en-US")} THB/mo` : "Tracked city"}</span>
+                      <span>{item.pm25Annual > 0 ? `PM2.5 ${item.pm25Annual}` : "Monitor mode"}</span>
+                    </div>
+                  </>
+                );
+
+                return actionable ? (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="slic-ranking-card action"
+                    onClick={() => focusCityWithLayer(mappedCitySlug, "smart-city-thailand")}
+                  >
+                    {rankingCard}
+                  </button>
+                ) : (
+                  <article key={item.id} className="slic-ranking-card">
+                    {rankingCard}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="card time-card">
+            <div className="card-header">
+              <span className="eyebrow">{copy.time}</span>
+              <span className="status-pill">UTC</span>
+            </div>
+            <div className="time-scrubber">
+              <div className="time-scrubber-head">
+                <strong>{timeRange}</strong>
+                <button
+                  type="button"
+                  className={timeCompareEnabled ? "chip active" : "chip"}
+                  onClick={() => setTimeCompareEnabled((value) => !value)}
+                >
+                  {timeCompareEnabled ? uiText.compareWindow : uiText.compareWindowOff}
+                </button>
               </div>
-              {commandCenter.metrics.map((metric) => (
-                <div key={metric.id} className={`data-item tone-${metric.tone}`}>
-                  <span className="eyebrow">{localize(lang, metric.label)}</span>
-                  <strong>{metric.value}</strong>
+              <input
+                type="range"
+                min={0}
+                max={TIME_RANGE_OPTIONS.length - 1}
+                step={1}
+                value={Math.max(0, timeRangeIndex)}
+                onChange={(event) => updateParam("timeRange", TIME_RANGE_OPTIONS[Number(event.target.value)])}
+              />
+              <div className="time-scrubber-scale">
+                {TIME_RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={`scrubber-${option}`}
+                    type="button"
+                    className={option === timeRange ? "chip active" : "chip"}
+                    onClick={() => updateParam("timeRange", option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <small>
+                {timeCompareEnabled
+                  ? lang === "th"
+                    ? "กำลังอ่านผลต่างเทียบกับช่วงเวลาก่อนหน้าใน narrative และ drawer"
+                    : "Narrative and drawer now read the current window against the previous period."
+                  : lang === "th"
+                    ? "โหมด snapshot ใช้สำหรับบันทึกภาพหรืออธิบายสภาพล่าสุด"
+                    : "Snapshot mode is best for clean screenshots and explaining the current state."}
+              </small>
+            </div>
+            <div className="time-zones">
+              {timeZones.map((zone) => (
+                <div key={zone.timeZone} className="time-zone">
+                  <span className="eyebrow">{zone.label}</span>
+                  <strong>{zone.localTime}</strong>
                 </div>
               ))}
             </div>
+          </section>
 
-            {/* Social Listening */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.social}</strong>
-                <span className="status-pill">{socialListening.mentionCount}</span>
+          <section className="card compare-card" id="compare">
+            <div className="card-header">
+              <span className="eyebrow">{uiText.cityProvinceCompare}</span>
+              <span className="eyebrow">{`${compareProfiles.length}/4`}</span>
+            </div>
+            <small>{uiText.comparePick}</small>
+            <div className="pill-list compact">
+              {overview.cities.map((item) => {
+                const active = compareCitySlugs.includes(item.slug);
+                return (
+                  <button
+                    key={`compare-toggle-${item.slug}`}
+                    type="button"
+                    className={active ? "chip active" : "chip"}
+                    onClick={() => toggleCompareCity(item.slug)}
+                  >
+                    {localize(lang, item.name)}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="compare-matrix">
+              <div className="compare-city-headers">
+                {compareProfiles.map((profile) => (
+                  <button
+                    key={`compare-profile-${profile.slug}`}
+                    type="button"
+                    className={profile.slug === selectedCity.slug ? "compare-city-card active" : "compare-city-card"}
+                    onClick={() => {
+                      applyDashboardScene({ view: "city", city: profile.slug });
+                      openCityOpsDrawer(
+                        profile.slug,
+                        lang === "th"
+                          ? "ใช้การ์ดนี้เพื่อเทียบเมืองและเปิดคำอธิบายต่อด้านขวา"
+                          : "Use this card to compare the city and open a right-side explanation.",
+                        layers
+                      );
+                    }}
+                  >
+                    <span className="eyebrow">{localize(lang, profile.region)}</span>
+                    <strong>{localize(lang, profile.name)}</strong>
+                    <small>{localize(lang, profile.focus)}</small>
+                  </button>
+                ))}
               </div>
-              <div className="data-item">
+              <div className="compare-metric-list">
+                {compareRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="compare-metric-row"
+                    style={{ gridTemplateColumns: `minmax(108px, 0.9fr) repeat(${Math.max(compareProfiles.length, 1)}, minmax(0, 1fr))` }}
+                  >
+                    <span className="eyebrow">{row.label}</span>
+                    {compareProfiles.map((profile) => (
+                      <strong key={`${row.id}-${profile.slug}`}>{row.getValue(profile)}</strong>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card trends-card" id="trends">
+            <div className="card-header">
+              <span className="eyebrow">{copy.trendWatch}</span>
+              <span className="status-pill">TH / 5Y</span>
+            </div>
+            <div className="trend-list tile-scroll">
+              {visibleTrends.map((item) => {
+                const stats = getTrendStats(item.values);
+
+                return (
+                  <a
+                    key={item.id}
+                    className="trend-row"
+                    href={createGoogleTrendsUrl(item.query)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="trend-term">
+                      <strong>{pickLocalized(lang, item.term)}</strong>
+                      <span className="status-pill">{pickLocalized(lang, item.category)}</span>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendNow}</span>
+                      <strong>{stats.latest}</strong>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendDelta}</span>
+                      <strong className={stats.delta >= 0 ? "trend-positive" : "trend-negative"}>
+                        {stats.delta >= 0 ? `+${stats.delta}` : stats.delta}
+                      </strong>
+                    </div>
+                    <div className="trend-stat">
+                      <span className="eyebrow">{copy.trendPeak}</span>
+                      <strong>{stats.peak}</strong>
+                    </div>
+                    <div className="trend-mini">
+                      <Sparkline values={item.values} />
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="card media-card" id="media">
+            <div className="card-header">
+              <span className="eyebrow">Live Media</span>
+              <span className="status-pill">{mediaFeeds.length}</span>
+            </div>
+            <div className="stack-list tile-scroll">
+              {compactMedia.map((item) => (
+                <a
+                  key={item.id}
+                  className="stack-item linked"
+                  href={item.externalUrl ?? item.embedUrl ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div className="stack-title">
+                    <strong>{item.label}</strong>
+                    <span className={`status-tag ${item.status === "live" ? "live" : "manual"}`}>{item.status}</span>
+                  </div>
+                  <small>{item.region ?? item.kind}</small>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section className="card changes-card" id="changes">
+            <div className="card-header">
+              <span className="eyebrow">{copy.changes}</span>
+              <span className="status-pill">{changes.updatedAt.slice(11, 16)} UTC</span>
+            </div>
+            <div className="change-grid">
+              {changes.items.map((item) => (
+                <article key={item.id} className={`change-item tone-${item.tone}`}>
+                  <span className="eyebrow">{localize(lang, item.label)}</span>
+                  <strong>{item.value}</strong>
+                  <small>{localize(lang, item.detail)}</small>
+                </article>
+              ))}
+            </div>
+            <div className="threshold-strip">
+              <span className="eyebrow">{copy.thresholdWatch}</span>
+              <div className="threshold-list">
+                {changes.thresholds.map((threshold) => (
+                  <div key={threshold.id} className={`threshold-item ${threshold.state}`}>
+                    <strong>{localize(lang, threshold.label)}</strong>
+                    <small>{localize(lang, threshold.detail)}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="card social-card" id="social">
+            <div className="card-header">
+              <span className="eyebrow">{copy.social}</span>
+              <span className="status-pill">{socialListening.source.freshnessStatus}</span>
+            </div>
+            <div className="social-stats">
+              <div className="social-stat">
                 <span className="eyebrow">{copy.mentions}</span>
                 <strong>{socialListening.mentionCount}</strong>
               </div>
-              <div className="data-item">
+              <div className="social-stat">
                 <span className="eyebrow">{copy.sentiment}</span>
-                <strong>{socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}</strong>
+                <strong className={socialListening.sentimentScore >= 0 ? "trend-positive" : "trend-negative"}>
+                  {socialListening.sentimentScore >= 0 ? `+${socialListening.sentimentScore}` : socialListening.sentimentScore}
+                </strong>
               </div>
-              <div className="data-item">
-                <span className="eyebrow">{socialListening.dominantSource}</span>
-                <div className="pill-list compact">
-                  {socialListening.topTerms.slice(0, 5).map((term) => (
-                    <span key={term} className="stack-pill">{term}</span>
-                  ))}
-                </div>
+              <div className="social-stat">
+                <span className="eyebrow">{copy.sourceMix}</span>
+                <strong>{socialListening.sourceCount}</strong>
+              </div>
+              <div className="social-stat">
+                <span className="eyebrow">Positive</span>
+                <strong>{Math.round(socialListening.positiveShare * 100)}%</strong>
               </div>
             </div>
-
-            {/* Markets */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.markets}</strong>
-                <span className="status-pill">{markets.source.freshnessStatus}</span>
+            <div className="social-meta">
+              <span>{socialListening.dominantSource}</span>
+              <div className="pill-list compact">
+                {socialListening.topTerms.slice(0, 5).map((term) => (
+                  <span key={term} className="stack-pill">
+                    {term}
+                  </span>
+                ))}
               </div>
+            </div>
+          </section>
+
+          <section className="card impact-card" id="impact">
+            <div className="card-header">
+              <span className="eyebrow">{copy.impact}</span>
+              <span className="status-pill">{impact.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
+              <div className="impact-row">
+                <span>{copy.official}</span>
+                <strong>{impact.officialUpdates}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Live</span>
+                <strong>{impact.liveSources}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Cities</span>
+                <strong>{impact.trackedCities}</strong>
+              </div>
+              <div className="impact-row">
+                <span>Signals</span>
+                <strong>{impact.publicSignals}</strong>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Latest</span>
+              <strong>{localize(lang, impact.latestHeadline)}</strong>
+            </div>
+          </section>
+        </section>
+
+        <section className="support-grid">
+          <section className="card market-card" id="markets">
+            <div className="card-header">
+              <span className="eyebrow">{copy.markets}</span>
+              <span className="status-pill">{markets.source.freshnessStatus}</span>
+            </div>
+            <div className="impact-list">
               {markets.items.map((item) => (
-                <div key={item.id} className={`data-item tone-${item.tone}`}>
+                <div key={item.id} className={`impact-row tone-${item.tone}`}>
                   <span>{localize(lang, item.label)}</span>
                   <strong>{item.value}</strong>
                 </div>
               ))}
             </div>
-
-            {/* Sources / API Status */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.apiWatch}</strong>
-                <span className={`status-pill api-${apiStatusLabel.toLowerCase()}`}>{`${apiReadyCount}/${apiWatchSources.length}`}</span>
-              </div>
-              {apiWatchSources.map((source) => (
-                <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
-                  <div className="stack-title">
-                    <strong>{source.name}</strong>
-                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-
-            {/* Activity Log */}
-            <div className="data-section">
-              <div className="data-section-head">
-                <strong>{copy.activity}</strong>
-                <span className="status-pill">{activityItems.length}</span>
-              </div>
-              {activityItems.map((item) => (
-                <div key={item.id} className="data-item">
-                  <div className="stack-title">
-                    <strong>{item.label}</strong>
-                    <span className={`status-tag ${item.status}`}>{item.status}</span>
-                  </div>
-                  <small>{formatUtcClock(item.timestamp)} UTC · {item.detail}</small>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Tab Bar */}
-        <div className="map-tab-bar">
-          {(["map", "satellite", "cctv", "insights", "data"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={activeTab === tab ? "map-tab active" : "map-tab"}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab === "map" ? "MAP" : tab === "satellite" ? "SATELLITE" : tab === "cctv" ? "CCTV" : tab === "insights" ? "AI INSIGHTS" : "DATA"}
-            </button>
-          ))}
-        </div>
-        </div>
-
-        <section className="overview-shell">
-          {/* ── Row 1: Hero (span 2) + Arena Events ── */}
-          <section className="card overview-card hero">
-            <div className="card-header">
-              <span className="eyebrow">Muang Thong Thani</span>
-              <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
-            </div>
-            <div className="terminal-callout compact">
-              <span className="eyebrow">{lang === "th" ? "สัญญาณ" : "Signal"}</span>
-              <strong>{executiveSignal}</strong>
-            </div>
-            <div className="overview-hero-metrics">
-              <div className="data-item">
-                <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
-                <strong>{formatPopulation(selectedCity.population)}</strong>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">CCTV</span>
-                <strong>{mttCameraFocus.liveCount} live</strong>
-              </div>
+            <div className="impact-headline">
+              <span className="eyebrow">Signal</span>
+              <strong>{localize(lang, markets.items[0]?.changeText ?? { th: "ไม่มีข้อมูล", en: "No data" })}</strong>
             </div>
           </section>
-
-          <section className="card overview-card arena-events">
+          <section className="card satellite-card" id="satellite">
             <div className="card-header">
-              <span className="eyebrow">IMPACT Arena</span>
-              <span className="status-pill">{impactArenaEventsSeed.filter((e) => e.status !== "cancelled").length} events</span>
+              <span className="eyebrow">{copy.satellite}</span>
+              <span className="status-pill">{`${activeSatelliteLayers.length} active / ${satelliteReadySources.length} ready`}</span>
             </div>
-            <div className="arena-event-list">
-              {impactArenaEventsSeed.filter((e) => e.status !== "cancelled").slice(0, 4).map((evt) => (
-                <div key={evt.id} className="arena-event-row">
-                  <strong>{localize(lang, evt.title)}</strong>
-                  <div className="event-meta">
-                    <span>{evt.date.slice(5)}</span>
-                    <span>{evt.timeStart}</span>
-                    <span className="event-crowd">~{evt.expectedCrowd >= 1000 ? `${(evt.expectedCrowd / 1000).toFixed(1)}k` : evt.expectedCrowd}</span>
-                    <span className={`status-tag ${evt.category}`}>{evt.category}</span>
+
+            <div className="satellite-shell">
+              <div className="impact-headline">
+                <span className="eyebrow">{copy.latestSignal}</span>
+                <strong>{satelliteNarrative}</strong>
+                <small>{satelliteDigest.status.message}</small>
+              </div>
+
+              <div className="satellite-preset-grid">
+                {satellitePresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={preset.active ? "satellite-preset active" : "satellite-preset"}
+                    onClick={() => applyLayerPreset([...preset.layers], "national")}
+                  >
+                    <span className="eyebrow">{localize(lang, preset.label)}</span>
+                    <strong>{localize(lang, preset.label)}</strong>
+                    <small>{localize(lang, preset.detail)}</small>
+                  </button>
+                ))}
+              </div>
+
+              <div className="satellite-grid">
+                <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteLiveLayers}</span>
+                  <div className="pill-list compact">
+                    <button
+                      type="button"
+                      className={basemap === "atlas" ? "chip active" : "chip"}
+                      onClick={() => updateParam("basemap", "atlas")}
+                    >
+                      {copy.mapAtlas}
+                    </button>
+                    <button
+                      type="button"
+                      className={basemap === "satellite" ? "chip active" : "chip"}
+                      onClick={() => updateParam("basemap", "satellite")}
+                    >
+                      {copy.mapSatellite}
+                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ── Row 2: CCTV + AI Vision (full width) ── */}
-          <section className="card overview-card cctv-overview">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กล้อง + AI Vision" : "CCTV + AI Vision"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
-                {mttCameraFocus.liveCount} live
-              </button>
-            </div>
-            <div className="cctv-ai-split">
-              <div>
-                <div className="cctv-overview-grid">
-                  {mttCameraFocus.heroCameras.map((cam) => (
-                    <article key={cam.id} className="cctv-overview-tile">
-                      <div className="cctv-overview-frame">
-                        <img
-                          src={getPublicCameraLiveImageUrl(cam)}
-                          alt={localize(lang, cam.label)}
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
-                          onError={(event) => {
-                            const next = event.currentTarget.dataset.fallback ?? "";
-                            if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
-                              event.currentTarget.classList.add("is-failed");
-                              return;
-                            }
-                            event.currentTarget.dataset.fallbackApplied = "true";
-                            event.currentTarget.src = next;
-                          }}
-                        />
+                  <div className="pill-list compact">
+                    {satelliteToggleOptions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={layers.includes(item.id) ? "chip active" : "chip"}
+                        onClick={() => toggleSatelliteLayer(item.id)}
+                      >
+                        {localize(lang, item.label)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="satellite-source-list">
+                    {satelliteLiveSources.map((source) => (
+                      <div key={source.id} className="headline-item satellite-source-item">
+                        <strong>{source.name}</strong>
+                        <small>{source.message}</small>
                       </div>
-                      <div className="cctv-overview-body">
-                        <strong>{localize(lang, cam.label)}</strong>
-                        <small>{localize(lang, cam.zoneLabel)}</small>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteMetrics}</span>
+                  <div className="satellite-metric-grid">
+                    {satelliteMetrics.map((metric) => (
+                      <div key={metric.id} className="satellite-metric-item">
+                        <span className="eyebrow">{localize(lang, metric.title)}</span>
+                        <strong>{metric.displayValue}</strong>
+                        <small>{localize(lang, metric.description)}</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
+                  <div className="stack-title">
+                    <span className="eyebrow">{copy.satelliteRecentScenes}</span>
+                    <span className="status-pill">{satelliteStatusLabel}</span>
+                  </div>
+                  <div className="satellite-source-list">
+                    {satelliteRecentScenes.length > 0 ? (
+                      satelliteRecentScenes.map((scene) => (
+                        <a
+                          key={scene.id}
+                          className="headline-item satellite-source-item"
+                          href={scene.quicklookUrl ?? satelliteDigest.status.docsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <strong>{scene.title}</strong>
+                          <small>
+                            {formatUtcDateTime(scene.timestamp)}
+                            {scene.cloudCover !== undefined ? ` • ${copy.satelliteCloudCover} ${Math.round(scene.cloudCover)}%` : ""}
+                          </small>
+                        </a>
+                      ))
+                    ) : (
+                      <div className="headline-item satellite-source-item">
+                        <strong>{copy.satelliteCredentialsNeeded}</strong>
+                        <small>{satelliteDigest.status.message}</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="satellite-panel">
+                  <span className="eyebrow">{copy.satelliteReadySources}</span>
+                  <div className="satellite-source-list">
+                    {satelliteReadySources.map((source) => (
+                      <a key={source.id} className="headline-item satellite-source-item" href={source.url} target="_blank" rel="noreferrer">
+                        <strong>{source.name}</strong>
+                        <small>{source.message}</small>
+                      </a>
+                    ))}
+                  </div>
+                  <a className="eo-watch-link" href={satelliteDigest.status.docsUrl} target="_blank" rel="noreferrer">
+                    {copy.satelliteDocs}
+                  </a>
+                </div>
+              </div>
+
+              <div className="satellite-section-label">{uiText.layerStudio}</div>
+              <div className="layer-studio-list">
+                {orderedOverlayItems.map((item, index) => {
+                  const active = layers.includes(item.id);
+                  const settings = overlayStudioSettings[item.id];
+
+                  return (
+                    <article key={`studio-${item.id}`} className="layer-studio-row">
+                      <div className="layer-studio-head">
+                        <div>
+                          <div className="side-toggle-row">
+                            <span className="swatch" style={{ background: item.color }} />
+                            <strong>{localize(lang, item.label)}</strong>
+                          </div>
+                          <small>{localize(lang, item.detail)}</small>
+                        </div>
+                        <button
+                          type="button"
+                          className={active ? "chip active" : "chip"}
+                          onClick={() => toggleSatelliteLayer(item.id)}
+                        >
+                          {active ? uiText.active : uiText.inactive}
+                        </button>
+                      </div>
+                      <div className="layer-studio-controls">
+                        <label>
+                          <span className="eyebrow">{uiText.opacity}</span>
+                          <input
+                            type="range"
+                            min={0.15}
+                            max={1}
+                            step={0.05}
+                            value={settings.opacity}
+                            onChange={(event) =>
+                              updateOverlaySetting(item.id, { opacity: Number(event.target.value) })
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span className="eyebrow">{uiText.blend}</span>
+                          <select
+                            value={settings.blendMode}
+                            onChange={(event) =>
+                              updateOverlaySetting(item.id, {
+                                blendMode: event.target.value as BlendModeOption
+                              })
+                            }
+                          >
+                            {BLEND_MODE_OPTIONS.map((option) => (
+                              <option key={`${item.id}-${option.id}`} value={option.id}>
+                                {localize(lang, option.label)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className="layer-order-controls">
+                          <span className="eyebrow">{`${uiText.order} ${index + 1}`}</span>
+                          <div className="pill-list compact">
+                            <button type="button" className="chip" onClick={() => moveOverlayItem(item.id, -1)}>
+                              {uiText.moveUp}
+                            </button>
+                            <button type="button" className="chip" onClick={() => moveOverlayItem(item.id, 1)}>
+                              {uiText.moveDown}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </article>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-              <div>
-                <div className="ai-model-strip">
-                  <div className="card-header">
-                    <span className="eyebrow">{lang === "th" ? "โมเดล AI" : "AI Models"}</span>
-                    <span className="status-pill">5 active</span>
+
+              <div className="satellite-section-label">{uiText.comparePanel}</div>
+              <div className="map-compare-grid">
+                {mapCompareCards.map((item) => (
+                  <button
+                    key={`compare-${item.id}`}
+                    type="button"
+                    className={item.active ? "map-compare-card active" : "map-compare-card"}
+                    onClick={item.action}
+                  >
+                    <div className="map-compare-thumb">
+                      <img src={item.previewUrl} alt={`${localize(lang, item.title)} preview`} loading="lazy" />
+                    </div>
+                    <div className="map-compare-copy">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <small>{localize(lang, item.detail)}</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="satellite-priority-list">
+                <span className="eyebrow">{copy.satelliteThailandPriority}</span>
+                {THAILAND_SATELLITE_PRIORITIES.map((item) => (
+                  <div key={item.id} className="stack-item">
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className="status-pill">TH</span>
+                    </div>
+                    <small>{localize(lang, item.detail)}</small>
                   </div>
-                  {cctvSamples.map((sample) => (
-                    <div key={sample.id} className="ai-model-row">
-                      <div>
-                        <strong>{sample.model}</strong>
-                      </div>
-                      <span className="model-status active">{localize(lang, sample.detection)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="recent-detections">
-                  <span className="eyebrow" style={{ padding: "0.15rem 0.32rem" }}>{lang === "th" ? "ตรวจจับล่าสุด" : "Recent Detections"}</span>
-                  {cctvSamples.slice(0, 3).map((sample) => (
-                    <div key={`det-${sample.id}`} className="detection-row">
-                      <span>{localize(lang, sample.zone)}</span>
-                      <span className={`status-tag ${sample.severity}`}>{sample.severity}</span>
-                      <span>{sample.minutesAgo}m ago</span>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </section>
 
-          {/* ── Row 3: Traffic, Social Trends, Briefing ── */}
-          <section className="card overview-card traffic">
+          <section className="card activity-card decision-card" id="decisions">
             <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "การจราจร" : "Traffic"}</span>
-              <span className={`status-tag ${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
+              <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decision Queue"}</span>
+              <span className="status-pill">{decisionItems.length}</span>
             </div>
-            <div className="corridor-list">
-              {mttTrafficSnapshotSeed.corridors.map((corridor) => (
-                <div key={corridor.id} className="corridor-row">
-                  <div>
-                    <strong>{localize(lang, corridor.label)}</strong>
-                  </div>
-                  <span className={`status-tag ${corridor.status}`}>{corridor.speedKmh} km/h</span>
-                </div>
-              ))}
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{lang === "th" ? "รายการนำ" : "Lead action"}</span>
+              <strong>
+                {decisionItems[0]
+                  ? localize(lang, decisionItems[0].title)
+                  : lang === "th"
+                    ? "ไม่มีรายการเร่งด่วนในคิว"
+                    : "No immediate actions in the queue"}
+              </strong>
             </div>
-          </section>
+            <div className="decision-list tile-scroll">
+              {decisionItems.length > 0 ? (
+                decisionItems.map((item) => {
+                  const domainLabel = overview.domains.find((domainItem) => domainItem.slug === item.domainSlug);
+                  const decisionDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
+                  const decisionCity = cityBySlug.get(item.citySlug) ?? selectedCity;
 
-          <section className="card overview-card social-trends">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "เทรนด์" : "Trends"}</span>
-              <span className="status-pill">{socialListening.mentionCount} mentions</span>
-            </div>
-            <div className="trend-keyword-cloud">
-              {(socialListening.trendKeywords ?? []).map((kw) => (
-                <span key={localize("en", kw.term)} className={`trend-tag sentiment-${kw.sentiment}`}>
-                  {localize(lang, kw.term)}
-                  <span className="trend-count">{kw.count}</span>
-                  <span className="trend-arrow">{kw.trend === "up" ? "\u2191" : kw.trend === "down" ? "\u2193" : "\u2192"}</span>
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section className="card overview-card briefing">
-            <div className="card-header">
-              <span className="eyebrow">{copy.briefing}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
-            </div>
-            <strong>{localize(lang, overview.briefing.headline)}</strong>
-            <p>{localize(lang, overview.briefing.body)}</p>
-          </section>
-
-          {/* ── Row 4: Decisions, News, Environment ── */}
-          <section className="card overview-card queue">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decisions"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-                {decisionItems.length}
-              </button>
-            </div>
-            <div className="overview-inline-list">
-              {overviewQueue.length > 0 ? (
-                overviewQueue.map((item) => {
-                  const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
-                  const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
                   return (
-                    <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`decision-item severity-${item.severity}`}
+                      onClick={() => focusDecision(item)}
+                    >
                       <div className="stack-title">
                         <strong>{localize(lang, item.title)}</strong>
                         <span className={`status-tag ${item.status}`}>{item.status}</span>
                       </div>
-                      <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
-                    </button>
-                  );
-                })
+                      <div className="decision-meta">
+                        <span>
+                          {decisionDistrict ? localize(lang, decisionDistrict.name) : localize(lang, decisionCity.name)}
+                        </span>
+                        <span>{domainLabel ? localize(lang, domainLabel.title) : item.domainSlug}</span>
+                        <span>{`${lang === "th" ? "เชื่อมั่น" : "Confidence"} ${formatConfidence(item.confidence)}`}</span>
+                      </div>
+                      <p>{localize(lang, item.summary)}</p>
+                      <small>{localize(lang, item.recommendedAction)}</small>
+                      <div className="decision-footer">
+                        <span>{localize(lang, item.owner)}</span>
+                        <span>{`${lang === "th" ? "ครบกำหนด" : "Due"} ${formatUtcClock(item.dueAt)} UTC`}</span>
+                      </div>
+                  </button>
+                );
+              })
+            ) : (
+                <article className="activity-item">
+                  <div className="stack-title">
+                    <strong>{lang === "th" ? "ไม่มีรายการค้าง" : "Queue clear"}</strong>
+                    <span className="status-tag live">live</span>
+                  </div>
+                  <small>{formatUtcClock(time.updatedAt)} UTC</small>
+                  <p>
+                    {lang === "th"
+                      ? "ขณะนี้ยังไม่มีการตัดสินใจที่ต้องยกระดับสำหรับตัวกรองนี้"
+                      : "There are no escalated actions for the current city, district, and domain filters."}
+                  </p>
+                </article>
+              )}
+            </div>
+            <div className="decision-activity-strip">
+              {activityItems.slice(0, 2).map((item) => (
+                <div key={item.id} className="decision-activity-item">
+                  <span>{item.label}</span>
+                  <small>{formatUtcClock(item.timestamp)} UTC</small>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card global-card" id="global-signals">
+            <div className="card-header">
+              <span className="eyebrow">{copy.globalSignals}</span>
+              <span className="status-pill">{globalSignalNews.length}</span>
+            </div>
+            <div className="stack-list tile-scroll">
+              {globalSignalNews.length > 0 ? (
+                globalSignalNews.map((item) => (
+                  <a
+                    key={item.id}
+                    className="stack-item linked"
+                    href={item.source.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className="status-pill">{formatUtcClock(item.publishedAt)} UTC</span>
+                    </div>
+                    <small>{item.source.sourceName}</small>
+                  </a>
+                ))
               ) : (
-                <div className="data-item">
-                  <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
+                <div className="stack-item">
+                  <p>{copy.noExternalSignals}</p>
                 </div>
               )}
             </div>
           </section>
 
-          <section className="card overview-card news">
+          <section className="card world-card" id="world-watch">
             <div className="card-header">
-              <span className="eyebrow">{copy.news}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-                {filteredNews.length}
-              </button>
+              <span className="eyebrow">{copy.worldWatch}</span>
+              <span className="status-pill">{globalWatchSources.length}</span>
             </div>
-            <div className="overview-inline-list">
-              {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-                <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
-                  <strong>{localize(lang, item.title)}</strong>
-                  <small>{item.source.sourceName}</small>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          <section className="card overview-card resilience">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Environment"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-                {resilience.source.freshnessStatus}
-              </button>
-            </div>
-            <div className="overview-hero-metrics">
-              <div className="data-item">
-                <span className="eyebrow">Weather</span>
-                <strong>{localize(lang, resilience.weatherSummary)}</strong>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">Air Quality</span>
-                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Row 5: Sources (span 2) + Satellite ── */}
-          <section className="card overview-card sources">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
-              <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
-            </div>
-            <div className="overview-inline-list">
-              {overviewSources.map((source) => (
-                <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
+            <div className="stack-list">
+              <span className="eyebrow">{copy.sourceStatus}</span>
+              {globalWatchSources.map((source) => (
+                <div key={source.id} className="stack-item compact-source">
                   <div className="stack-title">
                     <strong>{source.name}</strong>
                     <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
                   </div>
+                  <small>{source.message}</small>
+                </div>
+              ))}
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.worldContext}</span>
+              <strong>{localize(lang, resilience.warnings[0] ?? { th: "ไม่มีคำเตือนเพิ่มเติม", en: "No active warnings" })}</strong>
+            </div>
+            <div className="eo-watch-card">
+              <div className="stack-title">
+                <strong>{lang === "th" ? "Earth Observation Watch" : "Earth Observation Watch"}</strong>
+                <span className="status-pill">EO</span>
+              </div>
+              <div className="eo-watch-grid">
+                {eoWatchItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`eo-watch-item ${item.tone}`}
+                    onClick={() => {
+                      const next = buildStableParams();
+                      next.set("layers", item.targetLayers.join(","));
+                      if (
+                        item.targetLayers.includes("smart-city-thailand") ||
+                        item.targetLayers.includes("jaxa-rainfall") ||
+                        item.targetLayers.includes("eo-aerosol") ||
+                        item.targetLayers.includes("eo-precipitation") ||
+                        item.targetLayers.includes("eo-vegetation")
+                      ) {
+                        next.set("view", "national");
+                      }
+                      startTransition(() => {
+                        setSearchParams(next);
+                        setRecenterSignal((v) => v + 1);
+                      });
+                    }}
+                  >
+                    <span className="eyebrow">{item.title}</span>
+                    <small>{item.detail}</small>
+                  </button>
+                ))}
+              </div>
+              <a className="eo-watch-link" href="https://eodashboard.org" target="_blank" rel="noreferrer">
+                {lang === "th" ? "เปิด EO Dashboard เพื่อดูบริบทเชิงพื้นที่" : "Open EO Dashboard for spatial context"}
+              </a>
+            </div>
+            {undpDataSource ? (
+              <a className="stack-item linked compact-source" href={undpDataSource.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{undpDataSource.name}</strong>
+                  <span className={`status-tag ${undpDataSource.freshnessStatus}`}>{undpDataSource.freshnessStatus}</span>
+                </div>
+                <small>
+                  {lang === "th"
+                    ? "เปิด UNDP Data Hub เพื่อเข้าถึง development indicators, datasets, tiles, และ API URLs"
+                    : "Open UNDP Data Hub for development indicators, datasets, tiles, and dataset API URLs."}
+                </small>
+              </a>
+            ) : null}
+            <div className="compact-list">
+              {undpQuickLinks.map((item) => (
+                <a key={item.id} className="headline-item" href={item.href} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.title)}</strong>
+                  <small>{localize(lang, item.note)}</small>
                 </a>
+              ))}
+            </div>
+            <div className="compact-list">
+              <span className="eyebrow">{uiText.groundTruth}</span>
+              {groundTruthLinks.map((item) => (
+                <a key={item.id} className="headline-item" href={item.url} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.label)}</strong>
+                  <small>{localize(lang, item.note)}</small>
+                </a>
+              ))}
+            </div>
+            {compactMedia.length > 0 ? (
+              <div className="compact-list">
+                {compactMedia.slice(0, 2).map((item) => (
+                  <a
+                    key={item.id}
+                    className="headline-item"
+                    href={item.externalUrl ?? item.embedUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{item.region ?? item.kind}</small>
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="card activity-card" id="activity">
+            <div className="card-header">
+              <span className="eyebrow">{copy.activity}</span>
+              <span className="status-pill">{activityItems.length}</span>
+            </div>
+            <div className="activity-list tile-scroll">
+              {activityItems.map((item) => (
+                <article key={item.id} className="activity-item">
+                  <div className="stack-title">
+                    <strong>{item.label}</strong>
+                    <span className={`status-tag ${item.status}`}>{item.status}</span>
+                  </div>
+                  <small>{formatUtcClock(item.timestamp)} UTC</small>
+                  <p>{item.detail}</p>
+                </article>
               ))}
             </div>
           </section>
 
-          <section className="card overview-card ranking">
+          <section className="card research-card" id="candidate-compare">
             <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-                {activeSatelliteLayers.length} layers
-              </button>
+              <span className="eyebrow">{copy.candidateCompare}</span>
+              <span className="status-pill">{selectedModelCity.name}</span>
             </div>
-            <div className="overview-hero-metrics">
-              <div className="data-item">
-                <span className="eyebrow">Mode</span>
-                <strong>{satelliteDigest.status.mode}</strong>
+            <label className="stack-field">
+              <span className="eyebrow">{copy.modelCity}</span>
+              <select value={selectedModelCity.id} onChange={(event) => updateParam("modelCity", event.target.value)}>
+                {globalReferenceCities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {`${item.name}, ${item.country}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="candidate-grid">
+              <div className="candidate-panel">
+                <span className="eyebrow">{localize(lang, selectedCity.name)}</span>
+                <strong>{formatPopulation(selectedCity.population)}</strong>
+                <small>{localize(lang, selectedCity.region)}</small>
+                <p>{localize(lang, selectedCity.focus)}</p>
               </div>
-              <div className="data-item">
-                <span className="eyebrow">Sync</span>
-                <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+              <div className="candidate-panel">
+                <span className="eyebrow">{`${selectedModelCity.name}, ${selectedModelCity.country}`}</span>
+                <strong>{selectedModelCity.approxPopulation}</strong>
+                <small>{`${copy.eiuRank}: ${selectedModelCity.eiuRank2025}`}</small>
+                <p>{pickLocalized(lang, selectedModelCity.modelLens)}</p>
+              </div>
+            </div>
+            <div className="impact-headline">
+              <span className="eyebrow">{copy.fitSignal}</span>
+              <strong>
+                {fitDomains.length > 0
+                  ? fitDomains.map((item) => localize(lang, item.title)).join(" • ")
+                  : pickLocalized(lang, selectedModelCity.modelLens)}
+              </strong>
+            </div>
+            <div className="stack-list">
+              <span className="eyebrow">{copy.transferIdeas}</span>
+              {selectedModelCity.innovationIdeas.map((item, index) => (
+                <div key={`${selectedModelCity.id}-${index}`} className="stack-item">
+                  <p>{pickLocalized(lang, item)}</p>
+                </div>
+              ))}
+            </div>
+            <a className="stack-item linked" href={selectedModelCity.href} target="_blank" rel="noreferrer">
+              <div className="stack-title">
+                <strong>{copy.livabilityLens}</strong>
+                <span className="status-pill">{copy.eiuRank}</span>
+              </div>
+              <p>
+                {lang === "th"
+                  ? "ใช้เมืองอันดับสูงของ EIU เป็นเมืองอ้างอิงเพื่อชี้ให้เห็นแนวทางที่ถ่ายโอนได้"
+                  : "Uses high-ranking EIU cities as reference models for transferable planning ideas."}
+              </p>
+            </a>
+          </section>
+
+          <section className="card toolkit-card" id="toolkit">
+            <div className="card-header">
+              <span className="eyebrow">{copy.toolkit}</span>
+              <span className="status-pill">{`${toolkitLinks.length} APIs`}</span>
+            </div>
+
+            <div className="toolkit-shell tile-scroll">
+              <div className="toolkit-block">
+                <h3>{copy.apiDirectory}</h3>
+                <div className="tool-link-grid">
+                  {toolkitLinks.map((tool) => (
+                    <a key={tool.id} className="tool-link" href={tool.href} target="_blank" rel="noreferrer">
+                      <strong>{tool.name}</strong>
+                      <span>{tool.kind}</span>
+                      <p>{pickLocalized(lang, tool.description)}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="toolkit-block">
+                <h3>{copy.stack}</h3>
+                <div className="pill-list">
+                  {["Codex", "GitHub", "Render", "React", "Vite", "Fastify", "TypeScript", "npm"].map((item) => (
+                    <span key={item} className="stack-pill">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="export-panel">
+                  <div className="stack-title">
+                    <strong>{`${copy.exportLanguage}: ${activeExportLabel}`}</strong>
+                    <button className="share-button" onClick={copySkeleton}>
+                      {copiedSkeleton ? copy.exported : `${copy.exportCode} ${activeExportLabel}`}
+                    </button>
+                  </div>
+                  <div className="export-tabs">
+                    {exportOptions.map((option) => {
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`export-tab export-tab-${option.id}${exportLanguage === option.id ? " active" : ""}`}
+                          onClick={() => setExportLanguage(option.id)}
+                        >
+                          <span className="export-tab-mark">{option.mark}</span>
+                          <span className="export-tab-copy">
+                            <strong>{option.label}</strong>
+                            <small>{option.detail}</small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <pre>{activeExportSnippet}</pre>
+                </div>
               </div>
             </div>
           </section>
         </section>
-      </div>
 
-      {/* Bottom Data Strip */}
-      <footer className="bottombar">
-        <div className="bottomstrip-row metrics">
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">AQI</span>
-            <strong>{topAqiFeature ? `${numericProperty(topAqiFeature, "aqi")}` : "--"}</strong>
+        <section className="card footnote-card" id="fine-print">
+          <div className="card-header">
+            <span className="eyebrow">{copy.finePrint}</span>
+            <span className="status-pill">experimental</span>
           </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temp"}</span>
-            <strong>{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
+          <div className="footnote-grid">
+            <p>{copy.privacy}</p>
+            <p>{copy.experimental}</p>
+            <p>{copy.copyright}</p>
+            <div className="contact-card">
+              <div className="stack-title">
+                <strong>{copy.contactTitle}</strong>
+                <span className="status-pill">public</span>
+              </div>
+              <p className="contact-copy">{copy.contactLead}</p>
+              <p className="contact-copy">{copy.contactPrompt}</p>
+              <div className="contact-links">
+                <a href="mailto:non.ar@depa.or.th">
+                  <span className="eyebrow">{copy.contactEmailLabel}</span>
+                  <strong>non.ar@depa.or.th</strong>
+                </a>
+                <a href="https://www.linkedin.com/in/drnon/" target="_blank" rel="noreferrer">
+                  <span className="eyebrow">{copy.contactLinkedInLabel}</span>
+                  <strong>linkedin.com/in/drnon</strong>
+                </a>
+              </div>
+            </div>
           </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กล่าวถึง" : "Mentions"}</span>
-            <strong>{socialListening.mentionCount}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">Layers</span>
-            <strong>{layers.length}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">Sync</span>
-            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "คิว" : "Queue"}</span>
-            <strong>{decisionItems.length}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กล้อง" : "CCTV"}</span>
-            <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "จราจร" : "Traffic"}</span>
-            <strong>{mttTrafficSnapshotSeed.overallStatus}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">Arena</span>
-            <strong>{impactArenaEventsSeed.filter((e) => e.status !== "cancelled").length} events</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "ความรู้สึก" : "Sentiment"}</span>
-            <strong>{socialListening.sentimentScore}%</strong>
-          </div>
+        </section>
+      </main>
+
+      <aside className="context-rail" aria-label={lang === "th" ? "Layer catalog" : "Layer catalog"}>
+        <div className="context-rail-header">
+          <span className="eyebrow">{lang === "th" ? "Layer catalog" : "Layer Catalog"}</span>
+          <strong>{lang === "th" ? "Right rail for roads, vegetation, traffic, and imported overlays" : "Right rail for roads, vegetation, traffic, and imported overlays"}</strong>
+          <small>
+            {lang === "th"
+              ? `${layers.length} live now • ${catalogedLayerCount} cataloged`
+              : `${layers.length} live now • ${catalogedLayerCount} cataloged`}
+          </small>
         </div>
-        <div className="bottomstrip-row actions">
-          <div className="bottomstrip-actions">
-            {footerQuickActions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
-                onClick={() => {
-                  action.onClick?.();
-                  setActiveTab("map");
-                }}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-          <div className="bottomstrip-attribution">
-            <span className="bottomstrip-attribution-copy">{PUBLIC_DASHBOARD_ATTRIBUTION.copyright}</span>
-            <a className="bottomstrip-attribution-link" href={`mailto:${PUBLIC_DASHBOARD_ATTRIBUTION.email}`}>
-              {copy.contactEmailLabel}: {PUBLIC_DASHBOARD_ATTRIBUTION.email}
-            </a>
-            <a
-              className="bottomstrip-attribution-link"
-              href={PUBLIC_DASHBOARD_ATTRIBUTION.linkedInUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {copy.contactLinkedInLabel}: {PUBLIC_DASHBOARD_ATTRIBUTION.linkedInHandle}
-            </a>
-          </div>
+
+        {layerRailSections.map((section) => (
+          <section key={section.id} className="context-rail-section">
+            <div className="context-rail-section-head">
+              <div>
+                <span className="eyebrow">{section.title}</span>
+                <small>{section.note}</small>
+              </div>
+              <span className="status-pill">{section.items.length}</span>
+            </div>
+            <div className="layer-rail-list">
+              {section.items.map((item) => {
+                const interactive = "onClick" in item && typeof item.onClick === "function";
+                const content = (
+                  <>
+                    <div className="layer-rail-title">
+                      <div className="side-toggle-row">
+                        <span className="swatch" style={{ background: item.color }} />
+                        <strong>{item.label}</strong>
+                      </div>
+                      <span className={`layer-state state-${item.state}`}>{item.state === "active" ? "ON" : item.state}</span>
+                    </div>
+                    <p>{item.detail}</p>
+                    <small className="layer-source">{item.source}</small>
+                  </>
+                );
+
+                return interactive ? (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={item.state === "active" ? "layer-rail-item active" : "layer-rail-item"}
+                    onClick={item.onClick}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <article key={item.id} className="layer-rail-item passive">
+                    {content}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </aside>
+
+      <footer className="bottombar">
+        <div className="ticker">
+          <span className="eyebrow">Alert</span>
+          <strong>{executiveSignal}</strong>
+        </div>
+        <div className="ticker-meta">
+          <span>{localize(lang, selectedCity.name)}</span>
+          <span>{selectedDomain ? localize(lang, selectedDomain.title) : "All domains"}</span>
+          <span>{timeRange}</span>
         </div>
       </footer>
     </div>
