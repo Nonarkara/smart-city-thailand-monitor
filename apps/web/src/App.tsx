@@ -86,6 +86,14 @@ const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
+// Lock the public-facing identity to the nationwide Smart City Thailand dashboard.
+const PUBLIC_DASHBOARD_BRAND = Object.freeze({
+  title: "Smart City Thailand Super Dashboard",
+  eyebrow: {
+    th: "สมาร์ตซิตี้ไทยแลนด์",
+    en: "Smart City Thailand"
+  }
+});
 const COVERAGE_DOMAIN_KEYWORDS: Record<string, string[]> = {
   environment: ["environment", "resilience", "water", "coastal", "green", "climate", "canal", "flood"],
   economy: ["economy", "industrial", "trade", "tourism", "innovation", "growth", "logistics"],
@@ -1108,8 +1116,8 @@ function createSatelliteDigestFallback(): SatelliteDigest {
 
 const copyDeck = {
   th: {
-    title: "Smart City Thailand Super Dashboard",
-    brandEyebrow: "สมาร์ตซิตี้ไทยแลนด์",
+    title: PUBLIC_DASHBOARD_BRAND.title,
+    brandEyebrow: PUBLIC_DASHBOARD_BRAND.eyebrow.th,
     subtitle: "แดชบอร์ดปฏิบัติการสำหรับติดตามสัญญาณเมืองอัจฉริยะไทย",
     view: "มุมมอง",
     range: "ช่วงเวลา",
@@ -1263,8 +1271,8 @@ const copyDeck = {
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
   en: {
-    title: "Smart City Thailand Super Dashboard",
-    brandEyebrow: "Smart City Thailand",
+    title: PUBLIC_DASHBOARD_BRAND.title,
+    brandEyebrow: PUBLIC_DASHBOARD_BRAND.eyebrow.en,
     subtitle: "Live operations dashboard for Thailand's smart city intelligence",
     view: "View",
     range: "Time Range",
@@ -2983,8 +2991,7 @@ function DashboardPage() {
       }
     }
   ];
-  const siteTitle = (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Monitor";
-  const workspaceTitle = siteTitle;
+  const workspaceTitle = PUBLIC_DASHBOARD_BRAND.title;
   const workspaceNarrative =
     localize(lang, commandCenter.screenMode);
   const reporterStatusMeta = {
