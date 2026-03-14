@@ -518,7 +518,12 @@ export interface PublicCctvCamera {
   lat: number;
   lon: number;
   imageUrl: string;
+  previewUrl?: string;
   status: "live" | "offline" | "unknown";
+  statusDetail?: LocalizedText;
+  lastCheckedAt?: string;
+  lastSuccessfulAt?: string;
+  statusCode?: number | null;
   zone: string;
 }
 

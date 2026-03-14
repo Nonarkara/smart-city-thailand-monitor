@@ -1,6 +1,9 @@
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { cloneSeed, publicCctvCameras as seededPublicCctvCameras } from "@smart-city/shared";
-import type { PublicCctvCamera } from "@smart-city/shared";
+import type { LocalizedText, PublicCctvCamera } from "@smart-city/shared";
 import { fetchJsonOrNull } from "../adapters/common.js";
+import { config } from "../config.js";
 
 interface LongdoCameraFeedItem {
   title?: string;
@@ -12,16 +15,32 @@ interface LongdoCameraFeedItem {
   imgurl?: string;
 }
 
-const PUBLIC_CCTV_FEED_URL = "https://camera.longdo.com/feed/?command=json";
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const DUPLICATE_DISTANCE_DEGREES = 0.0015;
+interface ProbeResult {
+  ok: boolean;
+  statusCode: number | null;
+}
 
+const PUBLIC_CCTV_FEED_URL = "https://camera.longdo.com/feed/?command=json";
+const DUPLICATE_DISTANCE_DEGREES = 0.0015;
+const SIGNAL_DOWN: LocalizedText = {
+  th: "สัญญาณขัดข้อง",
+  en: "Signal down"
+};
+const SIGNAL_LIVE: LocalizedText = {
+  th: "สัญญาณพร้อมใช้งาน",
+  en: "Live signal ready"
+};
+
+let cacheLoaded = false;
 let cachedPayload:
   | {
       expiresAt: number;
+      updatedAt: string;
       cameras: PublicCctvCamera[];
     }
   | null = null;
+let refreshPromise: Promise<PublicCctvCamera[]> | null = null;
+let writeQueue = Promise.resolve();
 
 function toFiniteNumber(value: unknown) {
   const numeric = Number(value);
@@ -41,6 +60,177 @@ function hasUsablePreviewImage(item: LongdoCameraFeedItem) {
   return imageUrl !== "" && !imageUrl.includes("X.X.X.X:YYYY") && !imageUrl.endsWith("camid=");
 }
 
+function getPakKretFallbackPreview(cameraId: string) {
+  return cameraId.startsWith("CAMPK")
+    ? `https://camera1.iticfoundation.org/jpeg2.php?camid=${encodeURIComponent(cameraId)}`
+    : "";
+}
+
+function uniqueUrls(urls: string[]) {
+  return urls.filter((value, index, values) => value && values.indexOf(value) === index);
+}
+
+function getCandidatePreviewUrls(camera: PublicCctvCamera) {
+  return uniqueUrls([camera.previewUrl ?? "", camera.imageUrl, getPakKretFallbackPreview(camera.cameraId)]);
+}
+
+function resolveCctvSnapshotPath() {
+  if (!config.cctvSnapshotPath) {
+    return "";
+  }
+
+  return path.isAbsolute(config.cctvSnapshotPath)
+    ? config.cctvSnapshotPath
+    : path.resolve(process.cwd(), config.cctvSnapshotPath);
+}
+
+function isLocalizedText(value: unknown): value is LocalizedText {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof (value as { th?: unknown }).th === "string" &&
+      typeof (value as { en?: unknown }).en === "string"
+  );
+}
+
+function isPublicCctvCameraRecord(value: unknown): value is PublicCctvCamera {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    typeof record.cameraId === "string" &&
+    typeof record.source === "string" &&
+    typeof record.lat === "number" &&
+    typeof record.lon === "number" &&
+    typeof record.imageUrl === "string" &&
+    typeof record.zone === "string" &&
+    typeof record.status === "string" &&
+    isLocalizedText(record.label)
+  );
+}
+
+async function writeSnapshotFile(payload: string) {
+  const targetPath = resolveCctvSnapshotPath();
+  if (!targetPath) {
+    return;
+  }
+
+  try {
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    const tempPath = `${targetPath}.tmp`;
+    await writeFile(tempPath, payload, "utf8");
+    await rename(tempPath, targetPath);
+  } catch (error) {
+    console.warn("Failed to persist public CCTV snapshot", error);
+  }
+}
+
+function persistPublicCctvSnapshot(cameras: PublicCctvCamera[], updatedAt: string) {
+  const payload = JSON.stringify(
+    {
+      updatedAt,
+      total: cameras.length,
+      live: cameras.filter((camera) => camera.status === "live").length,
+      offline: cameras.filter((camera) => camera.status === "offline").length,
+      cameras
+    },
+    null,
+    2
+  );
+
+  writeQueue = writeQueue.then(() => writeSnapshotFile(payload));
+  return writeQueue;
+}
+
+async function ensurePersistedCacheLoaded() {
+  if (cacheLoaded) {
+    return;
+  }
+
+  cacheLoaded = true;
+  const targetPath = resolveCctvSnapshotPath();
+  if (!targetPath) {
+    return;
+  }
+
+  try {
+    const raw = await readFile(targetPath, "utf8");
+    const parsed = JSON.parse(raw) as { updatedAt?: string; cameras?: unknown };
+    const persistedCameras = Array.isArray(parsed.cameras)
+      ? parsed.cameras.filter((camera): camera is PublicCctvCamera => isPublicCctvCameraRecord(camera))
+      : [];
+
+    if (persistedCameras.length > 0) {
+      cachedPayload = {
+        expiresAt: config.allowLiveFetch ? 0 : Date.now() + Math.max(config.cctvCacheTtlMs, 60000),
+        updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
+        cameras: cloneSeed(persistedCameras)
+      };
+    }
+  } catch {
+    // Ignore missing or invalid persisted CCTV state.
+  }
+}
+
+async function probePreviewUrl(url: string): Promise<ProbeResult> {
+  if (!url || !config.allowLiveFetch) {
+    return { ok: false, statusCode: null };
+  }
+
+  const methods: RequestInit["method"][] = ["HEAD", "GET"];
+
+  for (const method of methods) {
+    try {
+      const response = await fetch(url, {
+        method,
+        redirect: "follow",
+        signal: AbortSignal.timeout(Math.max(config.cctvProbeTimeoutMs, 500)),
+        headers: method === "GET" ? { Range: "bytes=0-0" } : undefined
+      });
+      const contentType = response.headers.get("content-type") ?? "";
+      const isImageResponse = contentType === "" || contentType.startsWith("image/");
+
+      if (response.ok && isImageResponse) {
+        return { ok: true, statusCode: response.status };
+      }
+
+      if (method === "HEAD" && response.status === 405) {
+        continue;
+      }
+
+      return { ok: false, statusCode: response.status };
+    } catch {
+      // Try the next method or fallback URL.
+    }
+  }
+
+  return { ok: false, statusCode: null };
+}
+
+async function mapWithConcurrency<T, TResult>(
+  items: T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<TResult>
+) {
+  const results = new Array<TResult>(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(limit, items.length || 1));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
 function normalizeLongdoCamera(item: LongdoCameraFeedItem): PublicCctvCamera | null {
   const title = String(item.title ?? "").trim();
   const cameraId = String(item.camid ?? "").trim();
@@ -57,6 +247,7 @@ function normalizeLongdoCamera(item: LongdoCameraFeedItem): PublicCctvCamera | n
     sourceOrg && sourceOrg !== "iTIC Motion"
       ? `${sourceOrg} via iTIC / Longdo`
       : "iTIC / Longdo Traffic";
+  const previewUrl = String(item.imgurl).trim();
 
   return {
     id: `longdo-${slugify(cameraId)}`,
@@ -65,8 +256,10 @@ function normalizeLongdoCamera(item: LongdoCameraFeedItem): PublicCctvCamera | n
     source,
     lat,
     lon,
-    imageUrl: String(item.imgurl).trim(),
+    imageUrl: previewUrl,
+    previewUrl,
     status: "live",
+    statusDetail: SIGNAL_LIVE,
     zone
   };
 }
@@ -93,22 +286,108 @@ function mergePublicCameras(liveCameras: PublicCctvCamera[]) {
   return merged;
 }
 
-export async function getPublicCctvCameras(): Promise<PublicCctvCamera[]> {
-  if (cachedPayload && cachedPayload.expiresAt > Date.now()) {
-    return cloneSeed(cachedPayload.cameras);
-  }
-
+async function buildPublicCctvBaseSnapshot() {
   const liveFeed = await fetchJsonOrNull<LongdoCameraFeedItem[]>(PUBLIC_CCTV_FEED_URL);
   const liveCameras = Array.isArray(liveFeed)
     ? liveFeed.map((item) => normalizeLongdoCamera(item)).filter((item): item is PublicCctvCamera => Boolean(item))
     : [];
 
-  const cameras = liveCameras.length > 0 ? mergePublicCameras(liveCameras) : cloneSeed(seededPublicCctvCameras);
+  return liveCameras.length > 0 ? mergePublicCameras(liveCameras) : cloneSeed(seededPublicCctvCameras);
+}
 
-  cachedPayload = {
-    expiresAt: Date.now() + CACHE_TTL_MS,
-    cameras
-  };
+async function enrichCameraSignals(cameras: PublicCctvCamera[]) {
+  const checkedAt = new Date().toISOString();
+  const concurrency = Math.max(1, config.cctvProbeConcurrency);
 
-  return cloneSeed(cameras);
+  return mapWithConcurrency(cameras, concurrency, async (camera) => {
+    const previewCandidates = getCandidatePreviewUrls(camera);
+    let lastStatusCode: number | null = null;
+    let lastSuccessfulAt = camera.lastSuccessfulAt;
+
+    for (const previewUrl of previewCandidates) {
+      const result = await probePreviewUrl(previewUrl);
+      if (result.ok) {
+        lastSuccessfulAt = checkedAt;
+        return {
+          ...camera,
+          previewUrl,
+          status: "live" as const,
+          statusDetail: SIGNAL_LIVE,
+          lastCheckedAt: checkedAt,
+          lastSuccessfulAt,
+          statusCode: result.statusCode
+        };
+      }
+
+      if (result.statusCode !== null) {
+        lastStatusCode = result.statusCode;
+      }
+    }
+
+    return {
+      ...camera,
+      previewUrl: previewCandidates[previewCandidates.length - 1] ?? camera.previewUrl ?? camera.imageUrl,
+      status: "offline" as const,
+      statusDetail: SIGNAL_DOWN,
+      lastCheckedAt: checkedAt,
+      lastSuccessfulAt,
+      statusCode: lastStatusCode
+    };
+  });
+}
+
+export async function refreshPublicCctvSnapshot(force = false): Promise<PublicCctvCamera[]> {
+  await ensurePersistedCacheLoaded();
+
+  if (!force && cachedPayload && cachedPayload.expiresAt > Date.now()) {
+    return cloneSeed(cachedPayload.cameras);
+  }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    const cameras = await enrichCameraSignals(await buildPublicCctvBaseSnapshot());
+    const updatedAt = new Date().toISOString();
+
+    cachedPayload = {
+      expiresAt: Date.now() + Math.max(config.cctvCacheTtlMs, 60000),
+      updatedAt,
+      cameras
+    };
+
+    await persistPublicCctvSnapshot(cameras, updatedAt);
+    return cloneSeed(cameras);
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+export async function getPublicCctvCameras(): Promise<PublicCctvCamera[]> {
+  await ensurePersistedCacheLoaded();
+
+  if (cachedPayload) {
+    if (cachedPayload.expiresAt <= Date.now() && config.allowLiveFetch) {
+      void refreshPublicCctvSnapshot().catch(() => {
+        // Serve the last known snapshot if background refresh fails.
+      });
+    }
+
+    return cloneSeed(cachedPayload.cameras);
+  }
+
+  if (!config.allowLiveFetch) {
+    return cloneSeed(seededPublicCctvCameras);
+  }
+
+  try {
+    return await refreshPublicCctvSnapshot();
+  } catch {
+    return cloneSeed(seededPublicCctvCameras);
+  }
 }

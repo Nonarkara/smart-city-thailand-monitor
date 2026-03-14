@@ -1492,6 +1492,13 @@ function isPublicCctvPayload(value: unknown) {
         typeof item.imageUrl === "string" &&
         typeof item.status === "string" &&
         typeof item.zone === "string" &&
+        (typeof item.previewUrl === "string" || typeof item.previewUrl === "undefined") &&
+        (typeof item.lastCheckedAt === "string" || typeof item.lastCheckedAt === "undefined") &&
+        (typeof item.lastSuccessfulAt === "string" || typeof item.lastSuccessfulAt === "undefined") &&
+        (typeof item.statusCode === "number" || item.statusCode === null || typeof item.statusCode === "undefined") &&
+        (isObject(item.statusDetail)
+          ? typeof item.statusDetail.th === "string" && typeof item.statusDetail.en === "string"
+          : typeof item.statusDetail === "undefined") &&
         isObject(item.label) &&
         typeof item.label.th === "string" &&
         typeof item.label.en === "string"

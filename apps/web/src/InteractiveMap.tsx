@@ -464,31 +464,66 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
     const marker = L.marker([cam.lat, cam.lon], { icon });
 
     const label = localize(locale, cam.label);
+    const previewImageUrl = cam.previewUrl || cam.imageUrl;
     const fallbackImageUrl =
-      cam.cameraId.startsWith("CAMPK") && cam.imageUrl.includes("thaiclouderp.com/CCTV_MONITOR/src/img.php")
+      cam.cameraId.startsWith("CAMPK") && previewImageUrl.includes("thaiclouderp.com/CCTV_MONITOR/src/img.php")
         ? `https://camera1.iticfoundation.org/jpeg2.php?camid=${encodeURIComponent(cam.cameraId)}`
         : "";
+    const statusText =
+      cam.status === "live"
+        ? locale === "th"
+          ? "สด"
+          : "Live"
+        : cam.status === "offline"
+          ? locale === "th"
+            ? "สัญญาณขัดข้อง"
+            : "Signal down"
+          : locale === "th"
+            ? "ไม่ทราบ"
+            : "Unknown";
+    const statusDetail = cam.statusDetail ? localize(locale, cam.statusDetail) : statusText;
+    const checkedAtText = cam.lastCheckedAt
+      ? new Date(cam.lastCheckedAt).toLocaleString(locale === "th" ? "th-TH" : "en-US", {
+          dateStyle: "short",
+          timeStyle: "short"
+        })
+      : "";
     marker.bindTooltip(label, { direction: "top", offset: [0, -10] });
 
-    const popupHtml = `
-      <div style="display:grid;gap:6px;min-width:220px;max-width:280px;">
-        <strong style="font-size:13px;">${label}</strong>
+    const mediaHtml =
+      cam.status === "offline"
+        ? `
+        <div style="display:grid;place-items:center;min-height:124px;border-radius:2px;background:#111827;color:#fca5a5;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">
+          ${statusText}
+        </div>
+      `
+        : `
         <img
-          src="${cam.imageUrl}"
+          src="${previewImageUrl}"
           data-fallback-src="${fallbackImageUrl}"
           alt="${label}"
           style="width:100%;border-radius:2px;aspect-ratio:16/9;object-fit:cover;background:#111;"
           loading="lazy"
           referrerpolicy="no-referrer"
-          onerror="if (this.dataset.fallbackSrc && this.src !== this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; return; } this.style.display='none'"
+          onerror="if (this.dataset.fallbackSrc && this.src !== this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; return; } const down=this.nextElementSibling; if (down) { down.style.display='grid'; } this.style.display='none'"
         />
+        <div style="display:none;place-items:center;min-height:124px;border-radius:2px;background:#111827;color:#fca5a5;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">
+          ${locale === "th" ? "สัญญาณขัดข้อง" : "Signal down"}
+        </div>
+      `;
+
+    const popupHtml = `
+      <div style="display:grid;gap:6px;min-width:220px;max-width:280px;">
+        <strong style="font-size:13px;">${label}</strong>
+        ${mediaHtml}
         <div style="display:flex;gap:8px;align-items:center;font-size:11px;">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cam.status === "live" ? "#34d399" : cam.status === "offline" ? "#f87171" : "#fbbf24"};"></span>
-          <span>${cam.status === "live" ? (locale === "th" ? "สด" : "Live") : cam.status === "offline" ? (locale === "th" ? "ออฟไลน์" : "Offline") : (locale === "th" ? "ไม่ทราบ" : "Unknown")}</span>
+          <span>${statusText}</span>
           <span style="opacity:0.5;">•</span>
           <span>${cam.source}</span>
         </div>
         <small style="opacity:0.6;">${cam.cameraId} • ${cam.zone}</small>
+        <small style="opacity:0.75;">${statusDetail}${checkedAtText ? ` • ${checkedAtText}` : ""}</small>
       </div>
     `;
 
