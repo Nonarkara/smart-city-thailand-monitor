@@ -2693,6 +2693,47 @@ function DashboardPage() {
       }
     }
   ];
+  const activeFocusPresetId =
+    focusPresets.find((preset) => preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId)))?.id ??
+    null;
+  const footerQuickActions = [
+    {
+      id: "air-risk",
+      label: lang === "th" ? "อากาศ" : "Air",
+      active: activeFocusPresetId === "air-risk",
+      onClick: focusPresets[0]?.run
+    },
+    {
+      id: "candidate-cities",
+      label: lang === "th" ? "เมืองเด่น" : "Candidates",
+      active: activeFocusPresetId === "candidate-cities",
+      onClick: focusPresets[1]?.run
+    },
+    {
+      id: "media-watch",
+      label: lang === "th" ? "สื่อ" : "Media",
+      active: activeFocusPresetId === "media-watch",
+      onClick: focusPresets[2]?.run
+    },
+    {
+      id: "economic-context",
+      label: lang === "th" ? "เศรษฐกิจ" : "Economy",
+      active: activeFocusPresetId === "economic-context",
+      onClick: focusPresets[3]?.run
+    },
+    {
+      id: "basemap",
+      label: basemap === "satellite" ? copy.mapAtlas : copy.mapSatellite,
+      active: false,
+      onClick: () => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")
+    },
+    {
+      id: "recenter",
+      label: lang === "th" ? "จัดกึ่งกลาง" : "Recenter",
+      active: false,
+      onClick: () => setRecenterSignal((value) => value + 1)
+    }
+  ];
   const satellitePresets = SATELLITE_PRESETS.map((preset) => ({
     ...preset,
     active: preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId))
@@ -3323,6 +3364,19 @@ function DashboardPage() {
     });
   }
 
+  function selectCity(citySlug: string) {
+    const next = buildStableParams();
+    next.set("city", citySlug);
+    next.set("view", "city");
+    next.delete("district");
+
+    startTransition(() => {
+      setSearchParams(next);
+      setActiveTab("map");
+      setRecenterSignal((value) => value + 1);
+    });
+  }
+
   function toggleLayer(id: string) {
     const next = buildStableParams();
     const nextLayers = new Set(layers);
@@ -3556,7 +3610,7 @@ function DashboardPage() {
               {lang === "th" ? "เมือง" : "City"}
             </button>
           </div>
-          <select className="topbar-select" value={city} onChange={(event) => { updateParam("city", event.target.value); updateParam("view", "city"); }}>
+          <select className="topbar-select" value={city} onChange={(event) => selectCity(event.target.value)}>
             {overview.cities.map((item) => (
               <option key={item.slug} value={item.slug}>{localize(lang, item.name)}</option>
             ))}
@@ -4321,24 +4375,19 @@ function DashboardPage() {
           </div>
         </div>
         <div className="bottomstrip-row actions">
-          <button type="button" className={activeTab === "data" ? "bottomstrip-action active" : "bottomstrip-action"} onClick={() => setActiveTab("data")}>
-            {lang === "th" ? "Data" : "Data"}
-          </button>
-          <button type="button" className={activeTab === "insights" ? "bottomstrip-action active" : "bottomstrip-action"} onClick={() => setActiveTab("insights")}>
-            {lang === "th" ? "AI" : "AI"}
-          </button>
-          <button type="button" className={activeTab === "satellite" ? "bottomstrip-action active" : "bottomstrip-action"} onClick={() => setActiveTab("satellite")}>
-            {lang === "th" ? "EO" : "EO"}
-          </button>
-          <button type="button" className={activeTab === "cctv" ? "bottomstrip-action active" : "bottomstrip-action"} onClick={() => setActiveTab("cctv")}>
-            CCTV
-          </button>
-          <button type="button" className={layerPaletteOpen ? "bottomstrip-action active" : "bottomstrip-action"} onClick={() => setLayerPaletteOpen((value) => !value)}>
-            {lang === "th" ? "Layers" : "Layers"}
-          </button>
-          <button type="button" className="bottomstrip-action" onClick={copyLink}>
-            {copiedLink ? copy.copied : copy.share}
-          </button>
+          {footerQuickActions.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
+              onClick={() => {
+                action.onClick?.();
+                setActiveTab("map");
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
         </div>
       </footer>
     </div>
