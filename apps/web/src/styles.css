@@ -2717,7 +2717,7 @@ body {
 }
 
 body {
-  background-attachment: fixed;
+  background-attachment: scroll;
 }
 
 .shell {
@@ -3220,6 +3220,10 @@ textarea:focus {
   color: var(--ink);
 }
 
+.hotspot-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .hotspot-chip.warning,
 .threshold-item.alert,
 .api-watch-item.stale,
@@ -3281,10 +3285,14 @@ textarea:focus {
 }
 
 .response-panel,
-.export-panel pre {
+.export-panel {
   border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(16, 20, 28, 0.92);
   color: #e4e6ea;
+}
+
+.export-panel pre {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .brand-subline {
