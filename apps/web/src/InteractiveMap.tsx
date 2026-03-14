@@ -1,4 +1,4 @@
-import { localize, publicCctvCameras } from "@smart-city/shared";
+import { localize } from "@smart-city/shared";
 import type {
   DashboardView,
   DistrictProfile,
@@ -464,6 +464,10 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
     const marker = L.marker([cam.lat, cam.lon], { icon });
 
     const label = localize(locale, cam.label);
+    const fallbackImageUrl =
+      cam.cameraId.startsWith("CAMPK") && cam.imageUrl.includes("thaiclouderp.com/CCTV_MONITOR/src/img.php")
+        ? `https://camera1.iticfoundation.org/jpeg2.php?camid=${encodeURIComponent(cam.cameraId)}`
+        : "";
     marker.bindTooltip(label, { direction: "top", offset: [0, -10] });
 
     const popupHtml = `
@@ -471,10 +475,12 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
         <strong style="font-size:13px;">${label}</strong>
         <img
           src="${cam.imageUrl}"
+          data-fallback-src="${fallbackImageUrl}"
           alt="${label}"
           style="width:100%;border-radius:2px;aspect-ratio:16/9;object-fit:cover;background:#111;"
           loading="lazy"
-          onerror="this.style.display='none'"
+          referrerpolicy="no-referrer"
+          onerror="if (this.dataset.fallbackSrc && this.src !== this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; return; } this.style.display='none'"
         />
         <div style="display:flex;gap:8px;align-items:center;font-size:11px;">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cam.status === "live" ? "#34d399" : cam.status === "offline" ? "#f87171" : "#fbbf24"};"></span>
@@ -770,6 +776,7 @@ interface InteractiveMapProps {
   projects: ProjectRecord[];
   news: NewsItem[];
   featureCollections: MapFeatureCollection[];
+  publicCctvCameras: PublicCctvCamera[];
   recenterSignal: number;
 }
 
@@ -785,6 +792,7 @@ export default function InteractiveMap({
   projects,
   news,
   featureCollections,
+  publicCctvCameras,
   recenterSignal
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1013,7 +1021,7 @@ export default function InteractiveMap({
         }
       });
     }
-  }, [domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles]);
+  }, [domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles, publicCctvCameras]);
 
   useEffect(() => {
     const map = mapRef.current;

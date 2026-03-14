@@ -1018,6 +1018,15 @@ export const sources: SourceRecord[] = [
     message: "Bangkok traffic events and camera-linked signals are ready for operational map overlays."
   },
   {
+    id: "public-cctv",
+    name: "Public CCTV Cameras",
+    category: "geospatial",
+    url: "https://camera.longdo.com/feed/?command=json",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Pak Kret municipal cameras and iTIC / Longdo public traffic cameras are available for the live map layer."
+  },
+  {
     id: "nasa-gibs",
     name: "NASA GIBS WMTS",
     category: "geospatial",
@@ -1241,7 +1250,7 @@ export const mapLayers: MapLayerConfig[] = [
     color: "#34d399",
     kind: "signal",
     defaultViews: ["bangkok"],
-    sourceId: "pak-kret-cctv",
+    sourceId: "public-cctv",
     legendLabel: "CCTV",
     zIndex: 50
   },

@@ -16,6 +16,7 @@ import {
   mediaFeeds as mediaFeedSeed,
   news as newsSeed,
   officialImpact as officialImpactSeed,
+  publicCctvCameras as publicCctvCameraSeed,
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
@@ -42,6 +43,7 @@ import type {
   OfficialImpactSnapshot,
   OverviewSnapshot,
   ProjectRecord,
+  PublicCctvCamera,
   ResilienceSnapshot,
   SatelliteDigest,
   SocialListeningSnapshot,
@@ -1476,6 +1478,27 @@ function isSlicThailandPayload(value: unknown) {
   return isObject(value) && Array.isArray(value.topCities) && isObject(value.source);
 }
 
+function isPublicCctvPayload(value: unknown) {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isObject(item) &&
+        typeof item.id === "string" &&
+        typeof item.cameraId === "string" &&
+        typeof item.source === "string" &&
+        typeof item.lat === "number" &&
+        typeof item.lon === "number" &&
+        typeof item.imageUrl === "string" &&
+        typeof item.status === "string" &&
+        typeof item.zone === "string" &&
+        isObject(item.label) &&
+        typeof item.label.th === "string" &&
+        typeof item.label.en === "string"
+    )
+  );
+}
+
 async function fetchFromApi<T>(path: string, fallback: T, validate?: (value: unknown) => boolean): Promise<T> {
   for (const baseUrl of API_BASE_CANDIDATES) {
     try {
@@ -1974,6 +1997,15 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const publicCctvFallback = cloneSeed(publicCctvCameraSeed);
+  const publicCctvQuery = useQuery({
+    queryKey: ["public-cctv"],
+    queryFn: () => fetchFromApi<PublicCctvCamera[]>("/api/cctv/public", publicCctvFallback, isPublicCctvPayload),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const commandCenterQuery = useQuery({
     queryKey: ["command-center"],
     queryFn: () =>
@@ -2019,6 +2051,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     satelliteDigest: satelliteDigestQuery.data ?? createSatelliteDigestFallback(),
     mapFeatures: safeArray(mapFeaturesQuery.data, mapFeaturesFallback),
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
+    publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback)
   };
@@ -2082,6 +2115,7 @@ function DashboardPage() {
     satelliteDigest,
     mapFeatures,
     mediaFeeds,
+    publicCctvCameras,
     commandCenter,
     time
   } = useDashboardData(searchParams);
@@ -4106,6 +4140,7 @@ function DashboardPage() {
               projects={projects}
               news={news}
               featureCollections={mapFeaturesForView}
+              publicCctvCameras={publicCctvCameras}
               recenterSignal={recenterSignal}
             />
             <div className="map-overlay">

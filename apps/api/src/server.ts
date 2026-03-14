@@ -11,6 +11,7 @@ import {
   getSatelliteSearch,
   getSatelliteStats
 } from "./services/satellite.js";
+import { getPublicCctvCameras } from "./services/publicCctv.js";
 import { runSourceSync } from "./services/sync.js";
 
 function parseList(value: unknown) {
@@ -206,6 +207,7 @@ export async function createServer() {
       kinds: parseList(query.kinds ?? query.kind)
     });
   });
+  app.get("/api/cctv/public", async () => getPublicCctvCameras());
   app.get("/api/media/channels", async () => store.getMediaChannels());
   app.get("/api/assistant/status", async () => getAssistantStatus());
   app.get("/api/external/slic-thailand", async () => getSlicThailandSnapshot());
