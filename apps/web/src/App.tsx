@@ -2847,7 +2847,7 @@ function DashboardPage() {
       }
     }
   ];
-  const workspaceTitle = lang === "th" ? "Muang Thong Thani Command Center" : "Muang Thong Thani Command Center";
+  const workspaceTitle = lang === "th" ? "Smart City Thailand Super Dashboard" : "Smart City Thailand Super Dashboard";
   const workspaceNarrative =
     localize(lang, commandCenter.screenMode);
   const reporterStatusMeta = {
