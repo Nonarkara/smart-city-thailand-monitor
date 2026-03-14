@@ -33,7 +33,6 @@ function isoDateOffset(days: number) {
 
 export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
   const yesterday = isoDateOffset(-1);
-  const twoDaysAgo = isoDateOffset(-2);
   const ndviDate = isoDateOffset(-10);
 
   return {
@@ -68,7 +67,7 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
     /* Soil moisture - SMAP (NASA/international ground-truth network) */
     "eo-soil-moisture": {
       id: "eo-soil-moisture",
-      url: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", twoDaysAgo, "GoogleMapsCompatible_Level6"),
+      url: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", "default", "GoogleMapsCompatible_Level6"),
       opacity: 0.5,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / SMAP",
@@ -88,27 +87,27 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
     /* Snow/ice cover - MODIS Terra (critical for Himalayan watershed monitoring) */
     "eo-snow-cover": {
       id: "eo-snow-cover",
-      url: gibsTileUrl("MODIS_Terra_Snow_Cover", yesterday, "GoogleMapsCompatible_Level6"),
+      url: gibsTileUrl("MODIS_Terra_NDSI_Snow_Cover", "default", "GoogleMapsCompatible_Level8"),
       opacity: 0.55,
-      maxNativeZoom: 6,
+      maxNativeZoom: 8,
       attribution: "NASA GIBS / MODIS Terra",
       source: "NASA MODIS Terra (USA)"
     },
 
-    /* Fire and thermal anomalies - VIIRS (used by Roscosmos FIRMS, CMA, ISRO) */
+    /* Thermal watch - raster infrared brightness layer that works in Leaflet tile mode */
     "eo-fire-thermal": {
       id: "eo-fire-thermal",
-      url: gibsTileUrl("VIIRS_SNPP_Thermal_Anomalies_375m_Night", yesterday, "GoogleMapsCompatible_Level9"),
-      opacity: 0.65,
-      maxNativeZoom: 9,
-      attribution: "NASA GIBS / VIIRS SNPP",
-      source: "NASA-NOAA VIIRS (USA)"
+      url: gibsTileUrl("MODIS_Aqua_Brightness_Temp_Band31_Day", "default", "GoogleMapsCompatible_Level7"),
+      opacity: 0.62,
+      maxNativeZoom: 7,
+      attribution: "NASA GIBS / MODIS Aqua",
+      source: "NASA MODIS Aqua (USA)"
     },
 
     /* Ocean chlorophyll concentration - MODIS Aqua (shared with ESA OC-CCI) */
     "eo-chlorophyll": {
       id: "eo-chlorophyll",
-      url: gibsTileUrl("MODIS_Aqua_Chlorophyll_A", twoDaysAgo, "GoogleMapsCompatible_Level7"),
+      url: gibsTileUrl("MODIS_Aqua_L2_Chlorophyll_A", "default", "GoogleMapsCompatible_Level7"),
       opacity: 0.48,
       maxNativeZoom: 7,
       attribution: "NASA GIBS / MODIS Aqua",

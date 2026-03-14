@@ -217,14 +217,14 @@ const satelliteLayerDefinitions: Record<
     maxZoom: 6
   },
   "satellite-surface-temp": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Land_Surface_Temp_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
-    opacity: 0.48,
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_Land_Surface_Temp_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    opacity: 0.58,
     maxZoom: 7
   },
   "satellite-thermal": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
-    opacity: 0.7,
-    maxZoom: 9
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Brightness_Temp_Band31_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    opacity: 0.62,
+    maxZoom: 7
   },
   "satellite-water-vapor": {
     url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Water_Vapor_5km_Day/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",

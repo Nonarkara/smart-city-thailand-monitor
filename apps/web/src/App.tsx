@@ -655,13 +655,13 @@ const satelliteToggleOptions: ToggleOption[] = [
   {
     id: "satellite-surface-temp",
     label: { th: "ความร้อนพื้นผิว", en: "Surface Temp" },
-    detail: { th: "อุณหภูมิพื้นผิวดินสำหรับจุดร้อนเมือง", en: "Land-surface temperature for urban heat" },
+    detail: { th: "อุณหภูมิพื้นผิวดินจาก MODIS Aqua สำหรับความร้อนเมือง", en: "MODIS Aqua land-surface temperature for urban heat" },
     color: "#fb7185"
   },
   {
     id: "satellite-thermal",
-    label: { th: "ความร้อนผิดปกติ", en: "Thermal Alerts" },
-    detail: { th: "จุดความร้อนและความเสี่ยงไฟ", en: "Thermal anomalies and fire hotspots" },
+    label: { th: "แผนที่ความร้อน", en: "Thermal Band" },
+    detail: { th: "แถบอินฟราเรดความร้อนจาก MODIS Terra สำหรับอ่านลายเซ็นความร้อน", en: "MODIS Terra thermal infrared band for heat signatures" },
     color: "#f97316"
   },
   {
@@ -690,8 +690,8 @@ const satelliteToggleOptions: ToggleOption[] = [
   },
   {
     id: "eo-fire-thermal",
-    label: { th: "ไฟป่า", en: "Fire Watch" },
-    detail: { th: "จุดความร้อนกลางคืนจาก VIIRS ใช้ร่วมกับ Roscosmos FIRMS", en: "VIIRS night thermal anomalies, shared with Roscosmos FIRMS network" },
+    label: { th: "เฝ้าระวังความร้อน", en: "Heat Watch" },
+    detail: { th: "แถบอินฟราเรด MODIS Aqua สำหรับเฝ้าระวังภาวะร้อนจัด", en: "MODIS Aqua thermal infrared watch for elevated heat stress" },
     color: "#ef4444"
   },
   {
@@ -881,12 +881,18 @@ function getDefaultOverlayOpacity(id: string) {
   switch (id) {
     case "satellite-imagery":
       return 0.92;
+    case "satellite-surface-temp":
+      return 0.68;
+    case "satellite-thermal":
+      return 0.7;
     case "eo-vegetation":
       return 0.6;
     case "eo-aerosol":
       return 0.54;
     case "eo-precipitation":
       return 0.58;
+    case "eo-fire-thermal":
+      return 0.68;
     case "jaxa-rainfall":
       return 0.42;
     case "satellite-night-lights":
@@ -901,6 +907,10 @@ function getDefaultBlendMode(id: string): BlendModeOption {
     case "satellite-imagery":
       return "normal";
     case "satellite-night-lights":
+      return "screen";
+    case "satellite-surface-temp":
+    case "satellite-thermal":
+    case "eo-fire-thermal":
       return "screen";
     case "eo-aerosol":
       return "multiply";
@@ -1187,7 +1197,7 @@ const copyDeck = {
     coverageLegend: "สีแดง = พื้นที่ smart city ทั่วประเทศ",
     jaxaLegend: "สีน้ำเงินฟ้า = ภาพซ้อนปริมาณฝนจาก JAXA",
     soilMoistureLegend: "สีน้ำตาล = ความชื้นดินจาก NASA SMAP",
-    fireThermalLegend: "สีแดง = จุดความร้อนกลางคืนจาก VIIRS / Roscosmos FIRMS",
+    fireThermalLegend: "สีแดง = แถบความร้อนอินฟราเรดจาก MODIS Aqua สำหรับเฝ้าระวังความร้อน",
     snowCoverLegend: "สีขาวฟ้า = พื้นที่หิมะปกคลุมจาก MODIS",
     chlorophyllLegend: "สีเขียวเข้ม = คลอโรฟิลล์ทะเลจาก MODIS Aqua / ESA OC-CCI",
     cloudPhaseLegend: "สีเทา = เฟสเมฆอินฟราเรดจาก MODIS Aqua",
@@ -1343,7 +1353,7 @@ const copyDeck = {
     coverageLegend: "Red = nationwide smart city footprint",
     jaxaLegend: "Sky blue = JAXA rainfall raster overlay",
     soilMoistureLegend: "Brown = NASA SMAP soil moisture for agriculture and flood planning",
-    fireThermalLegend: "Red = VIIRS night thermal anomalies, shared with Roscosmos FIRMS network",
+    fireThermalLegend: "Red = MODIS Aqua thermal infrared watch for elevated heat stress",
     snowCoverLegend: "Ice blue = MODIS snow cover for Himalayan and Asian watershed monitoring",
     chlorophyllLegend: "Teal = MODIS Aqua ocean chlorophyll, merged with ESA OC-CCI program",
     cloudPhaseLegend: "Gray = MODIS Aqua cloud phase infrared for weather context",
@@ -2454,12 +2464,12 @@ function DashboardPage() {
     "satellite-aerosol": lang === "th" ? "ดัชนีละอองลอยจาก NASA GIBS" : "NASA GIBS aerosol index",
     "satellite-surface-temp":
       lang === "th"
-        ? "อุณหภูมิพื้นผิวดินจาก NASA GIBS สำหรับความร้อนเมืองและพื้นที่แห้ง"
-        : "NASA GIBS land-surface temperature for urban heat and dry stress",
+        ? "อุณหภูมิพื้นผิวดินจาก MODIS Aqua สำหรับความร้อนเมืองและความแห้ง"
+        : "MODIS Aqua land-surface temperature for urban heat and dry stress",
     "satellite-thermal":
       lang === "th"
-        ? "จุดความร้อนดาวเทียมจาก NASA GIBS สำหรับไฟและความร้อนผิดปกติ"
-        : "NASA GIBS thermal anomalies for fire and heat watch",
+        ? "แถบอินฟราเรดความร้อนจาก MODIS Terra สำหรับอ่านลายเซ็นความร้อน"
+        : "MODIS Terra thermal infrared band for heat signatures",
     "satellite-water-vapor":
       lang === "th"
         ? "ไอน้ำในชั้นบรรยากาศจาก NASA GIBS สำหรับแนวชื้นและมรสุม"
