@@ -1095,9 +1095,9 @@ function createSatelliteDigestFallback(): SatelliteDigest {
 
 const copyDeck = {
   th: {
-    title: "Smart City Thailand Monitor",
-    brandEyebrow: "แดชบอร์ดปฏิบัติการสาธารณะ",
-    subtitle: "แดชบอร์ดทดลองสาธารณะสำหรับติดตามสัญญาณเมืองอัจฉริยะไทย",
+    title: "Smart City Thailand Operation Dashboard",
+    brandEyebrow: "แดชบอร์ดปฏิบัติการเมืองอัจฉริยะ",
+    subtitle: "แดชบอร์ดปฏิบัติการสำหรับติดตามสัญญาณเมืองอัจฉริยะไทย",
     view: "มุมมอง",
     range: "ช่วงเวลา",
     share: "คัดลอกลิงก์",
@@ -1250,9 +1250,9 @@ const copyDeck = {
       "ลิขสิทธิ์ เครื่องหมายการค้า และข้อมูลภายนอกเป็นของเจ้าของแต่ละราย ต้นแบบนี้เผยแพร่เป็นทรัพยากรการเรียนรู้แบบเปิด และควรตรวจสอบข้อมูลซ้ำก่อนใช้เชิงปฏิบัติการ"
   },
   en: {
-    title: "Smart City Thailand Monitor",
-    brandEyebrow: "Public Operations Dashboard",
-    subtitle: "Experimental public dashboard for Thailand’s smart city pulse",
+    title: "Smart City Thailand Operation Dashboard",
+    brandEyebrow: "Operation Dashboard",
+    subtitle: "Live operations dashboard for Thailand's smart city intelligence",
     view: "View",
     range: "Time Range",
     share: "Copy Link",

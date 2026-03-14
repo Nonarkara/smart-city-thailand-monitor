@@ -472,7 +472,7 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
         <img
           src="${cam.imageUrl}"
           alt="${label}"
-          style="width:100%;border-radius:6px;aspect-ratio:16/9;object-fit:cover;background:#111;"
+          style="width:100%;border-radius:2px;aspect-ratio:16/9;object-fit:cover;background:#111;"
           loading="lazy"
           onerror="this.style.display='none'"
         />

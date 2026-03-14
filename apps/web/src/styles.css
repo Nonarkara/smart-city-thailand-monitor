@@ -13,7 +13,7 @@
   --amber: #9a6c14;
   --red: #a43b2f;
   --focus: rgba(56, 88, 199, 0.18);
-  --radius: 18px;
+  --radius: 2px;
   --shadow: 0 1px 2px rgba(23, 23, 23, 0.04), 0 18px 42px rgba(23, 23, 23, 0.045);
 }
 
@@ -84,11 +84,9 @@ p {
 .app-error-card {
   width: min(560px, 100%);
   padding: 1rem;
-  border-radius: 18px;
+  border-radius: 2px;
   border: 1px solid rgba(94, 255, 175, 0.24);
-  background:
-    linear-gradient(135deg, rgba(71, 232, 179, 0.08), rgba(245, 184, 78, 0.05)),
-    rgba(7, 18, 12, 0.94);
+  background: #0e0e10;
   box-shadow: var(--shadow);
   display: grid;
   gap: 0.7rem;
@@ -114,7 +112,7 @@ p {
 .app-error-detail {
   margin: 0;
   padding: 0.8rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(4, 10, 7, 0.88);
   color: var(--muted);
@@ -156,7 +154,7 @@ p {
   width: 34px;
   height: 34px;
   object-fit: contain;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #fff;
   border: 1px solid var(--line);
   padding: 0.18rem;
@@ -210,7 +208,7 @@ p {
 .compact-group {
   padding: 0.28rem 0.36rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.82);
 }
 
@@ -218,7 +216,7 @@ p {
 .share-button,
 .layer-chip {
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.88);
   color: var(--muted);
   padding: 0.42rem 0.72rem;
@@ -270,7 +268,7 @@ p {
 .search-input {
   width: 100%;
   padding: 0.5rem 0.6rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.82);
   font-size: 0.82rem;
@@ -303,7 +301,7 @@ p {
 .side-button {
   text-decoration: none;
   padding: 0.52rem 0.56rem;
-  border-radius: 12px;
+  border-radius: 2px;
   color: var(--muted);
   line-height: 1.1;
   font-size: 0.8rem;
@@ -342,7 +340,7 @@ p {
 
 .side-watch {
   padding: 0.62rem 0.68rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.8);
   display: grid;
@@ -361,7 +359,7 @@ p {
 .side-ai-launcher {
   width: 100%;
   padding: 0.65rem 0.68rem 0.7rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid rgba(56, 88, 199, 0.16);
   background: linear-gradient(180deg, #ffffff, #f6f4ef);
   display: grid;
@@ -390,7 +388,7 @@ p {
   z-index: 27;
   border: 1px solid var(--line-strong);
   border-left: 0;
-  border-radius: 0 16px 16px 0;
+  border-radius: 0 2px 2px 0;
   background: #fbfaf7;
   color: var(--ink);
   padding: 0.7rem 0.55rem 0.7rem 0.6rem;
@@ -445,7 +443,7 @@ p {
 .assistant-answer,
 .assistant-citation {
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -499,7 +497,7 @@ p {
 
 .assistant-cluster {
   padding: 0.55rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.54);
   display: grid;
@@ -529,7 +527,7 @@ p {
 
 .assistant-prompt-chip {
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.9);
   color: var(--muted);
   padding: 0.45rem 0.68rem;
@@ -559,7 +557,7 @@ p {
   resize: vertical;
   min-height: 84px;
   padding: 0.75rem 0.8rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.88);
   color: var(--ink);
@@ -636,7 +634,7 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.78);
   padding: 0.65rem 0.75rem;
   color: var(--ink);
@@ -667,7 +665,7 @@ textarea {
   background: var(--panel);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
-  border-radius: 16px;
+  border-radius: 2px;
   padding: 0.95rem;
   display: grid;
   gap: 0.72rem;
@@ -828,7 +826,7 @@ textarea {
 .status-pill,
 .status-tag {
   padding: 0.25rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 2px;
   font-size: 0.68rem;
   font-family: "IBM Plex Mono", monospace;
   text-transform: uppercase;
@@ -890,7 +888,7 @@ textarea {
 
 .metric-card {
   padding: 0.95rem;
-  border-radius: 16px;
+  border-radius: 2px;
   background: #fbfaf7;
   border: 1px solid var(--line);
   display: grid;
@@ -974,7 +972,7 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.4rem;
   padding: 0.45rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.52);
 }
@@ -1000,14 +998,14 @@ textarea {
 .swatch {
   width: 0.65rem;
   height: 0.65rem;
-  border-radius: 999px;
+  border-radius: 2px;
 }
 
 .thai-map {
   position: relative;
   height: clamp(280px, 34vw, 420px);
   min-height: 260px;
-  border-radius: 18px;
+  border-radius: 2px;
   border: 1px solid var(--line-strong);
   background: #eef0ea;
   overflow: hidden;
@@ -1041,7 +1039,7 @@ textarea {
 
 .leaflet-map .leaflet-popup-content-wrapper,
 .leaflet-map .leaflet-tooltip {
-  border-radius: 14px;
+  border-radius: 2px;
   box-shadow: 0 12px 36px rgba(20, 20, 20, 0.14);
 }
 
@@ -1051,7 +1049,7 @@ textarea {
   left: 0.7rem;
   z-index: 8;
   pointer-events: none;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line-strong);
   background: rgba(255, 255, 255, 0.94);
   color: var(--ink);
@@ -1093,7 +1091,7 @@ textarea {
   display: grid;
   gap: 0.24rem;
   padding: 0.7rem 0.8rem;
-  border-radius: 14px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--line);
   box-shadow: 0 12px 28px rgba(23, 23, 23, 0.06);
@@ -1111,7 +1109,7 @@ textarea {
 .map-open-link {
   pointer-events: none;
   padding: 0.5rem 0.74rem;
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--line);
   font-family: "IBM Plex Mono", monospace;
@@ -1132,7 +1130,7 @@ textarea {
 
 .hotspot-chip {
   padding: 0.62rem 0.68rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: #fbfaf7;
   display: grid;
@@ -1203,7 +1201,7 @@ textarea {
   gap: 0.75rem;
   align-items: start;
   padding: 0.72rem 0.78rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: #fbfaf7;
 }
@@ -1227,7 +1225,7 @@ textarea {
   align-items: center;
   gap: 0.35rem;
   padding: 0.24rem 0.42rem;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.74);
   line-height: 1;
@@ -1236,7 +1234,7 @@ textarea {
 .legend-swatch {
   width: 0.7rem;
   height: 0.7rem;
-  border-radius: 999px;
+  border-radius: 2px;
   flex: 0 0 auto;
 }
 
@@ -1252,7 +1250,7 @@ textarea {
   align-items: center;
   gap: 0.35rem;
   padding: 0.24rem 0.44rem;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.78);
   font-size: 0.76rem;
@@ -1280,7 +1278,7 @@ textarea {
 .city-intel-stat,
 .city-intel-focus {
   padding: 0.55rem 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.58);
   display: grid;
@@ -1306,7 +1304,7 @@ textarea {
 
 .district-watch-list p {
   padding: 0.42rem 0.48rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.52);
 }
@@ -1319,7 +1317,7 @@ textarea {
 
 .coverage-filter select {
   padding: 0.42rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.88);
   color: var(--ink);
@@ -1327,7 +1325,7 @@ textarea {
 
 .map-city-button {
   padding: 0.38rem 0.62rem;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
   color: var(--muted);
@@ -1357,7 +1355,7 @@ textarea {
 .news-item,
 .source-item {
   padding: 0.75rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
   display: grid;
@@ -1374,7 +1372,7 @@ textarea {
 .progress-track {
   flex: 1;
   min-height: 8px;
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(20, 20, 20, 0.08);
   overflow: hidden;
 }
@@ -1423,7 +1421,7 @@ textarea {
 
 .headline-item {
   padding: 0.65rem 0.7rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.62);
   display: grid;
@@ -1445,7 +1443,7 @@ textarea {
   display: grid;
   gap: 0.25rem;
   padding: 0.65rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.64);
 }
@@ -1474,7 +1472,7 @@ textarea {
 
 .threshold-item {
   padding: 0.5rem 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.58);
   display: grid;
@@ -1501,7 +1499,7 @@ textarea {
   display: grid;
   gap: 0.45rem;
   padding: 0.75rem;
-  border-radius: 16px;
+  border-radius: 2px;
   background: rgba(168, 102, 0, 0.06);
 }
 
@@ -1515,7 +1513,7 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.4rem 0.75rem;
   padding: 0.6rem 0.7rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.64);
 }
@@ -1539,7 +1537,7 @@ textarea {
 
 .time-zone {
   padding: 0.55rem 0.65rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.6);
 }
@@ -1566,7 +1564,7 @@ textarea {
   gap: 0.5rem;
   align-items: center;
   padding: 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
 }
@@ -1619,7 +1617,7 @@ textarea {
 
 .social-stat {
   padding: 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.62);
   display: grid;
@@ -1653,7 +1651,7 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.4rem;
   padding: 0.45rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.58);
 }
@@ -1662,7 +1660,7 @@ textarea {
   display: grid;
   gap: 0.3rem;
   padding: 0.55rem 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.58);
 }
@@ -1699,7 +1697,7 @@ textarea {
   display: grid;
   gap: 0.18rem;
   padding: 0.6rem 0.66rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.68);
   text-align: left;
@@ -1738,7 +1736,7 @@ textarea {
 .satellite-preview-card,
 .satellite-metric-item,
 .satellite-scene-list {
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.62);
 }
@@ -1800,7 +1798,7 @@ textarea {
 
 .satellite-panel {
   padding: 0.58rem 0.62rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: #fbfaf7;
 }
@@ -1819,7 +1817,7 @@ textarea {
   display: grid;
   gap: 0.45rem;
   padding: 0.55rem 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.6);
 }
@@ -1834,7 +1832,7 @@ textarea {
   display: grid;
   gap: 0.14rem;
   padding: 0.42rem 0.48rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.72);
   text-align: left;
@@ -1870,7 +1868,7 @@ textarea {
   align-items: center;
   justify-self: start;
   padding: 0.22rem 0.42rem;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.74);
   font-family: "IBM Plex Mono", monospace;
@@ -1888,7 +1886,7 @@ textarea {
 .api-watch-item,
 .slic-ranking-card {
   padding: 0.68rem 0.72rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: #fbfaf7;
   display: grid;
@@ -1954,7 +1952,7 @@ textarea {
 
 .activity-item {
   padding: 0.65rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.64);
   display: grid;
@@ -1971,7 +1969,7 @@ textarea {
 .decision-item {
   width: 100%;
   padding: 0.72rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.64);
   display: grid;
@@ -2034,7 +2032,7 @@ textarea {
 .decision-activity-item {
   flex: 1 1 180px;
   padding: 0.46rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.5);
   display: flex;
@@ -2050,7 +2048,7 @@ textarea {
 
 .candidate-panel {
   padding: 0.6rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.62);
   display: grid;
@@ -2095,7 +2093,7 @@ textarea {
 
 .tool-link {
   padding: 0.72rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
   display: grid;
@@ -2125,7 +2123,7 @@ textarea {
 
 .stack-pill {
   padding: 0.38rem 0.62rem;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
   font-family: "IBM Plex Mono", monospace;
@@ -2136,7 +2134,7 @@ textarea {
   display: grid;
   gap: 0.55rem;
   padding: 0.65rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.7);
 }
@@ -2149,7 +2147,7 @@ textarea {
 
 .export-tab {
   padding: 0.46rem 0.52rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.64);
   display: grid;
@@ -2175,7 +2173,7 @@ textarea {
 .export-tab-mark {
   width: 2rem;
   height: 2rem;
-  border-radius: 11px;
+  border-radius: 2px;
   display: grid;
   place-items: center;
   font-family: "IBM Plex Mono", monospace;
@@ -2223,7 +2221,7 @@ textarea {
   max-height: 180px;
   overflow: auto;
   padding: 1rem;
-  border-radius: 16px;
+  border-radius: 2px;
   background: rgba(20, 20, 20, 0.94);
   color: #f3f3f3;
   font-size: 0.78rem;
@@ -2246,7 +2244,7 @@ textarea {
 
 .command-alert {
   padding: 0.8rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.74);
   display: grid;
@@ -2305,13 +2303,11 @@ textarea {
   width: min(420px, calc(100vw - 120px));
   padding: 0.9rem;
   border-left: 1px solid var(--line);
-  background: rgba(10, 12, 16, 0.98);
-  backdrop-filter: blur(16px);
+  background: #0e0e10;
   display: grid;
   gap: 0.75rem;
   align-content: start;
   z-index: 29;
-  box-shadow: -18px 0 42px rgba(0, 0, 0, 0.3);
 }
 
 .ops-panel {
@@ -2328,8 +2324,8 @@ textarea {
 .manual-scene-card,
 .utility-link-card {
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 2px;
+  background: transparent;
 }
 
 .utility-panel-header {
@@ -2370,9 +2366,9 @@ textarea {
 
 .utility-stat {
   padding: 0.55rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.55);
+  background: transparent;
   display: grid;
   gap: 0.15rem;
 }
@@ -2404,7 +2400,7 @@ textarea {
   display: grid;
   gap: 0.55rem;
   padding: 0.65rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
 }
@@ -2451,7 +2447,7 @@ textarea {
 
 .compare-city-card {
   padding: 0.72rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.68);
   display: grid;
@@ -2487,7 +2483,7 @@ textarea {
 
 .layer-studio-row {
   padding: 0.75rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.7);
   display: grid;
@@ -2527,7 +2523,7 @@ textarea {
 
 .map-compare-card {
   padding: 0.55rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.66);
   display: grid;
@@ -2543,7 +2539,7 @@ textarea {
 
 .map-compare-thumb {
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid rgba(20, 20, 20, 0.08);
   background: rgba(20, 20, 20, 0.05);
   aspect-ratio: 1.35;
@@ -2563,7 +2559,7 @@ textarea {
 
 .footnote-grid p {
   padding: 0.8rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line-strong);
   background: #ffffff;
   color: var(--ink);
@@ -2574,7 +2570,7 @@ textarea {
 
 .contact-card {
   padding: 0.8rem;
-  border-radius: 16px;
+  border-radius: 2px;
   border: 1px solid var(--line-strong);
   background: #fcfbf8;
   display: grid;
@@ -2595,7 +2591,7 @@ textarea {
 
 .contact-links a {
   padding: 0.72rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px solid var(--line-strong);
   background: #ffffff;
   display: grid;
@@ -2654,9 +2650,7 @@ textarea {
   padding: 1.5rem;
   display: grid;
   gap: 1rem;
-  background:
-    linear-gradient(180deg, rgba(0, 87, 255, 0.04), transparent 28%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .admin-header {
@@ -2676,7 +2670,7 @@ textarea {
   margin: 0;
   min-height: 320px;
   padding: 1rem;
-  border-radius: 18px;
+  border-radius: 2px;
   background: rgba(20, 20, 20, 0.92);
   color: #f5f5f5;
   overflow: auto;
@@ -2686,38 +2680,31 @@ textarea {
   color-scheme: dark;
   --sidebar-width: 248px;
   --context-width: 336px;
-  --topbar-height: 76px;
-  --footer-height: 44px;
-  --bg: #0a0c10;
-  --panel: rgba(16, 20, 28, 0.92);
-  --panel-strong: rgba(22, 26, 36, 0.98);
-  --panel-soft: rgba(12, 16, 24, 0.96);
-  --line: rgba(255, 255, 255, 0.07);
-  --line-strong: rgba(255, 255, 255, 0.13);
-  --ink: #e4e6ea;
-  --muted: #7a808c;
-  --blue: #5b8cff;
-  --green: #34d399;
-  --amber: #fbbf24;
-  --red: #f87171;
-  --focus: rgba(91, 140, 255, 0.22);
-  --shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
-  --radius: 18px;
-  --glow-blue: rgba(91, 140, 255, 0.12);
-  --glow-green: rgba(52, 211, 153, 0.10);
+  --topbar-height: 56px;
+  --footer-height: 36px;
+  --bg: #09090b;
+  --panel: #0e0e10;
+  --panel-strong: #121216;
+  --panel-soft: #0c0c0e;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --ink: #e4e4e7;
+  --muted: #71717a;
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --amber: #eab308;
+  --red: #ef4444;
+  --focus: rgba(59, 130, 246, 0.18);
+  --shadow: none;
+  --radius: 2px;
+  --glow-blue: rgba(59, 130, 246, 0.08);
+  --glow-green: rgba(34, 197, 94, 0.06);
 }
 
 html,
 body {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(91, 140, 255, 0.08), transparent 50%),
-    radial-gradient(ellipse at 80% 0%, rgba(52, 211, 153, 0.05), transparent 40%),
-    #0a0c10;
+  background: #09090b;
   color: var(--ink);
-}
-
-body {
-  background-attachment: scroll;
 }
 
 .shell {
@@ -2727,63 +2714,65 @@ body {
 
 .topbar {
   min-height: var(--topbar-height);
-  padding: 0.8rem 1rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--line);
-  background: rgba(10, 12, 16, 0.95);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  background: #09090b;
 }
 
 .topbar h1,
 .admin-header h1 {
-  font-size: clamp(1.02rem, 1.35vw, 1.22rem);
-  letter-spacing: 0.03em;
+  font-family: "IBM Plex Mono", "Space Grotesk", monospace;
+  font-size: clamp(0.88rem, 1.2vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .brand-logo {
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
   border-color: var(--line);
 }
 
 .compact-group {
-  padding: 0.26rem 0.32rem;
+  padding: 0.22rem 0.28rem;
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
 }
 
 .chip,
 .share-button,
 .layer-chip {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
 }
 
 .chip:hover,
 .share-button:hover,
 .layer-chip:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--ink);
 }
 
 .chip.active,
-.share-button,
 .layer-chip.active {
-  background: rgba(91, 140, 255, 0.12);
-  border-color: rgba(91, 140, 255, 0.28);
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.24);
   color: var(--ink);
 }
 
 .share-button {
-  box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.1);
+  box-shadow: none;
 }
 
 .sidebar {
-  padding: 0.85rem 0.7rem;
+  padding: 0.65rem 0.6rem;
   border-right: 1px solid var(--line);
-  background: rgba(8, 10, 14, 0.92);
-  backdrop-filter: blur(12px);
+  background: #09090b;
   top: var(--topbar-height);
   height: calc(100vh - var(--topbar-height) - var(--footer-height));
 }
@@ -2793,8 +2782,10 @@ input,
 select,
 textarea {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
 }
 
 .search-input:focus,
@@ -2802,11 +2793,11 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: rgba(91, 140, 255, 0.4);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .search-input::placeholder {
-  color: rgba(122, 128, 140, 0.7);
+  color: rgba(113, 113, 122, 0.6);
 }
 
 .side-ai-launcher,
@@ -2814,7 +2805,7 @@ textarea:focus {
 .side-nav a,
 .side-button {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--ink);
   box-shadow: none;
 }
@@ -2824,7 +2815,7 @@ textarea:focus {
 .side-nav a:hover,
 .side-button:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .side-watch small,
@@ -2839,31 +2830,30 @@ textarea:focus {
 
 .side-toggle {
   width: 100%;
-  padding: 0.62rem 0.68rem;
-  border-radius: 14px;
+  padding: 0.5rem 0.6rem;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   color: var(--ink);
   display: grid;
-  gap: 0.3rem;
+  gap: 0.22rem;
   text-align: left;
-  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
 
 .side-toggle:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .side-toggle.active {
-  border-color: rgba(52, 211, 153, 0.28);
-  background:
-    linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(91, 140, 255, 0.05)),
-    rgba(255, 255, 255, 0.04);
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.04);
 }
 
 .side-toggle.satellite.active {
-  border-color: rgba(91, 140, 255, 0.28);
+  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.04);
 }
 
 .side-toggle-row {
@@ -2886,33 +2876,34 @@ textarea:focus {
 
 .toggle-state {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted);
-  padding: 0.18rem 0.42rem;
-  border-radius: 999px;
+  padding: 0.14rem 0.36rem;
+  border-radius: 1px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
-  min-width: 48px;
+  background: transparent;
+  min-width: 40px;
   text-align: center;
 }
 
 .side-toggle.active .toggle-state {
   color: var(--green);
-  border-color: rgba(52, 211, 153, 0.25);
-  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(34, 197, 94, 0.2);
+  background: transparent;
 }
 
 .assistant-edge-tab {
   left: var(--sidebar-width);
   border-color: var(--line);
-  background: rgba(16, 20, 28, 0.96);
-  box-shadow: var(--shadow);
+  background: #0e0e10;
+  box-shadow: none;
 }
 
 .assistant-scrim {
   inset: var(--topbar-height) 0 var(--footer-height) var(--sidebar-width);
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .assistant-drawer {
@@ -2920,8 +2911,7 @@ textarea:focus {
   left: var(--sidebar-width);
   bottom: var(--footer-height);
   border-right: 1px solid var(--line);
-  background: rgba(10, 12, 16, 0.98);
-  backdrop-filter: blur(16px);
+  background: #0e0e10;
 }
 
 .assistant-header,
@@ -2931,36 +2921,33 @@ textarea:focus {
 .assistant-answer,
 .assistant-citation {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 .assistant-prompt-chip,
 .assistant-cluster {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
 }
 
 .dashboard-shell {
-  padding: 0.85rem 0.9rem 0.95rem;
-  gap: 0.72rem;
+  padding: 0.7rem 0.8rem 0.8rem;
+  gap: 0.55rem;
   max-width: none;
 }
 
 .dashboard-board {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(170px, auto);
-  gap: 0.72rem;
+  grid-auto-rows: minmax(160px, auto);
+  gap: 0.55rem;
 }
 
 .card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
-    var(--panel);
+  background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  border-radius: 18px;
-  padding: 0.88rem;
-  backdrop-filter: blur(8px);
+  box-shadow: none;
+  border-radius: 2px;
+  padding: 0.75rem;
 }
 
 .hero-card {
@@ -3011,7 +2998,7 @@ textarea:focus {
 .status-pill,
 .status-tag {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--ink);
 }
 
@@ -3071,7 +3058,7 @@ textarea:focus {
 .map-caption,
 .map-open-link {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 .stack-item-button {
@@ -3092,12 +3079,10 @@ textarea:focus {
 .terminal-callout {
   display: grid;
   gap: 0.3rem;
-  padding: 0.8rem;
-  border-radius: 16px;
-  border: 1px solid rgba(91, 140, 255, 0.18);
-  background:
-    linear-gradient(135deg, rgba(91, 140, 255, 0.08), rgba(52, 211, 153, 0.04)),
-    rgba(255, 255, 255, 0.02);
+  padding: 0.7rem;
+  border-radius: 2px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  background: rgba(59, 130, 246, 0.04);
 }
 
 .terminal-callout.compact {
@@ -3115,9 +3100,9 @@ textarea:focus {
 
 .terminal-list p {
   padding: 0.45rem 0.55rem;
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.9);
+  background: transparent;
 }
 
 .metric-card {
@@ -3199,7 +3184,7 @@ textarea:focus {
 .map-city-button,
 .eo-watch-link {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.06);
+  background: transparent;
 }
 
 .active-layer-pill,
@@ -3241,7 +3226,7 @@ textarea:focus {
 }
 
 .progress-track {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .progress-fill {
@@ -3259,7 +3244,7 @@ textarea:focus {
 
 .satellite-preset {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 .satellite-metric-grid {
@@ -3272,23 +3257,22 @@ textarea:focus {
 }
 
 .bottombar {
-  padding: 0 0.9rem;
+  padding: 0 0.8rem;
   border-top: 1px solid var(--line);
-  background: rgba(10, 12, 16, 0.94);
-  backdrop-filter: blur(12px);
+  background: #09090b;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
 }
 
 .admin-shell {
-  background:
-    radial-gradient(circle at top right, rgba(91, 140, 255, 0.1), transparent 28%),
-    #0a0c10;
+  background: #09090b;
 }
 
 .response-panel,
 .export-panel {
   border: 1px solid var(--line);
-  background: rgba(16, 20, 28, 0.92);
-  color: #e4e6ea;
+  background: #0e0e10;
+  color: var(--ink);
 }
 
 .export-panel pre {
@@ -3362,8 +3346,8 @@ textarea:focus {
 .merge-item,
 .layer-rail-item {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 16px;
+  background: transparent;
+  border-radius: 2px;
   box-shadow: none;
 }
 
@@ -3453,11 +3437,9 @@ textarea:focus {
 .signal-thumb {
   min-height: 72px;
   padding: 0.8rem;
-  border-radius: 14px;
+  border-radius: 2px;
   border: 1px dashed var(--line-strong);
-  background:
-    linear-gradient(135deg, rgba(91, 140, 255, 0.06), rgba(52, 211, 153, 0.04)),
-    rgba(255, 255, 255, 0.02);
+  background: transparent;
   display: grid;
   place-items: center;
   text-align: center;
@@ -3488,12 +3470,13 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 2px;
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-family: "IBM Plex Mono", monospace;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent;
 }
 
 .urgency-pill.urgency-high {
@@ -3542,10 +3525,9 @@ textarea:focus {
   position: sticky;
   top: var(--topbar-height);
   height: calc(100vh - var(--topbar-height) - var(--footer-height));
-  padding: 0.9rem 0.9rem 0.95rem 0.5rem;
+  padding: 0.7rem 0.8rem 0.8rem 0.5rem;
   border-left: 1px solid var(--line);
-  background: rgba(8, 10, 14, 0.88);
-  backdrop-filter: blur(12px);
+  background: #09090b;
   overflow-y: auto;
 }
 
@@ -3577,7 +3559,7 @@ textarea:focus {
 .layer-rail-item {
   display: grid;
   gap: 0.35rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
 }
 
 .layer-rail-item.active {
@@ -3586,13 +3568,13 @@ textarea:focus {
 }
 
 .layer-state {
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  padding: 0.16rem 0.42rem;
+  border-radius: 1px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -3610,13 +3592,10 @@ textarea:focus {
 }
 
 .command-center-hero {
-  background:
-    radial-gradient(circle at top left, rgba(80, 172, 255, 0.18), transparent 30%),
-    radial-gradient(circle at top right, rgba(255, 179, 71, 0.14), transparent 28%),
-    linear-gradient(145deg, rgba(9, 18, 31, 0.98), rgba(14, 24, 39, 0.96));
-  border-color: rgba(117, 160, 220, 0.22);
-  box-shadow: 0 28px 80px rgba(8, 15, 26, 0.26);
-  color: #f5f8fc;
+  background: #0e0e10;
+  border-color: rgba(59, 130, 246, 0.15);
+  box-shadow: none;
+  color: var(--ink);
 }
 
 .command-center-hero .eyebrow,
@@ -3630,13 +3609,13 @@ textarea:focus {
 .command-center-hero .status-tag,
 .runway-card .status-tag {
   border-color: rgba(141, 179, 230, 0.2);
-  background: rgba(255, 255, 255, 0.07);
+  background: transparent;
   color: #eef5ff;
 }
 
 .command-center-hero .stack-pill {
   border-color: rgba(141, 179, 230, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
 }
 
 .command-center-lead {
@@ -3660,10 +3639,7 @@ textarea:focus {
 .command-metric-card {
   min-height: 150px;
   border-color: rgba(141, 179, 230, 0.18);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 100%),
-    rgba(13, 24, 39, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 .command-metric-card strong {
@@ -3687,11 +3663,11 @@ textarea:focus {
 
 .runway-card {
   display: grid;
-  gap: 0.45rem;
-  padding: 0.9rem;
-  border-radius: 16px;
-  border: 1px solid rgba(141, 179, 230, 0.18);
-  background: rgba(10, 20, 34, 0.72);
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: transparent;
 }
 
 .runway-card.stage-base {
@@ -3743,22 +3719,22 @@ textarea:focus {
 .sensor-feed-card,
 .connector-card {
   display: grid;
-  gap: 0.45rem;
-  padding: 0.88rem;
-  border-radius: 16px;
+  gap: 0.4rem;
+  padding: 0.7rem;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   text-align: left;
 }
 
 .sensor-feed-card.status-live,
 .connector-card.status-live {
-  border-color: rgba(52, 211, 153, 0.28);
+  border-color: rgba(34, 197, 94, 0.18);
 }
 
 .sensor-feed-card.status-ready,
 .connector-card.status-ready {
-  border-color: rgba(91, 140, 255, 0.28);
+  border-color: rgba(59, 130, 246, 0.18);
 }
 
 .sensor-feed-card.status-pilot,
@@ -4276,29 +4252,26 @@ textarea:focus {
 }
 
 .cctv-marker-dot {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: rgba(52, 211, 153, 0.85);
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5), 0 0 20px rgba(52, 211, 153, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--green);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+  transition: transform 0.15s ease;
   cursor: pointer;
 }
 
 .cctv-marker-dot:hover {
-  transform: scale(1.4);
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.7), 0 0 30px rgba(52, 211, 153, 0.3);
+  transform: scale(1.3);
 }
 
 .cctv-marker-dot.severity-alert {
-  background: rgba(248, 113, 113, 0.85);
-  box-shadow: 0 0 8px rgba(248, 113, 113, 0.5), 0 0 20px rgba(248, 113, 113, 0.2);
+  background: var(--red);
 }
 
 .cctv-marker-dot.severity-watch {
-  background: rgba(251, 191, 36, 0.85);
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.2);
+  background: var(--amber);
 }
 
 .cctv-popup {
@@ -4321,7 +4294,7 @@ textarea:focus {
 .cctv-popup-header .cctv-status {
   font-size: 0.68rem;
   padding: 0.15rem 0.4rem;
-  border-radius: 999px;
+  border-radius: 2px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-family: "IBM Plex Mono", monospace;
@@ -4335,7 +4308,7 @@ textarea:focus {
 .cctv-popup-frame {
   width: 100%;
   aspect-ratio: 16/9;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.3);
   margin-bottom: 6px;
@@ -4360,15 +4333,15 @@ textarea:focus {
 
 /* Dark leaflet popup overrides */
 .leaflet-popup-content-wrapper {
-  background: rgba(16, 20, 28, 0.95) !important;
-  color: #e4e6ea !important;
-  border-radius: 14px !important;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(12px);
+  background: #0e0e10 !important;
+  color: var(--ink) !important;
+  border-radius: 2px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }
 
 .leaflet-popup-tip {
-  background: rgba(16, 20, 28, 0.95) !important;
+  background: #0e0e10 !important;
 }
 
 .leaflet-popup-close-button {
@@ -4380,40 +4353,42 @@ textarea:focus {
 }
 
 .leaflet-tooltip {
-  background: rgba(16, 20, 28, 0.92) !important;
-  color: #e4e6ea !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  background: #0e0e10 !important;
+  color: var(--ink) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 1px !important;
+  box-shadow: none !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 0.72rem !important;
 }
 
 .leaflet-tooltip-top::before {
-  border-top-color: rgba(16, 20, 28, 0.92) !important;
+  border-top-color: #0e0e10 !important;
 }
 
 .leaflet-tooltip-bottom::before {
-  border-bottom-color: rgba(16, 20, 28, 0.92) !important;
+  border-bottom-color: #0e0e10 !important;
 }
 
 /* Additional dark mode overrides */
 .contact-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
 }
 
 .contact-links a {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   color: var(--ink);
 }
 
 .contact-links a:hover {
-  border-color: rgba(91, 140, 255, 0.28);
+  border-color: rgba(59, 130, 246, 0.2);
   background: rgba(91, 140, 255, 0.06);
 }
 
 .footnote-grid p {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
   color: var(--ink);
 }
@@ -4424,7 +4399,7 @@ textarea:focus {
 .manual-scene-card,
 .utility-link-card {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 .command-alert:hover,
@@ -4433,17 +4408,17 @@ textarea:focus {
 .manual-scene-card:hover,
 .utility-link-card:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .compare-city-card.active {
-  border-color: rgba(91, 140, 255, 0.28);
-  background: rgba(91, 140, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.04);
 }
 
 .map-compare-card.active {
-  border-color: rgba(91, 140, 255, 0.28);
-  background: rgba(91, 140, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.04);
 }
 
 .map-compare-thumb {
@@ -4452,72 +4427,67 @@ textarea:focus {
 }
 
 .export-tab {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
 }
 
 .export-tab.active {
-  background: rgba(91, 140, 255, 0.08);
-  border-color: rgba(91, 140, 255, 0.2);
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.15);
 }
 
 .export-tab-mark {
-  background: rgba(255, 255, 255, 0.06);
+  background: transparent;
 }
 
 .layer-studio-row {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
 }
 
 .time-scrubber {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
 }
 
 .tool-link {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
   border-color: var(--line);
 }
 
 .tool-link:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
   border-color: var(--line-strong);
 }
 
 .warning-list {
-  background: rgba(251, 191, 36, 0.06);
+  background: rgba(234, 179, 8, 0.04);
 }
 
 .decision-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .trend-row:hover,
 .stack-item.linked:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .command-card {
-  background:
-    linear-gradient(135deg, rgba(91, 140, 255, 0.06), rgba(52, 211, 153, 0.04)),
-    var(--panel);
+  background: var(--panel);
 }
 
 .satellite-preview-frame {
-  background:
-    radial-gradient(circle at top, rgba(91, 140, 255, 0.14), transparent 56%),
-    linear-gradient(180deg, rgba(8, 12, 20, 0.86), rgba(14, 20, 32, 0.94));
+  background: #0e0e10;
 }
 
 .side-ai-launcher {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)) !important;
-  border-color: rgba(91, 140, 255, 0.16) !important;
+  background: transparent !important;
+  border-color: var(--line) !important;
 }
 
 .urgency-pill {
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   border-color: var(--line);
 }
 
