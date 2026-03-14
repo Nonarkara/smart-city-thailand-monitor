@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Dark navy rounded square background -->
+  <rect width="200" height="200" rx="42" ry="42" fill="#2B3044"/>
+
+  <!-- Tile grid representing the MTT logo (3x4 grid with gaps, specific tiles colored) -->
+  <!-- Each tile is ~44x44 with 8px gaps, grid starts at x=20, y=18 -->
+
+  <!-- Row 1: col2=blue, col3=white -->
+  <!-- col1 empty -->
+  <rect x="68" y="20" width="44" height="44" rx="8" fill="#2563EB"/>
+  <rect x="120" y="20" width="44" height="44" rx="8" fill="#E8E8EA"/>
+
+  <!-- Row 2: col1=white, col2=white, col3=white -->
+  <rect x="16" y="72" width="44" height="44" rx="8" fill="#E8E8EA"/>
+  <!-- col2 empty/gap -->
+  <rect x="120" y="72" width="44" height="44" rx="8" fill="#E8E8EA"/>
+
+  <!-- Row 3: col2=white, col3=white -->
+  <!-- col1 empty -->
+  <rect x="68" y="124" width="44" height="44" rx="8" fill="#E8E8EA"/>
+  <!-- col3 split: top half white (baked into tile above), bottom half red -->
+  <rect x="120" y="124" width="44" height="22" rx="8" fill="#E8E8EA"/>
+  <rect x="120" y="146" width="44" height="22" rx="0" fill="#DC2626"/>
+  <!-- re-clip bottom corners -->
+  <rect x="120" y="160" width="44" height="8" rx="0" fill="#DC2626"/>
+  <rect x="120" y="156" width="44" height="12" rx="0" fill="#DC2626"/>
+  <path d="M120 156 h44 v12 q0 8 -8 8 h-28 q-8 0 -8 -8 z" fill="#DC2626"/>
+
+  <!-- Row 4: col1=white -->
+  <rect x="16" y="148" width="44" height="44" rx="8" fill="#E8E8EA"/>
+</svg>

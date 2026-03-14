@@ -240,8 +240,12 @@ export const globalReferenceCities: GlobalReferenceCity[] = [
         en: "Design streets and public space for real walking and cycling, not symbolic lanes."
       },
       {
-        th: "วางระบบข้อมูลเมืองให้เชื่อมกับ climate adaptation และการระบายน้ำ",
+        th: "วางระบบข้อมูลเมืองให้เชื่อมกับ climated adaptation และการระบายน้ำ",
         en: "Tie city data systems directly to climate adaptation and water management."
+      },
+      {
+        th: "Scrutiny: ประเมินสมดุลระหว่างภาษีที่สูงกับสวัสดิการ และประเด็นด้านความปลอดภัยพื้นฐาน",
+        en: "Scrutiny: Evaluate the balance between high taxes and welfare, and fundamental safety issues."
       }
     ],
     href: "https://www.cnbc.com/2025/06/19/economist-intelligence-unit-2025-most-livable-cities-in-the-world.html"

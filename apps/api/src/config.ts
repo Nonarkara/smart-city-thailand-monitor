@@ -9,6 +9,7 @@ export const config = {
   cctvCacheTtlMs: Number(process.env.CCTV_CACHE_TTL_MS ?? 300000),
   cctvProbeTimeoutMs: Number(process.env.CCTV_PROBE_TIMEOUT_MS ?? 2500),
   cctvProbeConcurrency: Number(process.env.CCTV_PROBE_CONCURRENCY ?? 8),
+  maxDailyAiInquiries: Number(process.env.MAX_DAILY_AI_INQUIRIES ?? 200),
   knowledgeDir: process.env.KNOWLEDGE_DIR ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",

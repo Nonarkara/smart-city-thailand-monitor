@@ -69,6 +69,23 @@ interface KnowledgeIndex {
 let cachedIndex: KnowledgeIndex | null = null;
 let cachedIndexBuiltAt = 0;
 
+let dailyAiInquiryCount = 0;
+let lastCountResetDate = "";
+
+function checkAndRotateAiCounter() {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+
+  if (lastCountResetDate !== today) {
+    dailyAiInquiryCount = 0;
+    lastCountResetDate = today;
+  }
+}
+
 function localized(th: string, en: string): LocalizedText {
   return { th, en };
 }
@@ -451,13 +468,24 @@ export async function queryAssistant(input: AssistantQueryRequest): Promise<Assi
     .map((item) => item.chunk);
   const citations = buildCitations(rankedChunks, terms);
 
-  const geminiAnswer = await askGemini(locale, input.question, contextSummary, citations);
+  checkAndRotateAiCounter();
+
+  let geminiAnswer: LocalizedText | null = null;
+  let provider: "gemini" | "local-rag" = "local-rag";
+
+  if (config.geminiApiKey && dailyAiInquiryCount < config.maxDailyAiInquiries) {
+    geminiAnswer = await askGemini(locale, input.question, contextSummary, citations);
+    if (geminiAnswer) {
+      dailyAiInquiryCount += 1;
+      provider = "gemini";
+    }
+  }
 
   return {
     answer: geminiAnswer ?? buildAnswer(locale, input.question, contextSummary, citations, index.available),
     contextSummary,
     citations,
-    provider: geminiAnswer ? "gemini" : "local-rag",
+    provider,
     generatedAt: new Date().toISOString(),
     knowledgeAvailable: index.available,
     documentCount: index.documentCount,
