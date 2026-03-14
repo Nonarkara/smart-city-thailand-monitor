@@ -1754,7 +1754,7 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "city") as DashboardView;
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "national") as DashboardView;
   const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
@@ -2133,9 +2133,10 @@ function DashboardPage() {
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
-  const selectedCity = overview.cities.find((item) => item.slug === city) ?? overview.cities[0];
+  const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
+  const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
-  const districtBySlug = new Map(cityDistricts.map((item) => [item.slug, item]));
+  const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
   const knownDistrictSlugs = new Set(cityDistricts.map((item) => item.slug));
   const selectedDomain = overview.domains.find((item) => item.slug === domain);
@@ -2294,6 +2295,24 @@ function DashboardPage() {
       ...score,
       domain: overview.domains.find((item) => item.slug === score.domainSlug)
     }));
+  const trackedPopulation = overview.cities.reduce((sum, item) => sum + item.population, 0);
+  const nationalTopDomains = useMemo(() => {
+    return overview.domains
+      .map((domainItem) => {
+        const scores = overview.cities.map(
+          (cityItem) => cityItem.scores.find((score) => score.domainSlug === domainItem.slug)?.score ?? 0
+        );
+        const average = Math.round(scores.reduce((sum, score) => sum + score, 0) / Math.max(scores.length, 1));
+
+        return {
+          domainSlug: domainItem.slug,
+          domain: domainItem,
+          score: average
+        };
+      })
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 3);
+  }, [overview.cities, overview.domains]);
   const selectedModelStrengths = new Set(selectedModelCity.strengths);
   const fitDomains = topCityScores.flatMap((item) =>
     item.domain && selectedModelStrengths.has(item.domain.slug) ? [item.domain] : []
@@ -2330,6 +2349,7 @@ function DashboardPage() {
       return !best || numericProperty(feature, "temperatureC") > numericProperty(best, "temperatureC") ? feature : best;
     }, null) ?? null;
   const latestExternalSignal = news.find((item) => item.kind === "external") ?? null;
+  const latestExternalSignalCity = latestExternalSignal?.citySlug ? cityBySlug.get(latestExternalSignal.citySlug) ?? null : null;
   const nationalCoverageCollection = mapFeatures.find((collection) => collection.layerId === "smart-city-thailand");
   const coverageFeatureCount = nationalCoverageCollection?.features.length ?? 0;
   const coverageCountsByDomain = useMemo(() => {
@@ -2808,7 +2828,7 @@ function DashboardPage() {
     latestExternalSignal
       ? {
           id: "media",
-          location: latestExternalSignal.citySlug ? localize(lang, selectedCity.name) : (lang === "th" ? "สื่อภายนอก" : "External media"),
+          location: latestExternalSignalCity ? localize(lang, latestExternalSignalCity.name) : (lang === "th" ? "สื่อภายนอก" : "External media"),
           title: lang === "th" ? "สื่อและข่าวภายนอกมีน้ำหนัก" : "Media attention is materially shaping the view",
           reason:
             lang === "th"
@@ -2846,6 +2866,26 @@ function DashboardPage() {
     confidence: number;
     freshness: string;
   }>;
+  const primaryScopeLabel = view === "national" ? (lang === "th" ? "ประเทศไทย" : "Thailand") : localize(lang, selectedCity.name);
+  const primaryScopeDetail =
+    view === "national"
+      ? selectedDomain
+        ? localize(lang, selectedDomain.description)
+        : lang === "th"
+          ? `${overview.cities.length} เมืองที่ติดตาม • ${coverageFeatureCount} จุดครอบคลุม`
+          : `${overview.cities.length} tracked cities • ${coverageFeatureCount} coverage footprints`
+      : selectedDistrict
+        ? localize(lang, selectedDistrict.priority)
+        : localize(lang, selectedCity.focus);
+  const scopePopulationLabel = view === "national" ? (lang === "th" ? "ประชากรเมืองที่ติดตาม" : "Tracked population") : copy.population;
+  const scopePopulationValue = view === "national" ? formatPopulation(trackedPopulation) : formatPopulation(selectedCity.population);
+  const scopeDomainScores = view === "national" ? nationalTopDomains : topCityScores;
+  const overviewWarnings = resilience.warnings.slice(0, 3);
+  const overviewQueue = decisionItems.slice(0, 3);
+  const overviewOfficialNews = officialNews.slice(0, 2);
+  const overviewExternalNews = externalNews.slice(0, 2);
+  const overviewProjects = compactProjects.slice(0, 3);
+  const overviewSources = apiWatchSources.slice(0, 4);
   const compareRows = [
     {
       id: "population",
@@ -3485,9 +3525,28 @@ function DashboardPage() {
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/mtt-logo.svg" alt="MTT" className="brand-logo" />
-          <h1>{workspaceTitle}</h1>
+          <div className="brand-copy">
+            <h1>{workspaceTitle}</h1>
+            <small className="brand-subline">{primaryScopeDetail}</small>
+          </div>
         </div>
         <div className="top-controls">
+          <div className="compact-group scope-toggle">
+            <button
+              className={view === "national" ? "chip active" : "chip"}
+              onClick={() =>
+                applyDashboardScene({
+                  view: "national",
+                  layers: Array.from(new Set([...layers, "smart-city-thailand"]))
+                })
+              }
+            >
+              {lang === "th" ? "ประเทศ" : "Thailand"}
+            </button>
+            <button className={view === "city" ? "chip active" : "chip"} onClick={() => applyDashboardScene({ view: "city", city })}>
+              {lang === "th" ? "เมือง" : "City"}
+            </button>
+          </div>
           <select className="topbar-select" value={city} onChange={(event) => { updateParam("city", event.target.value); updateParam("view", "city"); }}>
             {overview.cities.map((item) => (
               <option key={item.slug} value={item.slug}>{localize(lang, item.name)}</option>
@@ -4000,6 +4059,205 @@ function DashboardPage() {
           ))}
         </div>
       </div>
+
+      <section className="overview-shell">
+        <section className="card overview-card hero">
+          <div className="card-header">
+            <span className="eyebrow">{copy.topLine}</span>
+            <span className="status-pill">{view === "national" ? "Thailand" : localize(lang, selectedCity.name)}</span>
+          </div>
+          <div className="terminal-callout compact">
+            <span className="eyebrow">{lang === "th" ? "Decision signal" : "Decision signal"}</span>
+            <strong>{executiveSignal}</strong>
+          </div>
+          <div className="overview-hero-metrics">
+            <div className="data-item">
+              <span className="eyebrow">{scopePopulationLabel}</span>
+              <strong>{scopePopulationValue}</strong>
+              <small>{view === "national" ? `${overview.cities.length} tracked cities` : localize(lang, selectedCity.region)}</small>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">{lang === "th" ? "Coverage" : "Coverage"}</span>
+              <strong>{view === "national" ? `${coverageFeatureCount}` : (selectedDistrict ? localize(lang, selectedDistrict.name) : "Citywide")}</strong>
+              <small>{view === "national" ? `${overview.domains.length} domains` : primaryScopeDetail}</small>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">{lang === "th" ? "Satellite" : "Satellite"}</span>
+              <strong>{activeSatelliteLayers.length}</strong>
+              <small>{satelliteDigest.status.mode}</small>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">{lang === "th" ? "Sync" : "Sync"}</span>
+              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+              <small>{latestSyncSource?.name ?? "Sources"}</small>
+            </div>
+          </div>
+          <div className="pill-list compact">
+            {scopeDomainScores.map((item) => (
+              <span key={item.domainSlug} className="stack-pill">
+                {item.domain ? `${localize(lang, item.domain.title)} ${item.score}` : `${item.domainSlug} ${item.score}`}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="card overview-card briefing">
+          <div className="card-header">
+            <span className="eyebrow">{copy.briefing}</span>
+            <span className="status-pill">{selectedDomain ? localize(lang, selectedDomain.title) : primaryScopeLabel}</span>
+          </div>
+          <strong>{localize(lang, overview.briefing.headline)}</strong>
+          <p>{localize(lang, overview.briefing.body)}</p>
+          <div className="overview-inline-list">
+            {thisCycleItems.map((item) => (
+              <div key={item.id} className="data-item">
+                <span className="eyebrow">{localize(lang, item.label)}</span>
+                <strong>{item.value}</strong>
+                <small>{localize(lang, item.detail)}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card overview-card queue">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "Decision Queue" : "Decision Queue"}</span>
+            <span className="status-pill">{decisionItems.length}</span>
+          </div>
+          <div className="overview-inline-list">
+            {overviewQueue.length > 0 ? (
+              overviewQueue.map((item) => {
+                const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
+                const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
+
+                return (
+                  <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className={`status-tag ${item.status}`}>{item.status}</span>
+                    </div>
+                    <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="data-item">
+                <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="card overview-card news">
+          <div className="card-header">
+            <span className="eyebrow">{copy.news}</span>
+            <span className="status-pill">{filteredNews.length}</span>
+          </div>
+          <div className="overview-inline-list">
+            {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
+              <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                <strong>{localize(lang, item.title)}</strong>
+                <small>{item.source.sourceName}</small>
+              </a>
+            ))}
+            {latestExternalSignalCity ? (
+              <div className="data-item">
+                <span className="eyebrow">{lang === "th" ? "Media hotspot" : "Media hotspot"}</span>
+                <strong>{localize(lang, latestExternalSignalCity.name)}</strong>
+                <small>{socialListening.mentionCount} mentions</small>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="card overview-card projects">
+          <div className="card-header">
+            <span className="eyebrow">{copy.projects}</span>
+            <span className="status-pill">{filteredProjects.length}</span>
+          </div>
+          <div className="overview-inline-list">
+            {overviewProjects.map((project) => (
+              <button key={project.id} type="button" className="data-item" onClick={() => focusCityWithLayer(project.citySlug, "projects")}>
+                <div className="stack-title">
+                  <strong>{localize(lang, project.title)}</strong>
+                  <span className={`status-tag ${project.status}`}>{project.status}</span>
+                </div>
+                <small>{localize(lang, project.nextMilestone)}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="card overview-card sources">
+          <div className="card-header">
+            <span className="eyebrow">{copy.apiWatch}</span>
+            <span className={`status-pill api-${apiStatusLabel.toLowerCase()}`}>{`${apiReadyCount}/${apiWatchSources.length}`}</span>
+          </div>
+          <div className="overview-inline-list">
+            {overviewSources.map((source) => (
+              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{source.name}</strong>
+                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                </div>
+                <small>{source.message}</small>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="card overview-card resilience">
+          <div className="card-header">
+            <span className="eyebrow">{copy.resilience}</span>
+            <span className="status-pill">{resilience.source.freshnessStatus}</span>
+          </div>
+          <div className="overview-hero-metrics">
+            <div className="data-item">
+              <span className="eyebrow">Weather</span>
+              <strong>{localize(lang, resilience.weatherSummary)}</strong>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">Pollution</span>
+              <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+            </div>
+          </div>
+          <div className="overview-inline-list">
+            {overviewWarnings.map((warning, index) => (
+              <div key={`${warning.en}-${index}`} className="data-item">
+                <small>{localize(lang, warning)}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card overview-card ranking">
+          <div className="card-header">
+            <span className="eyebrow">SLIC Thailand</span>
+            <span className="status-pill">{formatUtcClock(slicThailand.updatedAt)} UTC</span>
+          </div>
+          <div className="overview-inline-list">
+            {slicTopCities.slice(0, 4).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="data-item"
+                onClick={() => {
+                  const mappedCitySlug = slicCitySlugMap[item.id];
+                  if (mappedCitySlug && knownCitySlugs.has(mappedCitySlug)) {
+                    focusCityWithLayer(mappedCitySlug, "smart-city-thailand");
+                  }
+                }}
+              >
+                <div className="stack-title">
+                  <strong>{lang === "th" ? item.nameTh || item.nameEn : item.nameEn}</strong>
+                  <span className="status-pill">#{item.rank}</span>
+                </div>
+                <small>{`${item.region} • ${item.overall}`}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      </section>
 
       {/* Bottom Data Strip */}
       <footer className="bottombar">
