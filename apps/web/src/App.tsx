@@ -1754,7 +1754,8 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const view = (searchParams.get("view") as DashboardView) || "city";
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "city") as DashboardView;
+  const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
   const district = searchParams.get("district") ?? "";
@@ -2892,7 +2893,8 @@ function DashboardPage() {
       }
     }
   ];
-  const workspaceTitle = lang === "th" ? "Smart City Thailand Super Dashboard" : "Smart City Thailand Super Dashboard";
+  const siteTitle = (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Smart City Thailand Super Dashboard";
+  const workspaceTitle = siteTitle;
   const workspaceNarrative =
     localize(lang, commandCenter.screenMode);
   const reporterStatusMeta = {

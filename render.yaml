@@ -15,6 +15,10 @@ services:
         value: https://smart-city-monitor-api.onrender.com
       - key: VITE_DEFAULT_CITY
         value: muang-thong-thani
+      - key: VITE_DEFAULT_VIEW
+        value: city
+      - key: VITE_SITE_TITLE
+        value: "Muang Thong Thani Monitor"
     routes:
       - type: rewrite
         source: /*
@@ -36,6 +40,10 @@ services:
         value: https://smart-city-monitor-api.onrender.com
       - key: VITE_DEFAULT_CITY
         value: bangkok
+      - key: VITE_DEFAULT_VIEW
+        value: national
+      - key: VITE_SITE_TITLE
+        value: "Smart City Thailand Super Dashboard"
     routes:
       - type: rewrite
         source: /*
