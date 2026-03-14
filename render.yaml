@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mtt-smart-city-monitor-web
+    name: smart-city-monitor-web
     runtime: static
     buildCommand: set -e && npm ci && npm run build -w packages/shared && npm run build -w apps/web && ls -la apps/web/dist/assets/
     staticPublishPath: ./apps/web/dist
