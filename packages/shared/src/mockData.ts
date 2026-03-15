@@ -134,6 +134,22 @@ export const domains: DomainScorecard[] = [
 
 export const cities: CityProfile[] = [
   {
+    id: "city-muang-thong-thani",
+    slug: "muang-thong-thani",
+    name: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    region: { th: "นนทบุรี", en: "Nonthaburi" },
+    population: 300000,
+    focus: {
+      th: "พื้นที่จัดงาน การเดินทางเข้าออก และการประสานงานภาคสนามระดับพื้นที่",
+      en: "Venue-scale operations, ingress mobility, and field coordination."
+    },
+    scores: [
+      { domainSlug: "mobility", score: 78 },
+      { domainSlug: "governance", score: 80 },
+      { domainSlug: "living", score: 75 }
+    ]
+  },
+  {
     id: "city-bangkok",
     slug: "bangkok",
     name: { th: "กรุงเทพมหานคร", en: "Bangkok" },
@@ -524,6 +540,131 @@ export const districts: DistrictProfile[] = [
     ],
     recommendedLayers: ["projects", "economy", "agriculture"],
     source: seedMeta("Khon Kaen Smart City", "https://www.citydata.in.th")
+  },
+  {
+    id: "district-mtt-impact-core",
+    slug: "impact-core",
+    citySlug: "muang-thong-thani",
+    name: { th: "Impact Core", en: "Impact Core" },
+    population: 62000,
+    focus: {
+      th: "พื้นที่หน้าอาคาร Challenger และ Arena สำหรับรถรับส่งและคนหนาแน่น",
+      en: "Challenger and Arena frontage for shuttle circulation and event crowds."
+    },
+    priority: {
+      th: "คุม drop-off, shuttle loop, และทางเดินหลักให้ไม่เกิดคอขวด",
+      en: "Keep the drop-off, shuttle loop, and main pedestrian frontages clear."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [100.5512, 13.9132],
+    bounds: [13.91, 100.5468, 13.9165, 100.5558],
+    watchpoints: [
+      { th: "รถจอดแช่ในช่องรับส่งหน้า Challenger", en: "Drop-off dwell time at the Challenger frontage." },
+      { th: "crowd spillback จากหน้าอาคารเข้าสู่ทางวิ่งรถ", en: "Crowd spillback from the frontage into vehicle lanes." }
+    ],
+    recommendedLayers: ["itic-traffic", "cctv-cameras", "projects"],
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "district-mtt-beehive-connector",
+    slug: "beehive-connector",
+    citySlug: "muang-thong-thani",
+    name: { th: "Beehive Connector", en: "Beehive Connector" },
+    population: 44000,
+    focus: {
+      th: "ทางเดินเชื่อม hall กับ Beehive และแนวรับน้ำช่วงฝน",
+      en: "Pedestrian movement between the halls and Beehive with rain-sensitive low points."
+    },
+    priority: {
+      th: "จัดการน้ำขังและทางเดินลื่นก่อนกระทบการไหลของคน",
+      en: "Clear pooling water and slip hazards before pedestrian flow slows."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [100.5488, 13.9101],
+    bounds: [13.9075, 100.545, 13.913, 100.5518],
+    watchpoints: [
+      { th: "จุดน้ำขังระหว่าง hall กับ Beehive หลังฝน", en: "Pooling water along the hall-to-Beehive walkway after rain." },
+      { th: "คนชะลอเดินและการไหลสวนกันในทางเชื่อม", en: "Bidirectional pedestrian slowdown in the connector." }
+    ],
+    recommendedLayers: ["weather", "water", "projects"],
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "district-mtt-cosmo-frontage",
+    slug: "cosmo-frontage",
+    citySlug: "muang-thong-thani",
+    name: { th: "Cosmo Frontage", en: "Cosmo Frontage" },
+    population: 52000,
+    focus: {
+      th: "ทางเท้า ร้านค้า และแนวจอดรับส่งหน้า Cosmo Bazaar",
+      en: "Sidewalks, vending pressure, and curbside activity near Cosmo Bazaar."
+    },
+    priority: {
+      th: "กันไม่ให้ทางเท้าถูกบีบจนคนไหลลงเลนรถ",
+      en: "Prevent walkway compression from spilling pedestrians into traffic."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [100.5404, 13.9083],
+    bounds: [13.9056, 100.537, 13.9108, 100.5436],
+    watchpoints: [
+      { th: "แผงค้าชั่วคราวกินพื้นที่ทางเท้า", en: "Temporary stalls shrinking the sidewalk width." },
+      { th: "รถรับส่งจอดค้างริมฟุตบาทช่วงเปลี่ยนคิว", en: "Curbside dwell pressure during shuttle turnover." }
+    ],
+    recommendedLayers: ["cctv-cameras", "itic-traffic", "projects"],
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "district-mtt-lakefront-gate",
+    slug: "lakefront-gate",
+    citySlug: "muang-thong-thani",
+    name: { th: "Lakefront Gate", en: "Lakefront Gate" },
+    population: 36000,
+    focus: {
+      th: "แนวทะเลสาบ ประตูทางเข้า และสาธารณูปโภคภาคสนาม",
+      en: "Lake-edge access, gate conditions, and field utilities."
+    },
+    priority: {
+      th: "คุมแสงสว่าง คุณภาพอากาศ และแนว drainage ริมทะเลสาบ",
+      en: "Keep lighting, air watch, and lakefront drainage in a stable state."
+    },
+    riskLevel: "watch",
+    updatedAt: seededAt,
+    center: [100.5558, 13.9058],
+    bounds: [13.9025, 100.5528, 13.9088, 100.5588],
+    watchpoints: [
+      { th: "ความร้อนและควันเบาบางใกล้ประตูริมทะเลสาบ", en: "Light thermal or smoke signatures near the lakefront gate." },
+      { th: "ไฟทางเดินและระบบส่องสว่างไม่เสถียร", en: "Intermittent walkway lighting near the gate." }
+    ],
+    recommendedLayers: ["weather", "water", "cctv-cameras"],
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "district-mtt-popular-bridge-ingress",
+    slug: "popular-bridge-ingress",
+    citySlug: "muang-thong-thani",
+    name: { th: "Popular / Bridge Ingress", en: "Popular / Bridge Ingress" },
+    population: 58000,
+    focus: {
+      th: "ถนนป๊อปปูล่า สะพานเมืองทอง และทางเข้าออกหลัก",
+      en: "Popular Road, Muang Thong bridges, and the main ingress approach."
+    },
+    priority: {
+      th: "ลดแรงกดดันการเข้าออกและป้องกัน wrong-way / queue spillback",
+      en: "Reduce ingress pressure and stop wrong-way movement or queue spillback."
+    },
+    riskLevel: "high",
+    updatedAt: seededAt,
+    center: [100.5378, 13.901],
+    bounds: [13.8984, 100.5348, 13.9036, 100.541],
+    watchpoints: [
+      { th: "motorbike หรือรถ service ย้อนศรใน feeder road", en: "Wrong-way motorbike or service-vehicle movement on feeder roads." },
+      { th: "แถวรถสะสมขึ้นสะพานและย้อนกลับไปทาง Popular", en: "Bridge approach queues spilling back onto Popular Road." }
+    ],
+    recommendedLayers: ["itic-traffic", "cctv-cameras", "weather"],
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
   }
 ];
 
@@ -590,6 +731,69 @@ export const projects: ProjectRecord[] = [
     },
     updatedAt: seededAt,
     source: seedMeta("data.go.th", "https://data.go.th")
+  },
+  {
+    id: "project-4",
+    slug: "mtt-event-ingress-fabric",
+    title: { th: "Muang Thong Event Ingress Fabric", en: "Muang Thong Event Ingress Fabric" },
+    citySlug: "muang-thong-thani",
+    districtSlug: "impact-core",
+    domainSlug: "mobility",
+    status: "active",
+    completionPercent: 72,
+    owner: { th: "ทีมจราจรและปฏิบัติการพื้นที่", en: "Traffic and venue operations" },
+    summary: {
+      th: "รวมข้อมูลกล้อง เส้นทางรับส่ง และจุดหนาแน่นเพื่อคุมทางเข้าออกในช่วงงาน",
+      en: "Combines camera, shuttle, and congestion signals for event ingress control."
+    },
+    nextMilestone: {
+      th: "ผูก queue thresholds กับ alert cards และ action queue",
+      en: "Attach queue thresholds to alert cards and the action queue."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "project-5",
+    slug: "mtt-lakefront-drainage-watch",
+    title: { th: "Muang Thong Lakefront Drainage Watch", en: "Muang Thong Lakefront Drainage Watch" },
+    citySlug: "muang-thong-thani",
+    districtSlug: "lakefront-gate",
+    domainSlug: "environment",
+    status: "watch",
+    completionPercent: 64,
+    owner: { th: "ระบายน้ำและอาคารสถานที่", en: "Drainage and facilities" },
+    summary: {
+      th: "จัด low-point watch, drainage checks, และสัญญาณฝนสำหรับพื้นที่ทางเดินริมน้ำ",
+      en: "Stages low-point watches, drainage checks, and rain signals for the lakefront walkways."
+    },
+    nextMilestone: {
+      th: "เชื่อมปริมาณฝนกับ escalation rules สำหรับทีมภาคสนาม",
+      en: "Connect rainfall intensity to field-team escalation rules."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+  },
+  {
+    id: "project-6",
+    slug: "mtt-reporter-bridge",
+    title: { th: "Muang Thong Reporter Bridge", en: "Muang Thong Reporter Bridge" },
+    citySlug: "muang-thong-thani",
+    districtSlug: "cosmo-frontage",
+    domainSlug: "governance",
+    status: "planned",
+    completionPercent: 41,
+    owner: { th: "ทีม command center", en: "Command center team" },
+    summary: {
+      th: "เตรียม vocabulary และ workflow สำหรับผูกรายงานหน้างานกับกล้องและบอร์ดเหตุการณ์",
+      en: "Prepares the vocabulary and workflow to connect field reports with cameras and incident boards."
+    },
+    nextMilestone: {
+      th: "ทดสอบเคส sidewalk และ queue spillback แบบ end-to-end",
+      en: "Test sidewalk and queue-spillback cases end to end."
+    },
+    updatedAt: seededAt,
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
   }
 ];
 
@@ -641,6 +845,60 @@ export const news: NewsItem[] = [
     domainSlug: "environment",
     publishedAt: seededAt,
     source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+  },
+  {
+    id: "news-4",
+    slug: "mtt-event-ops-readiness",
+    title: {
+      th: "เมืองทองธานีเตรียมแผนรับงานและการเดินทางเข้าออก",
+      en: "Muang Thong Thani stages event ingress and crowd operations plan"
+    },
+    excerpt: {
+      th: "เน้น drop-off, ทางเดิน, shuttle loop และพื้นที่หน้าอาคารหลัก",
+      en: "The plan focuses on drop-off lanes, walkways, shuttle loops, and the venue frontage."
+    },
+    kind: "official",
+    citySlug: "muang-thong-thani",
+    districtSlug: "impact-core",
+    domainSlug: "mobility",
+    publishedAt: seededAt,
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th", "manual")
+  },
+  {
+    id: "news-5",
+    slug: "mtt-rain-walkway-watch",
+    title: {
+      th: "ฝนช่วงเย็นทำให้แนวทางเชื่อม Beehive ต้องเฝ้าระวัง",
+      en: "Evening rain keeps the Beehive connector under watch"
+    },
+    excerpt: {
+      th: "รายงานเน้นน้ำขัง จุดลื่น และผลต่อการไหลของคนระหว่างอาคาร",
+      en: "Coverage is focused on pooling water, slip risk, and slowed movement between halls."
+    },
+    kind: "external",
+    citySlug: "muang-thong-thani",
+    districtSlug: "beehive-connector",
+    domainSlug: "environment",
+    publishedAt: seededAt,
+    source: seedMeta("Google News RSS", "https://news.google.com", "live")
+  },
+  {
+    id: "news-6",
+    slug: "mtt-reporter-pilot-brief",
+    title: {
+      th: "ทีมเมืองทองเริ่ม pilot การรับแจ้งเหตุคู่กับกล้อง",
+      en: "Muang Thong begins a pilot for reporter intake matched with cameras"
+    },
+    excerpt: {
+      th: "เป้าหมายคือให้ sidewalk, queue, และ facility cases เข้าบอร์ดเดียวกัน",
+      en: "The goal is to bring sidewalk, queue, and facility cases into one shared board."
+    },
+    kind: "official",
+    citySlug: "muang-thong-thani",
+    districtSlug: "cosmo-frontage",
+    domainSlug: "governance",
+    publishedAt: seededAt,
+    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th", "manual")
   }
 ];
 
@@ -878,6 +1136,84 @@ export const decisionQueue: DecisionQueueItem[] = [
     updatedAt: seededAt,
     sourceIds: ["data-go-th"],
     layerIds: ["agriculture", "economy", "projects"]
+  },
+  {
+    id: "decision-mtt-impact-dropoff",
+    citySlug: "muang-thong-thani",
+    districtSlug: "impact-core",
+    domainSlug: "mobility",
+    title: {
+      th: "เร่งเคลียร์ drop-off หน้า Challenger ก่อน queue spillback",
+      en: "Clear the Challenger drop-off before queue spillback builds"
+    },
+    summary: {
+      th: "รถจอดแช่และ shuttle loop เริ่มกดดันแนวหน้าทางเข้าอาคาร",
+      en: "Vehicle dwell time and shuttle circulation are starting to compress the main frontage."
+    },
+    severity: "urgent",
+    status: "new",
+    confidence: 0.92,
+    owner: { th: "จราจรภาคสนาม", en: "Field traffic operations" },
+    recommendedAction: {
+      th: "ส่งทีมจราจรหน้างาน เปิด lane recovery และคุมจุดรับส่งทันที",
+      en: "Dispatch field traffic staff, open lane recovery, and control the drop-off immediately."
+    },
+    dueAt: "2026-03-12T09:20:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["itic-traffic", "public-cctv"],
+    layerIds: ["itic-traffic", "cctv-cameras", "projects"]
+  },
+  {
+    id: "decision-mtt-beehive-rain",
+    citySlug: "muang-thong-thani",
+    districtSlug: "beehive-connector",
+    domainSlug: "environment",
+    title: {
+      th: "ยืนยัน drainage sweep และ signage ใน Beehive connector",
+      en: "Confirm a drainage sweep and signage on the Beehive connector"
+    },
+    summary: {
+      th: "ฝนช่วงเย็นทำให้แนวทางเชื่อมเริ่มมีน้ำขังและคนชะลอเดิน",
+      en: "Evening rain is causing standing water and slower pedestrian movement in the connector."
+    },
+    severity: "watch",
+    status: "ready",
+    confidence: 0.87,
+    owner: { th: "ระบายน้ำและอาคารสถานที่", en: "Drainage and facilities" },
+    recommendedAction: {
+      th: "ส่งทีมกวาดน้ำ วาง signage เตือนลื่น และเช็ก low-point alarms",
+      en: "Send drainage staff, place slip warnings, and verify low-point alarms."
+    },
+    dueAt: "2026-03-12T10:10:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["open-meteo-weather", "jaxa-earth"],
+    layerIds: ["weather", "water", "jaxa-rainfall"]
+  },
+  {
+    id: "decision-mtt-cosmo-sidewalk",
+    citySlug: "muang-thong-thani",
+    districtSlug: "cosmo-frontage",
+    domainSlug: "governance",
+    title: {
+      th: "รวม sidewalk case หน้า Cosmo เข้าบอร์ดเดียวกับกล้อง",
+      en: "Merge the Cosmo sidewalk case into the shared camera-linked board"
+    },
+    summary: {
+      th: "รายงานหน้างานและภาพกล้องพูดถึงปัญหาเดียวกันแล้ว ควรรวมเป็นหนึ่งเคสปฏิบัติการ",
+      en: "The field report and camera signal are describing the same issue and should become one ops case."
+    },
+    severity: "watch",
+    status: "in-progress",
+    confidence: 0.82,
+    owner: { th: "พื้นที่สาธารณะและ command center", en: "Public space and command center" },
+    recommendedAction: {
+      th: "ยืนยันเจ้าของเคสเดียว ปัก SLA และส่งทีมคุมพื้นที่หน้าทางเดิน",
+      en: "Assign one case owner, set the SLA, and send the frontage team."
+    },
+    dueAt: "2026-03-12T11:05:00.000Z",
+    updatedAt: seededAt,
+    sourceIds: ["public-cctv", "google-news-rss"],
+    layerIds: ["cctv-cameras", "itic-traffic", "projects"]
   }
 ];
 
@@ -1025,6 +1361,15 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "live",
     lastCheckedAt: seededAt,
     message: "Pak Kret municipal cameras and iTIC / Longdo public traffic cameras are available for the live map layer."
+  },
+  {
+    id: "reference",
+    name: "Muang Thong Reference Grid",
+    category: "geospatial",
+    url: "https://www.openstreetmap.org",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "1 x 1 km distance grid anchored to the Muang Thong Thani operations area."
   },
   {
     id: "nasa-gibs",
@@ -1256,7 +1601,7 @@ export const mapLayers: MapLayerConfig[] = [
   },
   {
     id: "mtt-grid",
-    label: { th: "กริด 500 ม.", en: "500 m Grid" },
+    label: { th: "กริด 1 กม.", en: "1 km Grid" },
     active: false,
     color: "#94a3b8",
     kind: "dataset",
@@ -1411,6 +1756,21 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           region: "Central",
           population: 10539000,
           smartFocus: "Flood response, mobility, and city-scale digital services."
+        },
+        source: smartCityThailandMeta
+      },
+      {
+        id: "smart-city-th-mtt",
+        layerId: "smart-city-thailand",
+        geometryType: "Point",
+        coordinates: [100.5512, 13.9118],
+        title: "Muang Thong Thani",
+        description: "Venue-scale operations cluster for events, mobility, and field-system integration.",
+        properties: {
+          city: "Muang Thong Thani",
+          region: "Central",
+          population: 300000,
+          smartFocus: "Venue operations, ingress control, and field reporting."
         },
         source: smartCityThailandMeta
       },
@@ -2131,6 +2491,64 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           focus: "living-lab"
         },
         source: dataToPolicyMeta
+      },
+      {
+        id: "projects-mtt-impact-ingress",
+        layerId: "projects",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.5468, 13.91],
+          [100.5558, 13.91],
+          [100.5558, 13.9165],
+          [100.5468, 13.9165]
+        ],
+        title: "Muang Thong ingress control zone",
+        description: "Primary event-frontage footprint for queue recovery, shuttle loops, and curbside control.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Impact Core",
+          districtSlug: "impact-core",
+          status: "active",
+          focus: "ingress-control"
+        },
+        source: dataToPolicyMeta
+      },
+      {
+        id: "projects-mtt-lakefront-drainage",
+        layerId: "projects",
+        geometryType: "LineString",
+        coordinates: [
+          [100.5496, 13.9097],
+          [100.5524, 13.9082],
+          [100.5553, 13.9067],
+          [100.558, 13.9052]
+        ],
+        title: "Muang Thong drainage readiness corridor",
+        description: "Operational sweep corridor used for rain response between Beehive and the lakefront gate.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Beehive Connector",
+          districtSlug: "beehive-connector",
+          status: "watch",
+          focus: "drainage"
+        },
+        source: dataToPolicyMeta
+      },
+      {
+        id: "projects-mtt-reporter-bridge",
+        layerId: "projects",
+        geometryType: "Point",
+        coordinates: [100.5404, 13.9083],
+        title: "Muang Thong reporter bridge pilot",
+        description: "Pilot point for merging field reports, curbside activity, and camera-linked workflow states.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Cosmo Frontage",
+          districtSlug: "cosmo-frontage",
+          status: "planned",
+          focus: "reporting"
+        },
+        source: dataToPolicyMeta
       }
     ]
   },
@@ -2215,6 +2633,38 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           theme: "mobility"
         },
         source: gdeltSignalsMeta
+      },
+      {
+        id: "news-mtt-ingress",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [100.5512, 13.9132],
+        title: "Muang Thong event ingress watch",
+        description: "Operations and event-readiness coverage is clustering around the Challenger frontage.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Impact Core",
+          districtSlug: "impact-core",
+          mentions: 10,
+          theme: "mobility"
+        },
+        source: gdeltSignalsMeta
+      },
+      {
+        id: "news-mtt-rain-connector",
+        layerId: "news",
+        geometryType: "Point",
+        coordinates: [100.5488, 13.9101],
+        title: "Muang Thong rain and walkway signal",
+        description: "Rain-driven walkway and drainage coverage is concentrated along the Beehive connector.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Beehive Connector",
+          districtSlug: "beehive-connector",
+          mentions: 8,
+          theme: "environment"
+        },
+        source: gdeltSignalsMeta
       }
     ]
   },
@@ -2276,6 +2726,28 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         properties: {
           risk: "drought",
           sourceLayer: "heat"
+        },
+        source: jaxaEarthMeta
+      },
+      {
+        id: "resilience-mtt-rain-pocket",
+        layerId: "resilience",
+        geometryType: "Polygon",
+        coordinates: [
+          [100.5438, 13.9015],
+          [100.5586, 13.9015],
+          [100.5594, 13.9138],
+          [100.5461, 13.917],
+          [100.5419, 13.9092]
+        ],
+        title: "Muang Thong event-rain response pocket",
+        description: "Low points, event queues, and walkway drainage overlap inside this venue-scale watch zone.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Beehive Connector",
+          districtSlug: "beehive-connector",
+          risk: "rain-and-drainage",
+          sourceLayer: "rainfall"
         },
         source: jaxaEarthMeta
       }
@@ -2553,6 +3025,28 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           type: "reservoir"
         },
         source: jaxaEarthMeta
+      },
+      {
+        id: "water-mtt-drainage-corridor",
+        layerId: "water",
+        geometryType: "LineString",
+        coordinates: [
+          [100.546, 13.9115],
+          [100.549, 13.9105],
+          [100.5528, 13.9088],
+          [100.5562, 13.9069],
+          [100.5586, 13.905]
+        ],
+        title: "Muang Thong drainage corridor",
+        description: "Venue-scale runoff path from the halls toward the lakefront gate and low-point checks.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Lakefront Gate",
+          districtSlug: "lakefront-gate",
+          basin: "Muang Thong drainage",
+          type: "urban-drainage"
+        },
+        source: dataToPolicyMeta
       }
     ]
   },
@@ -2652,7 +3146,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
   {
     layerId: "itic-traffic",
     updatedAt: seededAt,
-    bounds: [13.66, 100.44, 13.85, 100.67],
+    bounds: [13.66, 100.44, 13.93, 100.67],
     source: iticTrafficMeta,
     features: [
       {
@@ -2720,6 +3214,57 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           kind: "freight",
           severity: "moderate",
           speedKph: 27
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-mtt-impact-loop",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5518, 13.9131],
+        title: "Impact Challenger loop congestion watch",
+        description: "Drop-off dwell time and shuttle movement are compressing the frontage loop.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Impact Core",
+          districtSlug: "impact-core",
+          kind: "traffic",
+          severity: "high",
+          speedKph: 11
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-mtt-popular-bridge",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5378, 13.9011],
+        title: "Muang Thong bridge ingress watch",
+        description: "Bridge and Popular Road queues are starting to spill back into the feeder lanes.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Popular / Bridge Ingress",
+          districtSlug: "popular-bridge-ingress",
+          kind: "incident",
+          severity: "watch",
+          speedKph: 14
+        },
+        source: iticTrafficMeta
+      },
+      {
+        id: "itic-mtt-cosmo-curbside",
+        layerId: "itic-traffic",
+        geometryType: "Point",
+        coordinates: [100.5404, 13.9083],
+        title: "Cosmo frontage curbside pressure",
+        description: "Pedestrian spillover and curbside dwell time are narrowing the frontage movement lane.",
+        properties: {
+          city: "Muang Thong Thani",
+          district: "Cosmo Frontage",
+          districtSlug: "cosmo-frontage",
+          kind: "traffic",
+          severity: "moderate",
+          speedKph: 17
         },
         source: iticTrafficMeta
       }
@@ -2810,6 +3355,16 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Northern inland weather watchpoint",
         properties: { city: "Lampang", temperatureC: 33, humidity: 46, windKph: 9, region: "North" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
+      },
+      {
+        id: "weather-muang-thong-thani",
+        layerId: "weather",
+        geometryType: "Point",
+        coordinates: [100.5512, 13.9118],
+        title: "Muang Thong Thani",
+        description: "Venue weather watchpoint",
+        properties: { city: "Muang Thong Thani", temperatureC: 31, humidity: 72, windKph: 9, region: "Central" },
+        source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       }
     ]
   },
@@ -2897,6 +3452,16 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         title: "Lampang",
         description: "Northern AQI watchpoint",
         properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" },
+        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+      },
+      {
+        id: "pollution-muang-thong-thani",
+        layerId: "pollution",
+        geometryType: "Point",
+        coordinates: [100.5512, 13.9118],
+        title: "Muang Thong Thani",
+        description: "Venue AQI watchpoint",
+        properties: { city: "Muang Thong Thani", aqi: 46, pm25: 10, pm10: 15, region: "Central" },
         source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
       }
     ]
@@ -3518,7 +4083,7 @@ export const cameraEvents: CameraEventSample[] = [
     model: "Crowd Flow v0.4",
     minutesAgo: 11,
     confidence: 0.9,
-    targetLayers: ["bangkok-passages", "itic-traffic"]
+    targetLayers: ["cctv-cameras", "itic-traffic"]
   },
   {
     id: "camera-p2-wrong-way",
@@ -3598,7 +4163,7 @@ export const sensorFeeds: SensorFeedSample[] = [
     },
     cadence: "45 s",
     sourceLabel: "Vision counter",
-    targetLayers: ["bangkok-passages", "itic-traffic"]
+    targetLayers: ["cctv-cameras", "itic-traffic"]
   },
   {
     id: "sensor-rain-drain",
@@ -3692,7 +4257,7 @@ export const reporterCases: ReporterCaseSample[] = [
     },
     matchedCameraId: "MTT-CAM-03",
     minutesAgo: 22,
-    targetLayers: ["bangkok-passages", "itic-traffic"]
+    targetLayers: ["cctv-cameras", "itic-traffic"]
   },
   {
     id: "report-lighting",

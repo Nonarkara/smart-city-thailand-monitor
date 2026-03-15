@@ -86,6 +86,8 @@ type SatelliteLayerId =
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
+/* Greater Bangkok + Nonthaburi bounds — used as maxBounds for MTT dashboard */
+const greaterBangkokBounds = L.latLngBounds([13.5, 100.2], [14.15, 100.95]);
 
 const cityCenters: Record<
   string,
@@ -549,7 +551,7 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
 }
 
 /**
- * Renders a 500 m × 500 m reference grid over the Muang Thong Thani area.
+ * Renders a 1 km × 1 km reference grid over the Muang Thong Thani area.
  * Grid lines are drawn as Leaflet polylines; cell labels (e.g. A1, B2) are
  * placed at each intersection using DivIcon markers.
  */
@@ -560,14 +562,14 @@ function renderMttGrid(target: L.LayerGroup) {
   const west  = 100.520;
   const east  = 100.560;
 
-  // 500 m in degrees at ~14°N latitude
+  // 1 km in degrees at ~14°N latitude
   const mPerDegLat = 111_320;
   const mPerDegLon = 111_320 * Math.cos((13.91 * Math.PI) / 180);
-  const stepLat = 500 / mPerDegLat;
-  const stepLon = 500 / mPerDegLon;
+  const stepLat = 1000 / mPerDegLat;
+  const stepLon = 1000 / mPerDegLon;
 
   const lineStyle: L.PolylineOptions = {
-    color: "rgba(148,163,184,0.30)",
+    color: "rgba(148,163,184,0.38)",
     weight: 1,
     dashArray: "4 4",
     interactive: false
@@ -622,9 +624,9 @@ function renderMttGrid(target: L.LayerGroup) {
   // Scale reference at the bottom-right corner
   const scaleIcon = L.divIcon({
     className: "grid-label",
-    html: "500 m grid",
-    iconSize: [50, 12],
-    iconAnchor: [50, 12]
+    html: "1 km grid",
+    iconSize: [56, 12],
+    iconAnchor: [56, 12]
   });
   L.marker([south + stepLat * 0.15, east - stepLon * 0.15], {
     icon: scaleIcon,
@@ -960,10 +962,11 @@ export default function InteractiveMap({
       return;
     }
 
+    const isMtt = siteTheme === "editorial";
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true,
-      minZoom: 5,
+      minZoom: isMtt ? 11 : 5,
       maxBoundsViscosity: 0.85
     });
 
@@ -980,7 +983,8 @@ export default function InteractiveMap({
 
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;
-    map.setMaxBounds(thailandBounds.pad(0.22));
+    /* MTT: lock map to Greater Bangkok area. National: full Thailand bounds. */
+    map.setMaxBounds(isMtt ? greaterBangkokBounds.pad(0.1) : thailandBounds.pad(0.22));
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
@@ -1113,7 +1117,7 @@ export default function InteractiveMap({
     }
 
     const city = cityCenters[citySlug] ?? cityCenters.bangkok;
-    const zoom = citySlug === "muang-thong-thani" ? 14 : (view === "city" ? 10 : 8);
+    const zoom = citySlug === "muang-thong-thani" ? 15 : (view === "city" ? 10 : 8);
     map.setView([city.lat, city.lon], zoom);
   }, [view, citySlug, district, layers, bangkokBoundsKey, districtBoundsKey, nationalBoundsKey]);
 
@@ -1128,12 +1132,12 @@ export default function InteractiveMap({
 
     renderFeatureCollections(overlay, activeLayers, featureCollections, domainSlug);
 
-    if (activeLayers.has("cctv-cameras")) {
-      renderCctvCameras(overlay, locale, publicCctvCameras);
+    if (activeLayers.has("mtt-grid") && view === "city" && citySlug === "muang-thong-thani") {
+      renderMttGrid(overlay);
     }
 
-    if (activeLayers.has("mtt-grid")) {
-      renderMttGrid(overlay);
+    if (activeLayers.has("cctv-cameras")) {
+      renderCctvCameras(overlay, locale, publicCctvCameras);
     }
 
     const map = mapRef.current;
@@ -1160,7 +1164,7 @@ export default function InteractiveMap({
         }
       });
     }
-  }, [domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles, publicCctvCameras]);
+  }, [citySlug, domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles, publicCctvCameras, view]);
 
   useEffect(() => {
     const map = mapRef.current;

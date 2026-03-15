@@ -2702,38 +2702,40 @@ textarea {
   --sidebar-width: 0px;
   --context-width: 0px;
   --footer-height: var(--bottomstrip-height);
+  --overlay-bg: rgba(5, 5, 7, 0.92);
   --heading-font: "Space Grotesk", "IBM Plex Sans", sans-serif;
   --body-font: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
   --mono-font: "IBM Plex Mono", monospace;
 }
 
-/* === EDITORIAL THEME (MTT Muang Thong Thani — Monocle magazine) === */
+/* === EDITORIAL THEME (MTT Muang Thong Thani — clean Notion aesthetic) === */
 [data-theme="editorial"] {
   color-scheme: light;
   --topbar-height: 44px;
-  --bottomstrip-height: 52px;
+  --bottomstrip-height: 48px;
   --tab-height: 36px;
-  --bg: #f5f0e8;
-  --panel: #faf7f0;
+  --bg: #ffffff;
+  --panel: #fafafa;
   --panel-strong: #fff;
-  --panel-soft: #efe9dd;
-  --line: #d6cfc2;
-  --line-strong: #b8b0a0;
+  --panel-soft: #f5f5f4;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
   --ink: #1a1a1a;
-  --muted: #6b6358;
-  --blue: #1a3a6e;
-  --green: #2a5f3f;
-  --amber: #8a6a1a;
-  --red: #c8102e;
-  --focus: rgba(200, 16, 46, 0.14);
-  --shadow: 0 1px 3px rgba(0,0,0,0.06);
-  --radius: 0px;
+  --muted: #737373;
+  --blue: #2563eb;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --focus: rgba(37, 99, 235, 0.12);
+  --shadow: none;
+  --radius: 4px;
   --glow-blue: transparent;
   --glow-green: transparent;
   --sidebar-width: 0px;
   --context-width: 0px;
   --footer-height: var(--bottomstrip-height);
-  --heading-font: "Playfair Display", "Source Serif 4", Georgia, serif;
+  --overlay-bg: rgba(255, 255, 255, 0.94);
+  --heading-font: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
   --body-font: "IBM Plex Sans", "IBM Plex Sans Thai", sans-serif;
   --mono-font: "IBM Plex Mono", monospace;
 }
@@ -2748,10 +2750,10 @@ textarea {
 [data-theme="editorial"],
 [data-theme="editorial"] html,
 [data-theme="editorial"] body {
-  background: #f5f0e8;
+  background: #ffffff;
   color: #1a1a1a;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .shell {
@@ -3268,7 +3270,7 @@ textarea:focus {
 .map-open-link {
   color: var(--ink);
   box-shadow: none;
-  background: rgba(250, 247, 240, 0.92);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.92));
 }
 
 .legend-chip,
@@ -4051,20 +4053,21 @@ textarea:focus {
 .overview-shell {
   grid-column: auto;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 0;
   padding: 0;
   background: var(--panel-strong);
   border-left: 1px solid var(--line);
   min-height: 0;
   overflow: hidden;
-  align-content: stretch;
+  overflow-y: auto;
+  align-content: start;
 }
 
 .overview-card {
   min-height: 0;
-  padding: 0.58rem;
+  padding: 0.62rem;
   overflow: hidden;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -4073,43 +4076,43 @@ textarea:focus {
 }
 
 .overview-card.hero {
-  grid-column: 1 / span 2;
-  grid-row: 1;
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+.overview-card.cctv-overview {
+  grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .overview-card.briefing {
-  grid-column: 3;
-  grid-row: 1;
+  grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .overview-card.queue {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: auto;
 }
 
 .overview-card.news {
   grid-column: 2;
-  grid-row: 2;
-}
-
-.overview-card.sources {
-  grid-column: 3;
-  grid-row: 2;
+  grid-row: auto;
 }
 
 .overview-card.resilience {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: auto;
 }
 
-.overview-card.projects {
+.overview-card.sources {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: auto;
 }
 
 .overview-card.ranking {
-  grid-column: 3;
-  grid-row: 3;
+  grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .overview-hero-metrics {
@@ -4182,46 +4185,21 @@ textarea:focus {
 
   .overview-shell {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(4, minmax(0, 1fr));
+    grid-template-rows: none;
   }
 
-  .overview-card.hero {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
+  .overview-card.hero,
+  .overview-card.cctv-overview,
   .overview-card.briefing {
-    grid-column: 1;
-    grid-row: 2;
+    grid-column: 1 / -1;
   }
 
-  .overview-card.queue {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .overview-card.news {
-    grid-column: 1;
-    grid-row: 3;
-  }
-
-  .overview-card.sources {
-    grid-column: 2;
-    grid-row: 3;
-  }
-
-  .overview-card.resilience {
-    grid-column: 1;
-    grid-row: 4;
-  }
-
-  .overview-card.projects {
-    grid-column: 2;
-    grid-row: 4;
-  }
-
+  .overview-card.queue,
+  .overview-card.news,
+  .overview-card.resilience,
+  .overview-card.sources,
   .overview-card.ranking {
-    display: none;
+    grid-column: auto;
   }
 }
 
@@ -4302,7 +4280,7 @@ textarea:focus {
   height: var(--tab-height);
   display: flex;
   align-items: stretch;
-  background: rgba(250, 247, 240, 0.94);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.94));
   backdrop-filter: blur(6px);
   border-top: 1px solid var(--line-strong);
   z-index: 15;
@@ -4355,7 +4333,7 @@ textarea:focus {
   max-width: 520px;
   width: calc(100% - 24px);
   padding: 0.32rem 0.65rem;
-  background: rgba(250, 247, 240, 0.92);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(6px);
   border: 1px solid var(--line-strong);
   border-radius: 0;
@@ -4397,7 +4375,7 @@ textarea:focus {
   bottom: calc(var(--tab-height) + 10px);
   left: 10px;
   padding: 0.35rem 0.6rem;
-  background: rgba(250, 247, 240, 0.92);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4422,7 +4400,7 @@ textarea:focus {
   width: 260px;
   max-height: calc(100% - var(--tab-height) - 80px);
   overflow-y: auto;
-  background: rgba(250, 247, 240, 0.96);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.96));
   backdrop-filter: blur(8px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4491,13 +4469,15 @@ textarea:focus {
   bottom: calc(var(--tab-height) + 10px);
   right: 10px;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.35rem;
   z-index: 16;
 }
 
 .map-float-btn {
   padding: 0.3rem 0.55rem;
-  background: rgba(250, 247, 240, 0.92);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(6px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4516,8 +4496,9 @@ textarea:focus {
 }
 
 .map-float-btn.active {
-  color: var(--red);
-  border-color: var(--red);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.72);
+  background: rgba(20, 24, 32, 0.88);
 }
 
 /* -- Floating alert chips on map -- */
@@ -4533,7 +4514,7 @@ textarea:focus {
 
 .map-alert-chip {
   padding: 0.25rem 0.5rem;
-  background: rgba(250, 247, 240, 0.9);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.9));
   border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: var(--radius);
   font-family: "IBM Plex Mono", monospace;
@@ -4611,7 +4592,7 @@ textarea:focus {
   left: 0;
   right: 0;
   padding: 0.3rem 0.5rem;
-  background: rgba(250, 247, 240, 0.9);
+  background: var(--overlay-bg, rgba(255, 255, 255, 0.9));
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.62rem;
   color: var(--ink);
@@ -5252,10 +5233,12 @@ textarea:focus {
 
 .grid-label {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 9px;
-  color: rgba(148, 163, 184, 0.6);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(196, 210, 225, 0.82);
   white-space: nowrap;
   pointer-events: none;
+  text-shadow: 0 1px 0 rgba(12, 14, 18, 0.45);
 }
 
 .cctv-popup {
@@ -5659,9 +5642,77 @@ textarea:focus {
    EDITORIAL THEME OVERRIDES — light Monocle for MTT dashboard
    =================================================================== */
 
-/* Map zone: light background */
+/* Clean Notion-like topbar: no heavy border */
+[data-theme="editorial"] .topbar {
+  border-bottom: 1px solid var(--line);
+}
+
+/* Clean cards: subtle border, no heavy top rule */
+[data-theme="editorial"] .card {
+  border-top: none;
+  border-radius: var(--radius);
+}
+
+/* Clean bottom bar */
+[data-theme="editorial"] .bottombar {
+  border-top: 1px solid var(--line);
+}
+
+/* Map zone: neutral background */
 [data-theme="editorial"] .map-zone {
-  background: #f5f0e8;
+  background: #f5f5f4;
+}
+
+/* Map overlays: clean white */
+[data-theme="editorial"] .map-tab-bar {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+[data-theme="editorial"] .ai-status-line {
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 6px;
+}
+
+[data-theme="editorial"] .layer-palette-toggle {
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 6px;
+}
+
+[data-theme="editorial"] .layer-palette {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 8px;
+}
+
+[data-theme="editorial"] .map-float-btn {
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 6px;
+}
+
+[data-theme="editorial"] .map-caption,
+[data-theme="editorial"] .map-open-link {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+[data-theme="editorial"] .map-alert-chip {
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 6px;
+}
+
+[data-theme="editorial"] .sat-tile-label {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+/* Overview cards: clean Notion separators */
+[data-theme="editorial"] .overview-card {
+  border-right-color: var(--line);
+  border-bottom-color: var(--line);
+}
+
+/* Terminal callout: subtle left accent */
+[data-theme="editorial"] .terminal-callout {
+  border-left-color: var(--blue);
+  background: var(--panel-soft);
+  border-radius: var(--radius);
 }
 
 /* Leaflet popups: light for editorial */
@@ -5701,12 +5752,12 @@ textarea:focus {
 
 /* CCTV popup frame: light bg */
 [data-theme="editorial"] .cctv-popup-frame {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* Satellite preview frame: light */
 [data-theme="editorial"] .satellite-preview-frame {
-  background: #efe9dd;
+  background: #f5f5f4;
 }
 
 /* Hover states: warm subtle */

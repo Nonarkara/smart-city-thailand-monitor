@@ -86,12 +86,12 @@ const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 300000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
-// Lock the public-facing identity to the nationwide Smart City Thailand dashboard.
+// Lock the public-facing identity — MTT is its own independent dashboard.
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: "Smart City Thailand Super Dashboard",
+  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Super Dashboard",
   eyebrow: {
-    th: "สมาร์ตซิตี้ไทยแลนด์",
-    en: "Smart City Thailand"
+    th: "เมืองทองธานี มอนิเตอร์",
+    en: "Muang Thong Thani"
   }
 });
 const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
@@ -1603,6 +1603,7 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
   }
 
   return [
+    ...(citySlug === "muang-thong-thani" ? ["mtt-grid"] : []),
     "weather",
     "pollution",
     "projects",
@@ -1719,7 +1720,8 @@ const cityFeatureAliases: Record<string, string[]> = {
   bangkok: ["bangkok", "krung-thep"],
   phuket: ["phuket"],
   "khon-kaen": ["khon-kaen", "khonkaen"],
-  "chiang-mai": ["chiang-mai", "chiangmai"]
+  "chiang-mai": ["chiang-mai", "chiangmai"],
+  "muang-thong-thani": ["muang-thong-thani", "muangthongthani"]
 };
 
 function featureMatchesCity(feature: GeoFeatureRecord, citySlug: string) {
@@ -2158,6 +2160,8 @@ function DashboardPage() {
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
+  const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
+  const mttGridActive = layers.includes("mtt-grid");
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -2264,6 +2268,7 @@ function DashboardPage() {
       ? slicThailandQuery.data
       : slicThailandFallback;
   const operationalLayerOptions = operationalLayerToggleIds
+    .filter((id) => id !== "mtt-grid" || isMuangThongCityView)
     .map((id) => layerSeed.find((layer) => layer.id === id))
     .filter((item): item is (typeof layerSeed)[number] => Boolean(item));
 
@@ -2390,7 +2395,7 @@ function DashboardPage() {
 
     return mapFeatures
       .map((collection) => {
-        if (collection.layerId === "bangkok-passages" || collection.layerId === "itic-traffic") {
+        if (collection.layerId === "bangkok-passages") {
           if (city !== "bangkok") {
             return { ...collection, features: [] };
           }
@@ -2499,7 +2504,11 @@ function DashboardPage() {
     "eo-chlorophyll": copy.chlorophyllLegend,
     "eo-cloud-phase": copy.cloudPhaseLegend,
     "smart-city-thailand": copy.coverageLegend,
-    "bangkok-passages": copy.bangkokPlacesLegend
+    "bangkok-passages": copy.bangkokPlacesLegend,
+    "mtt-grid":
+      lang === "th"
+        ? "กริดอ้างอิง 1 x 1 กม. สำหรับอ่านระยะและการกระจายของเหตุในเมืองทองธานี"
+        : "1 x 1 km reference grid for reading distance and incident spacing in Muang Thong Thani."
   };
   const activeLegendItems = [
     ...layerSeed.map((item) => ({
@@ -3480,6 +3489,10 @@ function DashboardPage() {
     toggleLayer(id);
   }
 
+  function toggleMttGrid() {
+    toggleLayer("mtt-grid");
+  }
+
   function openOpsDrawer(state: OpsDrawerState) {
     setManualOpen(false);
     setOpsDrawerState(state);
@@ -3716,6 +3729,15 @@ function DashboardPage() {
           <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)}>
             {copy.recenter}
           </button>
+          {isMuangThongCityView ? (
+            <button
+              type="button"
+              className={mttGridActive ? "map-float-btn active" : "map-float-btn"}
+              onClick={toggleMttGrid}
+            >
+              {lang === "th" ? "กริด 1 กม." : "1 km grid"}
+            </button>
+          ) : null}
         </div>
 
         {/* Floating Alert Chips */}
@@ -4136,69 +4158,70 @@ function DashboardPage() {
         </div>
 
         <section className="overview-shell">
+          {/* — Hero: MTT venue pulse — */}
           <section className="card overview-card hero">
           <div className="card-header">
-            <span className="eyebrow">{copy.topLine}</span>
-            <span className="status-pill">{view === "national" ? "Thailand" : localize(lang, selectedCity.name)}</span>
+            <span className="eyebrow">Muang Thong Thani</span>
+            <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
           </div>
           <div className="terminal-callout compact">
-            <span className="eyebrow">{lang === "th" ? "Decision signal" : "Decision signal"}</span>
+            <span className="eyebrow">Signal</span>
             <strong>{executiveSignal}</strong>
           </div>
           <div className="overview-hero-metrics">
             <div className="data-item">
-              <span className="eyebrow">{scopePopulationLabel}</span>
-              <strong>{scopePopulationValue}</strong>
-              <small>{view === "national" ? `${overview.cities.length} tracked cities` : localize(lang, selectedCity.region)}</small>
+              <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
+              <strong>{formatPopulation(selectedCity.population)}</strong>
+              <small>{lang === "th" ? "พื้นที่ปฏิบัติการ" : "Venue district"}</small>
             </div>
             <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "Coverage" : "Coverage"}</span>
-              <strong>{view === "national" ? `${coverageFeatureCount}` : (selectedDistrict ? localize(lang, selectedDistrict.name) : "Citywide")}</strong>
-              <small>{view === "national" ? `${overview.domains.length} domains` : primaryScopeDetail}</small>
+              <span className="eyebrow">{lang === "th" ? "กล้อง" : "CCTV"}</span>
+              <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
+              <small>{`${publicCctvCameras.length} total feeds`}</small>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "Satellite" : "Satellite"}</span>
-              <strong>{activeSatelliteLayers.length}</strong>
-              <small>{satelliteDigest.status.mode}</small>
-            </div>
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "Sync" : "Sync"}</span>
-              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
-              <small>{latestSyncSource?.name ?? "Sources"}</small>
-            </div>
-          </div>
-          <div className="pill-list compact">
-            {scopeDomainScores.map((item) => (
-              <span key={item.domainSlug} className="stack-pill">
-                {item.domain ? `${localize(lang, item.domain.title)} ${item.score}` : `${item.domainSlug} ${item.score}`}
-              </span>
-            ))}
           </div>
           </section>
 
+          {/* — CCTV: prominent camera feeds — */}
+          <section className="card overview-card cctv-overview">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "Live Cameras"}</span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
+              {publicCctvCameras.filter((cam) => cam.status === "live").length} live
+            </button>
+          </div>
+          <div className="overview-inline-list">
+            {publicCctvCameras.slice(0, 6).map((cam) => (
+              <button key={cam.id} type="button" className={`data-item`} onClick={() => setActiveTab("cctv")}>
+                <div className="stack-title">
+                  <strong>{localize(lang, cam.label)}</strong>
+                  <span className={`status-tag ${cam.status}`}>{cam.status}</span>
+                </div>
+                <small>{cam.source} · {cam.zone}</small>
+              </button>
+            ))}
+            {publicCctvCameras.length > 6 ? (
+              <button type="button" className="data-item" onClick={() => setActiveTab("cctv")}>
+                <strong>{`+${publicCctvCameras.length - 6} more cameras`}</strong>
+              </button>
+            ) : null}
+          </div>
+          </section>
+
+          {/* — Briefing — */}
           <section className="card overview-card briefing">
           <div className="card-header">
             <span className="eyebrow">{copy.briefing}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>
-              {lang === "th" ? "AI" : "AI"}
-            </button>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
           </div>
           <strong>{localize(lang, overview.briefing.headline)}</strong>
           <p>{localize(lang, overview.briefing.body)}</p>
-          <div className="overview-inline-list">
-            {thisCycleItems.map((item) => (
-              <div key={item.id} className="data-item">
-                <span className="eyebrow">{localize(lang, item.label)}</span>
-                <strong>{item.value}</strong>
-                <small>{localize(lang, item.detail)}</small>
-              </div>
-            ))}
-          </div>
           </section>
 
+          {/* — Decision Queue — */}
           <section className="card overview-card queue">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "Decision Queue" : "Decision Queue"}</span>
+            <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decisions"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
               {decisionItems.length}
             </button>
@@ -4208,7 +4231,6 @@ function DashboardPage() {
               overviewQueue.map((item) => {
                 const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
                 const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
-
                 return (
                   <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
                     <div className="stack-title">
@@ -4227,6 +4249,7 @@ function DashboardPage() {
           </div>
           </section>
 
+          {/* — News — */}
           <section className="card overview-card news">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
@@ -4241,59 +4264,13 @@ function DashboardPage() {
                 <small>{item.source.sourceName}</small>
               </a>
             ))}
-            {latestExternalSignalCity ? (
-              <div className="data-item">
-                <span className="eyebrow">{lang === "th" ? "Media hotspot" : "Media hotspot"}</span>
-                <strong>{localize(lang, latestExternalSignalCity.name)}</strong>
-                <small>{socialListening.mentionCount} mentions</small>
-              </div>
-            ) : null}
           </div>
           </section>
 
-          <section className="card overview-card projects">
-          <div className="card-header">
-            <span className="eyebrow">{copy.projects}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-              {filteredProjects.length}
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {overviewProjects.map((project) => (
-              <button key={project.id} type="button" className="data-item" onClick={() => focusCityWithLayer(project.citySlug, "projects")}>
-                <div className="stack-title">
-                  <strong>{localize(lang, project.title)}</strong>
-                  <span className={`status-tag ${project.status}`}>{project.status}</span>
-                </div>
-                <small>{localize(lang, project.nextMilestone)}</small>
-              </button>
-            ))}
-          </div>
-          </section>
-
-          <section className="card overview-card sources">
-          <div className="card-header">
-            <span className="eyebrow">{copy.apiWatch}</span>
-            <button type="button" className={`status-pill status-button api-${apiStatusLabel.toLowerCase()}`} onClick={() => setActiveTab("data")}>
-              {`${apiReadyCount}/${apiWatchSources.length}`}
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {overviewSources.map((source) => (
-              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{source.name}</strong>
-                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
-                </div>
-                <small>{source.message}</small>
-              </a>
-            ))}
-          </div>
-          </section>
-
+          {/* — Resilience: weather + pollution — */}
           <section className="card overview-card resilience">
           <div className="card-header">
-            <span className="eyebrow">{copy.resilience}</span>
+            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Environment"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
               {resilience.source.freshnessStatus}
             </button>
@@ -4304,46 +4281,47 @@ function DashboardPage() {
               <strong>{localize(lang, resilience.weatherSummary)}</strong>
             </div>
             <div className="data-item">
-              <span className="eyebrow">Pollution</span>
+              <span className="eyebrow">Air Quality</span>
               <strong>{localize(lang, resilience.pollutionSummary)}</strong>
             </div>
           </div>
+          </section>
+
+          {/* — Sources — */}
+          <section className="card overview-card sources">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
+            <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
+          </div>
           <div className="overview-inline-list">
-            {overviewWarnings.map((warning, index) => (
-              <div key={`${warning.en}-${index}`} className="data-item">
-                <small>{localize(lang, warning)}</small>
-              </div>
+            {overviewSources.map((source) => (
+              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{source.name}</strong>
+                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                </div>
+              </a>
             ))}
           </div>
           </section>
 
+          {/* — Satellite — */}
           <section className="card overview-card ranking">
           <div className="card-header">
-            <span className="eyebrow">SLIC Thailand</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-              {formatUtcClock(slicThailand.updatedAt)} UTC
+            <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
+              {activeSatelliteLayers.length} layers
             </button>
           </div>
-          <div className="overview-inline-list">
-            {slicTopCities.slice(0, 4).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="data-item"
-                onClick={() => {
-                  const mappedCitySlug = slicCitySlugMap[item.id];
-                  if (mappedCitySlug && knownCitySlugs.has(mappedCitySlug)) {
-                    focusCityWithLayer(mappedCitySlug, "smart-city-thailand");
-                  }
-                }}
-              >
-                <div className="stack-title">
-                  <strong>{lang === "th" ? item.nameTh || item.nameEn : item.nameEn}</strong>
-                  <span className="status-pill">#{item.rank}</span>
-                </div>
-                <small>{`${item.region} • ${item.overall}`}</small>
-              </button>
-            ))}
+          <div className="overview-hero-metrics">
+            <div className="data-item">
+              <span className="eyebrow">Mode</span>
+              <strong>{satelliteDigest.status.mode}</strong>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">Sync</span>
+              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+            </div>
           </div>
           </section>
         </section>
