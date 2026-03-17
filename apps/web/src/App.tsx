@@ -3693,27 +3693,40 @@ function DashboardPage() {
               <button type="button" className="chip" onClick={() => setLayerPaletteOpen(false)}>&times;</button>
             </div>
             <div className="palette-section">
-              <span className="eyebrow">{lang === "th" ? "ปฏิบัติการ" : "Operational"}</span>
+              <span className="palette-title">{lang === "th" ? "แผนที่ฐาน" : "Base Map"}</span>
+              <button type="button" className={basemap === "atlas" ? "palette-toggle active" : "palette-toggle"} onClick={() => updateParam("basemap", "atlas")}>
+                <span className="palette-dot" style={{ background: "#22c55e" }} />
+                <span>{lang === "th" ? "ถนน" : "Street"}</span>
+                <span className="palette-state">{basemap === "atlas" ? "ON" : "OFF"}</span>
+              </button>
+              <button type="button" className={basemap === "satellite" ? "palette-toggle active" : "palette-toggle"} onClick={() => updateParam("basemap", "satellite")}>
+                <span className="palette-dot" style={{ background: "#3b82f6" }} />
+                <span>{lang === "th" ? "ภาพถ่ายทางอากาศ" : "Aerial"}</span>
+                <span className="palette-state">{basemap === "satellite" ? "ON" : "OFF"}</span>
+              </button>
+            </div>
+            <div className="palette-section">
+              <span className="palette-title">{lang === "th" ? "ปฏิบัติการ" : "Operational"}</span>
               {operationalLayerOptions.map((layer) => {
                 const active = layers.includes(layer.id);
                 return (
                   <button key={layer.id} type="button" className={active ? "palette-toggle active" : "palette-toggle"} onClick={() => toggleLayer(layer.id)}>
-                    <span className="swatch" style={{ background: layer.color }} />
+                    <span className="palette-dot" style={{ background: layer.color }} />
                     <span>{localize(lang, layer.label)}</span>
-                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                    <span className="palette-state">{active ? "ON" : "OFF"}</span>
                   </button>
                 );
               })}
             </div>
             <div className="palette-section">
-              <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
+              <span className="palette-title">{lang === "th" ? "ดาวเทียม" : "Satellite Overlays"}</span>
               {satelliteToggleOptions.map((item) => {
                 const active = layers.includes(item.id);
                 return (
                   <button key={item.id} type="button" className={active ? "palette-toggle active" : "palette-toggle"} onClick={() => toggleSatelliteLayer(item.id)}>
-                    <span className="swatch" style={{ background: item.color }} />
+                    <span className="palette-dot" style={{ background: item.color }} />
                     <span>{localize(lang, item.label)}</span>
-                    <span className="toggle-state">{active ? "ON" : "OFF"}</span>
+                    <span className="palette-state">{active ? "ON" : "OFF"}</span>
                   </button>
                 );
               })}
@@ -3766,9 +3779,32 @@ function DashboardPage() {
         {/* SATELLITE TAB */}
         {activeTab === "satellite" ? (
           <div className="tab-overlay satellite-gallery">
+            {/* ── BASE MAP (single-select) ── */}
             <div className="sat-section-header">
-              <strong>{lang === "th" ? "ภาพดาวเทียมและ Earth Observation" : "Satellite & Earth Observation"}</strong>
-              <small>{satelliteDigest.status.message}</small>
+              <strong>{lang === "th" ? "แผนที่ฐาน" : "Base Map"}</strong>
+              <small>{lang === "th" ? "เลือกได้ 1 ชั้น" : "Select one"}</small>
+            </div>
+            <div className="sat-tile-grid">
+              {mapCompareCards.filter((c) => c.id === "street" || c.id === "aerial").map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  className={card.active ? "sat-preview-tile active" : "sat-preview-tile"}
+                  onClick={card.action}
+                >
+                  <img src={card.previewUrl} alt={localize(lang, card.title)} loading="lazy" />
+                  <span className="sat-tile-label">
+                    {localize(lang, card.title)}
+                    <span className="sat-toggle-dot" />
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* ── OVERLAY LAYERS (multi-select, stacked on top) ── */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ชั้นข้อมูลซ้อนทับ" : "Overlay Layers"}</strong>
+              <small>{activeSatelliteLayers.length > 0 ? `${activeSatelliteLayers.length} active` : lang === "th" ? "เลือกได้หลายชั้น" : "Select multiple"}</small>
             </div>
             <div className="satellite-metrics-strip">
               {satelliteMetrics.map((metric) => (
@@ -3777,13 +3813,9 @@ function DashboardPage() {
                   <strong>{metric.displayValue}</strong>
                 </div>
               ))}
-              <div className="sat-metric">
-                <span className="eyebrow">{lang === "th" ? "ชั้นภาพ" : "Layers"}</span>
-                <strong>{activeSatelliteLayers.length}</strong>
-              </div>
             </div>
             <div className="sat-tile-grid">
-              {mapCompareCards.map((card) => (
+              {mapCompareCards.filter((c) => c.id !== "street" && c.id !== "aerial").map((card) => (
                 <button
                   key={card.id}
                   type="button"
@@ -3791,12 +3823,17 @@ function DashboardPage() {
                   onClick={card.action}
                 >
                   <img src={card.previewUrl} alt={localize(lang, card.title)} loading="lazy" />
-                  <span className="sat-tile-label">{localize(lang, card.title)}</span>
+                  <span className="sat-tile-label">
+                    {localize(lang, card.title)}
+                    <span className="sat-toggle-dot" />
+                  </span>
                 </button>
               ))}
             </div>
+
+            {/* ── EO PRESETS ── */}
             <div className="sat-section-header">
-              <strong>{lang === "th" ? "EO Watch" : "EO Watch"}</strong>
+              <strong>{lang === "th" ? "ชุดเฝ้าระวัง" : "Watch Presets"}</strong>
             </div>
             <div className="sat-tile-grid">
               {eoWatchItems.map((item) => (

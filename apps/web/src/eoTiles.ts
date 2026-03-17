@@ -11,6 +11,8 @@ export type EoLayerId =
 export interface EoTileConfig {
   id: EoLayerId;
   url: string;
+  /** Fallback URL using an older date if the primary date has no tiles yet */
+  fallbackUrl?: string;
   opacity: number;
   maxNativeZoom: number;
   attribution: string;
@@ -33,6 +35,7 @@ function isoDateOffset(days: number) {
 
 export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
   const yesterday = isoDateOffset(-1);
+  const twoDaysAgo = isoDateOffset(-2);
   const ndviDate = isoDateOffset(-10);
 
   return {
@@ -40,6 +43,7 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
     "eo-aerosol": {
       id: "eo-aerosol",
       url: gibsTileUrl("MODIS_Combined_Value_Added_AOD", yesterday, "GoogleMapsCompatible_Level6"),
+      fallbackUrl: gibsTileUrl("MODIS_Combined_Value_Added_AOD", twoDaysAgo, "GoogleMapsCompatible_Level6"),
       opacity: 0.54,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / MODIS",
@@ -48,6 +52,7 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
     "eo-precipitation": {
       id: "eo-precipitation",
       url: gibsTileUrl("IMERG_Precipitation_Rate", yesterday, "GoogleMapsCompatible_Level6"),
+      fallbackUrl: gibsTileUrl("IMERG_Precipitation_Rate", twoDaysAgo, "GoogleMapsCompatible_Level6"),
       opacity: 0.58,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / GPM IMERG",
@@ -56,6 +61,7 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
     "eo-vegetation": {
       id: "eo-vegetation",
       url: gibsTileUrl("MODIS_Terra_NDVI_8Day", ndviDate),
+      fallbackUrl: gibsTileUrl("MODIS_Terra_NDVI_8Day", isoDateOffset(-18)),
       opacity: 0.6,
       maxNativeZoom: 9,
       attribution: "NASA GIBS / MODIS Terra",
@@ -64,50 +70,55 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
 
     /* ── Extended international EO layers ── */
 
-    /* Soil moisture - SMAP (NASA/international ground-truth network) */
+    /* Soil moisture - SMAP */
     "eo-soil-moisture": {
       id: "eo-soil-moisture",
-      url: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", "default", "GoogleMapsCompatible_Level6"),
+      url: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", twoDaysAgo, "GoogleMapsCompatible_Level6"),
+      fallbackUrl: gibsTileUrl("SMAP_L3_Active_Passive_Soil_Moisture", isoDateOffset(-4), "GoogleMapsCompatible_Level6"),
       opacity: 0.5,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / SMAP",
       source: "NASA SMAP (USA)"
     },
 
-    /* Cloud phase infrared - MODIS Aqua (NASA, used by CMA/ISRO/Roshydromet) */
+    /* Cloud phase infrared - MODIS Aqua */
     "eo-cloud-phase": {
       id: "eo-cloud-phase",
       url: gibsTileUrl("MODIS_Aqua_Cloud_Phase_Infrared_Day", yesterday, "GoogleMapsCompatible_Level6"),
+      fallbackUrl: gibsTileUrl("MODIS_Aqua_Cloud_Phase_Infrared_Day", twoDaysAgo, "GoogleMapsCompatible_Level6"),
       opacity: 0.42,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / MODIS Aqua",
       source: "NASA MODIS Aqua (USA)"
     },
 
-    /* Snow/ice cover - MODIS Terra (critical for Himalayan watershed monitoring) */
+    /* Snow/ice cover - MODIS Terra */
     "eo-snow-cover": {
       id: "eo-snow-cover",
-      url: gibsTileUrl("MODIS_Terra_NDSI_Snow_Cover", "default", "GoogleMapsCompatible_Level8"),
+      url: gibsTileUrl("MODIS_Terra_NDSI_Snow_Cover", yesterday, "GoogleMapsCompatible_Level8"),
+      fallbackUrl: gibsTileUrl("MODIS_Terra_NDSI_Snow_Cover", twoDaysAgo, "GoogleMapsCompatible_Level8"),
       opacity: 0.55,
       maxNativeZoom: 8,
       attribution: "NASA GIBS / MODIS Terra",
       source: "NASA MODIS Terra (USA)"
     },
 
-    /* Thermal watch - raster infrared brightness layer that works in Leaflet tile mode */
+    /* Thermal watch - MODIS Aqua brightness temperature */
     "eo-fire-thermal": {
       id: "eo-fire-thermal",
-      url: gibsTileUrl("MODIS_Aqua_Brightness_Temp_Band31_Day", "default", "GoogleMapsCompatible_Level7"),
+      url: gibsTileUrl("MODIS_Aqua_Brightness_Temp_Band31_Day", yesterday, "GoogleMapsCompatible_Level7"),
+      fallbackUrl: gibsTileUrl("MODIS_Aqua_Brightness_Temp_Band31_Day", twoDaysAgo, "GoogleMapsCompatible_Level7"),
       opacity: 0.62,
       maxNativeZoom: 7,
       attribution: "NASA GIBS / MODIS Aqua",
       source: "NASA MODIS Aqua (USA)"
     },
 
-    /* Ocean chlorophyll concentration - MODIS Aqua (shared with ESA OC-CCI) */
+    /* Ocean chlorophyll concentration - MODIS Aqua */
     "eo-chlorophyll": {
       id: "eo-chlorophyll",
-      url: gibsTileUrl("MODIS_Aqua_L2_Chlorophyll_A", "default", "GoogleMapsCompatible_Level7"),
+      url: gibsTileUrl("MODIS_Aqua_L2_Chlorophyll_A", yesterday, "GoogleMapsCompatible_Level7"),
+      fallbackUrl: gibsTileUrl("MODIS_Aqua_L2_Chlorophyll_A", twoDaysAgo, "GoogleMapsCompatible_Level7"),
       opacity: 0.48,
       maxNativeZoom: 7,
       attribution: "NASA GIBS / MODIS Aqua",

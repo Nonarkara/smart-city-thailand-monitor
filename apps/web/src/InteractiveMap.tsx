@@ -194,52 +194,75 @@ const EO_LAYER_IDS: readonly EoLayerId[] = [
   "eo-fire-thermal",
   "eo-chlorophyll"
 ];
+function gibsSatUrl(layer: string, date: string, tileMatrix: string, format = "png") {
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/${tileMatrix}/{z}/{y}/{x}.${format}`;
+}
+
+function isoDateOffsetSat(days: number) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+const satYesterday = isoDateOffsetSat(-1);
+const satTwoDaysAgo = isoDateOffsetSat(-2);
+const satNdviDate = isoDateOffsetSat(-10);
+
 const satelliteLayerDefinitions: Record<
   SatelliteLayerId,
   {
     url: string;
+    fallbackUrl: string;
     opacity: number;
     maxZoom: number;
     attribution?: string;
   }
 > = {
   "satellite-imagery": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",
+    url: gibsSatUrl("MODIS_Terra_CorrectedReflectance_TrueColor", satYesterday, "GoogleMapsCompatible_Level9", "jpg"),
+    fallbackUrl: gibsSatUrl("MODIS_Terra_CorrectedReflectance_TrueColor", satTwoDaysAgo, "GoogleMapsCompatible_Level9", "jpg"),
     opacity: 0.92,
     maxZoom: 9
   },
   "satellite-vegetation": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_8Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
+    url: gibsSatUrl("MODIS_Terra_NDVI_8Day", satNdviDate, "GoogleMapsCompatible_Level9"),
+    fallbackUrl: gibsSatUrl("MODIS_Terra_NDVI_8Day", isoDateOffsetSat(-18), "GoogleMapsCompatible_Level9"),
     opacity: 0.58,
     maxZoom: 9
   },
   "satellite-aerosol": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/OMPS_NOAA20_NadirMapper_AerosolIndex_360_v2_NRT/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",
+    url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/OMPS_NOAA20_NadirMapper_AerosolIndex_360_v2_NRT/default/${satYesterday}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`,
+    fallbackUrl: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/OMPS_NOAA20_NadirMapper_AerosolIndex_360_v2_NRT/default/${satTwoDaysAgo}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`,
     opacity: 0.52,
     maxZoom: 6
   },
   "satellite-surface-temp": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_Land_Surface_Temp_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    url: gibsSatUrl("MODIS_Aqua_Land_Surface_Temp_Day", satYesterday, "GoogleMapsCompatible_Level7"),
+    fallbackUrl: gibsSatUrl("MODIS_Aqua_Land_Surface_Temp_Day", satTwoDaysAgo, "GoogleMapsCompatible_Level7"),
     opacity: 0.58,
     maxZoom: 7
   },
   "satellite-thermal": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Brightness_Temp_Band31_Day/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    url: gibsSatUrl("MODIS_Terra_Brightness_Temp_Band31_Day", satYesterday, "GoogleMapsCompatible_Level7"),
+    fallbackUrl: gibsSatUrl("MODIS_Terra_Brightness_Temp_Band31_Day", satTwoDaysAgo, "GoogleMapsCompatible_Level7"),
     opacity: 0.62,
     maxZoom: 7
   },
   "satellite-water-vapor": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Water_Vapor_5km_Day/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png",
+    url: gibsSatUrl("MODIS_Terra_Water_Vapor_5km_Day", satYesterday, "GoogleMapsCompatible_Level6"),
+    fallbackUrl: gibsSatUrl("MODIS_Terra_Water_Vapor_5km_Day", satTwoDaysAgo, "GoogleMapsCompatible_Level6"),
     opacity: 0.46,
     maxZoom: 6
   },
   "satellite-sea-surface-temp": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png",
+    url: gibsSatUrl("GHRSST_L4_MUR_Sea_Surface_Temperature", satYesterday, "GoogleMapsCompatible_Level7"),
+    fallbackUrl: gibsSatUrl("GHRSST_L4_MUR_Sea_Surface_Temperature", satTwoDaysAgo, "GoogleMapsCompatible_Level7"),
     opacity: 0.54,
     maxZoom: 7
   },
   "satellite-night-lights": {
-    url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png",
+    url: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/${satYesterday}/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png`,
+    fallbackUrl: `https://gibs.earthdata.nasa.gov/wmts/epsg3857/all/VIIRS_Black_Marble/default/${satTwoDaysAgo}/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png`,
     opacity: 0.5,
     maxZoom: 8
   }
@@ -990,14 +1013,24 @@ export default function InteractiveMap({
     jaxaFallbackRef.current = L.layerGroup();
 
     satelliteLayersRef.current = Object.fromEntries(
-      Object.entries(satelliteLayerDefinitions).map(([id, definition]) => [
-        id,
-        L.tileLayer(definition.url, {
+      Object.entries(satelliteLayerDefinitions).map(([id, definition]) => {
+        let triedFallback = false;
+        const layer = L.tileLayer(definition.url, {
           attribution: satelliteAttribution,
           opacity: definition.opacity,
-          maxZoom: definition.maxZoom
-        })
-      ])
+          maxZoom: 18,
+          maxNativeZoom: definition.maxZoom,
+          crossOrigin: true,
+          errorTileUrl: ""
+        });
+        layer.on("tileerror", () => {
+          if (!triedFallback && definition.fallbackUrl) {
+            triedFallback = true;
+            layer.setUrl(definition.fallbackUrl);
+          }
+        });
+        return [id, layer];
+      })
     ) as Partial<Record<SatelliteLayerId, L.TileLayer>>;
 
     mapRef.current = map;
@@ -1205,12 +1238,20 @@ export default function InteractiveMap({
         return;
       }
 
+      let eoTriedFallback = false;
       const nextLayer = L.tileLayer(config.url, {
         opacity: visuals.opacity,
         maxZoom: 18,
         maxNativeZoom: config.maxNativeZoom,
         attribution: config.attribution,
-        crossOrigin: true
+        crossOrigin: true,
+        errorTileUrl: ""
+      });
+      nextLayer.on("tileerror", () => {
+        if (!eoTriedFallback && config.fallbackUrl) {
+          eoTriedFallback = true;
+          nextLayer.setUrl(config.fallbackUrl);
+        }
       });
 
       nextLayer.addTo(map);
