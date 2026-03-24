@@ -33,7 +33,9 @@ import type {
   TimeRange,
   TimeSnapshot,
   WorkflowBoardStatus,
-  PublicCctvCamera
+  PublicCctvCamera,
+  ImpactArenaEvent,
+  MttTrafficSnapshot
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -3975,12 +3977,22 @@ export const auditTrail: AuditEventRecord[] = [
 
 export const socialListening: SocialListeningSnapshot = {
   updatedAt: seededAt,
-  mentionCount: 17,
-  sentimentScore: 18,
-  sourceCount: 6,
+  mentionCount: 142,
+  sentimentScore: 62,
+  sourceCount: 8,
   positiveShare: 0.59,
   dominantSource: "GDELT Signals",
-  topTerms: ["smart city", "thailand", "mobility", "resilience", "depa"],
+  topTerms: ["muang thong", "impact arena", "parking", "concert", "congestion", "expo", "shuttle", "flood"],
+  trendKeywords: [
+    { term: { th: "คอนเสิร์ต", en: "concert" }, count: 67, trend: "up", sentiment: "positive" },
+    { term: { th: "จอดรถ", en: "parking" }, count: 42, trend: "up", sentiment: "negative" },
+    { term: { th: "รถติด", en: "congestion" }, count: 31, trend: "up", sentiment: "negative" },
+    { term: { th: "งานแสดง", en: "expo" }, count: 24, trend: "steady", sentiment: "positive" },
+    { term: { th: "น้ำท่วม", en: "flood" }, count: 18, trend: "steady", sentiment: "neutral" },
+    { term: { th: "IMPACT", en: "IMPACT" }, count: 56, trend: "up", sentiment: "positive" },
+    { term: { th: "รถรับส่ง", en: "shuttle" }, count: 15, trend: "up", sentiment: "neutral" },
+    { term: { th: "อุบัติเหตุ", en: "accident" }, count: 5, trend: "down", sentiment: "negative" }
+  ],
   source: seedMeta("GDELT Signals", "https://api.gdeltproject.org/api/v2/doc/doc", "live")
 };
 
@@ -4767,6 +4779,123 @@ export const publicCctvCameras: PublicCctvCamera[] = [
   { id: "exat-007", cameraId: "EXAT-UD-02", label: { th: "ทางด่วนอุดรรัถยา ด่านเมืองทอง", en: "Udon Ratthaya Expressway - MTT Toll" }, source: "EXAT", lat: 13.9100, lon: 100.5555, imageUrl: "https://www.exat.co.th/cctv/UD_MTT01.jpg", status: "live", zone: "expressway-udonrat" },
   { id: "exat-008", cameraId: "EXAT-UD-03", label: { th: "ทางด่วนอุดรรัถยา ช่วงปากเกร็ด", en: "Udon Ratthaya Expressway - Pak Kret Section" }, source: "EXAT", lat: 13.9250, lon: 100.5480, imageUrl: "https://www.exat.co.th/cctv/UD_PK01.jpg", status: "live", zone: "expressway-udonrat" }
 ];
+
+/* ── IMPACT Arena Event Calendar ── */
+export const impactArenaEvents: ImpactArenaEvent[] = [
+  {
+    id: "evt-001",
+    title: { th: "BNK48 16th Single Senbatsu Concert", en: "BNK48 16th Single Senbatsu Concert" },
+    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    date: "2026-03-27",
+    timeStart: "18:00",
+    timeEnd: "22:00",
+    expectedCrowd: 11500,
+    category: "concert",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-002",
+    title: { th: "Thailand International Motor Expo", en: "Thailand International Motor Expo" },
+    venue: { th: "IMPACT Challenger", en: "IMPACT Challenger" },
+    date: "2026-03-28",
+    timeStart: "10:00",
+    timeEnd: "21:00",
+    expectedCrowd: 8000,
+    category: "expo",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-003",
+    title: { th: "ONE Championship: Fight Night", en: "ONE Championship: Fight Night" },
+    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    date: "2026-03-29",
+    timeStart: "17:00",
+    timeEnd: "23:00",
+    expectedCrowd: 10000,
+    category: "sport",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-004",
+    title: { th: "Commart Thailand 2026", en: "Commart Thailand 2026" },
+    venue: { th: "IMPACT Challenger 1-3", en: "IMPACT Challenger 1-3" },
+    date: "2026-03-30",
+    timeStart: "10:00",
+    timeEnd: "20:00",
+    expectedCrowd: 6500,
+    category: "expo",
+    parkingPressure: "moderate",
+    status: "confirmed"
+  },
+  {
+    id: "evt-005",
+    title: { th: "พิธีรับปริญญา ม.รังสิต", en: "Rangsit University Graduation" },
+    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    date: "2026-04-01",
+    timeStart: "08:00",
+    timeEnd: "16:00",
+    expectedCrowd: 9000,
+    category: "graduation",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-006",
+    title: { th: "Thailand Wedding Fair", en: "Thailand Wedding Fair" },
+    venue: { th: "IMPACT Hall 5-6", en: "IMPACT Hall 5-6" },
+    date: "2026-04-02",
+    timeStart: "10:00",
+    timeEnd: "19:00",
+    expectedCrowd: 3500,
+    category: "expo",
+    parkingPressure: "low",
+    status: "tentative"
+  }
+];
+
+/* ── MTT Traffic Corridors ── */
+export const mttTrafficSnapshot: MttTrafficSnapshot = {
+  updatedAt: seededAt,
+  corridors: [
+    {
+      id: "chaengwattana-inbound",
+      label: { th: "แจ้งวัฒนะ ขาเข้า", en: "Chaengwattana Inbound" },
+      status: "congested",
+      speedKmh: 14,
+      delayMinutes: 12,
+      trend: "up"
+    },
+    {
+      id: "tiwanon-outbound",
+      label: { th: "ติวานนท์ ขาออก", en: "Tiwanon Outbound" },
+      status: "moderate",
+      speedKmh: 28,
+      delayMinutes: 5,
+      trend: "steady"
+    },
+    {
+      id: "ngamwongwan-inbound",
+      label: { th: "งามวงศ์วาน ขาเข้า", en: "Ngamwongwan Inbound" },
+      status: "clear",
+      speedKmh: 52,
+      delayMinutes: 0,
+      trend: "down"
+    },
+    {
+      id: "impact-roundabout",
+      label: { th: "วงเวียน IMPACT", en: "IMPACT Roundabout" },
+      status: "moderate",
+      speedKmh: 18,
+      delayMinutes: 8,
+      trend: "steady"
+    }
+  ],
+  overallStatus: "moderate",
+  source: seedMeta("ITIC / Longdo Traffic", "https://traffic.longdo.com", "live")
+};
 
 export function localize(locale: Locale, value: { th: string; en: string }): string {
   return value[locale];

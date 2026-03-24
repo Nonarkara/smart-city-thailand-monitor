@@ -214,6 +214,13 @@ export interface ActivityLogItem {
   status: FreshnessStatus;
 }
 
+export interface TrendKeyword {
+  term: LocalizedText;
+  count: number;
+  trend: TrendDirection;
+  sentiment: "positive" | "neutral" | "negative";
+}
+
 export interface SocialListeningSnapshot {
   updatedAt: string;
   mentionCount: number;
@@ -222,6 +229,7 @@ export interface SocialListeningSnapshot {
   positiveShare: number;
   dominantSource: string;
   topTerms: string[];
+  trendKeywords?: TrendKeyword[];
   source: SourceMeta;
 }
 
@@ -540,4 +548,39 @@ export interface CommandCenterSnapshot {
   workflowBoards: WorkflowBoardStatus[];
   fusionQueue: FusionQueueItem[];
   expansionTracks: ExpansionTrack[];
+}
+
+/* ── IMPACT Arena & Venue Events ── */
+export type EventCategory = "concert" | "expo" | "convention" | "sport" | "graduation" | "other";
+
+export interface ImpactArenaEvent {
+  id: string;
+  title: LocalizedText;
+  venue: LocalizedText;
+  date: string;
+  timeStart: string;
+  timeEnd: string;
+  expectedCrowd: number;
+  category: EventCategory;
+  parkingPressure: "low" | "moderate" | "high";
+  status: "confirmed" | "tentative" | "cancelled";
+}
+
+/* ── MTT Traffic Corridors ── */
+export type TrafficCorridorStatus = "clear" | "moderate" | "congested" | "blocked";
+
+export interface TrafficCorridor {
+  id: string;
+  label: LocalizedText;
+  status: TrafficCorridorStatus;
+  speedKmh: number;
+  delayMinutes: number;
+  trend: TrendDirection;
+}
+
+export interface MttTrafficSnapshot {
+  updatedAt: string;
+  corridors: TrafficCorridor[];
+  overallStatus: TrafficCorridorStatus;
+  source: SourceMeta;
 }

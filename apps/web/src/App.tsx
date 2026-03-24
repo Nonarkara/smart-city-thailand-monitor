@@ -20,7 +20,9 @@ import {
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
-  sources as sourceSeed
+  sources as sourceSeed,
+  impactArenaEvents as impactArenaEventsSeed,
+  mttTrafficSnapshot as mttTrafficSnapshotSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -49,7 +51,10 @@ import type {
   SocialListeningSnapshot,
   SourceRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  ImpactArenaEvent,
+  MttTrafficSnapshot,
+  TrendKeyword
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -300,6 +305,193 @@ interface ReporterSampleTemplate {
   minutesAgo: number;
   targetLayers: string[];
 }
+
+interface MttCameraCoverageDefinition {
+  id: string;
+  label: LocalizedText;
+  detail: LocalizedText;
+  watch: LocalizedText;
+  zones: string[];
+  tone: "alert" | "watch" | "stable";
+  targetLayers: string[];
+}
+
+interface MttCameraRecipeDefinition {
+  sampleId: string;
+  zones: string[];
+  objects: LocalizedText[];
+  prompt: LocalizedText;
+  targetLayers: string[];
+}
+
+const MTT_CAMERA_CORE = Object.freeze({
+  lat: 13.912,
+  lon: 100.548
+});
+
+const MTT_CAMERA_ZONE_PRIORITY = [
+  "impact",
+  "mtt-entrance",
+  "mtt-central",
+  "mtt-lake",
+  "mtt-popular",
+  "mtt-bridge",
+  "mtt-junction",
+  "mtt-bond-street",
+  "expressway-udonrat",
+  "chaeng-watthana"
+] as const;
+
+const MTT_STREAM_PRIORITY_CAMERA_IDS = ["CAMPK028", "CAMPK033", "CAMPK037", "CAMPK019", "CAMPK058", "CAMPK032"] as const;
+
+const MTT_CAMERA_ZONE_LABELS: Record<string, LocalizedText> = {
+  impact: { th: "โซน IMPACT", en: "IMPACT campus" },
+  "mtt-entrance": { th: "ประตูเข้าเมืองทอง", en: "Muang Thong gates" },
+  "mtt-central": { th: "แกนกลางเมืองทอง", en: "Muang Thong core" },
+  "mtt-lake": { th: "ริมทะเลสาบ", en: "Lakefront edge" },
+  "mtt-popular": { th: "ถ.ป๊อปปูล่า", en: "Popular Road" },
+  "mtt-bridge": { th: "สะพานเมืองทอง", en: "Muang Thong bridges" },
+  "mtt-junction": { th: "แยกหน้าเมืองทอง", en: "Muang Thong junction" },
+  "mtt-bond-street": { th: "ถ.บอนด์สตรีท", en: "Bond Street" },
+  "expressway-udonrat": { th: "ทางด่วนอุดรรัถยา", en: "Udon Ratthaya expressway" },
+  "chaeng-watthana": { th: "แนวแจ้งวัฒนะ", en: "Chaeng Watthana approach" }
+};
+
+const MTT_CAMERA_COVERAGE_DEFS: MttCameraCoverageDefinition[] = [
+  {
+    id: "event-ingress",
+    label: { th: "Ingress / Drop-off", en: "Ingress / Drop-off" },
+    detail: {
+      th: "IMPACT, วงเวียน, และประตู T1/T2 ต้องอ่าน queue กับ dwell time พร้อมกัน",
+      en: "IMPACT frontage, the roundabout, and T1/T2 gates should be read together for queue and dwell time."
+    },
+    watch: {
+      th: "นับรถจอดแช่ รถรับส่งค้าง และการคืนตัวของ lane",
+      en: "Track curb dwell, shuttle blockage, and lane recovery."
+    },
+    zones: ["impact", "mtt-entrance", "mtt-central"],
+    tone: "alert",
+    targetLayers: ["cctv-cameras", "itic-traffic", "projects", "mtt-grid"]
+  },
+  {
+    id: "bridge-fabric",
+    label: { th: "Bridge / Popular", en: "Bridge / Popular" },
+    detail: {
+      th: "สะพานเมืองทอง, Popular, Bond Street และจุดต่อเชื่อมคือผืนเดียวกัน",
+      en: "The bridge ramps, Popular Road, Bond Street, and the junction behave like one operational fabric."
+    },
+    watch: {
+      th: "จับรถย้อนศร, spillback, และมอเตอร์ไซค์ weaving",
+      en: "Catch wrong-way moves, spillback, and motorcycle weaving."
+    },
+    zones: ["mtt-bridge", "mtt-popular", "mtt-junction", "mtt-bond-street"],
+    tone: "watch",
+    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
+  },
+  {
+    id: "lake-edge",
+    label: { th: "Lake Edge", en: "Lake Edge" },
+    detail: {
+      th: "ขอบทะเลสาบต้องดูน้ำขัง, ควัน, และการเดินเท้าตอนกลางคืนร่วมกัน",
+      en: "The lake edge should read standing water, smoke, and night-time pedestrian movement together."
+    },
+    watch: {
+      th: "มองน้ำขัง, plume ควัน, และจุดอับแสงรอบทางเดิน",
+      en: "Watch pooling, smoke plumes, and low-light walkway conflicts."
+    },
+    zones: ["mtt-lake"],
+    tone: "stable",
+    targetLayers: ["cctv-cameras", "water", "weather", "resilience", "mtt-grid"]
+  },
+  {
+    id: "regional-arrival",
+    label: { th: "Regional Arrival", en: "Regional Arrival" },
+    detail: {
+      th: "แจ้งวัฒนะและทางด่วนคือสัญญาณล่วงหน้าก่อนคอขวดในพื้นที่จัดงาน",
+      en: "Chaeng Watthana and the expressway are the lead indicators before venue bottlenecks materialize."
+    },
+    watch: {
+      th: "ดู toll discharge, queue build-up, และ inbound surge ก่อนชน gate",
+      en: "Read toll discharge, queue build-up, and inbound surges before they hit the gates."
+    },
+    zones: ["expressway-udonrat", "chaeng-watthana"],
+    tone: "watch",
+    targetLayers: ["cctv-cameras", "itic-traffic", "projects"]
+  }
+];
+
+const MTT_CAMERA_RECIPE_DEFS: MttCameraRecipeDefinition[] = [
+  {
+    sampleId: "camera-impact-dropoff",
+    zones: ["impact", "mtt-entrance"],
+    objects: [
+      { th: "รถจอดแช่", en: "Long-dwell vehicles" },
+      { th: "รถรับส่ง", en: "Shuttle buses" },
+      { th: "ช่อง curb", en: "Curb lane occupancy" }
+    ],
+    prompt: {
+      th: "ตัวอย่าง AI สำหรับนับ dwell time หน้า Hall และเตือนก่อนรถล้นลูป",
+      en: "AI sample for curb dwell timing and pre-queue alerts at the hall frontage."
+    },
+    targetLayers: ["cctv-cameras", "itic-traffic", "projects", "mtt-grid"]
+  },
+  {
+    sampleId: "camera-beehive-incident",
+    zones: ["mtt-bond-street", "mtt-popular", "mtt-junction"],
+    objects: [
+      { th: "รถหยุดผิดปกติ", en: "Abnormal stop" },
+      { th: "ขอบ crowd", en: "Crowd edge" },
+      { th: "จุดชนเล็ก", en: "Minor crash signature" }
+    ],
+    prompt: {
+      th: "ใช้กล้องต่อเนื่องเพื่อตรวจ stop pattern และ crowd spillback หลังฝน",
+      en: "Use continuous camera reads to catch stop patterns and crowd spillback after rain."
+    },
+    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
+  },
+  {
+    sampleId: "camera-cosmo-sidewalk",
+    zones: ["mtt-central", "impact"],
+    objects: [
+      { th: "คนล้นทางเท้า", en: "Pedestrian spillover" },
+      { th: "ร้านล้ำแนวเดิน", en: "Vendor overspill" },
+      { th: "แนวจอดรถ", en: "Curb conflict" }
+    ],
+    prompt: {
+      th: "ตัวอย่าง AI เพื่ออ่านความหนาแน่นคนและ lane conflict รอบหน้าศูนย์กิจกรรม",
+      en: "AI sample for reading pedestrian density and curb conflict around event frontage."
+    },
+    targetLayers: ["cctv-cameras", "itic-traffic", "mtt-grid"]
+  },
+  {
+    sampleId: "camera-p2-wrong-way",
+    zones: ["mtt-bridge", "mtt-junction", "mtt-popular"],
+    objects: [
+      { th: "รถย้อนศร", en: "Wrong-way movement" },
+      { th: "คิวสะพาน", en: "Bridge queue" },
+      { th: "ช่อง feeder", en: "Feeder lane flow" }
+    ],
+    prompt: {
+      th: "ตัวอย่าง AI สำหรับจับพฤติกรรมรถย้อนศรและ spillback จากสะพานกลับเข้า Popular",
+      en: "AI sample for wrong-way behavior and spillback from the bridge back into Popular."
+    },
+    targetLayers: ["cctv-cameras", "itic-traffic", "weather", "mtt-grid"]
+  },
+  {
+    sampleId: "camera-lakefront-smoke",
+    zones: ["mtt-lake"],
+    objects: [
+      { th: "ควัน", en: "Smoke plume" },
+      { th: "น้ำขัง", en: "Water pooling" },
+      { th: "จุดร้อน", en: "Heat source" }
+    ],
+    prompt: {
+      th: "ตัวอย่าง AI สำหรับ smoke / water / thermal watch ริมทะเลสาบและทางเดิน",
+      en: "AI sample for smoke, water, and thermal watch along the lake edge and walkways."
+    },
+    targetLayers: ["cctv-cameras", "water", "weather", "resilience", "mtt-grid"]
+  }
+];
 
 const importedLayerReferences: ImportedLayerReference[] = [
   {
@@ -1753,6 +1945,65 @@ function normalizeCitySlug(value?: string) {
   }
 
   return value.toLowerCase().replace(/\s+/g, "-");
+}
+
+function titleCaseSlug(value: string) {
+  return value
+    .split("-")
+    .filter(Boolean)
+    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+    .join(" ");
+}
+
+function getMttZoneLabel(zone: string): LocalizedText {
+  return MTT_CAMERA_ZONE_LABELS[zone] ?? {
+    th: titleCaseSlug(zone),
+    en: titleCaseSlug(zone)
+  };
+}
+
+function getMttCameraDistanceKm(lat: number, lon: number) {
+  const latDiffKm = (lat - MTT_CAMERA_CORE.lat) * 111;
+  const lonDiffKm = (lon - MTT_CAMERA_CORE.lon) * 107;
+  return Math.hypot(latDiffKm, lonDiffKm);
+}
+
+function formatDistanceLabel(distanceKm: number, locale: Locale) {
+  if (!Number.isFinite(distanceKm)) {
+    return locale === "th" ? "ระยะไม่ทราบ" : "Distance unknown";
+  }
+
+  if (distanceKm < 1) {
+    return locale === "th"
+      ? `${Math.round(distanceKm * 1000)} ม.`
+      : `${Math.round(distanceKm * 1000)} m`;
+  }
+
+  return locale === "th" ? `${distanceKm.toFixed(1)} กม.` : `${distanceKm.toFixed(1)} km`;
+}
+
+function getPublicCameraPreviewFallbackUrl(camera: PublicCctvCamera) {
+  if (camera.cameraId.startsWith("CAMPK")) {
+    return `https://camera1.iticfoundation.org/jpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
+  }
+
+  return camera.imageUrl;
+}
+
+function getPublicCameraFeedUrl(camera: PublicCctvCamera) {
+  if (camera.cameraId.startsWith("CAMPK")) {
+    return `https://camera1.iticfoundation.org/mjpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
+  }
+
+  return camera.previewUrl ?? camera.imageUrl;
+}
+
+function getPublicCameraLiveImageUrl(camera: PublicCctvCamera) {
+  if (camera.cameraId.startsWith("CAMPK")) {
+    return `https://camera1.iticfoundation.org/mjpeg2.php?camid=${encodeURIComponent(camera.cameraId)}`;
+  }
+
+  return camera.previewUrl ?? camera.imageUrl;
 }
 
 const cityFeatureAliases: Record<string, string[]> = {
@@ -3241,6 +3492,105 @@ function DashboardPage() {
   const sensorFeeds = commandCenter.sensorFeeds;
   const openReporterCount = reporterSamples.filter((item) => item.status !== "completed").length;
   const escalatedCctvCount = cctvSamples.filter((item) => item.severity === "alert").length;
+  const mttCameraFocus = useMemo(() => {
+    const zoneRank = new Map<string, number>(MTT_CAMERA_ZONE_PRIORITY.map((zone, index) => [zone, index]));
+
+    const orderedCameras = publicCctvCameras
+      .map((camera) => {
+        const coverage =
+          MTT_CAMERA_COVERAGE_DEFS.find((definition) => definition.zones.includes(camera.zone)) ?? null;
+
+        return {
+          ...camera,
+          distanceKm: getMttCameraDistanceKm(camera.lat, camera.lon),
+          zoneLabel: getMttZoneLabel(camera.zone),
+          targetLayers: coverage?.targetLayers ?? ["cctv-cameras", "itic-traffic", "mtt-grid"]
+        };
+      })
+      .sort((left, right) => {
+        const leftStatusRank = left.status === "live" ? 0 : left.status === "unknown" ? 1 : 2;
+        const rightStatusRank = right.status === "live" ? 0 : right.status === "unknown" ? 1 : 2;
+
+        if (leftStatusRank !== rightStatusRank) {
+          return leftStatusRank - rightStatusRank;
+        }
+
+        const leftZoneRank = zoneRank.get(left.zone) ?? 99;
+        const rightZoneRank = zoneRank.get(right.zone) ?? 99;
+        if (leftZoneRank !== rightZoneRank) {
+          return leftZoneRank - rightZoneRank;
+        }
+
+        return left.distanceKm - right.distanceKm;
+      });
+
+    const relevant = orderedCameras.filter((camera) => zoneRank.has(camera.zone) || camera.distanceKm <= 6);
+    const cameras = (relevant.length > 0 ? relevant : orderedCameras).slice(0, 16);
+    const liveCount = cameras.filter((camera) => camera.status === "live").length;
+    const sourceCount = new Set(cameras.map((camera) => camera.source)).size;
+    const zoneCount = new Set(cameras.map((camera) => camera.zone)).size;
+    const lastCheckedAt =
+      [...cameras]
+        .map((camera) => camera.lastCheckedAt)
+        .filter((value): value is string => Boolean(value))
+        .sort((left, right) => right.localeCompare(left))[0] ?? "";
+
+    const coverageBoards = MTT_CAMERA_COVERAGE_DEFS.map((definition) => {
+      const groupedCameras = cameras.filter((camera) => definition.zones.includes(camera.zone));
+
+      return {
+        ...definition,
+        cameras: groupedCameras,
+        liveCount: groupedCameras.filter((camera) => camera.status === "live").length,
+        sourceCount: new Set(groupedCameras.map((camera) => camera.source)).size,
+        primaryCamera: groupedCameras[0] ?? null
+      };
+    }).filter((board) => board.cameras.length > 0);
+
+    const recipeCards = MTT_CAMERA_RECIPE_DEFS.flatMap((definition) => {
+      const sample = cctvSamples.find((item) => item.id === definition.sampleId);
+      if (!sample) {
+        return [];
+      }
+
+      const camera =
+        cameras.find((candidate) => definition.zones.includes(candidate.zone)) ??
+        cameras[0] ??
+        null;
+
+      return [
+        {
+          sample,
+          camera,
+          objects: definition.objects,
+          prompt: definition.prompt,
+          targetLayers: Array.from(new Set(["cctv-cameras", "mtt-grid", ...sample.targetLayers, ...definition.targetLayers]))
+        }
+      ];
+    });
+
+    const heroCameras = MTT_STREAM_PRIORITY_CAMERA_IDS.map((cameraId) =>
+      cameras.find((camera) => camera.cameraId === cameraId && camera.status === "live")
+    )
+      .filter((camera): camera is (typeof cameras)[number] => Boolean(camera))
+      .slice(0, 4);
+
+    const resolvedHeroCameras =
+      heroCameras.length > 0
+        ? heroCameras
+        : cameras.filter((camera) => camera.status === "live").slice(0, 4);
+
+    return {
+      cameras,
+      heroCameras: resolvedHeroCameras,
+      liveCount,
+      sourceCount,
+      zoneCount,
+      lastCheckedAt,
+      coverageBoards,
+      recipeCards
+    };
+  }, [cctvSamples, publicCctvCameras]);
   const integrationBoards = commandCenter.workflowBoards.map((item) => ({
     ...item,
     title: localize(lang, item.title),
@@ -3254,6 +3604,15 @@ function DashboardPage() {
   const commandConnectors = commandCenter.connectors;
   const connectorReadyCount = commandConnectors.filter((item) => item.status === "live" || item.status === "ready").length;
   const expansionTracks = commandCenter.expansionTracks;
+  const focusMttScene = (targetLayers: string[]) => {
+    applyDashboardScene({
+      view: "city",
+      city: "muang-thong-thani",
+      basemap: "atlas",
+      layers: Array.from(new Set([...layers, "cctv-cameras", "mtt-grid", ...targetLayers]))
+    });
+    setActiveTab("map");
+  };
   const layerRailSections = [
     {
       id: "base",
@@ -4103,58 +4462,226 @@ function DashboardPage() {
         {activeTab === "cctv" ? (
           <div className="tab-overlay cctv-gallery">
             <div className="sat-section-header">
-              <strong>{lang === "th" ? "กล้อง CCTV สาธารณะ" : "Public CCTV Cameras"}</strong>
-              <small>{`${publicCctvCameras.length} cameras · ${cctvSamples.filter((c) => c.severity === "alert").length} alerts`}</small>
+              <strong>{lang === "th" ? "เครือข่ายกล้องสาธารณะ เมืองทองธานี" : "Muang Thong Public Camera Grid"}</strong>
+              <small>
+                {lang === "th"
+                  ? `${mttCameraFocus.liveCount}/${mttCameraFocus.cameras.length} ออนไลน์ · ${mttCameraFocus.sourceCount} แหล่งข้อมูล`
+                  : `${mttCameraFocus.liveCount}/${mttCameraFocus.cameras.length} live · ${mttCameraFocus.sourceCount} public sources`}
+              </small>
             </div>
-            <div className="cctv-event-grid">
-              {cctvSamples.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`cctv-event-card severity-${item.severity}`}
-                  onClick={() => {
-                    applyDashboardScene({
-                      view: "city",
-                      city: selectedCity.slug,
-                      basemap: "atlas",
-                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
-                    });
-                    setActiveTab("map");
-                  }}
-                >
-                  <div className="cctv-event-head">
-                    <span className="eyebrow">{item.cameraId}</span>
-                    <span className={`status-tag ${item.severity === "alert" ? "delayed" : item.severity === "watch" ? "watch" : "live"}`}>{item.severity}</span>
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ฟีดเคลื่อนไหวตอนนี้" : "Live Streams Now"}</strong>
+              <small>
+                {lang === "th"
+                  ? "ฟีด MJPEG จากกล้องสาธารณะในพื้นที่เมืองทองจริง"
+                  : "Actual MJPEG public-camera feeds from the Muang Thong area."}
+              </small>
+            </div>
+            <div className="cctv-stream-grid">
+              {mttCameraFocus.heroCameras.map((cam) => (
+                <article key={cam.id} className="cctv-stream-card">
+                  <div className="cctv-stream-frame">
+                    <img
+                      src={getPublicCameraLiveImageUrl(cam)}
+                      alt={localize(lang, cam.label)}
+                      loading="eager"
+                      referrerPolicy="no-referrer"
+                      data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
+                      onError={(event) => {
+                        const next = event.currentTarget.dataset.fallback ?? "";
+                        if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
+                          event.currentTarget.classList.add("is-failed");
+                          return;
+                        }
+
+                        event.currentTarget.dataset.fallbackApplied = "true";
+                        event.currentTarget.src = next;
+                      }}
+                    />
                   </div>
-                  <strong>{localize(lang, item.detection)}</strong>
-                  <small>{localize(lang, item.zone)}</small>
-                  <div className="signal-meta">
-                    <span>{`${formatConfidence(item.confidence)}`}</span>
-                    <span>{item.model}</span>
+                  <div className="cctv-stream-body">
+                    <div className="cctv-event-head">
+                      <span className="eyebrow">{cam.cameraId}</span>
+                      <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                    </div>
+                    <strong>{localize(lang, cam.label)}</strong>
+                    <small>{`${localize(lang, cam.zoneLabel)} · ${formatDistanceLabel(cam.distanceKm, lang)}`}</small>
+                    <a className="cctv-inline-link" href={getPublicCameraFeedUrl(cam)} target="_blank" rel="noreferrer">
+                      {lang === "th" ? "เปิดฟีดเต็ม" : "Open full feed"}
+                    </a>
                   </div>
-                </button>
+                </article>
               ))}
             </div>
-            {publicCctvCameras.length > 0 ? (
+            <div className="cctv-metrics-strip">
+              <div className="cctv-metric">
+                <span className="eyebrow">LIVE NOW</span>
+                <strong>{mttCameraFocus.liveCount}</strong>
+                <small>{lang === "th" ? "ฟีดที่ probe แล้วพร้อมใช้งาน" : "Feeds that probed live."}</small>
+              </div>
+              <div className="cctv-metric">
+                <span className="eyebrow">ZONES</span>
+                <strong>{mttCameraFocus.zoneCount}</strong>
+                <small>{lang === "th" ? "ครอบคลุมทางเข้า สะพาน และริมทะเลสาบ" : "Ingress, bridge, and lake edge covered."}</small>
+              </div>
+              <div className="cctv-metric">
+                <span className="eyebrow">AI SAMPLES</span>
+                <strong>{mttCameraFocus.recipeCards.length}</strong>
+                <small>{lang === "th" ? "ตัวอย่าง object tracking พร้อมใช้" : "Object-tracking samples ready to demo."}</small>
+              </div>
+              <div className="cctv-metric">
+                <span className="eyebrow">LAST CHECK</span>
+                <strong>{formatUtcClock(mttCameraFocus.lastCheckedAt)} UTC</strong>
+                <small>{lang === "th" ? "probe ล่าสุดของชุดกล้องเมืองทอง" : "Latest probe across the Muang Thong set."}</small>
+              </div>
+            </div>
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ตัวอย่าง AI watchlist" : "AI Watch Samples"}</strong>
+              <small>
+                {lang === "th"
+                  ? "จับวัตถุและพฤติกรรมที่มีผลต่อคอขวดในพื้นที่จริง"
+                  : "Track the objects and behaviors that matter in the actual venue fabric."}
+              </small>
+            </div>
+            <div className="cctv-ai-grid">
+              {mttCameraFocus.recipeCards.map((recipe) => (
+                <article key={recipe.sample.id} className={`cctv-ai-card severity-${recipe.sample.severity}`}>
+                  <div className="cctv-event-head">
+                    <span className="eyebrow">{recipe.camera ? recipe.camera.cameraId : recipe.sample.cameraId}</span>
+                    <span className={`status-tag ${recipe.sample.severity === "alert" ? "delayed" : recipe.sample.severity === "watch" ? "watch" : "live"}`}>
+                      {recipe.sample.severity}
+                    </span>
+                  </div>
+                  <strong>{localize(lang, recipe.sample.detection)}</strong>
+                  <small>
+                    {recipe.camera
+                      ? `${localize(lang, recipe.camera.label)} · ${localize(lang, recipe.camera.zoneLabel)}`
+                      : localize(lang, recipe.sample.zone)}
+                  </small>
+                  <p>{localize(lang, recipe.prompt)}</p>
+                  <div className="signal-meta">
+                    <span>{formatConfidence(recipe.sample.confidence)}</span>
+                    <span>{recipe.sample.model}</span>
+                    <span>{localize(lang, recipe.sample.status)}</span>
+                  </div>
+                  <div className="cctv-ai-tags">
+                    {recipe.objects.map((item) => (
+                      <span key={`${recipe.sample.id}-${item.en}`}>{localize(lang, item)}</span>
+                    ))}
+                  </div>
+                  <div className="cctv-action-row">
+                    <button type="button" onClick={() => focusMttScene(recipe.targetLayers)}>
+                      {lang === "th" ? "เปิดบนแผนที่" : "Map context"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "บอร์ดครอบคลุมพื้นที่" : "Coverage Boards"}</strong>
+              <small>
+                {lang === "th"
+                  ? "จับกล้องเป็นชุดตาม logic หน้างานจริง"
+                  : "Group cameras by the operational logic that matters on the ground."}
+              </small>
+            </div>
+            <div className="cctv-summary-grid">
+              {mttCameraFocus.coverageBoards.map((board) => (
+                <article key={board.id} className={`cctv-summary-card tone-${board.tone}`}>
+                  <div className="cctv-event-head">
+                    <span className="eyebrow">{`${board.liveCount}/${board.cameras.length} live`}</span>
+                    <span className={`status-tag ${board.tone === "alert" ? "delayed" : board.tone === "watch" ? "watch" : "live"}`}>{board.tone}</span>
+                  </div>
+                  <strong>{localize(lang, board.label)}</strong>
+                  <p>{localize(lang, board.detail)}</p>
+                  <div className="cctv-summary-meta">
+                    <span>{localize(lang, board.watch)}</span>
+                    <span>
+                      {board.primaryCamera
+                        ? localize(lang, board.primaryCamera.label)
+                        : lang === "th"
+                          ? "รอกล้อง"
+                          : "Awaiting camera"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {mttCameraFocus.cameras.length > 0 ? (
               <>
                 <div className="sat-section-header">
-                  <strong>{lang === "th" ? "กล้องสด" : "Live Cameras"}</strong>
-                  <small>{`${publicCctvCameras.filter((c) => c.status === "live").length} online`}</small>
+                  <strong>{lang === "th" ? "กล้องสดในวงแหวนเมืองทอง" : "Live Cameras Around Muang Thong"}</strong>
+                  <small>
+                    {lang === "th"
+                      ? `${mttCameraFocus.sourceCount} แหล่งสาธารณะ · พร้อมเดโม object tracking`
+                      : `${mttCameraFocus.sourceCount} public sources · ready for object-tracking demos`}
+                  </small>
                 </div>
-                <div className="cctv-event-grid">
-                  {publicCctvCameras.slice(0, 12).map((cam) => (
-                    <article key={cam.id} className={`cctv-event-card cam-status-${cam.status}`}>
-                      <div className="cctv-event-head">
-                        <span className="eyebrow">{cam.cameraId}</span>
-                        <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                <div className="cctv-live-grid">
+                  {mttCameraFocus.cameras.slice(0, 12).map((cam) => (
+                    <article key={cam.id} className={`cctv-live-card cam-status-${cam.status}`}>
+                      <div className="cctv-live-frame">
+                        <img
+                          src={cam.previewUrl ?? cam.imageUrl}
+                          alt={localize(lang, cam.label)}
+                          loading="lazy"
+                          data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
+                          onError={(event) => {
+                            const next = event.currentTarget.dataset.fallback ?? "";
+                            if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
+                              event.currentTarget.classList.add("is-failed");
+                              return;
+                            }
+
+                            event.currentTarget.dataset.fallbackApplied = "true";
+                            event.currentTarget.src = next;
+                          }}
+                        />
                       </div>
-                      <strong>{localize(lang, cam.label)}</strong>
-                      <small>{cam.source} · {cam.zone}</small>
+                      <div className="cctv-live-body">
+                        <div className="cctv-event-head">
+                          <span className="eyebrow">{cam.cameraId}</span>
+                          <span className={`status-tag ${cam.status === "live" ? "live" : cam.status === "offline" ? "delayed" : "manual"}`}>{cam.status}</span>
+                        </div>
+                        <strong>{localize(lang, cam.label)}</strong>
+                        <small>{cam.source}</small>
+                        <div className="cctv-live-meta">
+                          <span>{localize(lang, cam.zoneLabel)}</span>
+                          <span>{formatDistanceLabel(cam.distanceKm, lang)}</span>
+                          <span>
+                            {cam.lastCheckedAt
+                              ? `${lang === "th" ? "เช็ก" : "Checked"} ${formatUtcClock(cam.lastCheckedAt)} UTC`
+                              : lang === "th"
+                                ? "รอ probe"
+                                : "Probe pending"}
+                          </span>
+                        </div>
+                        <div className="cctv-action-row">
+                          <a href={getPublicCameraFeedUrl(cam)} target="_blank" rel="noreferrer">
+                            {lang === "th" ? "เปิดฟีด" : "Open feed"}
+                          </a>
+                          <button type="button" onClick={() => focusMttScene(cam.targetLayers)}>
+                            {lang === "th" ? "ดูบนแผนที่" : "Map"}
+                          </button>
+                        </div>
+                      </div>
                     </article>
                   ))}
                 </div>
               </>
-            ) : null}
+            ) : (
+              <div className="cctv-empty-state">
+                <strong>{lang === "th" ? "ยังไม่มีกล้องที่โหลดได้" : "No public cameras loaded yet"}</strong>
+                <small>
+                  {lang === "th"
+                    ? "ระบบจะ fallback ไปที่ seed และ probe ใหม่เมื่อ API พร้อม"
+                    : "The dashboard will fall back to the seeded set and probe again when the API is ready."}
+                </small>
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -4449,171 +4976,261 @@ function DashboardPage() {
         </div>
 
         <section className="overview-shell">
-          {/* — Hero: MTT venue pulse — */}
+          {/* ── Row 1: Hero (span 2) + Arena Events ── */}
           <section className="card overview-card hero">
-          <div className="card-header">
-            <span className="eyebrow">Muang Thong Thani</span>
-            <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
-          </div>
-          <div className="terminal-callout compact">
-            <span className="eyebrow">Signal</span>
-            <strong>{executiveSignal}</strong>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
-              <strong>{formatPopulation(selectedCity.population)}</strong>
-              <small>{lang === "th" ? "พื้นที่ปฏิบัติการ" : "Venue district"}</small>
+            <div className="card-header">
+              <span className="eyebrow">Muang Thong Thani</span>
+              <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "กล้อง" : "CCTV"}</span>
-              <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
-              <small>{`${publicCctvCameras.length} total feeds`}</small>
+            <div className="terminal-callout compact">
+              <span className="eyebrow">{lang === "th" ? "สัญญาณ" : "Signal"}</span>
+              <strong>{executiveSignal}</strong>
             </div>
-          </div>
-          </section>
-
-          {/* — CCTV: prominent camera feeds — */}
-          <section className="card overview-card cctv-overview">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "Live Cameras"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
-              {publicCctvCameras.filter((cam) => cam.status === "live").length} live
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {publicCctvCameras.slice(0, 6).map((cam) => (
-              <button key={cam.id} type="button" className={`data-item`} onClick={() => setActiveTab("cctv")}>
-                <div className="stack-title">
-                  <strong>{localize(lang, cam.label)}</strong>
-                  <span className={`status-tag ${cam.status}`}>{cam.status}</span>
-                </div>
-                <small>{cam.source} · {cam.zone}</small>
-              </button>
-            ))}
-            {publicCctvCameras.length > 6 ? (
-              <button type="button" className="data-item" onClick={() => setActiveTab("cctv")}>
-                <strong>{`+${publicCctvCameras.length - 6} more cameras`}</strong>
-              </button>
-            ) : null}
-          </div>
-          </section>
-
-          {/* — Briefing — */}
-          <section className="card overview-card briefing">
-          <div className="card-header">
-            <span className="eyebrow">{copy.briefing}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
-          </div>
-          <strong>{localize(lang, overview.briefing.headline)}</strong>
-          <p>{localize(lang, overview.briefing.body)}</p>
-          </section>
-
-          {/* — Decision Queue — */}
-          <section className="card overview-card queue">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decisions"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-              {decisionItems.length}
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {overviewQueue.length > 0 ? (
-              overviewQueue.map((item) => {
-                const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
-                const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
-                return (
-                  <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
-                    <div className="stack-title">
-                      <strong>{localize(lang, item.title)}</strong>
-                      <span className={`status-tag ${item.status}`}>{item.status}</span>
-                    </div>
-                    <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
-                  </button>
-                );
-              })
-            ) : (
+            <div className="overview-hero-metrics">
               <div className="data-item">
-                <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
+                <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
+                <strong>{formatPopulation(selectedCity.population)}</strong>
               </div>
-            )}
-          </div>
-          </section>
-
-          {/* — News — */}
-          <section className="card overview-card news">
-          <div className="card-header">
-            <span className="eyebrow">{copy.news}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
-              {filteredNews.length}
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-              <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
-                <strong>{localize(lang, item.title)}</strong>
-                <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
-              </a>
-            ))}
-          </div>
-          </section>
-
-          {/* — Resilience: weather + pollution — */}
-          <section className="card overview-card resilience">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Environment"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-              {resilience.source.freshnessStatus}
-            </button>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">Weather</span>
-              <strong>{localize(lang, resilience.weatherSummary)}</strong>
+              <div className="data-item">
+                <span className="eyebrow">CCTV</span>
+                <strong>{mttCameraFocus.liveCount} live</strong>
+              </div>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">Air Quality</span>
-              <strong>{localize(lang, resilience.pollutionSummary)}</strong>
-            </div>
-          </div>
           </section>
 
-          {/* — Sources — */}
-          <section className="card overview-card sources">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
-            <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
-          </div>
-          <div className="overview-inline-list">
-            {overviewSources.map((source) => (
-              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{source.name}</strong>
-                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+          <section className="card overview-card arena-events">
+            <div className="card-header">
+              <span className="eyebrow">IMPACT Arena</span>
+              <span className="status-pill">{impactArenaEventsSeed.filter((e) => e.status !== "cancelled").length} events</span>
+            </div>
+            <div className="arena-event-list">
+              {impactArenaEventsSeed.filter((e) => e.status !== "cancelled").slice(0, 4).map((evt) => (
+                <div key={evt.id} className="arena-event-row">
+                  <strong>{localize(lang, evt.title)}</strong>
+                  <div className="event-meta">
+                    <span>{evt.date.slice(5)}</span>
+                    <span>{evt.timeStart}</span>
+                    <span className="event-crowd">~{evt.expectedCrowd >= 1000 ? `${(evt.expectedCrowd / 1000).toFixed(1)}k` : evt.expectedCrowd}</span>
+                    <span className={`status-tag ${evt.category}`}>{evt.category}</span>
+                  </div>
                 </div>
-              </a>
-            ))}
-          </div>
+              ))}
+            </div>
           </section>
 
-          {/* — Satellite — */}
+          {/* ── Row 2: CCTV + AI Vision (full width) ── */}
+          <section className="card overview-card cctv-overview">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กล้อง + AI Vision" : "CCTV + AI Vision"}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
+                {mttCameraFocus.liveCount} live
+              </button>
+            </div>
+            <div className="cctv-ai-split">
+              <div>
+                <div className="cctv-overview-grid">
+                  {mttCameraFocus.heroCameras.map((cam) => (
+                    <article key={cam.id} className="cctv-overview-tile">
+                      <div className="cctv-overview-frame">
+                        <img
+                          src={getPublicCameraLiveImageUrl(cam)}
+                          alt={localize(lang, cam.label)}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          data-fallback={getPublicCameraPreviewFallbackUrl(cam)}
+                          onError={(event) => {
+                            const next = event.currentTarget.dataset.fallback ?? "";
+                            if (event.currentTarget.dataset.fallbackApplied === "true" || !next) {
+                              event.currentTarget.classList.add("is-failed");
+                              return;
+                            }
+                            event.currentTarget.dataset.fallbackApplied = "true";
+                            event.currentTarget.src = next;
+                          }}
+                        />
+                      </div>
+                      <div className="cctv-overview-body">
+                        <strong>{localize(lang, cam.label)}</strong>
+                        <small>{localize(lang, cam.zoneLabel)}</small>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="ai-model-strip">
+                  <div className="card-header">
+                    <span className="eyebrow">{lang === "th" ? "โมเดล AI" : "AI Models"}</span>
+                    <span className="status-pill">5 active</span>
+                  </div>
+                  {cctvSamples.map((sample) => (
+                    <div key={sample.id} className="ai-model-row">
+                      <div>
+                        <strong>{sample.model}</strong>
+                      </div>
+                      <span className="model-status active">{localize(lang, sample.detection)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="recent-detections">
+                  <span className="eyebrow" style={{ padding: "0.15rem 0.32rem" }}>{lang === "th" ? "ตรวจจับล่าสุด" : "Recent Detections"}</span>
+                  {cctvSamples.slice(0, 3).map((sample) => (
+                    <div key={`det-${sample.id}`} className="detection-row">
+                      <span>{localize(lang, sample.zone)}</span>
+                      <span className={`status-tag ${sample.severity}`}>{sample.severity}</span>
+                      <span>{sample.minutesAgo}m ago</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Row 3: Traffic, Social Trends, Briefing ── */}
+          <section className="card overview-card traffic">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "การจราจร" : "Traffic"}</span>
+              <span className={`status-tag ${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
+            </div>
+            <div className="corridor-list">
+              {mttTrafficSnapshotSeed.corridors.map((corridor) => (
+                <div key={corridor.id} className="corridor-row">
+                  <div>
+                    <strong>{localize(lang, corridor.label)}</strong>
+                  </div>
+                  <span className={`status-tag ${corridor.status}`}>{corridor.speedKmh} km/h</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card overview-card social-trends">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "เทรนด์" : "Trends"}</span>
+              <span className="status-pill">{socialListening.mentionCount} mentions</span>
+            </div>
+            <div className="trend-keyword-cloud">
+              {(socialListening.trendKeywords ?? []).map((kw) => (
+                <span key={localize("en", kw.term)} className={`trend-tag sentiment-${kw.sentiment}`}>
+                  {localize(lang, kw.term)}
+                  <span className="trend-count">{kw.count}</span>
+                  <span className="trend-arrow">{kw.trend === "up" ? "\u2191" : kw.trend === "down" ? "\u2193" : "\u2192"}</span>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="card overview-card briefing">
+            <div className="card-header">
+              <span className="eyebrow">{copy.briefing}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
+            </div>
+            <strong>{localize(lang, overview.briefing.headline)}</strong>
+            <p>{localize(lang, overview.briefing.body)}</p>
+          </section>
+
+          {/* ── Row 4: Decisions, News, Environment ── */}
+          <section className="card overview-card queue">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decisions"}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
+                {decisionItems.length}
+              </button>
+            </div>
+            <div className="overview-inline-list">
+              {overviewQueue.length > 0 ? (
+                overviewQueue.map((item) => {
+                  const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
+                  const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
+                  return (
+                    <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
+                      <div className="stack-title">
+                        <strong>{localize(lang, item.title)}</strong>
+                        <span className={`status-tag ${item.status}`}>{item.status}</span>
+                      </div>
+                      <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="data-item">
+                  <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="card overview-card news">
+            <div className="card-header">
+              <span className="eyebrow">{copy.news}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
+                {filteredNews.length}
+              </button>
+            </div>
+            <div className="overview-inline-list">
+              {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
+                <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                  <strong>{localize(lang, item.title)}</strong>
+                  <small>{item.source.sourceName}</small>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section className="card overview-card resilience">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Environment"}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
+                {resilience.source.freshnessStatus}
+              </button>
+            </div>
+            <div className="overview-hero-metrics">
+              <div className="data-item">
+                <span className="eyebrow">Weather</span>
+                <strong>{localize(lang, resilience.weatherSummary)}</strong>
+              </div>
+              <div className="data-item">
+                <span className="eyebrow">Air Quality</span>
+                <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Row 5: Sources (span 2) + Satellite ── */}
+          <section className="card overview-card sources">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
+              <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
+            </div>
+            <div className="overview-inline-list">
+              {overviewSources.map((source) => (
+                <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
+                  <div className="stack-title">
+                    <strong>{source.name}</strong>
+                    <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+
           <section className="card overview-card ranking">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-              {activeSatelliteLayers.length} layers
-            </button>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">Mode</span>
-              <strong>{satelliteDigest.status.mode}</strong>
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
+                {activeSatelliteLayers.length} layers
+              </button>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">Sync</span>
-              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+            <div className="overview-hero-metrics">
+              <div className="data-item">
+                <span className="eyebrow">Mode</span>
+                <strong>{satelliteDigest.status.mode}</strong>
+              </div>
+              <div className="data-item">
+                <span className="eyebrow">Sync</span>
+                <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+              </div>
             </div>
-          </div>
           </section>
         </section>
       </div>
@@ -4650,8 +5267,16 @@ function DashboardPage() {
             <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">TH</span>
-            <strong>{coverageFeatureCount}</strong>
+            <span className="eyebrow">{lang === "th" ? "จราจร" : "Traffic"}</span>
+            <strong>{mttTrafficSnapshotSeed.overallStatus}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">Arena</span>
+            <strong>{impactArenaEventsSeed.filter((e) => e.status !== "cancelled").length} events</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "ความรู้สึก" : "Sentiment"}</span>
+            <strong>{socialListening.sentimentScore}%</strong>
           </div>
         </div>
         <div className="bottomstrip-row actions">
