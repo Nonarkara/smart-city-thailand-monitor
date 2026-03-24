@@ -67,7 +67,7 @@ services:
       - key: ALLOW_LIVE_FETCH
         value: "true"
       - key: SYNC_INTERVAL_MS
-        value: "300000"
+        value: "180000"
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
