@@ -84,7 +84,7 @@ function getApiBaseCandidates() {
 
 const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
-const LIVE_POLL_INTERVAL_MS = 300000;
+const LIVE_POLL_INTERVAL_MS = 180000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 // Lock the public-facing identity — MTT is its own independent dashboard.
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
@@ -643,6 +643,24 @@ const satelliteToggleOptions: ToggleOption[] = [
     color: "#d5e7ff"
   },
   {
+    id: "satellite-cloudless",
+    label: { th: "คลาวด์เลส", en: "Cloudless" },
+    detail: { th: "โมเสก Sentinel-2 ความละเอียดสูงแบบไร้เมฆ", en: "High-resolution Sentinel-2 cloudless mosaic" },
+    color: "#93c5fd"
+  },
+  {
+    id: "satellite-surface-water",
+    label: { th: "น้ำผิวดิน", en: "Surface Water" },
+    detail: { th: "ความถี่การเกิดน้ำผิวดินสำหรับ floodplain และพื้นที่ชุ่มน้ำ", en: "Surface-water occurrence for floodplain and wetland context" },
+    color: "#0ea5e9"
+  },
+  {
+    id: "satellite-bathymetry",
+    label: { th: "ความลึกทะเล", en: "Bathymetry" },
+    detail: { th: "ความลึกทะเลและภูมิประเทศชายฝั่งสำหรับเมืองชายทะเล", en: "Ocean depth and coastal terrain context" },
+    color: "#14b8a6"
+  },
+  {
     id: "eo-vegetation",
     label: { th: "พืชพรรณ", en: "Vegetation" },
     detail: { th: "ดัชนีพืชพรรณ NDVI", en: "NDVI vegetation index" },
@@ -895,6 +913,12 @@ function getDefaultOverlayOpacity(id: string) {
   switch (id) {
     case "satellite-imagery":
       return 0.92;
+    case "satellite-cloudless":
+      return 0.78;
+    case "satellite-surface-water":
+      return 0.58;
+    case "satellite-bathymetry":
+      return 0.54;
     case "satellite-surface-temp":
       return 0.68;
     case "satellite-thermal":
@@ -919,9 +943,12 @@ function getDefaultOverlayOpacity(id: string) {
 function getDefaultBlendMode(id: string): BlendModeOption {
   switch (id) {
     case "satellite-imagery":
+    case "satellite-cloudless":
       return "normal";
     case "satellite-night-lights":
       return "screen";
+    case "satellite-surface-water":
+      return "overlay";
     case "satellite-surface-temp":
     case "satellite-thermal":
     case "eo-fire-thermal":
@@ -1188,6 +1215,7 @@ const copyDeck = {
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
     focusAirRisk: "ความเสี่ยงอากาศ",
+    focusMonsoonWatch: "ฝน / มรสุม",
     focusCandidates: "เมืองผู้สมัคร",
     focusMediaWatch: "จับตาสื่อ",
     focusEconomyContext: "บริบทเศรษฐกิจ",
@@ -1196,7 +1224,7 @@ const copyDeck = {
     activeLayersLegend: "เลเยอร์ที่เปิดอยู่",
     clickToFocus: "กดเพื่อโฟกัสบนแผนที่",
     mediaHotspot: "สัญญาณสื่อ",
-    weatherLegend: "วงกลมสีฟ้า = อุณหภูมิ / ความชื้น",
+    weatherLegend: "วงกลมสีฟ้า = อุณหภูมิ / ลม / ฝน",
     projectLegend: "สีน้ำเงิน = ความหนาแน่นของโครงการ",
     newsLegend: "สีเขียว = จุดความเคลื่อนไหวข่าว",
     resilienceLegend: "สีส้ม = พื้นที่เฝ้าระวัง",
@@ -1344,6 +1372,7 @@ const copyDeck = {
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
     focusAirRisk: "Air Risk",
+    focusMonsoonWatch: "Rain / Monsoon",
     focusCandidates: "Candidate Cities",
     focusMediaWatch: "Media Watch",
     focusEconomyContext: "Economic Context",
@@ -1352,7 +1381,7 @@ const copyDeck = {
     activeLayersLegend: "Active Layers",
     clickToFocus: "Click to focus on the map",
     mediaHotspot: "Media Spike",
-    weatherLegend: "Teal circles = temperature / humidity",
+    weatherLegend: "Blue circles = temperature / wind / rain",
     projectLegend: "Blue = project density",
     newsLegend: "Green = news signal points",
     resilienceLegend: "Amber = watch areas",
@@ -1708,6 +1737,16 @@ function formatConfidence(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
+function formatSignalLabel(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 function normalizeCitySlug(value?: string) {
   if (!value) {
     return "";
@@ -1757,6 +1796,16 @@ function numericProperty(feature: GeoFeatureRecord, key: string) {
   return typeof raw === "number" ? raw : Number(raw ?? 0);
 }
 
+function stringProperty(feature: GeoFeatureRecord, key: string) {
+  const raw = feature.properties[key];
+  return raw === null || raw === undefined ? "" : String(raw);
+}
+
+function timeValue(value?: string) {
+  const parsed = new Date(value ?? "").getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
   if (!domainSlug) {
     return true;
@@ -1780,10 +1829,10 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "city") as DashboardView;
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "national") as DashboardView;
   const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani");
+  const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
   const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
@@ -2128,6 +2177,10 @@ function DashboardPage() {
   const modelCityParam = searchParams.get("modelCity") ?? "";
   const basemap = searchParams.get("basemap") === "satellite" ? "satellite" : "atlas";
 
+  useEffect(() => {
+    document.title = PUBLIC_DASHBOARD_BRAND.title;
+  }, []);
+
   const {
     lang,
     view,
@@ -2307,8 +2360,11 @@ function DashboardPage() {
     })
     : news;
 
-  const officialNews = filteredNews.filter((item) => item.kind === "official").slice(0, 2);
-  const externalNews = filteredNews.filter((item) => item.kind === "external").slice(0, 3);
+  const sortedFilteredNews = [...filteredNews].sort(
+    (left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime()
+  );
+  const officialNews = sortedFilteredNews.filter((item) => item.kind === "official").slice(0, 2);
+  const externalNews = sortedFilteredNews.filter((item) => item.kind === "external").slice(0, 3);
   const globalSignalNews = globalNews.slice(0, 4);
   const compactProjects = filteredProjects.slice(0, 3);
   const visibleTrends = trendWatchItems.slice(0, 3);
@@ -2368,6 +2424,7 @@ function DashboardPage() {
   const undpDataSource = sources.find((source) => source.id === "undp-data") ?? null;
   const pollutionCollection = mapFeatures.find((collection) => collection.layerId === "pollution");
   const weatherCollection = mapFeatures.find((collection) => collection.layerId === "weather");
+  const trafficCollection = mapFeatures.find((collection) => collection.layerId === "itic-traffic");
   const topAqiFeature =
     pollutionCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
       return !best || numericProperty(feature, "aqi") > numericProperty(best, "aqi") ? feature : best;
@@ -2376,7 +2433,54 @@ function DashboardPage() {
     weatherCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
       return !best || numericProperty(feature, "temperatureC") > numericProperty(best, "temperatureC") ? feature : best;
     }, null) ?? null;
-  const latestExternalSignal = news.find((item) => item.kind === "external") ?? null;
+  const wettestWeatherFeature =
+    weatherCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
+      const precipitationScore =
+        numericProperty(feature, "precipitationMm") * 100 + numericProperty(feature, "precipitationProbability");
+      const bestScore = best
+        ? numericProperty(best, "precipitationMm") * 100 + numericProperty(best, "precipitationProbability")
+        : -1;
+
+      return !best || precipitationScore > bestScore ? feature : best;
+    }, null) ?? null;
+  const weatherLeadFeature =
+    wettestWeatherFeature &&
+    (numericProperty(wettestWeatherFeature, "precipitationMm") > 0 ||
+      numericProperty(wettestWeatherFeature, "precipitationProbability") >= 40 ||
+      numericProperty(wettestWeatherFeature, "windKph") >= 18)
+      ? wettestWeatherFeature
+      : hottestWeatherFeature;
+  const topTrafficFeature =
+    trafficCollection?.features.reduce<GeoFeatureRecord | null>((best, feature) => {
+      const priority = numericProperty(feature, "priorityScore");
+      const bestPriority = best ? numericProperty(best, "priorityScore") : -1;
+
+      if (!best || priority > bestPriority) {
+        return feature;
+      }
+
+      if (priority === bestPriority) {
+        const featureTime = timeValue(stringProperty(feature, "startedAt") || feature.source.publishedAt);
+        const bestTime = timeValue(stringProperty(best, "startedAt") || best.source.publishedAt);
+        return featureTime > bestTime ? feature : best;
+      }
+
+      return best;
+    }, null) ?? null;
+  const trafficWatchItems = [...(trafficCollection?.features ?? [])]
+    .sort((left, right) => {
+      const priorityDelta = numericProperty(right, "priorityScore") - numericProperty(left, "priorityScore");
+      if (priorityDelta !== 0) {
+        return priorityDelta;
+      }
+
+      return (
+        timeValue(stringProperty(right, "startedAt") || right.source.publishedAt) -
+        timeValue(stringProperty(left, "startedAt") || left.source.publishedAt)
+      );
+    })
+    .slice(0, 4);
+  const latestExternalSignal = sortedFilteredNews.find((item) => item.kind === "external") ?? null;
   const latestExternalSignalCity = latestExternalSignal?.citySlug ? cityBySlug.get(latestExternalSignal.citySlug) ?? null : null;
   const nationalCoverageCollection = mapFeatures.find((collection) => collection.layerId === "smart-city-thailand");
   const coverageFeatureCount = nationalCoverageCollection?.features.length ?? 0;
@@ -2393,7 +2497,7 @@ function DashboardPage() {
       return mapFeatures;
     }
 
-    return mapFeatures
+      return mapFeatures
       .map((collection) => {
         if (collection.layerId === "bangkok-passages") {
           if (city !== "bangkok") {
@@ -2462,13 +2566,41 @@ function DashboardPage() {
   const hottestCitySlug = normalizeCitySlug(
     String(hottestWeatherFeature?.properties.city ?? hottestWeatherFeature?.title ?? "")
   );
+  const weatherLeadSummary = weatherLeadFeature
+    ? (() => {
+        const rain = numericProperty(weatherLeadFeature, "precipitationMm");
+        const rainChance = numericProperty(weatherLeadFeature, "precipitationProbability");
+        const wind = numericProperty(weatherLeadFeature, "windKph");
+        const temperature = numericProperty(weatherLeadFeature, "temperatureC");
+        const humidity = numericProperty(weatherLeadFeature, "humidity");
+
+        if (rain > 0 || rainChance >= 40 || wind >= 18) {
+          return lang === "th"
+            ? `ลม ${wind} กม./ชม. · ฝน ${rain.toFixed(1)} มม. · โอกาสฝน ${rainChance}%`
+            : `wind ${wind} km/h · rain ${rain.toFixed(1)} mm · chance ${rainChance}%`;
+        }
+
+        return lang === "th" ? `${temperature}°C · ความชื้น ${humidity}%` : `${temperature}°C · ${humidity}% humidity`;
+      })()
+    : "";
+  const topTrafficCitySlug = normalizeCitySlug(
+    String(topTrafficFeature?.properties.citySlug ?? topTrafficFeature?.properties.city ?? "")
+  );
+  const topTrafficSummary = topTrafficFeature
+    ? [formatSignalLabel(stringProperty(topTrafficFeature, "eventClass")), formatSignalLabel(stringProperty(topTrafficFeature, "status"))]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
   const layerLegendDetails: Record<string, string> = {
     pollution: copy.clickToFocus,
     weather: copy.weatherLegend,
     projects: copy.projectLegend,
     news: copy.newsLegend,
     resilience: copy.resilienceLegend,
-    "itic-traffic": lang === "th" ? "สีแดง = จุดจราจรและเหตุการณ์จราจรสด" : "Red = live traffic watchpoints and incidents",
+    "itic-traffic":
+      lang === "th"
+        ? "สีแดง = อุบัติเหตุ การปิดถนน และเหตุจราจรสด"
+        : "Red = live accidents, road closures, and traffic incidents",
     economy: copy.economyLegend,
     agriculture: copy.agricultureLegend,
     water: copy.waterLegend,
@@ -2479,6 +2611,18 @@ function DashboardPage() {
     disaster: copy.disasterLegend,
     "jaxa-rainfall": copy.jaxaLegend,
     "satellite-imagery": lang === "th" ? "ภาพสีจริงจาก NASA GIBS" : "NASA GIBS true-color imagery",
+    "satellite-cloudless":
+      lang === "th"
+        ? "โมเสก Sentinel-2 แบบไร้เมฆจาก EOX สำหรับมุมมองภาพจริงความละเอียดสูง"
+        : "EOX Sentinel-2 cloudless mosaic for a high-resolution visual baseline",
+    "satellite-surface-water":
+      lang === "th"
+        ? "ชั้นข้อมูลน้ำผิวดินจาก JRC สำหรับ floodplain และพื้นที่ชุ่มน้ำ"
+        : "JRC Global Surface Water occurrence for floodplain and wetland context",
+    "satellite-bathymetry":
+      lang === "th"
+        ? "ความลึกทะเลและภูมิประเทศชายฝั่งจาก EMODnet Bathymetry"
+        : "EMODnet bathymetry and coastal terrain context",
     "satellite-vegetation": lang === "th" ? "ค่าพืชพรรณ NDVI จาก NASA GIBS" : "NASA GIBS NDVI vegetation index",
     "satellite-aerosol": lang === "th" ? "ดัชนีละอองลอยจาก NASA GIBS" : "NASA GIBS aerosol index",
     "satellite-surface-temp":
@@ -2652,16 +2796,36 @@ function DashboardPage() {
     {
       id: "air-risk",
       label: copy.focusAirRisk,
-      layers: ["pollution", "weather", "resilience"],
+      layers: ["pollution", "weather", "eo-aerosol", "resilience"],
       run: () => {
         const next = new URLSearchParams(searchParams);
-        next.set("layers", ["pollution", "weather", "resilience"].join(","));
+        next.set("layers", ["pollution", "weather", "eo-aerosol", "resilience"].join(","));
+        next.set("basemap", "satellite");
+        next.delete("district");
+        next.delete("domain");
         if (topAqiCitySlug && knownCitySlugs.has(topAqiCitySlug)) {
           next.set("city", topAqiCitySlug);
           next.set("view", "city");
         } else {
           next.set("view", "national");
         }
+        startTransition(() => {
+          setSearchParams(next);
+          setRecenterSignal((value) => value + 1);
+        });
+      }
+    },
+    {
+      id: "monsoon-watch",
+      label: copy.focusMonsoonWatch,
+      layers: ["eo-precipitation", "jaxa-rainfall", "water", "resilience"],
+      run: () => {
+        const next = new URLSearchParams(searchParams);
+        next.set("layers", ["eo-precipitation", "jaxa-rainfall", "water", "resilience"].join(","));
+        next.set("basemap", "satellite");
+        next.set("view", "national");
+        next.delete("district");
+        next.delete("domain");
         startTransition(() => {
           setSearchParams(next);
           setRecenterSignal((value) => value + 1);
@@ -2719,30 +2883,41 @@ function DashboardPage() {
   const activeFocusPresetId =
     focusPresets.find((preset) => preset.layers.length === layers.length && preset.layers.every((layerId) => layers.includes(layerId)))?.id ??
     null;
+  const airRiskPreset = focusPresets.find((preset) => preset.id === "air-risk");
+  const monsoonPreset = focusPresets.find((preset) => preset.id === "monsoon-watch");
+  const candidatePreset = focusPresets.find((preset) => preset.id === "candidate-cities");
+  const mediaPreset = focusPresets.find((preset) => preset.id === "media-watch");
+  const economyPreset = focusPresets.find((preset) => preset.id === "economic-context");
   const footerQuickActions = [
     {
       id: "air-risk",
       label: lang === "th" ? "อากาศ" : "Air",
       active: activeFocusPresetId === "air-risk",
-      onClick: focusPresets[0]?.run
+      onClick: airRiskPreset?.run
+    },
+    {
+      id: "monsoon-watch",
+      label: lang === "th" ? "ฝน" : "Rain",
+      active: activeFocusPresetId === "monsoon-watch",
+      onClick: monsoonPreset?.run
     },
     {
       id: "candidate-cities",
       label: lang === "th" ? "เมืองเด่น" : "Candidates",
       active: activeFocusPresetId === "candidate-cities",
-      onClick: focusPresets[1]?.run
+      onClick: candidatePreset?.run
     },
     {
       id: "media-watch",
       label: lang === "th" ? "สื่อ" : "Media",
       active: activeFocusPresetId === "media-watch",
-      onClick: focusPresets[2]?.run
+      onClick: mediaPreset?.run
     },
     {
       id: "economic-context",
       label: lang === "th" ? "เศรษฐกิจ" : "Economy",
       active: activeFocusPresetId === "economic-context",
-      onClick: focusPresets[3]?.run
+      onClick: economyPreset?.run
     },
     {
       id: "basemap",
@@ -2798,6 +2973,30 @@ function DashboardPage() {
       previewUrl:
         "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/6/31/52.jpg",
       action: () => toggleSatelliteLayer("satellite-imagery")
+    },
+    {
+      id: "satellite-cloudless",
+      title: { th: "คลาวด์เลส", en: "Cloudless" },
+      detail: { th: "ฐานภาพ Sentinel-2 แบบไร้เมฆ", en: "Sentinel-2 cloudless high-resolution base." },
+      active: layers.includes("satellite-cloudless"),
+      previewUrl: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/6/31/52.jpg",
+      action: () => toggleSatelliteLayer("satellite-cloudless")
+    },
+    {
+      id: "satellite-surface-water",
+      title: { th: "น้ำผิวดิน", en: "Surface Water" },
+      detail: { th: "ดูแนวพื้นที่ชุ่มน้ำและ floodplain", en: "Wetland and floodplain occurrence context." },
+      active: layers.includes("satellite-surface-water"),
+      previewUrl: "https://storage.googleapis.com/global-surface-water/tiles2021/occurrence/6/52/31.png",
+      action: () => toggleSatelliteLayer("satellite-surface-water")
+    },
+    {
+      id: "satellite-bathymetry",
+      title: { th: "ความลึกทะเล", en: "Bathymetry" },
+      detail: { th: "ภูมิประเทศชายฝั่งและความลึกทะเล", en: "Coastal depth and seabed terrain context." },
+      active: layers.includes("satellite-bathymetry"),
+      previewUrl: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/6/52/31.png",
+      action: () => toggleSatelliteLayer("satellite-bathymetry")
     },
     {
       id: "eo-vegetation",
@@ -3615,7 +3814,7 @@ function DashboardPage() {
     <div className="shell" data-theme={siteTheme}>
       <header className="topbar">
         <div className="brand-cluster">
-          <img src="/mtt-logo.svg" alt="MTT" className="brand-logo" />
+          <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
           <div className="brand-copy">
             <h1>{workspaceTitle}</h1>
             <small className="brand-subline">{primaryScopeDetail}</small>
@@ -3638,7 +3837,7 @@ function DashboardPage() {
               {lang === "th" ? "เมือง" : "City"}
             </button>
           </div>
-          <span className="chip active" style={{ cursor: "default" }}>{localize(lang, selectedCity.name)}</span>
+          <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
           <div className="compact-group">
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
             <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
@@ -3757,10 +3956,29 @@ function DashboardPage() {
         {activeTab === "map" ? (
           <div className="map-alerts-strip">
             {topAqiFeature ? (
-              <button type="button" className="map-alert-chip warning" onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}>
+              <button
+                type="button"
+                className="map-alert-chip warning"
+                onClick={() => {
+                  if (airRiskPreset?.run) {
+                    airRiskPreset.run();
+                    return;
+                  }
+                  focusCityWithLayer(topAqiCitySlug || city, "pollution");
+                }}
+              >
                 {`AQI ${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}
               </button>
             ) : null}
+            <button
+              type="button"
+              className="map-alert-chip"
+              onClick={() => {
+                monsoonPreset?.run?.();
+              }}
+            >
+              {lang === "th" ? "ฝน + มรสุม" : "Rain + Monsoon"}
+            </button>
             {hottestWeatherFeature ? (
               <button type="button" className="map-alert-chip" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
                 {`${numericProperty(hottestWeatherFeature, "temperatureC")}°C ${hottestWeatherFeature.title}`}
@@ -3946,14 +4164,17 @@ function DashboardPage() {
             <div className="sitrep">
               <div className="sitrep-header">
                 <strong>{lang === "th" ? "สถานการณ์ปัจจุบัน" : "SITUATION REPORT"}</strong>
-                <span className="eyebrow">{localize(lang, selectedCity.name)} · {formatUtcClock(overview.updatedAt)} UTC</span>
+                <span className="eyebrow">{primaryScopeLabel} · {formatUtcClock(overview.updatedAt)} UTC</span>
               </div>
               <div className="sitrep-row"><span className="eyebrow">SIGNAL</span><strong>{executiveSignal}</strong></div>
+              {topTrafficFeature ? (
+                <div className="sitrep-row"><span className="eyebrow">TRAFFIC</span><strong>{`${topTrafficSummary || "Traffic"} · ${topTrafficFeature.title}`}</strong></div>
+              ) : null}
               {topAqiFeature ? (
                 <div className="sitrep-row"><span className="eyebrow">AQI</span><strong>{`${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}</strong></div>
               ) : null}
-              {hottestWeatherFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">WEATHER</span><strong>{`${numericProperty(hottestWeatherFeature, "temperatureC")}°C · ${numericProperty(hottestWeatherFeature, "humidity")}% humidity`}</strong></div>
+              {weatherLeadFeature ? (
+                <div className="sitrep-row"><span className="eyebrow">WEATHER</span><strong>{`${weatherLeadFeature.title} · ${weatherLeadSummary}`}</strong></div>
               ) : null}
               <div className="sitrep-row"><span className="eyebrow">DECISIONS</span><strong>{`${decisionItems.length} pending`}</strong></div>
               <div className="sitrep-row"><span className="eyebrow">SOCIAL</span><strong>{`${socialListening.mentionCount} mentions · ${Math.round(socialListening.positiveShare * 100)}% positive`}</strong></div>
@@ -4033,6 +4254,39 @@ function DashboardPage() {
               )}
             </div>
 
+            <div className="data-section">
+              <div className="data-section-head">
+                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic Ops"}</strong>
+                <span className="status-pill">{trafficWatchItems.length}</span>
+              </div>
+              {trafficWatchItems.length > 0 ? trafficWatchItems.map((feature) => {
+                const mappedCitySlug = normalizeCitySlug(
+                  stringProperty(feature, "citySlug") || stringProperty(feature, "city")
+                );
+                const trafficStamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
+
+                return (
+                  <button
+                    key={feature.id}
+                    type="button"
+                    className="data-item"
+                    onClick={() => {
+                      focusCityWithLayer(mappedCitySlug, "itic-traffic");
+                      setActiveTab("map");
+                    }}
+                  >
+                    <div className="stack-title">
+                      <strong>{feature.title}</strong>
+                      <span className="status-pill">{topTrafficSummary && feature.id === topTrafficFeature?.id ? topTrafficSummary : [formatSignalLabel(stringProperty(feature, "eventClass")), formatSignalLabel(stringProperty(feature, "status"))].filter(Boolean).join(" · ")}</span>
+                    </div>
+                    <small>{[stringProperty(feature, "city"), formatUtcDateTime(trafficStamp)].filter(Boolean).join(" · ")}</small>
+                  </button>
+                );
+              }) : (
+                <div className="data-item"><strong>{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</strong></div>
+              )}
+            </div>
+
             {/* News */}
             <div className="data-section">
               <div className="data-section-head">
@@ -4042,13 +4296,13 @@ function DashboardPage() {
               {officialNews.map((item) => (
                 <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
                   <strong>{localize(lang, item.title)}</strong>
-                  <small>{item.source.sourceName}</small>
+                  <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
                 </a>
               ))}
               {externalNews.map((item) => (
                 <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
                   <strong>{localize(lang, item.title)}</strong>
-                  <small>{item.source.sourceName}</small>
+                  <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
                 </a>
               ))}
             </div>
@@ -4298,7 +4552,7 @@ function DashboardPage() {
             {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
               <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
                 <strong>{localize(lang, item.title)}</strong>
-                <small>{item.source.sourceName}</small>
+                <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
               </a>
             ))}
           </div>

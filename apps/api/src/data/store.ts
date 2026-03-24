@@ -178,6 +178,57 @@ function mergeByKey<T>(seeded: T[], persisted: T[], getKey: (value: T) => string
   );
 }
 
+function mergeCollectionBounds(boundsList: Array<MapFeatureCollection["bounds"] | undefined>) {
+  const validBounds = boundsList.filter(
+    (bounds): bounds is [number, number, number, number] => Array.isArray(bounds) && bounds.length === 4
+  );
+
+  if (validBounds.length === 0) {
+    return undefined;
+  }
+
+  return [
+    Math.min(...validBounds.map((bounds) => bounds[0])),
+    Math.min(...validBounds.map((bounds) => bounds[1])),
+    Math.max(...validBounds.map((bounds) => bounds[2])),
+    Math.max(...validBounds.map((bounds) => bounds[3]))
+  ] as [number, number, number, number];
+}
+
+function mergeMapCollections(collections: MapFeatureCollection[]) {
+  const primaryCollection = collections[0];
+  if (!primaryCollection) {
+    return null;
+  }
+
+  const mergedFeatures = collections
+    .flatMap((collection) => collection.features)
+    .filter(
+      (feature, index, features) =>
+        features.findIndex((candidate) => candidate.id === feature.id) === index
+    );
+  const sourceNames = [...new Set(collections.map((collection) => collection.source.sourceName).filter(Boolean))];
+  const latestUpdatedAt =
+    [...collections]
+      .map((collection) => collection.updatedAt)
+      .sort((left, right) => right.localeCompare(left))[0] ?? primaryCollection.updatedAt;
+
+  return {
+    ...cloneSeed(primaryCollection),
+    updatedAt: latestUpdatedAt,
+    features: cloneSeed(mergedFeatures),
+    bounds: mergeCollectionBounds(collections.map((collection) => collection.bounds)),
+    source: {
+      ...primaryCollection.source,
+      sourceName: sourceNames.join(" + "),
+      freshnessStatus: collections.some((collection) => collection.source.freshnessStatus === "live")
+        ? "live"
+        : primaryCollection.source.freshnessStatus,
+      confidence: Math.max(...collections.map((collection) => collection.source.confidence ?? 0))
+    }
+  } satisfies MapFeatureCollection;
+}
+
 function mergeSourceBacked<T extends { source: SourceMeta }>(seeded: T, persisted?: T): T {
   if (!persisted) {
     return cloneSeed(seeded);
@@ -737,8 +788,21 @@ export const store = {
 
     const mapCollections = results.flatMap((result) => result.mapFeatureCollections ?? []);
     if (mapCollections.length > 0) {
+      const collectionsByLayer = new Map<string, MapFeatureCollection[]>();
       mapCollections.forEach((collection) => {
-        state.mapFeaturesByLayer[collection.layerId] = cloneSeed(collection);
+        const existing = collectionsByLayer.get(collection.layerId) ?? [];
+        existing.push(collection);
+        collectionsByLayer.set(collection.layerId, existing);
+      });
+
+      collectionsByLayer.forEach((collections, layerId) => {
+        const nextCollection =
+          collections.length === 1 ? cloneSeed(collections[0]) : mergeMapCollections(collections);
+        if (!nextCollection) {
+          return;
+        }
+
+        state.mapFeaturesByLayer[layerId] = cloneSeed(nextCollection);
       });
     }
 

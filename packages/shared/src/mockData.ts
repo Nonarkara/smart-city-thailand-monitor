@@ -52,6 +52,62 @@ const seedMeta = (
   fallbackMode: mode
 });
 
+interface SeedPollutionPoint {
+  id: string;
+  coordinates: [number, number];
+  title: string;
+  description: string;
+  properties: {
+    city: string;
+    aqi: number;
+    pm25: number;
+    pm10: number;
+    region: string;
+  };
+}
+
+const pollutionSeedOffsets = [
+  { idSuffix: "", label: "core", latDelta: 0, lonDelta: 0, aqiDelta: 0, pm25Delta: 0, pm10Delta: 0 },
+  { idSuffix: "north", label: "north", latDelta: 0.074, lonDelta: 0, aqiDelta: 11, pm25Delta: 6, pm10Delta: 8 },
+  { idSuffix: "east", label: "east", latDelta: 0, lonDelta: 0.082, aqiDelta: 7, pm25Delta: 4, pm10Delta: 5 },
+  { idSuffix: "south", label: "south", latDelta: -0.074, lonDelta: 0, aqiDelta: -5, pm25Delta: -3, pm10Delta: -4 },
+  { idSuffix: "west", label: "west", latDelta: 0, lonDelta: -0.082, aqiDelta: 4, pm25Delta: 2, pm10Delta: 3 }
+] as const;
+
+function clampSeedMetric(value: number, floor: number) {
+  return Math.max(floor, Math.round(value));
+}
+
+function createSeedPollutionMesh(points: SeedPollutionPoint[]): GeoFeatureRecord[] {
+  return points.flatMap((point) =>
+    pollutionSeedOffsets.map((offset, index) => ({
+      id: offset.idSuffix ? `${point.id}-${offset.idSuffix}` : point.id,
+      layerId: "pollution",
+      geometryType: "Point",
+      coordinates: [
+        Number((point.coordinates[0] + offset.lonDelta).toFixed(4)),
+        Number((point.coordinates[1] + offset.latDelta).toFixed(4))
+      ],
+      title: point.title,
+      description:
+        offset.idSuffix === ""
+          ? point.description
+          : `${point.title} AQI mesh sample ${offset.label}`,
+      properties: {
+        ...point.properties,
+        aqi: clampSeedMetric(point.properties.aqi + offset.aqiDelta, 12),
+        pm25: clampSeedMetric(point.properties.pm25 + offset.pm25Delta, 1),
+        pm10: clampSeedMetric(point.properties.pm10 + offset.pm10Delta, 2),
+        sampleKind: "mesh",
+        sampleLabel: offset.label,
+        sampleRank: index,
+        cityCenter: offset.idSuffix === ""
+      },
+      source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+    }))
+  );
+}
+
 export const domains: DomainScorecard[] = [
   {
     id: "domain-environment",
@@ -1379,6 +1435,69 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "live",
     lastCheckedAt: seededAt,
     message: "Global Imagery Browse Services provides satellite tile overlays for aerosol, precipitation, and vegetation context."
+  },
+  {
+    id: "nasa-cmr-stac",
+    name: "NASA CMR STAC",
+    category: "geospatial",
+    url: "https://cmr.earthdata.nasa.gov/stac",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "No-auth STAC catalog across NASA holdings for discovery of VIIRS, MODIS, IMERG, and broader EO collections."
+  },
+  {
+    id: "microsoft-planetary-computer",
+    name: "Microsoft Planetary Computer STAC",
+    category: "geospatial",
+    url: "https://planetarycomputer.microsoft.com/api/stac/v1",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Free global STAC endpoint for Sentinel, Landsat, MODIS, DEM, and cloud-optimized geospatial collections."
+  },
+  {
+    id: "google-earth-engine",
+    name: "Google Earth Engine",
+    category: "geospatial",
+    url: "https://earthengine.googleapis.com",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "OAuth-ready planetary analysis backend for scripted change detection, time-series, and custom raster export."
+  },
+  {
+    id: "eox-sentinel2-cloudless",
+    name: "EOX Sentinel-2 Cloudless",
+    category: "geospatial",
+    url: "https://tiles.maps.eox.at",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Public 10 m Sentinel-2 cloudless mosaic that works as a clean high-resolution visual baseline."
+  },
+  {
+    id: "jrc-surface-water",
+    name: "JRC Global Surface Water",
+    category: "geospatial",
+    url: "https://global-surface-water.appspot.com",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Global surface-water occurrence tiles help frame floodplain behavior, wetlands, and persistent water bodies."
+  },
+  {
+    id: "emodnet-bathymetry",
+    name: "EMODnet Bathymetry",
+    category: "geospatial",
+    url: "https://emodnet.ec.europa.eu/en/bathymetry",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Bathymetry and coastal terrain tiles add maritime context for coastal cities, ports, and shoreline planning."
+  },
+  {
+    id: "nasa-firms",
+    name: "NASA FIRMS",
+    category: "geospatial",
+    url: "https://firms.modaps.eosdis.nasa.gov",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Thermal hotspot and active-fire detections can supplement haze, wildfire, and heat-stress monitoring."
   },
   {
     id: "sentinel-hub-process",
@@ -3158,9 +3277,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Live probe-traffic watchpoint covering the Rama IX eastbound approach.",
         properties: {
           city: "Bangkok",
+          citySlug: "bangkok",
           district: "Pathum Wan",
           districtSlug: "pathum-wan",
           kind: "traffic",
+          eventClass: "traffic",
+          status: "active",
+          severityLabel: "watch",
+          priorityScore: 68,
+          startedAt: "2026-02-28T11:20:00.000Z",
           severity: "watch",
           speedKph: 18
         },
@@ -3175,9 +3300,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Traffic incident cluster affecting interchange access and peak-hour delays.",
         properties: {
           city: "Bangkok",
+          citySlug: "bangkok",
           district: "Pathum Wan",
           districtSlug: "pathum-wan",
-          kind: "incident",
+          kind: "accident",
+          eventClass: "accident",
+          status: "active",
+          severityLabel: "high",
+          priorityScore: 104,
+          startedAt: "2026-02-28T11:42:00.000Z",
           severity: "high",
           speedKph: 12
         },
@@ -3192,9 +3323,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Bridge approach watchpoint used to track cross-river travel pressure.",
         properties: {
           city: "Bangkok",
+          citySlug: "bangkok",
           district: "Thon Buri",
           districtSlug: "thon-buri",
           kind: "traffic",
+          eventClass: "traffic",
+          status: "active",
+          severityLabel: "watch",
+          priorityScore: 66,
+          startedAt: "2026-02-28T11:08:00.000Z",
           severity: "watch",
           speedKph: 21
         },
@@ -3209,9 +3346,16 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         description: "Freight and airport-linked corridor watchpoint for outbound cargo movement.",
         properties: {
           city: "Bangkok",
+          citySlug: "bangkok",
           district: "Bang Na",
           districtSlug: "bang-na",
-          kind: "freight",
+          kind: "closure",
+          eventClass: "closure",
+          status: "scheduled",
+          severityLabel: "watch",
+          priorityScore: 88,
+          startedAt: "2026-02-28T13:00:00.000Z",
+          endedAt: "2026-02-28T20:00:00.000Z",
           severity: "moderate",
           speedKph: 27
         },
@@ -3283,7 +3427,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [100.5018, 13.7563],
         title: "Bangkok",
         description: "City weather watchpoint",
-        properties: { city: "Bangkok", temperatureC: 32, humidity: 60, windKph: 10, region: "Central" },
+        properties: {
+          city: "Bangkok",
+          temperatureC: 32,
+          humidity: 60,
+          windKph: 10,
+          precipitationMm: 0.4,
+          precipitationProbability: 58,
+          region: "Central"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3293,7 +3445,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.9853, 18.7883],
         title: "Chiang Mai",
         description: "City weather watchpoint",
-        properties: { city: "Chiang Mai", temperatureC: 29, humidity: 52, windKph: 8, region: "North" },
+        properties: {
+          city: "Chiang Mai",
+          temperatureC: 29,
+          humidity: 52,
+          windKph: 8,
+          precipitationMm: 0,
+          precipitationProbability: 18,
+          region: "North"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3303,7 +3463,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [102.8236, 16.4322],
         title: "Khon Kaen",
         description: "City weather watchpoint",
-        properties: { city: "Khon Kaen", temperatureC: 31, humidity: 48, windKph: 12, region: "Northeast" },
+        properties: {
+          city: "Khon Kaen",
+          temperatureC: 31,
+          humidity: 48,
+          windKph: 12,
+          precipitationMm: 0.2,
+          precipitationProbability: 34,
+          region: "Northeast"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3313,7 +3481,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [98.3923, 7.8804],
         title: "Phuket",
         description: "City weather watchpoint",
-        properties: { city: "Phuket", temperatureC: 30, humidity: 74, windKph: 15, region: "South" },
+        properties: {
+          city: "Phuket",
+          temperatureC: 30,
+          humidity: 74,
+          windKph: 15,
+          precipitationMm: 1.8,
+          precipitationProbability: 82,
+          region: "South"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3323,7 +3499,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [100.9847, 13.3611],
         title: "Chon Buri",
         description: "Industrial-coast weather watchpoint",
-        properties: { city: "Chon Buri", temperatureC: 33, humidity: 68, windKph: 14, region: "East" },
+        properties: {
+          city: "Chon Buri",
+          temperatureC: 33,
+          humidity: 68,
+          windKph: 14,
+          precipitationMm: 0.9,
+          precipitationProbability: 67,
+          region: "East"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3333,7 +3517,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [100.4747, 7.0084],
         title: "Hat Yai",
         description: "Southern urban weather watchpoint",
-        properties: { city: "Hat Yai", temperatureC: 31, humidity: 79, windKph: 11, region: "South" },
+        properties: {
+          city: "Hat Yai",
+          temperatureC: 31,
+          humidity: 79,
+          windKph: 11,
+          precipitationMm: 1.2,
+          precipitationProbability: 76,
+          region: "South"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3343,7 +3535,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [102.0978, 14.9799],
         title: "Nakhon Ratchasima",
         description: "Plateau weather watchpoint",
-        properties: { city: "Nakhon Ratchasima", temperatureC: 34, humidity: 43, windKph: 16, region: "Northeast" },
+        properties: {
+          city: "Nakhon Ratchasima",
+          temperatureC: 34,
+          humidity: 43,
+          windKph: 16,
+          precipitationMm: 0.1,
+          precipitationProbability: 24,
+          region: "Northeast"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3353,7 +3553,15 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         coordinates: [99.4908, 18.2888],
         title: "Lampang",
         description: "Northern inland weather watchpoint",
-        properties: { city: "Lampang", temperatureC: 33, humidity: 46, windKph: 9, region: "North" },
+        properties: {
+          city: "Lampang",
+          temperatureC: 33,
+          humidity: 46,
+          windKph: 9,
+          precipitationMm: 0,
+          precipitationProbability: 12,
+          region: "North"
+        },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
@@ -3373,98 +3581,71 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
     updatedAt: seededAt,
     bounds: [7.0, 98.2, 18.9, 102.9],
     source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live"),
-    features: [
+    features: createSeedPollutionMesh([
       {
         id: "pollution-bangkok",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [100.5018, 13.7563],
         title: "Bangkok",
         description: "City AQI watchpoint",
-        properties: { city: "Bangkok", aqi: 57, pm25: 11, pm10: 12, region: "Central" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Bangkok", aqi: 57, pm25: 11, pm10: 12, region: "Central" }
       },
       {
         id: "pollution-chiang-mai",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [98.9853, 18.7883],
         title: "Chiang Mai",
         description: "City AQI watchpoint",
-        properties: { city: "Chiang Mai", aqi: 88, pm25: 29, pm10: 40, region: "North" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Chiang Mai", aqi: 88, pm25: 29, pm10: 40, region: "North" }
       },
       {
         id: "pollution-khon-kaen",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [102.8236, 16.4322],
         title: "Khon Kaen",
         description: "City AQI watchpoint",
-        properties: { city: "Khon Kaen", aqi: 49, pm25: 9, pm10: 14, region: "Northeast" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Khon Kaen", aqi: 49, pm25: 9, pm10: 14, region: "Northeast" }
       },
       {
         id: "pollution-phuket",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [98.3923, 7.8804],
         title: "Phuket",
         description: "City AQI watchpoint",
-        properties: { city: "Phuket", aqi: 34, pm25: 6, pm10: 9, region: "South" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Phuket", aqi: 34, pm25: 6, pm10: 9, region: "South" }
       },
       {
         id: "pollution-chon-buri",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [100.9847, 13.3611],
         title: "Chon Buri",
         description: "Industrial-coast AQI watchpoint",
-        properties: { city: "Chon Buri", aqi: 63, pm25: 18, pm10: 27, region: "East" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Chon Buri", aqi: 63, pm25: 18, pm10: 27, region: "East" }
       },
       {
         id: "pollution-hat-yai",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [100.4747, 7.0084],
         title: "Hat Yai",
         description: "Southern AQI watchpoint",
-        properties: { city: "Hat Yai", aqi: 42, pm25: 8, pm10: 13, region: "South" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Hat Yai", aqi: 42, pm25: 8, pm10: 13, region: "South" }
       },
       {
         id: "pollution-korat",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [102.0978, 14.9799],
         title: "Nakhon Ratchasima",
         description: "Plateau AQI watchpoint",
-        properties: { city: "Nakhon Ratchasima", aqi: 69, pm25: 22, pm10: 32, region: "Northeast" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Nakhon Ratchasima", aqi: 69, pm25: 22, pm10: 32, region: "Northeast" }
       },
       {
         id: "pollution-lampang",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [99.4908, 18.2888],
         title: "Lampang",
         description: "Northern AQI watchpoint",
-        properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" }
       },
       {
         id: "pollution-muang-thong-thani",
-        layerId: "pollution",
-        geometryType: "Point",
         coordinates: [100.5512, 13.9118],
         title: "Muang Thong Thani",
         description: "Venue AQI watchpoint",
-        properties: { city: "Muang Thong Thani", aqi: 46, pm25: 10, pm10: 15, region: "Central" },
-        source: seedMeta("Open-Meteo Air Quality", "https://open-meteo.com/en/docs/air-quality-api", "live")
+        properties: { city: "Muang Thong Thani", aqi: 46, pm25: 10, pm10: 15, region: "Central" }
       }
-    ]
+    ])
   },
   {
     layerId: "disaster",
@@ -3888,7 +4069,7 @@ export const commandConnectors: CommandConnector[] = [
   {
     id: "smart-city-overview",
     title: "Overview snapshot",
-    project: "Muang Thong Thani Monitor",
+    project: "Smart City Thailand Super Dashboard",
     category: "platform",
     status: "live",
     route: "/api/overview",
@@ -3903,7 +4084,7 @@ export const commandConnectors: CommandConnector[] = [
   {
     id: "smart-city-satellite",
     title: "Satellite digest",
-    project: "Muang Thong Thani Monitor",
+    project: "Smart City Thailand Super Dashboard",
     category: "earth-observation",
     status: "live",
     route: "/api/satellite/digest",
@@ -3918,7 +4099,7 @@ export const commandConnectors: CommandConnector[] = [
   {
     id: "smart-city-media",
     title: "Media feeds",
-    project: "Muang Thong Thani Monitor",
+    project: "Smart City Thailand Super Dashboard",
     category: "media",
     status: "live",
     route: "/api/media/feeds",

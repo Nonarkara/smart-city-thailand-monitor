@@ -1077,6 +1077,47 @@ textarea {
   color: #9a6200;
 }
 
+.leaflet-map .pollution-surface-ring {
+  stroke: none;
+  filter: blur(18px);
+  mix-blend-mode: multiply;
+}
+
+.leaflet-map .pollution-surface-ring-outer {
+  filter: blur(24px);
+}
+
+.leaflet-map .pollution-surface-ring-mid {
+  filter: blur(18px);
+}
+
+.leaflet-map .pollution-surface-ring-inner {
+  filter: blur(12px);
+}
+
+.leaflet-map .pollution-surface-core {
+  filter: blur(6px);
+  mix-blend-mode: screen;
+}
+
+.leaflet-map .rain-surface-ring {
+  stroke: none;
+  mix-blend-mode: screen;
+}
+
+.leaflet-map .rain-surface-ring-outer {
+  filter: blur(26px);
+}
+
+.leaflet-map .rain-surface-ring-mid {
+  filter: blur(16px);
+}
+
+.leaflet-map .rain-surface-core {
+  filter: blur(8px);
+  mix-blend-mode: screen;
+}
+
 .map-overlay {
   position: absolute;
   inset: auto 0.75rem 0.75rem 0.75rem;

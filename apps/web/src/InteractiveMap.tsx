@@ -61,6 +61,9 @@ type LayerId =
   | "eo-chlorophyll"
   | "jaxa-rainfall"
   | "satellite-imagery"
+  | "satellite-cloudless"
+  | "satellite-surface-water"
+  | "satellite-bathymetry"
   | "satellite-vegetation"
   | "satellite-aerosol"
   | "satellite-surface-temp"
@@ -76,6 +79,9 @@ type LayerId =
 type EoRainState = "off" | "loading" | "live" | "fallback";
 type SatelliteLayerId =
   | "satellite-imagery"
+  | "satellite-cloudless"
+  | "satellite-surface-water"
+  | "satellite-bathymetry"
   | "satellite-vegetation"
   | "satellite-aerosol"
   | "satellite-surface-temp"
@@ -171,6 +177,9 @@ const layerColors: Record<LayerId, string> = {
   "eo-chlorophyll": "#059669",
   "jaxa-rainfall": "#0f8cff",
   "satellite-imagery": "#e2e8f0",
+  "satellite-cloudless": "#93c5fd",
+  "satellite-surface-water": "#0ea5e9",
+  "satellite-bathymetry": "#14b8a6",
   "satellite-vegetation": "#4ade80",
   "satellite-aerosol": "#f59e0b",
   "satellite-surface-temp": "#fb7185",
@@ -212,7 +221,7 @@ const satelliteLayerDefinitions: Record<
   SatelliteLayerId,
   {
     url: string;
-    fallbackUrl: string;
+    fallbackUrl?: string;
     opacity: number;
     maxZoom: number;
     attribution?: string;
@@ -223,6 +232,24 @@ const satelliteLayerDefinitions: Record<
     fallbackUrl: gibsSatUrl("MODIS_Terra_CorrectedReflectance_TrueColor", satTwoDaysAgo, "GoogleMapsCompatible_Level9", "jpg"),
     opacity: 0.92,
     maxZoom: 9
+  },
+  "satellite-cloudless": {
+    url: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg",
+    opacity: 0.78,
+    maxZoom: 15,
+    attribution: 'Imagery courtesy of <a href="https://maps.eox.at">EOX / Sentinel-2 Cloudless</a>'
+  },
+  "satellite-surface-water": {
+    url: "https://storage.googleapis.com/global-surface-water/tiles2021/occurrence/{z}/{x}/{y}.png",
+    opacity: 0.58,
+    maxZoom: 13,
+    attribution: 'Imagery courtesy of <a href="https://global-surface-water.appspot.com/">JRC Global Surface Water</a>'
+  },
+  "satellite-bathymetry": {
+    url: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/{z}/{x}/{y}.png",
+    opacity: 0.54,
+    maxZoom: 12,
+    attribution: 'Imagery courtesy of <a href="https://emodnet.ec.europa.eu/en/bathymetry">EMODnet Bathymetry</a>'
   },
   "satellite-vegetation": {
     url: gibsSatUrl("MODIS_Terra_NDVI_8Day", satNdviDate, "GoogleMapsCompatible_Level9"),
@@ -685,9 +712,78 @@ function humanizePropertyKey(key: string) {
     .replace(/\b\w/g, (value) => value.toUpperCase());
 }
 
-function formatPropertyValue(key: string, value: string | number | boolean | null) {
+const popupHiddenKeys = new Set(["kind", "citySlug", "sampleRank", "priorityScore", "severityScore"]);
+const popupPriorityKeys = [
+  "eventClass",
+  "status",
+  "severityLabel",
+  "city",
+  "region",
+  "aqi",
+  "pm25",
+  "pm10",
+  "temperatureC",
+  "humidity",
+  "windKph",
+  "precipitationMm",
+  "precipitationProbability",
+  "startedAt",
+  "endedAt",
+  "contributor"
+] as const;
+const popupLabelMap: Record<string, string> = {
+  eventClass: "Event",
+  severityLabel: "Severity",
+  temperatureC: "Temperature",
+  windKph: "Wind",
+  precipitationMm: "Rain",
+  precipitationProbability: "Rain Chance",
+  startedAt: "Start",
+  endedAt: "End",
+  pm25: "PM2.5",
+  pm10: "PM10",
+  aqi: "AQI"
+};
+
+function formatPopupDateTime(value: string, locale: Locale) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString(locale === "th" ? "th-TH" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+
+function formatPropertyValue(key: string, value: string | number | boolean | null, locale: Locale) {
   if (typeof value === "number" && key.toLowerCase().includes("population")) {
     return value.toLocaleString("en-US");
+  }
+
+  if (typeof value === "number" && key === "temperatureC") {
+    return `${value}°C`;
+  }
+
+  if (typeof value === "number" && key === "humidity") {
+    return `${value}%`;
+  }
+
+  if (typeof value === "number" && key === "windKph") {
+    return `${value} km/h`;
+  }
+
+  if (typeof value === "number" && key === "precipitationMm") {
+    return `${value.toFixed(1)} mm`;
+  }
+
+  if (typeof value === "number" && key === "precipitationProbability") {
+    return `${value}%`;
+  }
+
+  if (typeof value === "string" && /(At|Time)$/i.test(key)) {
+    return formatPopupDateTime(value, locale);
   }
 
   return String(value ?? "");
@@ -718,15 +814,36 @@ function toLeafletLatLngs(value: unknown) {
     .map(([lon, lat]) => [lat, lon] as [number, number]);
 }
 
-function buildPopupContent(feature: GeoFeatureRecord) {
+function buildPopupContent(feature: GeoFeatureRecord, locale: Locale) {
   const propertyRows = Object.entries(feature.properties)
-    .filter(([, value]) => value !== null && value !== "")
+    .filter(([key, value]) => !popupHiddenKeys.has(key) && value !== null && value !== "")
+    .sort(([leftKey], [rightKey]) => {
+      const leftIndex = popupPriorityKeys.indexOf(leftKey as (typeof popupPriorityKeys)[number]);
+      const rightIndex = popupPriorityKeys.indexOf(rightKey as (typeof popupPriorityKeys)[number]);
+      const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+      const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+
+      if (normalizedLeft !== normalizedRight) {
+        return normalizedLeft - normalizedRight;
+      }
+
+      return leftKey.localeCompare(rightKey);
+    })
     .slice(0, 5)
     .map(
       ([key, value]) =>
-        `<small><strong>${humanizePropertyKey(key)}:</strong> ${formatPropertyValue(key, value)}</small>`
+        `<small><strong>${popupLabelMap[key] ?? humanizePropertyKey(key)}:</strong> ${formatPropertyValue(key, value, locale)}</small>`
     )
     .join("");
+  const publishedAt = feature.source.publishedAt
+    ? `${locale === "th" ? "เริ่ม" : "Start"}: ${formatPopupDateTime(feature.source.publishedAt, locale)}`
+    : "";
+  const fetchedAt = feature.source.fetchedAt
+    ? `${locale === "th" ? "ดึงล่าสุด" : "Fetched"}: ${formatPopupDateTime(feature.source.fetchedAt, locale)}`
+    : "";
+  const sourceLink = feature.source.sourceUrl
+    ? `<a href="${feature.source.sourceUrl}" target="_blank" rel="noreferrer" style="font-size:11px;font-weight:600;color:#0f62fe;text-decoration:none;">${locale === "th" ? "เปิดแหล่งข้อมูล" : "Open source"}</a>`
+    : "";
 
   return `
     <div style="display:grid;gap:4px;min-width:180px;">
@@ -734,6 +851,9 @@ function buildPopupContent(feature: GeoFeatureRecord) {
       ${feature.description ? `<span>${feature.description}</span>` : ""}
       ${propertyRows}
       <small>${feature.source.sourceName}</small>
+      ${publishedAt ? `<small style="opacity:0.72;">${publishedAt}</small>` : ""}
+      ${fetchedAt ? `<small style="opacity:0.72;">${fetchedAt}</small>` : ""}
+      ${sourceLink}
     </div>
   `;
 }
@@ -743,6 +863,135 @@ function getPollutionSeverityColor(aqi: number) {
   if (aqi >= 70) return "#dc2626";
   if (aqi >= 50) return "#f59e0b";
   return "#16a34a";
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getPm25AccentColor(pm25: number) {
+  if (pm25 >= 30) return "#7c3aed";
+  if (pm25 >= 18) return "#8b5cf6";
+  return "#c084fc";
+}
+
+function getPm10AccentColor(pm10: number) {
+  if (pm10 >= 35) return "#f97316";
+  if (pm10 >= 20) return "#fb923c";
+  return "#fdba74";
+}
+
+function renderPollutionSurface(
+  target: L.LayerGroup,
+  lat: number,
+  lon: number,
+  aqi: number,
+  pm25: number,
+  pm10: number
+) {
+  const severity = clampNumber(aqi / 100, 0.25, 1.1);
+  const pm25Weight = clampNumber(pm25 / 35, 0.18, 1);
+  const pm10Weight = clampNumber(pm10 / 45, 0.15, 0.95);
+  const baseColor = getPollutionSeverityColor(aqi);
+  const rings = [
+    {
+      radius: 52000 + aqi * 900,
+      fillColor: baseColor,
+      fillOpacity: 0.07 + severity * 0.07,
+      className: "pollution-surface-ring pollution-surface-ring-outer"
+    },
+    {
+      radius: 30000 + pm25 * 900,
+      fillColor: getPm25AccentColor(pm25),
+      fillOpacity: 0.05 + pm25Weight * 0.08,
+      className: "pollution-surface-ring pollution-surface-ring-mid"
+    },
+    {
+      radius: 17000 + pm10 * 520,
+      fillColor: getPm10AccentColor(pm10),
+      fillOpacity: 0.06 + pm10Weight * 0.09,
+      className: "pollution-surface-ring pollution-surface-ring-inner"
+    }
+  ];
+
+  rings.forEach((ring) => {
+    L.circle([lat, lon], {
+      radius: ring.radius,
+      stroke: false,
+      fill: true,
+      fillColor: ring.fillColor,
+      fillOpacity: ring.fillOpacity,
+      interactive: false,
+      className: ring.className
+    }).addTo(target);
+  });
+
+  L.circle([lat, lon], {
+    radius: 5000 + aqi * 70,
+    color: baseColor,
+    opacity: 0.42,
+    weight: 1,
+    fillColor: baseColor,
+    fillOpacity: 0.16,
+    interactive: false,
+    className: "pollution-surface-core"
+  }).addTo(target);
+}
+
+function getRainSurfaceColor(precipitationMm: number, precipitationProbability: number) {
+  if (precipitationMm >= 6 || precipitationProbability >= 90) return "#0f3d91";
+  if (precipitationMm >= 2.5 || precipitationProbability >= 70) return "#2563eb";
+  if (precipitationMm >= 0.8 || precipitationProbability >= 45) return "#38bdf8";
+  return "#7dd3fc";
+}
+
+function renderRainSurface(
+  target: L.LayerGroup,
+  lat: number,
+  lon: number,
+  precipitationMm: number,
+  precipitationProbability: number
+) {
+  const probabilityWeight = clampNumber(precipitationProbability / 100, 0.18, 1);
+  const rainfallWeight = clampNumber(precipitationMm / 8, 0.12, 1);
+  const baseColor = getRainSurfaceColor(precipitationMm, precipitationProbability);
+  const rings = [
+    {
+      radius: 16000 + precipitationProbability * 210,
+      fillColor: baseColor,
+      fillOpacity: 0.05 + probabilityWeight * 0.08,
+      className: "rain-surface-ring rain-surface-ring-outer"
+    },
+    {
+      radius: 9000 + precipitationMm * 5200 + precipitationProbability * 70,
+      fillColor: "#38bdf8",
+      fillOpacity: 0.06 + rainfallWeight * 0.1,
+      className: "rain-surface-ring rain-surface-ring-mid"
+    }
+  ];
+
+  rings.forEach((ring) => {
+    L.circle([lat, lon], {
+      radius: ring.radius,
+      stroke: false,
+      fill: true,
+      fillColor: ring.fillColor,
+      fillOpacity: ring.fillOpacity,
+      interactive: false,
+      className: ring.className
+    }).addTo(target);
+  });
+
+  L.circle([lat, lon], {
+    radius: 4200 + precipitationMm * 2200 + precipitationProbability * 22,
+    color: baseColor,
+    opacity: 0.36,
+    weight: 1,
+    fillColor: "#dbeafe",
+    fillOpacity: 0.14,
+    interactive: false,
+    className: "rain-surface-core"
+  }).addTo(target);
 }
 
 function getLatestJaxaRainDate() {
@@ -799,6 +1048,7 @@ function renderEoRainFallback(target: L.LayerGroup, locale: Locale, featureColle
 
 function renderFeatureCollections(
   target: L.LayerGroup,
+  locale: Locale,
   activeLayers: Set<LayerId>,
   featureCollections: MapFeatureCollection[],
   domainSlug?: string
@@ -816,6 +1066,14 @@ function renderFeatureCollections(
       const isBangkokPlaces = collection.layerId === "bangkok-passages";
       const isNationalFootprint = collection.layerId === "smart-city-thailand";
       const isPollutionLayer = collection.layerId === "pollution";
+      const isWeatherLayer = collection.layerId === "weather";
+      const pm25 = isPollutionLayer ? Number(feature.properties.pm25 ?? 0) : 0;
+      const pm10 = isPollutionLayer ? Number(feature.properties.pm10 ?? 0) : 0;
+      const precipitationMm = isWeatherLayer ? Number(feature.properties.precipitationMm ?? 0) : 0;
+      const precipitationProbability = isWeatherLayer
+        ? Number(feature.properties.precipitationProbability ?? 0)
+        : 0;
+      const hasRainSignal = isWeatherLayer && (precipitationMm > 0 || precipitationProbability >= 25);
       const intensity =
         isPollutionLayer
           ? Number(feature.properties.aqi ?? 0)
@@ -824,8 +1082,10 @@ function renderFeatureCollections(
             : 0;
       const pointColor = isPollutionLayer
         ? getPollutionSeverityColor(intensity)
+        : hasRainSignal
+          ? getRainSurfaceColor(precipitationMm, precipitationProbability)
         : layerColors[collection.layerId as LayerId] ?? "#22c55e";
-      const popupContent = buildPopupContent(feature);
+      const popupContent = buildPopupContent(feature, locale);
 
       if (feature.geometryType === "Point") {
         const point = normalizeCoordinatePair(feature.coordinates);
@@ -834,6 +1094,22 @@ function renderFeatureCollections(
         }
 
         const [lon, lat] = point;
+
+        if (isPollutionLayer && (intensity > 0 || pm25 > 0 || pm10 > 0)) {
+          renderPollutionSurface(
+            target,
+            lat,
+            lon,
+            intensity,
+            pm25,
+            pm10
+          );
+        }
+
+        if (hasRainSignal) {
+          renderRainSurface(target, lat, lon, precipitationMm, precipitationProbability);
+        }
+
         const marker = L.circleMarker([lat, lon], {
           radius: isNationalFootprint
             ? 7
@@ -842,7 +1118,9 @@ function renderFeatureCollections(
               : collection.layerId === "itic-traffic"
                 ? 6
               : isPollutionLayer
-                ? Math.max(5, Math.min(10, 4 + intensity / 20))
+                ? Math.max(5, Math.min(9, 4 + intensity / 22))
+                : hasRainSignal
+                  ? Math.max(6, Math.min(9, 5 + precipitationProbability / 40 + precipitationMm))
                 : collection.layerId === "weather"
                   ? 6
                   : collection.layerId === "agriculture" || collection.layerId === "water" || collection.layerId === "land-use"
@@ -850,7 +1128,7 @@ function renderFeatureCollections(
                   : 4,
           color: pointColor,
           fillColor: pointColor,
-          fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.28 : 0.35,
+          fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.86 : hasRainSignal ? 0.58 : 0.35,
           weight: 2
         });
 
@@ -1016,7 +1294,7 @@ export default function InteractiveMap({
       Object.entries(satelliteLayerDefinitions).map(([id, definition]) => {
         let triedFallback = false;
         const layer = L.tileLayer(definition.url, {
-          attribution: satelliteAttribution,
+          attribution: definition.attribution ?? satelliteAttribution,
           opacity: definition.opacity,
           maxZoom: 18,
           maxNativeZoom: definition.maxZoom,
@@ -1163,7 +1441,7 @@ export default function InteractiveMap({
     overlay.clearLayers();
     const activeLayers = new Set(layers as LayerId[]);
 
-    renderFeatureCollections(overlay, activeLayers, featureCollections, domainSlug);
+    renderFeatureCollections(overlay, locale, activeLayers, featureCollections, domainSlug);
 
     if (activeLayers.has("mtt-grid") && view === "city" && citySlug === "muang-thong-thani") {
       renderMttGrid(overlay);

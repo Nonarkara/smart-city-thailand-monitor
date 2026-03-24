@@ -3,7 +3,7 @@ export const config = {
   host: process.env.HOST ?? "127.0.0.1",
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
   allowLiveFetch: process.env.ALLOW_LIVE_FETCH !== "false",
-  syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 300000),
+  syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 180000),
   stateSnapshotPath: process.env.STATE_SNAPSHOT_PATH ?? "tmp/api-state.json",
   cctvSnapshotPath: process.env.CCTV_SNAPSHOT_PATH ?? "tmp/public-cctv-state.json",
   cctvCacheTtlMs: Number(process.env.CCTV_CACHE_TTL_MS ?? 300000),

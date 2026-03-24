@@ -14,11 +14,11 @@ services:
       - key: VITE_API_BASE_URL
         value: https://smart-city-monitor-api.onrender.com
       - key: VITE_DEFAULT_CITY
-        value: muang-thong-thani
+        value: bangkok
       - key: VITE_DEFAULT_VIEW
-        value: city
+        value: national
       - key: VITE_SITE_TITLE
-        value: "Muang Thong Thani Monitor"
+        value: "Smart City Thailand Super Dashboard"
     routes:
       - type: rewrite
         source: /*
