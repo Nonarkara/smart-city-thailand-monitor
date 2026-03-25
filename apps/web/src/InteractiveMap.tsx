@@ -74,7 +74,7 @@ type LayerId =
   | "disaster"
   | "itic-traffic"
   | "cctv-cameras"
-  | "mtt-grid";
+;
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
 type SatelliteLayerId =
@@ -92,7 +92,6 @@ type SatelliteLayerId =
 
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
-/* Greater Bangkok + Nonthaburi bounds — used as maxBounds for MTT dashboard */
 const greaterBangkokBounds = L.latLngBounds([13.5, 100.2], [14.15, 100.95]);
 
 const cityCenters: Record<
@@ -148,10 +147,10 @@ const cityCenters: Record<
     lat: 14.9799,
     lon: 102.0978
   },
-  "muang-thong-thani": {
-    label: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
-    lat: 13.9118,
-    lon: 100.5512
+  nonthaburi: {
+    label: { th: "นนทบุรี", en: "Nonthaburi" },
+    lat: 13.8622,
+    lon: 100.5144
   }
 };
 
@@ -190,7 +189,6 @@ const layerColors: Record<LayerId, string> = {
   disaster: "#cf5c00",
   "itic-traffic": "#ef4444",
   "cctv-cameras": "#34d399",
-  "mtt-grid": "#94a3b8"
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = [
@@ -347,8 +345,7 @@ function applyGenericLayerVisuals(
   }
 }
 
-/* Detect site theme from env var */
-const siteTheme = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani") === "muang-thong-thani" ? "editorial" : "ops";
+const siteTheme = "ops" as const;
 
 /* International base map tile sources */
 const basemapSources = {
@@ -598,90 +595,6 @@ function renderCctvCameras(target: L.LayerGroup, locale: Locale, cameras: Public
     marker.bindPopup(popupHtml, { maxWidth: 300, minWidth: 220 });
     marker.addTo(target);
   });
-}
-
-/**
- * Renders a 1 km × 1 km reference grid over the Muang Thong Thani area.
- * Grid lines are drawn as Leaflet polylines; cell labels (e.g. A1, B2) are
- * placed at each intersection using DivIcon markers.
- */
-function renderMttGrid(target: L.LayerGroup) {
-  // Muang Thong Thani area bounds (roughly 4 km × 4 km centred on the development)
-  const south = 13.890;
-  const north = 13.930;
-  const west  = 100.520;
-  const east  = 100.560;
-
-  // 1 km in degrees at ~14°N latitude
-  const mPerDegLat = 111_320;
-  const mPerDegLon = 111_320 * Math.cos((13.91 * Math.PI) / 180);
-  const stepLat = 1000 / mPerDegLat;
-  const stepLon = 1000 / mPerDegLon;
-
-  const lineStyle: L.PolylineOptions = {
-    color: "rgba(148,163,184,0.38)",
-    weight: 1,
-    dashArray: "4 4",
-    interactive: false
-  };
-
-  const cols: number[] = [];
-  for (let lon = west; lon <= east + 1e-9; lon += stepLon) cols.push(lon);
-
-  const rows: number[] = [];
-  for (let lat = south; lat <= north + 1e-9; lat += stepLat) rows.push(lat);
-
-  // Horizontal lines
-  rows.forEach((lat) => {
-    L.polyline(
-      [
-        [lat, west],
-        [lat, east]
-      ],
-      lineStyle
-    ).addTo(target);
-  });
-
-  // Vertical lines
-  cols.forEach((lon) => {
-    L.polyline(
-      [
-        [south, lon],
-        [north, lon]
-      ],
-      lineStyle
-    ).addTo(target);
-  });
-
-  // Cell labels at top-left corner of each cell
-  const colLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  for (let r = 0; r < rows.length - 1; r++) {
-    for (let c = 0; c < cols.length - 1; c++) {
-      const cellLabel = `${colLetters[c] ?? c}${r + 1}`;
-      const labelIcon = L.divIcon({
-        className: "grid-label",
-        html: cellLabel,
-        iconSize: [24, 12],
-        iconAnchor: [0, 0]
-      });
-      L.marker([rows[r] + stepLat * 0.94, cols[c] + stepLon * 0.04], {
-        icon: labelIcon,
-        interactive: false
-      }).addTo(target);
-    }
-  }
-
-  // Scale reference at the bottom-right corner
-  const scaleIcon = L.divIcon({
-    className: "grid-label",
-    html: "1 km grid",
-    iconSize: [56, 12],
-    iconAnchor: [56, 12]
-  });
-  L.marker([south + stepLat * 0.15, east - stepLon * 0.15], {
-    icon: scaleIcon,
-    interactive: false
-  }).addTo(target);
 }
 
 function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
@@ -1263,11 +1176,10 @@ export default function InteractiveMap({
       return;
     }
 
-    const isMtt = siteTheme === "editorial";
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true,
-      minZoom: isMtt ? 11 : 5,
+      minZoom: 5,
       maxBoundsViscosity: 0.85
     });
 
@@ -1284,8 +1196,7 @@ export default function InteractiveMap({
 
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;
-    /* MTT: lock map to Greater Bangkok area. National: full Thailand bounds. */
-    map.setMaxBounds(isMtt ? greaterBangkokBounds.pad(0.1) : thailandBounds.pad(0.22));
+    map.setMaxBounds(thailandBounds.pad(0.22));
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
@@ -1428,7 +1339,7 @@ export default function InteractiveMap({
     }
 
     const city = cityCenters[citySlug] ?? cityCenters.bangkok;
-    const zoom = citySlug === "muang-thong-thani" ? 15 : (view === "city" ? 10 : 8);
+    const zoom = view === "city" ? 10 : 8;
     map.setView([city.lat, city.lon], zoom);
   }, [view, citySlug, district, layers, bangkokBoundsKey, districtBoundsKey, nationalBoundsKey]);
 
@@ -1442,10 +1353,6 @@ export default function InteractiveMap({
     const activeLayers = new Set(layers as LayerId[]);
 
     renderFeatureCollections(overlay, locale, activeLayers, featureCollections, domainSlug);
-
-    if (activeLayers.has("mtt-grid") && view === "city" && citySlug === "muang-thong-thani") {
-      renderMttGrid(overlay);
-    }
 
     if (activeLayers.has("cctv-cameras")) {
       renderCctvCameras(overlay, locale, publicCctvCameras);

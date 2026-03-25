@@ -16,11 +16,11 @@ export const config = {
   newsApiKey: process.env.NEWS_API_KEY ?? "",
   newsApiPageSize: Number(process.env.NEWS_API_PAGE_SIZE ?? 4),
   satelliteImageryEndpoint: process.env.SATELLITE_IMAGERY_ENDPOINT ?? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  newsApiQueries: (process.env.NEWS_API_QUERIES ?? "Muang Thong Thani|IMPACT Muang Thong Thani|Nonthaburi Smart City")
+  newsApiQueries: (process.env.NEWS_API_QUERIES ?? "Thailand Smart City|Bangkok Air Quality|Nonthaburi Smart City")
     .split("|")
     .map((item) => item.trim())
     .filter(Boolean),
-  googleNewsRssQueries: (process.env.GOOGLE_NEWS_RSS_QUERIES ?? "Muang Thong Thani|Nonthaburi Smart City")
+  googleNewsRssQueries: (process.env.GOOGLE_NEWS_RSS_QUERIES ?? "Thailand Smart City|Nonthaburi Smart City")
     .split("|")
     .map((item) => item.trim())
     .filter(Boolean),

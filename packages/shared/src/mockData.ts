@@ -192,9 +192,9 @@ export const domains: DomainScorecard[] = [
 
 export const cities: CityProfile[] = [
   {
-    id: "city-muang-thong-thani",
-    slug: "muang-thong-thani",
-    name: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    id: "city-nonthaburi",
+    slug: "nonthaburi",
+    name: { th: "นนทบุรี", en: "Nonthaburi" },
     region: { th: "นนทบุรี", en: "Nonthaburi" },
     population: 300000,
     focus: {
@@ -600,9 +600,9 @@ export const districts: DistrictProfile[] = [
     source: seedMeta("Khon Kaen Smart City", "https://www.citydata.in.th")
   },
   {
-    id: "district-mtt-impact-core",
+    id: "district-nonthaburi-impact-core",
     slug: "impact-core",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     name: { th: "Impact Core", en: "Impact Core" },
     population: 62000,
     focus: {
@@ -622,12 +622,12 @@ export const districts: DistrictProfile[] = [
       { th: "crowd spillback จากหน้าอาคารเข้าสู่ทางวิ่งรถ", en: "Crowd spillback from the frontage into vehicle lanes." }
     ],
     recommendedLayers: ["itic-traffic", "cctv-cameras", "projects"],
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
-    id: "district-mtt-beehive-connector",
+    id: "district-nonthaburi-beehive-connector",
     slug: "beehive-connector",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     name: { th: "Beehive Connector", en: "Beehive Connector" },
     population: 44000,
     focus: {
@@ -647,12 +647,12 @@ export const districts: DistrictProfile[] = [
       { th: "คนชะลอเดินและการไหลสวนกันในทางเชื่อม", en: "Bidirectional pedestrian slowdown in the connector." }
     ],
     recommendedLayers: ["weather", "water", "projects"],
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
-    id: "district-mtt-cosmo-frontage",
+    id: "district-nonthaburi-cosmo-frontage",
     slug: "cosmo-frontage",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     name: { th: "Cosmo Frontage", en: "Cosmo Frontage" },
     population: 52000,
     focus: {
@@ -672,12 +672,12 @@ export const districts: DistrictProfile[] = [
       { th: "รถรับส่งจอดค้างริมฟุตบาทช่วงเปลี่ยนคิว", en: "Curbside dwell pressure during shuttle turnover." }
     ],
     recommendedLayers: ["cctv-cameras", "itic-traffic", "projects"],
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
-    id: "district-mtt-lakefront-gate",
+    id: "district-nonthaburi-lakefront-gate",
     slug: "lakefront-gate",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     name: { th: "Lakefront Gate", en: "Lakefront Gate" },
     population: 36000,
     focus: {
@@ -697,17 +697,17 @@ export const districts: DistrictProfile[] = [
       { th: "ไฟทางเดินและระบบส่องสว่างไม่เสถียร", en: "Intermittent walkway lighting near the gate." }
     ],
     recommendedLayers: ["weather", "water", "cctv-cameras"],
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
-    id: "district-mtt-popular-bridge-ingress",
+    id: "district-nonthaburi-popular-bridge-ingress",
     slug: "popular-bridge-ingress",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     name: { th: "Popular / Bridge Ingress", en: "Popular / Bridge Ingress" },
     population: 58000,
     focus: {
-      th: "ถนนป๊อปปูล่า สะพานเมืองทอง และทางเข้าออกหลัก",
-      en: "Popular Road, Muang Thong bridges, and the main ingress approach."
+      th: "ถนนป๊อปปูล่า สะพานนนทบุรี และทางเข้าออกหลัก",
+      en: "Popular Road, Nonthaburi bridges, and the main ingress approach."
     },
     priority: {
       th: "ลดแรงกดดันการเข้าออกและป้องกัน wrong-way / queue spillback",
@@ -722,7 +722,7 @@ export const districts: DistrictProfile[] = [
       { th: "แถวรถสะสมขึ้นสะพานและย้อนกลับไปทาง Popular", en: "Bridge approach queues spilling back onto Popular Road." }
     ],
     recommendedLayers: ["itic-traffic", "cctv-cameras", "weather"],
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   }
 ];
 
@@ -792,9 +792,9 @@ export const projects: ProjectRecord[] = [
   },
   {
     id: "project-4",
-    slug: "mtt-event-ingress-fabric",
-    title: { th: "Muang Thong Event Ingress Fabric", en: "Muang Thong Event Ingress Fabric" },
-    citySlug: "muang-thong-thani",
+    slug: "nonthaburi-event-ingress-fabric",
+    title: { th: "Nonthaburi Event Ingress Fabric", en: "Nonthaburi Event Ingress Fabric" },
+    citySlug: "nonthaburi",
     districtSlug: "impact-core",
     domainSlug: "mobility",
     status: "active",
@@ -809,13 +809,13 @@ export const projects: ProjectRecord[] = [
       en: "Attach queue thresholds to alert cards and the action queue."
     },
     updatedAt: seededAt,
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
     id: "project-5",
-    slug: "mtt-lakefront-drainage-watch",
-    title: { th: "Muang Thong Lakefront Drainage Watch", en: "Muang Thong Lakefront Drainage Watch" },
-    citySlug: "muang-thong-thani",
+    slug: "nonthaburi-lakefront-drainage-watch",
+    title: { th: "Nonthaburi Lakefront Drainage Watch", en: "Nonthaburi Lakefront Drainage Watch" },
+    citySlug: "nonthaburi",
     districtSlug: "lakefront-gate",
     domainSlug: "environment",
     status: "watch",
@@ -830,13 +830,13 @@ export const projects: ProjectRecord[] = [
       en: "Connect rainfall intensity to field-team escalation rules."
     },
     updatedAt: seededAt,
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   },
   {
     id: "project-6",
-    slug: "mtt-reporter-bridge",
-    title: { th: "Muang Thong Reporter Bridge", en: "Muang Thong Reporter Bridge" },
-    citySlug: "muang-thong-thani",
+    slug: "nonthaburi-reporter-bridge",
+    title: { th: "Nonthaburi Reporter Bridge", en: "Nonthaburi Reporter Bridge" },
+    citySlug: "nonthaburi",
     districtSlug: "cosmo-frontage",
     domainSlug: "governance",
     status: "planned",
@@ -851,7 +851,7 @@ export const projects: ProjectRecord[] = [
       en: "Test sidewalk and queue-spillback cases end to end."
     },
     updatedAt: seededAt,
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th")
   }
 ];
 
@@ -906,25 +906,25 @@ export const news: NewsItem[] = [
   },
   {
     id: "news-4",
-    slug: "mtt-event-ops-readiness",
+    slug: "nonthaburi-event-ops-readiness",
     title: {
-      th: "เมืองทองธานีเตรียมแผนรับงานและการเดินทางเข้าออก",
-      en: "Muang Thong Thani stages event ingress and crowd operations plan"
+      th: "นนทบุรีเตรียมแผนรับงานและการเดินทางเข้าออก",
+      en: "Nonthaburi stages event ingress and crowd operations plan"
     },
     excerpt: {
       th: "เน้น drop-off, ทางเดิน, shuttle loop และพื้นที่หน้าอาคารหลัก",
       en: "The plan focuses on drop-off lanes, walkways, shuttle loops, and the venue frontage."
     },
     kind: "official",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     districtSlug: "impact-core",
     domainSlug: "mobility",
     publishedAt: seededAt,
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th", "manual")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th", "manual")
   },
   {
     id: "news-5",
-    slug: "mtt-rain-walkway-watch",
+    slug: "nonthaburi-rain-walkway-watch",
     title: {
       th: "ฝนช่วงเย็นทำให้แนวทางเชื่อม Beehive ต้องเฝ้าระวัง",
       en: "Evening rain keeps the Beehive connector under watch"
@@ -934,7 +934,7 @@ export const news: NewsItem[] = [
       en: "Coverage is focused on pooling water, slip risk, and slowed movement between halls."
     },
     kind: "external",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     districtSlug: "beehive-connector",
     domainSlug: "environment",
     publishedAt: seededAt,
@@ -942,21 +942,21 @@ export const news: NewsItem[] = [
   },
   {
     id: "news-6",
-    slug: "mtt-reporter-pilot-brief",
+    slug: "nonthaburi-reporter-pilot-brief",
     title: {
-      th: "ทีมเมืองทองเริ่ม pilot การรับแจ้งเหตุคู่กับกล้อง",
-      en: "Muang Thong begins a pilot for reporter intake matched with cameras"
+      th: "ทีมนนทบุรีเริ่ม pilot การรับแจ้งเหตุคู่กับกล้อง",
+      en: "Nonthaburi begins a pilot for reporter intake matched with cameras"
     },
     excerpt: {
       th: "เป้าหมายคือให้ sidewalk, queue, และ facility cases เข้าบอร์ดเดียวกัน",
       en: "The goal is to bring sidewalk, queue, and facility cases into one shared board."
     },
     kind: "official",
-    citySlug: "muang-thong-thani",
+    citySlug: "nonthaburi",
     districtSlug: "cosmo-frontage",
     domainSlug: "governance",
     publishedAt: seededAt,
-    source: seedMeta("Muang Thong Operations Desk", "https://www.pakkretcity.go.th", "manual")
+    source: seedMeta("Nonthaburi Operations Desk", "https://www.pakkretcity.go.th", "manual")
   }
 ];
 
@@ -1196,8 +1196,8 @@ export const decisionQueue: DecisionQueueItem[] = [
     layerIds: ["agriculture", "economy", "projects"]
   },
   {
-    id: "decision-mtt-impact-dropoff",
-    citySlug: "muang-thong-thani",
+    id: "decision-nonthaburi-impact-dropoff",
+    citySlug: "nonthaburi",
     districtSlug: "impact-core",
     domainSlug: "mobility",
     title: {
@@ -1222,8 +1222,8 @@ export const decisionQueue: DecisionQueueItem[] = [
     layerIds: ["itic-traffic", "cctv-cameras", "projects"]
   },
   {
-    id: "decision-mtt-beehive-rain",
-    citySlug: "muang-thong-thani",
+    id: "decision-nonthaburi-beehive-rain",
+    citySlug: "nonthaburi",
     districtSlug: "beehive-connector",
     domainSlug: "environment",
     title: {
@@ -1248,8 +1248,8 @@ export const decisionQueue: DecisionQueueItem[] = [
     layerIds: ["weather", "water", "jaxa-rainfall"]
   },
   {
-    id: "decision-mtt-cosmo-sidewalk",
-    citySlug: "muang-thong-thani",
+    id: "decision-nonthaburi-cosmo-sidewalk",
+    citySlug: "nonthaburi",
     districtSlug: "cosmo-frontage",
     domainSlug: "governance",
     title: {
@@ -1422,12 +1422,12 @@ export const sources: SourceRecord[] = [
   },
   {
     id: "reference",
-    name: "Muang Thong Reference Grid",
+    name: "Nonthaburi Reference Grid",
     category: "geospatial",
     url: "https://www.openstreetmap.org",
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
-    message: "1 x 1 km distance grid anchored to the Muang Thong Thani operations area."
+    message: "1 x 1 km distance grid anchored to the Nonthaburi operations area."
   },
   {
     id: "nasa-gibs",
@@ -1721,7 +1721,7 @@ export const mapLayers: MapLayerConfig[] = [
     zIndex: 50
   },
   {
-    id: "mtt-grid",
+    id: "reference-grid",
     label: { th: "กริด 1 กม.", en: "1 km Grid" },
     active: false,
     color: "#94a3b8",
@@ -1881,14 +1881,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: smartCityThailandMeta
       },
       {
-        id: "smart-city-th-mtt",
+        id: "smart-city-th-nonthaburi",
         layerId: "smart-city-thailand",
         geometryType: "Point",
         coordinates: [100.5512, 13.9118],
-        title: "Muang Thong Thani",
+        title: "Nonthaburi",
         description: "Venue-scale operations cluster for events, mobility, and field-system integration.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           region: "Central",
           population: 300000,
           smartFocus: "Venue operations, ingress control, and field reporting."
@@ -2614,7 +2614,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: dataToPolicyMeta
       },
       {
-        id: "projects-mtt-impact-ingress",
+        id: "projects-nonthaburi-impact-ingress",
         layerId: "projects",
         geometryType: "Polygon",
         coordinates: [
@@ -2623,10 +2623,10 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           [100.5558, 13.9165],
           [100.5468, 13.9165]
         ],
-        title: "Muang Thong ingress control zone",
+        title: "Nonthaburi ingress control zone",
         description: "Primary event-frontage footprint for queue recovery, shuttle loops, and curbside control.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Impact Core",
           districtSlug: "impact-core",
           status: "active",
@@ -2635,7 +2635,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: dataToPolicyMeta
       },
       {
-        id: "projects-mtt-lakefront-drainage",
+        id: "projects-nonthaburi-lakefront-drainage",
         layerId: "projects",
         geometryType: "LineString",
         coordinates: [
@@ -2644,10 +2644,10 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           [100.5553, 13.9067],
           [100.558, 13.9052]
         ],
-        title: "Muang Thong drainage readiness corridor",
+        title: "Nonthaburi drainage readiness corridor",
         description: "Operational sweep corridor used for rain response between Beehive and the lakefront gate.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Beehive Connector",
           districtSlug: "beehive-connector",
           status: "watch",
@@ -2656,14 +2656,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: dataToPolicyMeta
       },
       {
-        id: "projects-mtt-reporter-bridge",
+        id: "projects-nonthaburi-reporter-bridge",
         layerId: "projects",
         geometryType: "Point",
         coordinates: [100.5404, 13.9083],
-        title: "Muang Thong reporter bridge pilot",
+        title: "Nonthaburi reporter bridge pilot",
         description: "Pilot point for merging field reports, curbside activity, and camera-linked workflow states.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Cosmo Frontage",
           districtSlug: "cosmo-frontage",
           status: "planned",
@@ -2756,14 +2756,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: gdeltSignalsMeta
       },
       {
-        id: "news-mtt-ingress",
+        id: "news-nonthaburi-ingress",
         layerId: "news",
         geometryType: "Point",
         coordinates: [100.5512, 13.9132],
-        title: "Muang Thong event ingress watch",
+        title: "Nonthaburi event ingress watch",
         description: "Operations and event-readiness coverage is clustering around the Challenger frontage.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Impact Core",
           districtSlug: "impact-core",
           mentions: 10,
@@ -2772,14 +2772,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: gdeltSignalsMeta
       },
       {
-        id: "news-mtt-rain-connector",
+        id: "news-nonthaburi-rain-connector",
         layerId: "news",
         geometryType: "Point",
         coordinates: [100.5488, 13.9101],
-        title: "Muang Thong rain and walkway signal",
+        title: "Nonthaburi rain and walkway signal",
         description: "Rain-driven walkway and drainage coverage is concentrated along the Beehive connector.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Beehive Connector",
           districtSlug: "beehive-connector",
           mentions: 8,
@@ -2851,7 +2851,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: jaxaEarthMeta
       },
       {
-        id: "resilience-mtt-rain-pocket",
+        id: "resilience-nonthaburi-rain-pocket",
         layerId: "resilience",
         geometryType: "Polygon",
         coordinates: [
@@ -2861,10 +2861,10 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           [100.5461, 13.917],
           [100.5419, 13.9092]
         ],
-        title: "Muang Thong event-rain response pocket",
+        title: "Nonthaburi event-rain response pocket",
         description: "Low points, event queues, and walkway drainage overlap inside this venue-scale watch zone.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Beehive Connector",
           districtSlug: "beehive-connector",
           risk: "rain-and-drainage",
@@ -3148,7 +3148,7 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: jaxaEarthMeta
       },
       {
-        id: "water-mtt-drainage-corridor",
+        id: "water-nonthaburi-drainage-corridor",
         layerId: "water",
         geometryType: "LineString",
         coordinates: [
@@ -3158,13 +3158,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
           [100.5562, 13.9069],
           [100.5586, 13.905]
         ],
-        title: "Muang Thong drainage corridor",
+        title: "Nonthaburi drainage corridor",
         description: "Venue-scale runoff path from the halls toward the lakefront gate and low-point checks.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Lakefront Gate",
           districtSlug: "lakefront-gate",
-          basin: "Muang Thong drainage",
+          basin: "Nonthaburi drainage",
           type: "urban-drainage"
         },
         source: dataToPolicyMeta
@@ -3364,14 +3364,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: iticTrafficMeta
       },
       {
-        id: "itic-mtt-impact-loop",
+        id: "itic-nonthaburi-impact-loop",
         layerId: "itic-traffic",
         geometryType: "Point",
         coordinates: [100.5518, 13.9131],
         title: "Impact Challenger loop congestion watch",
         description: "Drop-off dwell time and shuttle movement are compressing the frontage loop.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Impact Core",
           districtSlug: "impact-core",
           kind: "traffic",
@@ -3381,14 +3381,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: iticTrafficMeta
       },
       {
-        id: "itic-mtt-popular-bridge",
+        id: "itic-nonthaburi-popular-bridge",
         layerId: "itic-traffic",
         geometryType: "Point",
         coordinates: [100.5378, 13.9011],
-        title: "Muang Thong bridge ingress watch",
+        title: "Nonthaburi bridge ingress watch",
         description: "Bridge and Popular Road queues are starting to spill back into the feeder lanes.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Popular / Bridge Ingress",
           districtSlug: "popular-bridge-ingress",
           kind: "incident",
@@ -3398,14 +3398,14 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: iticTrafficMeta
       },
       {
-        id: "itic-mtt-cosmo-curbside",
+        id: "itic-nonthaburi-cosmo-curbside",
         layerId: "itic-traffic",
         geometryType: "Point",
         coordinates: [100.5404, 13.9083],
         title: "Cosmo frontage curbside pressure",
         description: "Pedestrian spillover and curbside dwell time are narrowing the frontage movement lane.",
         properties: {
-          city: "Muang Thong Thani",
+          city: "Nonthaburi",
           district: "Cosmo Frontage",
           districtSlug: "cosmo-frontage",
           kind: "traffic",
@@ -3567,13 +3567,13 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       },
       {
-        id: "weather-muang-thong-thani",
+        id: "weather-nonthaburi",
         layerId: "weather",
         geometryType: "Point",
         coordinates: [100.5512, 13.9118],
-        title: "Muang Thong Thani",
+        title: "Nonthaburi",
         description: "Venue weather watchpoint",
-        properties: { city: "Muang Thong Thani", temperatureC: 31, humidity: 72, windKph: 9, region: "Central" },
+        properties: { city: "Nonthaburi", temperatureC: 31, humidity: 72, windKph: 9, region: "Central" },
         source: seedMeta("Open-Meteo Forecast", "https://open-meteo.com/en/docs", "live")
       }
     ]
@@ -3641,11 +3641,11 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         properties: { city: "Lampang", aqi: 78, pm25: 25, pm10: 35, region: "North" }
       },
       {
-        id: "pollution-muang-thong-thani",
+        id: "pollution-nonthaburi",
         coordinates: [100.5512, 13.9118],
-        title: "Muang Thong Thani",
+        title: "Nonthaburi",
         description: "Venue AQI watchpoint",
-        properties: { city: "Muang Thong Thani", aqi: 46, pm25: 10, pm10: 15, region: "Central" }
+        properties: { city: "Nonthaburi", aqi: 46, pm25: 10, pm10: 15, region: "Central" }
       }
     ])
   },
@@ -4232,7 +4232,7 @@ export const commandConnectors: CommandConnector[] = [
 export const cameraEvents: CameraEventSample[] = [
   {
     id: "camera-impact-dropoff",
-    cameraId: "MTT-CAM-01",
+    cameraId: "SCTH-CAM-01",
     zone: { th: "Impact Challenger drop-off", en: "Impact Challenger drop-off" },
     detection: { th: "จอดแช่ผิดกฎหมาย", en: "Illegal Parking" },
     detail: {
@@ -4248,7 +4248,7 @@ export const cameraEvents: CameraEventSample[] = [
   },
   {
     id: "camera-beehive-incident",
-    cameraId: "MTT-CAM-02",
+    cameraId: "SCTH-CAM-02",
     zone: { th: "Beehive connector", en: "Beehive connector" },
     detection: { th: "เหตุเฉี่ยวชนเล็กน้อย", en: "Minor Incident" },
     detail: {
@@ -4264,7 +4264,7 @@ export const cameraEvents: CameraEventSample[] = [
   },
   {
     id: "camera-cosmo-sidewalk",
-    cameraId: "MTT-CAM-03",
+    cameraId: "SCTH-CAM-03",
     zone: { th: "Cosmo Bazaar frontage", en: "Cosmo Bazaar frontage" },
     detection: { th: "คนล้นทางเท้า", en: "Pedestrian Spillover" },
     detail: {
@@ -4280,7 +4280,7 @@ export const cameraEvents: CameraEventSample[] = [
   },
   {
     id: "camera-p2-wrong-way",
-    cameraId: "MTT-CAM-04",
+    cameraId: "SCTH-CAM-04",
     zone: { th: "P2 feeder road", en: "P2 feeder road" },
     detection: { th: "รถย้อนศร", en: "Wrong-way Vehicle" },
     detail: {
@@ -4296,7 +4296,7 @@ export const cameraEvents: CameraEventSample[] = [
   },
   {
     id: "camera-lakefront-smoke",
-    cameraId: "MTT-CAM-05",
+    cameraId: "SCTH-CAM-05",
     zone: { th: "Lakefront gate", en: "Lakefront gate" },
     detection: { th: "ควัน / ความร้อนผิดปกติ", en: "Smoke / Thermal Alert" },
     detail: {
@@ -4448,7 +4448,7 @@ export const reporterCases: ReporterCaseSample[] = [
       th: "AI summary: ควรจับคู่กับ crowd detection และ curbside loading",
       en: "AI summary: should be matched with crowd detection and curbside loading."
     },
-    matchedCameraId: "MTT-CAM-03",
+    matchedCameraId: "SCTH-CAM-03",
     minutesAgo: 22,
     targetLayers: ["cctv-cameras", "itic-traffic"]
   },
@@ -4522,8 +4522,8 @@ export const fusionQueue: FusionQueueItem[] = [
     id: "fusion-crowd",
     title: { th: "Crowd obstruction + reporter ticket", en: "Crowd obstruction + reporter ticket" },
     detail: {
-      th: "SCTH-4932 จับคู่กับ MTT-CAM-03 เพื่อทำเคสทางเท้าเดียวกัน",
-      en: "SCTH-4932 is matched with MTT-CAM-03 as one sidewalk case."
+      th: "SCTH-4932 จับคู่กับ SCTH-CAM-03 เพื่อทำเคสทางเท้าเดียวกัน",
+      en: "SCTH-4932 is matched with SCTH-CAM-03 as one sidewalk case."
     },
     confidence: 0.94
   },
@@ -4583,7 +4583,7 @@ export const expansionTracks: ExpansionTrack[] = [
 export function createCommandCenterSnapshot(): CommandCenterSnapshot {
   return {
     updatedAt: new Date().toISOString(),
-    zoneLabel: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    zoneLabel: { th: "นนทบุรี", en: "Nonthaburi" },
     mission: {
       th: "Command center สำหรับพื้นที่จัดงาน เมือง และระบบภาคสนามที่ต้องต่อขยายได้",
       en: "A command center for venue-scale city operations with room to grow into field-system integration."
@@ -4681,28 +4681,28 @@ export const publicCctvCameras: PublicCctvCamera[] = [
   { id: "pk-015", cameraId: "CAMPK015", label: { th: "ศูนย์รีไซเคิลชุมชน 2", en: "Community Recycling Center 2" }, source: "Pak Kret Municipality", lat: 13.889700, lon: 100.517800, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK015_thumb.jpg", status: "live", zone: "community" },
   { id: "pk-016", cameraId: "CAMPK016", label: { th: "ถ.ภูมิเวท โรงเรียน 1", en: "Phumivet Road School 1" }, source: "Pak Kret Municipality", lat: 13.904638, lon: 100.492249, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK016_thumb.jpg", status: "live", zone: "school" },
   { id: "pk-017", cameraId: "CAMPK017", label: { th: "ถ.ภูมิเวท โรงเรียน 2", en: "Phumivet Road School 2" }, source: "Pak Kret Municipality", lat: 13.904761, lon: 100.492255, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK017_thumb.jpg", status: "live", zone: "school" },
-  { id: "pk-018", cameraId: "CAMPK018", label: { th: "สะพานเมืองทองธานี 1", en: "Muang Thong Thani Bridge 1" }, source: "Pak Kret Municipality", lat: 13.900662, lon: 100.537181, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK018_thumb.jpg", status: "live", zone: "mtt-bridge" },
-  { id: "pk-019", cameraId: "CAMPK019", label: { th: "สะพานเมืองทองธานี 2", en: "Muang Thong Thani Bridge 2" }, source: "Pak Kret Municipality", lat: 13.900991, lon: 100.537920, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK019_thumb.jpg", status: "live", zone: "mtt-bridge" },
-  { id: "pk-020", cameraId: "CAMPK020", label: { th: "สะพานเมืองทองธานี 3", en: "Muang Thong Thani Bridge 3" }, source: "Pak Kret Municipality", lat: 13.901321, lon: 100.538659, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK020_thumb.jpg", status: "live", zone: "mtt-bridge" },
+  { id: "pk-018", cameraId: "CAMPK018", label: { th: "สะพานนนทบุรี 1", en: "Nonthaburi Bridge 1" }, source: "Pak Kret Municipality", lat: 13.900662, lon: 100.537181, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK018_thumb.jpg", status: "live", zone: "nonthaburi-bridge" },
+  { id: "pk-019", cameraId: "CAMPK019", label: { th: "สะพานนนทบุรี 2", en: "Nonthaburi Bridge 2" }, source: "Pak Kret Municipality", lat: 13.900991, lon: 100.537920, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK019_thumb.jpg", status: "live", zone: "nonthaburi-bridge" },
+  { id: "pk-020", cameraId: "CAMPK020", label: { th: "สะพานนนทบุรี 3", en: "Nonthaburi Bridge 3" }, source: "Pak Kret Municipality", lat: 13.901321, lon: 100.538659, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK020_thumb.jpg", status: "live", zone: "nonthaburi-bridge" },
   { id: "pk-021", cameraId: "CAMPK021", label: { th: "ถ.ศรีสมาน 1", en: "Srisaman Road 1" }, source: "Pak Kret Municipality", lat: 13.934229, lon: 100.563837, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK021_thumb.jpg", status: "live", zone: "srisaman" },
   { id: "pk-022", cameraId: "CAMPK022", label: { th: "ถ.ศรีสมาน 2", en: "Srisaman Road 2" }, source: "Pak Kret Municipality", lat: 13.934531, lon: 100.563139, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK022_thumb.jpg", status: "live", zone: "srisaman" },
   { id: "pk-023", cameraId: "CAMPK023", label: { th: "ศูนย์เรียนรู้สิ่งแวดล้อม", en: "Environmental Learning Center" }, source: "Pak Kret Municipality", lat: 13.918865, lon: 100.501040, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK023_thumb.jpg", status: "live", zone: "environment" },
   { id: "pk-024", cameraId: "CAMPK024", label: { th: "วัดสนามเหนือ ท่าเรือ", en: "Wat Sanam Nua Pier" }, source: "Pak Kret Municipality", lat: 13.921400, lon: 100.498200, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK024_thumb.jpg", status: "live", zone: "riverside" },
   { id: "pk-025", cameraId: "CAMPK025", label: { th: "ถ.แจ้งวัฒนะ ปากซอย 14", en: "Chaeng Watthana Soi 14" }, source: "Pak Kret Municipality", lat: 13.903200, lon: 100.518900, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK025_thumb.jpg", status: "live", zone: "chaeng-watthana" },
   { id: "pk-026", cameraId: "CAMPK026", label: { th: "ถ.ติวานนท์ แยกปากเกร็ด", en: "Tiwanon Rd - Pak Kret Junction" }, source: "Pak Kret Municipality", lat: 13.910500, lon: 100.510300, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK026_thumb.jpg", status: "live", zone: "tiwanon" },
-  { id: "pk-027", cameraId: "CAMPK027", label: { th: "ถ.ป๊อปปูล่า เมืองทอง", en: "Popular Rd - MTT" }, source: "Pak Kret Municipality", lat: 13.908300, lon: 100.537500, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK027_thumb.jpg", status: "live", zone: "mtt-popular" },
+  { id: "pk-027", cameraId: "CAMPK027", label: { th: "ถ.ป๊อปปูล่า นนทบุรี", en: "Popular Rd - Nonthaburi" }, source: "Pak Kret Municipality", lat: 13.908300, lon: 100.537500, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK027_thumb.jpg", status: "live", zone: "nonthaburi-popular" },
   { id: "pk-028", cameraId: "CAMPK028", label: { th: "IMPACT Arena ด้านหน้า", en: "IMPACT Arena Front" }, source: "Pak Kret Municipality", lat: 13.913400, lon: 100.553000, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK028_thumb.jpg", status: "live", zone: "impact" },
-  { id: "pk-029", cameraId: "CAMPK029", label: { th: "ถ.แจ้งวัฒนะ แยกเมืองทอง", en: "Chaeng Watthana - MTT Junction" }, source: "Pak Kret Municipality", lat: 13.906100, lon: 100.530200, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK029_thumb.jpg", status: "live", zone: "mtt-junction" },
-  { id: "pk-030", cameraId: "CAMPK030", label: { th: "ทางเข้าเมืองทอง ถ.แจ้งวัฒนะ", en: "MTT Entrance - Chaeng Watthana" }, source: "Pak Kret Municipality", lat: 13.905800, lon: 100.540100, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK030_thumb.jpg", status: "live", zone: "mtt-entrance" },
+  { id: "pk-029", cameraId: "CAMPK029", label: { th: "ถ.แจ้งวัฒนะ แยกนนทบุรี", en: "Chaeng Watthana - Nonthaburi Junction" }, source: "Pak Kret Municipality", lat: 13.906100, lon: 100.530200, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK029_thumb.jpg", status: "live", zone: "nonthaburi-junction" },
+  { id: "pk-030", cameraId: "CAMPK030", label: { th: "ทางเข้านนทบุรี ถ.แจ้งวัฒนะ", en: "Nonthaburi Entrance - Chaeng Watthana" }, source: "Pak Kret Municipality", lat: 13.905800, lon: 100.540100, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK030_thumb.jpg", status: "live", zone: "nonthaburi-entrance" },
 
   // --- Pak Kret Municipality: remaining cameras (CAMPK031–CAMPK064) ---
-  { id: "pk-031", cameraId: "CAMPK031", label: { th: "แยกแจ้งวัฒนะ - บอนด์สตรีท", en: "Chaeng Watthana - Bond Street" }, source: "Pak Kret Municipality", lat: 13.9072, lon: 100.5350, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK031_thumb.jpg", status: "live", zone: "mtt-bond-street" },
-  { id: "pk-032", cameraId: "CAMPK032", label: { th: "ถ.แจ้งวัฒนะ หน้าเมืองทอง T2", en: "Chaeng Watthana - MTT T2 Gate" }, source: "Pak Kret Municipality", lat: 13.9065, lon: 100.5425, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK032_thumb.jpg", status: "live", zone: "mtt-entrance" },
-  { id: "pk-033", cameraId: "CAMPK033", label: { th: "วงเวียนเมืองทองธานี", en: "MTT Roundabout" }, source: "Pak Kret Municipality", lat: 13.9105, lon: 100.5435, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK033_thumb.jpg", status: "live", zone: "mtt-central" },
-  { id: "pk-034", cameraId: "CAMPK034", label: { th: "IMPACT เมืองทองธานี ด้านข้าง", en: "IMPACT Arena Side" }, source: "Pak Kret Municipality", lat: 13.9142, lon: 100.5518, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK034_thumb.jpg", status: "live", zone: "impact" },
-  { id: "pk-035", cameraId: "CAMPK035", label: { th: "ถ.ป๊อปปูล่า 3 เมืองทอง", en: "Popular 3 Rd - MTT" }, source: "Pak Kret Municipality", lat: 13.9098, lon: 100.5400, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK035_thumb.jpg", status: "live", zone: "mtt-popular" },
-  { id: "pk-036", cameraId: "CAMPK036", label: { th: "ทะเลสาบเมืองทอง 1", en: "MTT Lake Area 1" }, source: "Pak Kret Municipality", lat: 13.9120, lon: 100.5460, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK036_thumb.jpg", status: "live", zone: "mtt-lake" },
-  { id: "pk-037", cameraId: "CAMPK037", label: { th: "ทะเลสาบเมืองทอง 2", en: "MTT Lake Area 2" }, source: "Pak Kret Municipality", lat: 13.9128, lon: 100.5478, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK037_thumb.jpg", status: "live", zone: "mtt-lake" },
+  { id: "pk-031", cameraId: "CAMPK031", label: { th: "แยกแจ้งวัฒนะ - บอนด์สตรีท", en: "Chaeng Watthana - Bond Street" }, source: "Pak Kret Municipality", lat: 13.9072, lon: 100.5350, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK031_thumb.jpg", status: "live", zone: "nonthaburi-bond-street" },
+  { id: "pk-032", cameraId: "CAMPK032", label: { th: "ถ.แจ้งวัฒนะ หน้านนทบุรี T2", en: "Chaeng Watthana - Nonthaburi T2 Gate" }, source: "Pak Kret Municipality", lat: 13.9065, lon: 100.5425, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK032_thumb.jpg", status: "live", zone: "nonthaburi-entrance" },
+  { id: "pk-033", cameraId: "CAMPK033", label: { th: "วงเวียนนนทบุรี", en: "Nonthaburi Roundabout" }, source: "Pak Kret Municipality", lat: 13.9105, lon: 100.5435, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK033_thumb.jpg", status: "live", zone: "nonthaburi-central" },
+  { id: "pk-034", cameraId: "CAMPK034", label: { th: "IMPACT นนทบุรี ด้านข้าง", en: "IMPACT Arena Side" }, source: "Pak Kret Municipality", lat: 13.9142, lon: 100.5518, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK034_thumb.jpg", status: "live", zone: "impact" },
+  { id: "pk-035", cameraId: "CAMPK035", label: { th: "ถ.ป๊อปปูล่า 3 นนทบุรี", en: "Popular 3 Rd - Nonthaburi" }, source: "Pak Kret Municipality", lat: 13.9098, lon: 100.5400, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK035_thumb.jpg", status: "live", zone: "nonthaburi-popular" },
+  { id: "pk-036", cameraId: "CAMPK036", label: { th: "ทะเลสาบนนทบุรี 1", en: "Nonthaburi Lake Area 1" }, source: "Pak Kret Municipality", lat: 13.9120, lon: 100.5460, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK036_thumb.jpg", status: "live", zone: "nonthaburi-lake" },
+  { id: "pk-037", cameraId: "CAMPK037", label: { th: "ทะเลสาบนนทบุรี 2", en: "Nonthaburi Lake Area 2" }, source: "Pak Kret Municipality", lat: 13.9128, lon: 100.5478, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK037_thumb.jpg", status: "live", zone: "nonthaburi-lake" },
   { id: "pk-038", cameraId: "CAMPK038", label: { th: "ถ.แจ้งวัฒนะ ซ.10 ปากเกร็ด", en: "Chaeng Watthana Soi 10" }, source: "Pak Kret Municipality", lat: 13.9040, lon: 100.5155, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK038_thumb.jpg", status: "live", zone: "chaeng-watthana" },
   { id: "pk-039", cameraId: "CAMPK039", label: { th: "แยกปากเกร็ด 3", en: "Pak Kret Intersection 3" }, source: "Pak Kret Municipality", lat: 13.9080, lon: 100.5045, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK039_thumb.jpg", status: "live", zone: "pak-kret-junction" },
   { id: "pk-040", cameraId: "CAMPK040", label: { th: "แยกปากเกร็ด 4", en: "Pak Kret Intersection 4" }, source: "Pak Kret Municipality", lat: 13.9079, lon: 100.5038, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK040_thumb.jpg", status: "live", zone: "pak-kret-junction" },
@@ -4723,15 +4723,15 @@ export const publicCctvCameras: PublicCctvCamera[] = [
   { id: "pk-055", cameraId: "CAMPK055", label: { th: "ถ.สามัคคี ปากเกร็ด 2", en: "Samakkhi Rd 2" }, source: "Pak Kret Municipality", lat: 13.8990, lon: 100.5300, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK055_thumb.jpg", status: "live", zone: "samakkhi" },
   { id: "pk-056", cameraId: "CAMPK056", label: { th: "ถ.งามวงศ์วาน แยกปากเกร็ด", en: "Ngamwongwan - Pak Kret Junction" }, source: "Pak Kret Municipality", lat: 13.8965, lon: 100.5135, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK056_thumb.jpg", status: "live", zone: "ngamwongwan" },
   { id: "pk-057", cameraId: "CAMPK057", label: { th: "IMPACT Challenger ด้านหลัง", en: "IMPACT Challenger Rear" }, source: "Pak Kret Municipality", lat: 13.9155, lon: 100.5545, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK057_thumb.jpg", status: "live", zone: "impact" },
-  { id: "pk-058", cameraId: "CAMPK058", label: { th: "ทางเข้าเมืองทอง T1", en: "MTT T1 Entrance" }, source: "Pak Kret Municipality", lat: 13.9055, lon: 100.5380, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK058_thumb.jpg", status: "live", zone: "mtt-entrance" },
+  { id: "pk-058", cameraId: "CAMPK058", label: { th: "ทางเข้านนทบุรี T1", en: "Nonthaburi T1 Entrance" }, source: "Pak Kret Municipality", lat: 13.9055, lon: 100.5380, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK058_thumb.jpg", status: "live", zone: "nonthaburi-entrance" },
   { id: "pk-059", cameraId: "CAMPK059", label: { th: "ถ.แจ้งวัฒนะ ซ.28", en: "Chaeng Watthana Soi 28" }, source: "Pak Kret Municipality", lat: 13.9048, lon: 100.5480, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK059_thumb.jpg", status: "live", zone: "chaeng-watthana" },
   { id: "pk-060", cameraId: "CAMPK060", label: { th: "ถ.แจ้งวัฒนะ ปั๊มบางจาก", en: "Chaeng Watthana - Bangchak Station" }, source: "Pak Kret Municipality", lat: 13.9035, lon: 100.5258, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK060_thumb.jpg", status: "live", zone: "chaeng-watthana" },
-  { id: "pk-061", cameraId: "CAMPK061", label: { th: "ถ.บอนด์สตรีท เมืองทอง 1", en: "Bond Street MTT 1" }, source: "Pak Kret Municipality", lat: 13.9090, lon: 100.5345, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK061_thumb.jpg", status: "live", zone: "mtt-bond-street" },
-  { id: "pk-062", cameraId: "CAMPK062", label: { th: "ถ.บอนด์สตรีท เมืองทอง 2", en: "Bond Street MTT 2" }, source: "Pak Kret Municipality", lat: 13.9085, lon: 100.5360, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK062_thumb.jpg", status: "live", zone: "mtt-bond-street" },
+  { id: "pk-061", cameraId: "CAMPK061", label: { th: "ถ.บอนด์สตรีท นนทบุรี 1", en: "Bond Street Nonthaburi 1" }, source: "Pak Kret Municipality", lat: 13.9090, lon: 100.5345, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK061_thumb.jpg", status: "live", zone: "nonthaburi-bond-street" },
+  { id: "pk-062", cameraId: "CAMPK062", label: { th: "ถ.บอนด์สตรีท นนทบุรี 2", en: "Bond Street Nonthaburi 2" }, source: "Pak Kret Municipality", lat: 13.9085, lon: 100.5360, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK062_thumb.jpg", status: "live", zone: "nonthaburi-bond-street" },
   { id: "pk-063", cameraId: "CAMPK063", label: { th: "ถ.แจ้งวัฒนะ หน้า ศูนย์ราชการ", en: "Chaeng Watthana - Govt Complex" }, source: "Pak Kret Municipality", lat: 13.8828, lon: 100.5660, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK063_thumb.jpg", status: "live", zone: "govt-complex" },
   { id: "pk-064", cameraId: "CAMPK064", label: { th: "ถ.แจ้งวัฒนะ หน้า Central แจ้งวัฒนะ", en: "Chaeng Watthana - Central Plaza" }, source: "Pak Kret Municipality", lat: 13.8870, lon: 100.5588, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=CAMPK064_thumb.jpg", status: "live", zone: "chaeng-watthana" },
 
-  // --- BMA Traffic CCTV (cameras on roads approaching Muang Thong Thani) ---
+  // --- BMA Traffic CCTV (cameras on roads approaching Nonthaburi) ---
   { id: "bma-001", cameraId: "BMA-NGW-01", label: { th: "งามวงศ์วาน - แยกพงษ์เพชร", en: "Ngamwongwan - Phong Phet Junction" }, source: "BMA Traffic", lat: 13.8620, lon: 100.5140, imageUrl: "https://its.bangkok.go.th/CCTV/camera/NGW01.jpg", status: "live", zone: "ngamwongwan" },
   { id: "bma-002", cameraId: "BMA-NGW-02", label: { th: "งามวงศ์วาน - แยกบางเขน", en: "Ngamwongwan - Bang Khen Junction" }, source: "BMA Traffic", lat: 13.8558, lon: 100.5145, imageUrl: "https://its.bangkok.go.th/CCTV/camera/NGW02.jpg", status: "live", zone: "ngamwongwan" },
   { id: "bma-003", cameraId: "BMA-NGW-03", label: { th: "งามวงศ์วาน - ตลาดยิ่งเจริญ", en: "Ngamwongwan - Ying Charoen Market" }, source: "BMA Traffic", lat: 13.8495, lon: 100.5148, imageUrl: "https://its.bangkok.go.th/CCTV/camera/NGW03.jpg", status: "live", zone: "ngamwongwan" },
@@ -4745,10 +4745,10 @@ export const publicCctvCameras: PublicCctvCamera[] = [
   { id: "bma-011", cameraId: "BMA-TWN-01", label: { th: "ติวานนท์ - แยกสนามบินน้ำ", en: "Tiwanon - Sanam Bin Nam" }, source: "BMA Traffic", lat: 13.8610, lon: 100.5090, imageUrl: "https://its.bangkok.go.th/CCTV/camera/TWN01.jpg", status: "live", zone: "tiwanon" },
   { id: "bma-012", cameraId: "BMA-RCB-01", label: { th: "รัตนาธิเบศร์ - MRT บางกระสอ", en: "Rattanathibet - MRT Bang Kraso" }, source: "BMA Traffic", lat: 13.8620, lon: 100.5010, imageUrl: "https://its.bangkok.go.th/CCTV/camera/RCB01.jpg", status: "live", zone: "rattanathibet" },
 
-  // --- DOH Highway Traffic CCTV (Department of Highways cameras on routes near MTT) ---
+  // --- DOH Highway Traffic CCTV (Department of Highways cameras on routes near Nonthaburi) ---
   { id: "doh-001", cameraId: "DOH-304-01", label: { th: "ทล.304 แจ้งวัฒนะ กม.8", en: "Hwy 304 Chaeng Watthana Km 8" }, source: "Dept of Highways", lat: 13.8910, lon: 100.5545, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/304_01.jpg", status: "live", zone: "chaeng-watthana" },
   { id: "doh-002", cameraId: "DOH-304-02", label: { th: "ทล.304 แจ้งวัฒนะ กม.12", en: "Hwy 304 Chaeng Watthana Km 12" }, source: "Dept of Highways", lat: 13.9010, lon: 100.5388, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/304_02.jpg", status: "live", zone: "chaeng-watthana" },
-  { id: "doh-003", cameraId: "DOH-304-03", label: { th: "ทล.304 แจ้งวัฒนะ กม.15 ทางเข้าเมืองทอง", en: "Hwy 304 Chaeng Watthana Km 15 - MTT Turn" }, source: "Dept of Highways", lat: 13.9060, lon: 100.5330, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/304_03.jpg", status: "live", zone: "mtt-junction" },
+  { id: "doh-003", cameraId: "DOH-304-03", label: { th: "ทล.304 แจ้งวัฒนะ กม.15 ทางเข้านนทบุรี", en: "Hwy 304 Chaeng Watthana Km 15 - Nonthaburi Turn" }, source: "Dept of Highways", lat: 13.9060, lon: 100.5330, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/304_03.jpg", status: "live", zone: "nonthaburi-junction" },
   { id: "doh-004", cameraId: "DOH-302-01", label: { th: "ทล.302 งามวงศ์วาน กม.5", en: "Hwy 302 Ngamwongwan Km 5" }, source: "Dept of Highways", lat: 13.8680, lon: 100.5135, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/302_01.jpg", status: "live", zone: "ngamwongwan" },
   { id: "doh-005", cameraId: "DOH-302-02", label: { th: "ทล.302 งามวงศ์วาน กม.9", en: "Hwy 302 Ngamwongwan Km 9" }, source: "Dept of Highways", lat: 13.8840, lon: 100.5125, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/302_02.jpg", status: "live", zone: "ngamwongwan" },
   { id: "doh-006", cameraId: "DOH-302-03", label: { th: "ทล.302 งามวงศ์วาน กม.12 แยกแคราย", en: "Hwy 302 Ngamwongwan Km 12 - Khae Rai" }, source: "Dept of Highways", lat: 13.8588, lon: 100.5100, imageUrl: "https://www.highwaytraffic.go.th/ImageCCTV/302_03.jpg", status: "live", zone: "ngamwongwan" },
@@ -4769,14 +4769,14 @@ export const publicCctvCameras: PublicCctvCamera[] = [
   { id: "ntb-009", cameraId: "NTB-PKD-09", label: { th: "ถ.กาญจนาภิเษก แยกบางบัวทอง", en: "Kanchanaphisek - Bang Bua Thong" }, source: "Nonthaburi Province", lat: 13.9128, lon: 100.4250, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=NTB_BBT_thumb.jpg", status: "live", zone: "kanchanaphisek" },
   { id: "ntb-010", cameraId: "NTB-PKD-10", label: { th: "ถ.ราชพฤกษ์ แยกราชพฤกษ์-รัตนาธิเบศร์", en: "Ratchaphruek - Rattanathibet Jct" }, source: "Nonthaburi Province", lat: 13.8450, lon: 100.4725, imageUrl: "https://www.thaiclouderp.com/CCTV_MONITOR/src/img.php?name=NTB_RATCHAPHRUEK_thumb.jpg", status: "live", zone: "ratchaphruek" },
 
-  // --- EXAT Expressway CCTV (expressway access routes near MTT) ---
+  // --- EXAT Expressway CCTV (expressway access routes near Nonthaburi) ---
   { id: "exat-001", cameraId: "EXAT-SR-01", label: { th: "ด่านแจ้งวัฒนะ 1 ทางด่วนศรีรัช", en: "Si Rat Expressway - Chaeng Watthana Toll 1" }, source: "EXAT", lat: 13.8858, lon: 100.5625, imageUrl: "https://www.exat.co.th/cctv/SR_CW01.jpg", status: "live", zone: "expressway-srirat" },
   { id: "exat-002", cameraId: "EXAT-SR-02", label: { th: "ด่านแจ้งวัฒนะ 2 ทางด่วนศรีรัช", en: "Si Rat Expressway - Chaeng Watthana Toll 2" }, source: "EXAT", lat: 13.8862, lon: 100.5610, imageUrl: "https://www.exat.co.th/cctv/SR_CW02.jpg", status: "live", zone: "expressway-srirat" },
   { id: "exat-003", cameraId: "EXAT-SR-03", label: { th: "ทางด่วนศรีรัช ช่วงงามวงศ์วาน", en: "Si Rat Expressway - Ngamwongwan Section" }, source: "EXAT", lat: 13.8670, lon: 100.5185, imageUrl: "https://www.exat.co.th/cctv/SR_NGW.jpg", status: "live", zone: "expressway-srirat" },
   { id: "exat-004", cameraId: "EXAT-CL-01", label: { th: "ทางด่วนฉลองรัช ด่านรามอินทรา", en: "Chalong Rat Expressway - Ram Intra Toll" }, source: "EXAT", lat: 13.8855, lon: 100.6290, imageUrl: "https://www.exat.co.th/cctv/CL_RI01.jpg", status: "live", zone: "expressway-chalongrat" },
   { id: "exat-005", cameraId: "EXAT-CL-02", label: { th: "ทางด่วนฉลองรัช ช่วงคู้บอน", en: "Chalong Rat Expressway - Khu Bon Section" }, source: "EXAT", lat: 13.8920, lon: 100.6380, imageUrl: "https://www.exat.co.th/cctv/CL_KB01.jpg", status: "live", zone: "expressway-chalongrat" },
   { id: "exat-006", cameraId: "EXAT-UD-01", label: { th: "ทางด่วนอุดรรัถยา ด่านแจ้งวัฒนะ", en: "Udon Ratthaya Expressway - Chaeng Watthana" }, source: "EXAT", lat: 13.8988, lon: 100.5520, imageUrl: "https://www.exat.co.th/cctv/UD_CW01.jpg", status: "live", zone: "expressway-udonrat" },
-  { id: "exat-007", cameraId: "EXAT-UD-02", label: { th: "ทางด่วนอุดรรัถยา ด่านเมืองทอง", en: "Udon Ratthaya Expressway - MTT Toll" }, source: "EXAT", lat: 13.9100, lon: 100.5555, imageUrl: "https://www.exat.co.th/cctv/UD_MTT01.jpg", status: "live", zone: "expressway-udonrat" },
+  { id: "exat-007", cameraId: "EXAT-UD-02", label: { th: "ทางด่วนอุดรรัถยา ด่านนนทบุรี", en: "Udon Ratthaya Expressway - Nonthaburi Toll" }, source: "EXAT", lat: 13.9100, lon: 100.5555, imageUrl: "https://www.exat.co.th/cctv/UD_MTT01.jpg", status: "live", zone: "expressway-udonrat" },
   { id: "exat-008", cameraId: "EXAT-UD-03", label: { th: "ทางด่วนอุดรรัถยา ช่วงปากเกร็ด", en: "Udon Ratthaya Expressway - Pak Kret Section" }, source: "EXAT", lat: 13.9250, lon: 100.5480, imageUrl: "https://www.exat.co.th/cctv/UD_PK01.jpg", status: "live", zone: "expressway-udonrat" }
 ];
 

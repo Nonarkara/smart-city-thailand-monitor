@@ -126,9 +126,9 @@ export const thailandMonitoringCities: MonitoringCity[] = [
     population: 2630000
   },
   {
-    slug: "muang-thong-thani",
-    labelTh: "เมืองทองธานี",
-    labelEn: "Muang Thong Thani",
+    slug: "nonthaburi",
+    labelTh: "นนทบุรี",
+    labelEn: "Nonthaburi",
     regionTh: "นนทบุรี",
     regionEn: "Nonthaburi",
     lat: 13.9118,
