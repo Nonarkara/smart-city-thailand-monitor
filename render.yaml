@@ -18,7 +18,7 @@ services:
       - key: VITE_DEFAULT_VIEW
         value: national
       - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Super Dashboard"
+        value: "Smart City Thailand Monitor v3.0"
     routes:
       - type: rewrite
         source: /*
@@ -43,7 +43,7 @@ services:
       - key: VITE_DEFAULT_VIEW
         value: national
       - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Super Dashboard"
+        value: "Smart City Thailand Monitor v3.0"
     routes:
       - type: rewrite
         source: /*
