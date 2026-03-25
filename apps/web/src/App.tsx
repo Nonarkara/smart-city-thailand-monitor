@@ -661,20 +661,20 @@ const satelliteToggleOptions: ToggleOption[] = [
   },
   {
     id: "eo-vegetation",
-    label: { th: "พืชพรรณ", en: "Vegetation" },
-    detail: { th: "ดัชนีพืชพรรณ NDVI", en: "NDVI vegetation index" },
+    label: { th: "ป่าไม้และพืช", en: "Forests & Plants" },
+    detail: { th: "แสดงพื้นที่ป่าไม้และพืชพรรณที่สมบูรณ์หรือเสื่อมโทรม", en: "Shows where plants and forests are healthy or stressed" },
     color: "#65a30d"
   },
   {
     id: "eo-aerosol",
-    label: { th: "ละอองลอย", en: "Aerosol" },
-    detail: { th: "ดัชนีละอองลอยชั้นบรรยากาศ", en: "Atmospheric aerosol index" },
+    label: { th: "ฝุ่นและหมอกควัน", en: "Dust & Haze" },
+    detail: { th: "ติดตามฝุ่นละอองและหมอกควันในอากาศ", en: "Tracks airborne dust and smoke particles" },
     color: "#9333ea"
   },
   {
     id: "eo-precipitation",
-    label: { th: "มรสุม", en: "Monsoon" },
-    detail: { th: "ภาพรวมฝนและมรสุมระดับประเทศ", en: "Nationwide precipitation and monsoon context" },
+    label: { th: "รูปแบบฝน", en: "Rainfall Pattern" },
+    detail: { th: "แสดงว่าฝนตกที่ไหนทั่วประเทศ", en: "Shows where rain is falling across the country" },
     color: "#2563eb"
   },
   {
@@ -685,20 +685,20 @@ const satelliteToggleOptions: ToggleOption[] = [
   },
   {
     id: "satellite-surface-temp",
-    label: { th: "ความร้อนพื้นผิว", en: "Surface Temp" },
-    detail: { th: "อุณหภูมิพื้นผิวดินจาก MODIS Aqua สำหรับความร้อนเมือง", en: "MODIS Aqua land-surface temperature for urban heat" },
+    label: { th: "ความร้อนพื้นดิน", en: "Ground Heat" },
+    detail: { th: "วัดว่าพื้นดินร้อนแค่ไหน", en: "Measures how hot the ground surface is" },
     color: "#fb7185"
   },
   {
     id: "satellite-thermal",
-    label: { th: "แผนที่ความร้อน", en: "Thermal Band" },
-    detail: { th: "แถบอินฟราเรดความร้อนจาก MODIS Terra สำหรับอ่านลายเซ็นความร้อน", en: "MODIS Terra thermal infrared band for heat signatures" },
+    label: { th: "จุดความร้อน", en: "Heat Detection" },
+    detail: { th: "ตรวจจับจุดร้อนผิดปกติ", en: "Detects unusual heat sources and hot spots" },
     color: "#f97316"
   },
   {
     id: "satellite-water-vapor",
-    label: { th: "ไอน้ำ", en: "Water Vapor" },
-    detail: { th: "ความชื้นบรรยากาศและแนวมรสุม", en: "Atmospheric moisture and monsoon flow" },
+    label: { th: "ความชื้น", en: "Humidity" },
+    detail: { th: "แสดงความชื้นในอากาศ", en: "Shows moisture in the atmosphere" },
     color: "#38bdf8"
   },
   {
@@ -733,14 +733,14 @@ const satelliteToggleOptions: ToggleOption[] = [
   },
   {
     id: "eo-chlorophyll",
-    label: { th: "คลอโรฟิลล์", en: "Ocean Color" },
-    detail: { th: "ความเข้มข้นคลอโรฟิลล์ทะเลจาก MODIS Aqua ร่วมกับ ESA OC-CCI", en: "Ocean chlorophyll from MODIS Aqua, merged with ESA OC-CCI program" },
+    label: { th: "สุขภาพทะเล", en: "Ocean Health" },
+    detail: { th: "ติดตามคุณภาพน้ำทะเล", en: "Monitors ocean water quality" },
     color: "#059669"
   },
   {
     id: "eo-cloud-phase",
-    label: { th: "เฟสเมฆ", en: "Cloud Phase" },
-    detail: { th: "เฟสเมฆอินฟราเรดจาก MODIS Aqua สำหรับพยากรณ์", en: "Cloud phase infrared for weather forecasting context" },
+    label: { th: "ประเภทเมฆ", en: "Cloud Type" },
+    detail: { th: "จำแนกประเภทเมฆสำหรับพยากรณ์อากาศ", en: "Identifies cloud type for weather forecasting" },
     color: "#94a3b8"
   }
 ];
@@ -1162,7 +1162,7 @@ const copyDeck = {
     topLine: "สัญญาณหลัก",
     projects: "โครงการ",
     news: "ข่าว",
-    resilience: "ความยืดหยุ่น",
+    resilience: "สภาพอากาศ",
     compare: "เปรียบเทียบเมือง",
     sources: "แหล่งข้อมูล",
     briefing: "สรุปสถานการณ์",
@@ -1206,10 +1206,10 @@ const copyDeck = {
     sourceResearch:
       "แหล่งอ้างอิงภายนอกใช้เพื่ออธิบายวิธีคิดของเมืองต่อ dashboards, livability, และ city-as-a-platform",
     changes: "สิ่งที่เปลี่ยน",
-    activity: "บันทึกการทำงานสด",
-    social: "Social Listening",
-    impact: "Official Impact",
-    recenter: "จัดกึ่งกลางแผนที่",
+    activity: "อัปเดตล่าสุด",
+    social: "กระแสสังคม",
+    impact: "มาตรการภาครัฐ",
+    recenter: "กลับแผนที่",
     eoOverlay: "Rain",
     hotspots: "จุดเด่นตอนนี้",
     focusPresets: "มุมมองด่วน",
@@ -1251,7 +1251,7 @@ const copyDeck = {
     markets: "บริบทตลาด",
     globalSignals: "สัญญาณโลก",
     worldWatch: "จับตาโลก",
-    apiWatch: "สถานะ API",
+    apiWatch: "แหล่งข้อมูล",
     noExternalSignals: "ยังไม่มีสัญญาณภายนอกเพิ่มเติม",
     sourceStatus: "สถานะแหล่งข้อมูล",
     worldContext: "บริบทโลก",
@@ -1260,7 +1260,7 @@ const copyDeck = {
     askLead: "AI ผู้ช่วย",
     askQuestionMap: "แผนที่คำถาม",
     askQuestionMapNote: "คำถามเหล่านี้มาจากกรอบคิดที่ซ้ำกันใน Hitachi Review และ Smart City Primer",
-    askPlaceholder: "ถามจากเอกสารใน Knowledge โดยอิงจากเมืองและเลเยอร์ที่กำลังดูอยู่",
+    askPlaceholder: "ถามอะไรก็ได้เกี่ยวกับเมืองหรือข้อมูลที่คุณเห็น",
     askSubmit: "ถาม",
     askClose: "ปิด",
     askContext: "บริบทที่ส่งให้ผู้ช่วย",
@@ -1318,7 +1318,7 @@ const copyDeck = {
     topLine: "Current Pulse",
     projects: "Projects",
     news: "News",
-    resilience: "Resilience",
+    resilience: "Weather & Environment",
     compare: "City Compare",
     sources: "Sources",
     briefing: "Briefing",
@@ -1363,10 +1363,10 @@ const copyDeck = {
     sourceResearch:
       "External references are included to show how cities use dashboards for operations, livability, and city-as-a-platform thinking.",
     changes: "What Changed",
-    activity: "Live Activity",
-    social: "Social Listening",
-    impact: "Official Impact",
-    recenter: "Recenter Map",
+    activity: "Recent Updates",
+    social: "Public Sentiment",
+    impact: "Government Actions",
+    recenter: "Center Map",
     eoOverlay: "Rain",
     hotspots: "Hotspots Now",
     focusPresets: "Focus Presets",
@@ -1408,7 +1408,7 @@ const copyDeck = {
     markets: "Market Context",
     globalSignals: "Global Signals",
     worldWatch: "World Watch",
-    apiWatch: "API Watch",
+    apiWatch: "Data Sources",
     noExternalSignals: "No additional external signals yet",
     sourceStatus: "Source Status",
     worldContext: "World Context",
@@ -1417,7 +1417,7 @@ const copyDeck = {
     askLead: "Knowledge AI",
     askQuestionMap: "Question Map",
     askQuestionMapNote: "These prompts come from the recurring frames in the Hitachi Review and the Smart City Primer",
-    askPlaceholder: "Ask the local Knowledge folder using the city, domain, and layers you are currently viewing",
+    askPlaceholder: "Ask anything about your city or the data you see",
     askSubmit: "Ask",
     askClose: "Close",
     askContext: "Current context",
@@ -1733,6 +1733,15 @@ function formatPopulation(value: number) {
 
 function formatConfidence(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function aqiLabel(value: number, lang: Locale): string {
+  if (value <= 50) return lang === "th" ? "ดี" : "Good";
+  if (value <= 100) return lang === "th" ? "ปานกลาง" : "Moderate";
+  if (value <= 150) return lang === "th" ? "ไม่ดีต่อกลุ่มเสี่ยง" : "Sensitive groups";
+  if (value <= 200) return lang === "th" ? "ไม่ดีต่อสุขภาพ" : "Unhealthy";
+  if (value <= 300) return lang === "th" ? "อันตราย" : "Very unhealthy";
+  return lang === "th" ? "อันตรายมาก" : "Hazardous";
 }
 
 function formatSignalLabel(value?: string) {
@@ -3869,7 +3878,7 @@ function DashboardPage() {
           className="layer-palette-toggle"
           onClick={() => setLayerPaletteOpen((v) => !v)}
         >
-          {`Layers (${layers.length})`}
+          {lang === "th" ? `ตัวกรองแผนที่ (${layers.length})` : `Map Filters (${layers.length})`}
         </button>
 
         {/* Floating Layer Palette */}
@@ -3946,7 +3955,7 @@ function DashboardPage() {
                   focusCityWithLayer(topAqiCitySlug || city, "pollution");
                 }}
               >
-                {`AQI ${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}
+                {`${lang === "th" ? "อากาศ" : "Air"}: ${aqiLabel(numericProperty(topAqiFeature, "aqi"), lang)} — ${topAqiFeature.title}`}
               </button>
             ) : null}
             <button
@@ -3956,16 +3965,16 @@ function DashboardPage() {
                 monsoonPreset?.run?.();
               }}
             >
-              {lang === "th" ? "ฝน + มรสุม" : "Rain + Monsoon"}
+              {lang === "th" ? "เฝ้าระวังฝนและน้ำท่วม" : "Rain & Flood Watch"}
             </button>
             {hottestWeatherFeature ? (
               <button type="button" className="map-alert-chip" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
-                {`${numericProperty(hottestWeatherFeature, "temperatureC")}°C ${hottestWeatherFeature.title}`}
+                {`${lang === "th" ? "ร้อน" : "Heat"}: ${numericProperty(hottestWeatherFeature, "temperatureC")}°C — ${hottestWeatherFeature.title}`}
               </button>
             ) : null}
             {socialListening.mentionCount > 0 ? (
               <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
-                {`${socialListening.mentionCount} mentions`}
+                {`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"}`}
               </button>
             ) : null}
           </div>
@@ -4145,19 +4154,19 @@ function DashboardPage() {
                 <strong>{lang === "th" ? "สถานการณ์ปัจจุบัน" : "SITUATION REPORT"}</strong>
                 <span className="eyebrow">{primaryScopeLabel} · {formatUtcClock(overview.updatedAt)} UTC</span>
               </div>
-              <div className="sitrep-row"><span className="eyebrow">SIGNAL</span><strong>{executiveSignal}</strong></div>
+              <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "สถานะ" : "STATUS"}</span><strong>{executiveSignal}</strong></div>
               {topTrafficFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">TRAFFIC</span><strong>{`${topTrafficSummary || "Traffic"} · ${topTrafficFeature.title}`}</strong></div>
+                <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "จราจร" : "TRAFFIC"}</span><strong>{`${topTrafficSummary || "Traffic"} · ${topTrafficFeature.title}`}</strong></div>
               ) : null}
               {topAqiFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">AQI</span><strong>{`${numericProperty(topAqiFeature, "aqi")} ${topAqiFeature.title}`}</strong></div>
+                <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "คุณภาพอากาศ" : "AIR QUALITY"}</span><strong>{`${aqiLabel(numericProperty(topAqiFeature, "aqi"), lang)} (${numericProperty(topAqiFeature, "aqi")}) — ${topAqiFeature.title}`}</strong></div>
               ) : null}
               {weatherLeadFeature ? (
-                <div className="sitrep-row"><span className="eyebrow">WEATHER</span><strong>{`${weatherLeadFeature.title} · ${weatherLeadSummary}`}</strong></div>
+                <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "อากาศ" : "WEATHER"}</span><strong>{`${weatherLeadFeature.title} · ${weatherLeadSummary}`}</strong></div>
               ) : null}
-              <div className="sitrep-row"><span className="eyebrow">DECISIONS</span><strong>{`${decisionItems.length} pending`}</strong></div>
-              <div className="sitrep-row"><span className="eyebrow">SOCIAL</span><strong>{`${socialListening.mentionCount} mentions · ${Math.round(socialListening.positiveShare * 100)}% positive`}</strong></div>
-              <div className="sitrep-row"><span className="eyebrow">SATELLITE</span><strong>{`${activeSatelliteLayers.length} layers · ${satelliteDigest.status.mode}`}</strong></div>
+              <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "รอดำเนินการ" : "ACTIONS"}</span><strong>{`${decisionItems.length} ${lang === "th" ? "รายการ" : "pending"}`}</strong></div>
+              <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "กระแสสังคม" : "PUBLIC MOOD"}</span><strong>{`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"} · ${Math.round(socialListening.positiveShare * 100)}% ${lang === "th" ? "เชิงบวก" : "positive"}`}</strong></div>
+              <div className="sitrep-row"><span className="eyebrow">{lang === "th" ? "ภาพโลก" : "EARTH VIEW"}</span><strong>{`${activeSatelliteLayers.length} ${lang === "th" ? "ชั้นข้อมูล" : "layers active"}`}</strong></div>
             </div>
 
             <div className="ai-panel-prompts">
@@ -4217,7 +4226,7 @@ function DashboardPage() {
             {/* Decision Queue */}
             <div className="data-section">
               <div className="data-section-head">
-                <strong>{lang === "th" ? "คิวตัดสินใจ" : "Decision Queue"}</strong>
+                <strong>{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</strong>
                 <span className="status-pill">{decisionItems.length}</span>
               </div>
               {decisionItems.length > 0 ? decisionItems.map((item) => (
@@ -4235,7 +4244,7 @@ function DashboardPage() {
 
             <div className="data-section">
               <div className="data-section-head">
-                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic Ops"}</strong>
+                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic"}</strong>
                 <span className="status-pill">{trafficWatchItems.length}</span>
               </div>
               {trafficWatchItems.length > 0 ? trafficWatchItems.map((feature) => {
@@ -4328,7 +4337,7 @@ function DashboardPage() {
             {/* Command Center Metrics */}
             <div className="data-section">
               <div className="data-section-head">
-                <strong>{lang === "th" ? "Command Center" : "Command Center"}</strong>
+                <strong>{lang === "th" ? "ศูนย์ควบคุม" : "Control Center"}</strong>
                 <span className="status-pill">{`${connectorReadyCount}/${commandConnectors.length}`}</span>
               </div>
               {commandCenter.metrics.map((metric) => (
@@ -4421,7 +4430,7 @@ function DashboardPage() {
               className={activeTab === tab ? "map-tab active" : "map-tab"}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === "map" ? "MAP" : tab === "satellite" ? "SATELLITE" : tab === "cctv" ? "CCTV" : tab === "insights" ? "AI INSIGHTS" : "DATA"}
+              {tab === "map" ? (lang === "th" ? "แผนที่" : "Map") : tab === "satellite" ? (lang === "th" ? "ภาพโลก" : "Earth View") : tab === "cctv" ? (lang === "th" ? "กล้อง" : "Cameras") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย" : "Assistant") : (lang === "th" ? "แดชบอร์ด" : "Dashboard")}
             </button>
           ))}
         </div>
@@ -4431,11 +4440,11 @@ function DashboardPage() {
           {/* — Hero: Nonthaburi venue pulse — */}
           <section className="card overview-card hero">
           <div className="card-header">
-            <span className="eyebrow">Nonthaburi</span>
+            <span className="eyebrow">{lang === "th" ? "เมืองของคุณ" : "Your City"}</span>
             <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
           </div>
           <div className="terminal-callout compact">
-            <span className="eyebrow">Signal</span>
+            <span className="eyebrow">{lang === "th" ? "สถานะ" : "Status"}</span>
             <strong>{executiveSignal}</strong>
           </div>
           <div className="overview-hero-metrics">
@@ -4445,7 +4454,7 @@ function DashboardPage() {
               <small>{lang === "th" ? "พื้นที่ปฏิบัติการ" : "Venue district"}</small>
             </div>
             <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "กล้อง" : "CCTV"}</span>
+              <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
               <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
               <small>{`${publicCctvCameras.length} total feeds`}</small>
             </div>
@@ -4455,7 +4464,7 @@ function DashboardPage() {
           {/* — CCTV: prominent camera feeds — */}
           <section className="card overview-card cctv-overview">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "Live Cameras"}</span>
+            <span className="eyebrow">{lang === "th" ? "กล้องสด" : "Live Cameras"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
               {publicCctvCameras.filter((cam) => cam.status === "live").length} live
             </button>
@@ -4491,7 +4500,7 @@ function DashboardPage() {
           {/* — Decision Queue — */}
           <section className="card overview-card queue">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "คิวตัดสินใจ" : "Decisions"}</span>
+            <span className="eyebrow">{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
               {decisionItems.length}
             </button>
@@ -4540,7 +4549,7 @@ function DashboardPage() {
           {/* — Resilience: weather + pollution — */}
           <section className="card overview-card resilience">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Environment"}</span>
+            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather & Air"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
               {resilience.source.freshnessStatus}
             </button>
@@ -4560,7 +4569,7 @@ function DashboardPage() {
           {/* — Sources — */}
           <section className="card overview-card sources">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
+            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Data Sources"}</span>
             <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
           </div>
           <div className="overview-inline-list">
@@ -4578,7 +4587,7 @@ function DashboardPage() {
           {/* — Satellite — */}
           <section className="card overview-card ranking">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "ดาวเทียม" : "Satellite"}</span>
+            <span className="eyebrow">{lang === "th" ? "ภาพจากดาวเทียม" : "Earth Observation"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
               {activeSatelliteLayers.length} layers
             </button>
@@ -4601,35 +4610,31 @@ function DashboardPage() {
       <footer className="bottombar">
         <div className="bottomstrip-row metrics">
           <div className="bottomstrip-metric">
-            <span className="eyebrow">AQI</span>
-            <strong>{topAqiFeature ? `${numericProperty(topAqiFeature, "aqi")}` : "--"}</strong>
+            <span className="eyebrow">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
+            <strong>{topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temp"}</span>
+            <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
             <strong>{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กล่าวถึง" : "Mentions"}</span>
+            <span className="eyebrow">{lang === "th" ? "กระแส" : "Public Buzz"}</span>
             <strong>{socialListening.mentionCount}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">Layers</span>
-            <strong>{layers.length}</strong>
+            <span className="eyebrow">{lang === "th" ? "อัปเดต" : "Updated"}</span>
+            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">Sync</span>
-            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "คิว" : "Queue"}</span>
+            <span className="eyebrow">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
             <strong>{decisionItems.length}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กล้อง" : "CCTV"}</span>
+            <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
             <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
           </div>
           <div className="bottomstrip-metric">
-            <span className="eyebrow">TH</span>
+            <span className="eyebrow">{lang === "th" ? "เมือง" : "Cities"}</span>
             <strong>{coverageFeatureCount}</strong>
           </div>
         </div>
