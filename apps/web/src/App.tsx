@@ -51,7 +51,8 @@ import type {
   SocialListeningSnapshot,
   SourceRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  ImpactArenaEvent
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -88,12 +89,12 @@ const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 180000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
-const APP_VERSION = "3.0.0";
+const APP_VERSION = "4.0.0";
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Smart City Thailand Monitor",
+  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Super Dashboard",
   eyebrow: {
-    th: "สมาร์ทซิตี้ ไทยแลนด์",
-    en: "Smart City Thailand"
+    th: "เมืองทองธานี ซูเปอร์แดชบอร์ด",
+    en: "Muang Thong Thani"
   }
 });
 const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
@@ -2124,6 +2125,14 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchInterval: 1000
   });
 
+  const arenaEventsQuery = useQuery({
+    queryKey: ["arena-events"],
+    queryFn: () => fetchFromApi<ImpactArenaEvent[]>("/api/arena-events", cloneSeed(impactArenaEventsSeed), Array.isArray),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2152,7 +2161,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
-    time: normalizeTimeSnapshot(timeQuery.data, timeFallback)
+    time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
+    arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed))
   };
 }
 
@@ -2222,7 +2232,8 @@ function DashboardPage() {
     mediaFeeds,
     publicCctvCameras,
     commandCenter,
-    time
+    time,
+    arenaEvents
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
@@ -3957,7 +3968,7 @@ function DashboardPage() {
                     {`${localize(lang, c.label)} ${c.speedKmh} km/h`}
                   </button>
                 ))}
-                {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
+                {arenaEvents.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
                   <button key={e.id} type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
                     {`${localize(lang, e.title)} ~${(e.expectedCrowd / 1000).toFixed(0)}k`}
                   </button>
@@ -4606,10 +4617,10 @@ function DashboardPage() {
             </button>
           </section>
 
-          {/* — Hero: city pulse — */}
+          {/* ── Row 1: Hero (span 2) + Arena Events ── */}
           <section className="card overview-card hero">
           <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "เมืองของคุณ" : "Your City"}</span>
+            <span className="eyebrow">Muang Thong Thani</span>
             <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
           </div>
           <div className="terminal-callout compact">
@@ -4630,7 +4641,29 @@ function DashboardPage() {
           </div>
           </section>
 
-          {/* — CCTV: prominent camera feeds — */}
+          <section className="card overview-card arena-events">
+            <div className="card-header">
+              <span className="eyebrow">IMPACT Arena</span>
+              <span className="status-pill">{arenaEvents.filter((e) => e.status !== "cancelled").length} events</span>
+            </div>
+            <div className="arena-event-list">
+              {arenaEvents.filter((e) => e.status !== "cancelled").slice(0, 5).map((evt) => (
+                <div key={evt.id} className="arena-event-row">
+                  <strong>{localize(lang, evt.title)}</strong>
+                  <div className="event-meta">
+                    <span>{evt.date.slice(5)}</span>
+                    <span>{evt.timeStart}</span>
+                    <span className="event-crowd">~{evt.expectedCrowd >= 1000 ? `${(evt.expectedCrowd / 1000).toFixed(1)}k` : evt.expectedCrowd}</span>
+                    <span className={`status-tag ${evt.parkingPressure === "high" ? "congested" : evt.parkingPressure === "moderate" ? "moderate" : "clear"}`}>
+                      {evt.parkingPressure === "high" ? (lang === "th" ? "รถติดหนัก" : "HEAVY") : evt.category}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Row 2: CCTV + AI Vision ── */}
           <section className="card overview-card cctv-overview">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "กล้องสด" : "Live Cameras"}</span>
@@ -4656,7 +4689,38 @@ function DashboardPage() {
           </div>
           </section>
 
-          {/* — Briefing — */}
+          {/* ── Row 3: Traffic, Trends, Briefing ── */}
+          <section className="card overview-card traffic">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "การจราจร" : "Traffic"}</span>
+              <span className={`status-tag ${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
+            </div>
+            <div className="corridor-list">
+              {mttTrafficSnapshotSeed.corridors.map((corridor) => (
+                <div key={corridor.id} className="corridor-row">
+                  <div><strong>{localize(lang, corridor.label)}</strong></div>
+                  <span className={`status-tag ${corridor.status}`}>{corridor.speedKmh} km/h</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card overview-card social-trends">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "เทรนด์" : "Trends"}</span>
+              <span className="status-pill">{socialListening.mentionCount} mentions</span>
+            </div>
+            <div className="trend-keyword-cloud">
+              {(socialListening.trendKeywords ?? []).map((kw) => (
+                <span key={localize("en", kw.term)} className={`trend-tag sentiment-${kw.sentiment}`}>
+                  {localize(lang, kw.term)}
+                  <span className="trend-count">{kw.count}</span>
+                  <span className="trend-arrow">{kw.trend === "up" ? "\u2191" : kw.trend === "down" ? "\u2193" : "\u2192"}</span>
+                </span>
+              ))}
+            </div>
+          </section>
+
           <section className="card overview-card briefing">
           <div className="card-header">
             <span className="eyebrow">{copy.briefing}</span>

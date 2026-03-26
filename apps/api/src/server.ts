@@ -14,6 +14,7 @@ import {
 } from "./services/satellite.js";
 import { getPublicCctvCameras } from "./services/publicCctv.js";
 import { runSourceSync } from "./services/sync.js";
+import { getImpactArenaEvents } from "./adapters/impactArenaAdapter.js";
 
 function parseList(value: unknown) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -209,6 +210,12 @@ export async function createServer() {
     }
     reply.header("Cache-Control", "public, max-age=1800, stale-while-revalidate=300");
     return getStacTileInfo(query.layer);
+  });
+
+  /* IMPACT Arena events — attempts live scrape, falls back to seed */
+  app.get("/api/arena-events", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return getImpactArenaEvents();
   });
 
   app.get("/api/briefings/latest", async () => store.getBriefing());

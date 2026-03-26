@@ -92,5 +92,8 @@ export const config = {
   planetaryComputerStacUrl:
     process.env.PLANETARY_COMPUTER_STAC_URL ?? "https://planetarycomputer.microsoft.com/api/stac/v1",
 
-  slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand"
+  slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand",
+
+  /* IMPACT Arena event calendar */
+  impactArenaCalendarUrl: process.env.IMPACT_ARENA_CALENDAR_URL ?? "https://www.impact.co.th/en/visitors/event-calendar"
 };
