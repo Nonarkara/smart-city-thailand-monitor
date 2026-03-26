@@ -9,7 +9,8 @@ import {
   getSatelliteDigest,
   getSatellitePreview,
   getSatelliteSearch,
-  getSatelliteStats
+  getSatelliteStats,
+  getStacTileInfo
 } from "./services/satellite.js";
 import { getPublicCctvCameras } from "./services/publicCctv.js";
 import { runSourceSync } from "./services/sync.js";
@@ -199,6 +200,17 @@ export async function createServer() {
       };
     }
   });
+  /* STAC tile discovery — returns verified tile dates for EO layers */
+  app.get("/api/satellite/stac-tiles", async (request, reply) => {
+    const query = request.query as { layer?: string };
+    if (!query.layer) {
+      reply.code(400);
+      return { message: "layer parameter required" };
+    }
+    reply.header("Cache-Control", "public, max-age=1800, stale-while-revalidate=300");
+    return getStacTileInfo(query.layer);
+  });
+
   app.get("/api/briefings/latest", async () => store.getBriefing());
   app.get("/api/time", async () => store.getTime());
   app.get("/api/media/feeds", async (request) => {

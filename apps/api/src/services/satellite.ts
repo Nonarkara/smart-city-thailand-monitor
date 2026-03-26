@@ -857,3 +857,124 @@ export async function getSatellitePreview(presetId: string) {
     } satisfies PreviewCacheEntry;
   }
 }
+
+/* ── STAC Tile Discovery ──
+ * Queries NASA CMR-STAC to find the latest available date for a given GIBS
+ * product. Returns tile URLs with verified dates so the frontend doesn't have
+ * to guess. Falls back to yesterday/2-days-ago if STAC is unreachable.
+ *
+ * Best practice: STAC discovery → COG partial reads → no full downloads.
+ * See: stacspec.org, cmr.earthdata.nasa.gov/stac
+ */
+
+const GIBS_STAC_BASE = "https://cmr.earthdata.nasa.gov/stac";
+
+/** Map from our EO layer IDs to NASA CMR collection concept IDs */
+const EO_STAC_COLLECTIONS: Record<string, { conceptId: string; gibsLayer: string; tileMatrix: string; format: string }> = {
+  "eo-aerosol":       { conceptId: "C1443528505-LAADS", gibsLayer: "MODIS_Combined_Value_Added_AOD", tileMatrix: "GoogleMapsCompatible_Level6", format: "png" },
+  "eo-precipitation": { conceptId: "C1598621093-GES_DISC", gibsLayer: "IMERG_Precipitation_Rate", tileMatrix: "GoogleMapsCompatible_Level6", format: "png" },
+  "eo-vegetation":    { conceptId: "C203234517-LPDAAC_ECS", gibsLayer: "MODIS_Terra_NDVI_8Day", tileMatrix: "GoogleMapsCompatible_Level9", format: "png" },
+  "eo-cloud-phase":   { conceptId: "C1443775451-LAADS", gibsLayer: "MODIS_Aqua_Cloud_Phase_Infrared_Day", tileMatrix: "GoogleMapsCompatible_Level6", format: "png" },
+  "eo-fire-thermal":  { conceptId: "C1443775394-LAADS", gibsLayer: "MODIS_Aqua_Brightness_Temp_Band31_Day", tileMatrix: "GoogleMapsCompatible_Level7", format: "png" }
+};
+
+type StacTileResult = {
+  layerId: string;
+  url: string;
+  date: string;
+  fallbackUrl: string;
+  fallbackDate: string;
+  source: "stac" | "static";
+};
+
+const stacTileCache = new Map<string, { result: StacTileResult; expiresAt: number }>();
+const STAC_CACHE_TTL = 30 * 60_000; // 30 minutes
+
+function gibsTileUrl(layer: string, date: string, tileMatrix: string, format = "png") {
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/${tileMatrix}/{z}/{y}/{x}.${format}`;
+}
+
+function isoDateOffset(days: number) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export async function getStacTileInfo(layerId: string): Promise<StacTileResult> {
+  const cached = stacTileCache.get(layerId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
+  const mapping = EO_STAC_COLLECTIONS[layerId];
+  const yesterday = isoDateOffset(-1);
+  const twoDaysAgo = isoDateOffset(-2);
+
+  if (!mapping) {
+    return {
+      layerId,
+      url: "",
+      date: yesterday,
+      fallbackUrl: "",
+      fallbackDate: twoDaysAgo,
+      source: "static"
+    };
+  }
+
+  const staticResult: StacTileResult = {
+    layerId,
+    url: gibsTileUrl(mapping.gibsLayer, yesterday, mapping.tileMatrix, mapping.format),
+    date: yesterday,
+    fallbackUrl: gibsTileUrl(mapping.gibsLayer, twoDaysAgo, mapping.tileMatrix, mapping.format),
+    fallbackDate: twoDaysAgo,
+    source: "static"
+  };
+
+  if (!config.allowLiveFetch) {
+    stacTileCache.set(layerId, { result: staticResult, expiresAt: Date.now() + STAC_CACHE_TTL });
+    return staticResult;
+  }
+
+  try {
+    const searchUrl = `${GIBS_STAC_BASE}/LPCLOUD/search`;
+    const sevenDaysAgo = isoDateOffset(-7);
+    const response = await fetch(searchUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        collections: [mapping.conceptId],
+        datetime: `${sevenDaysAgo}T00:00:00Z/..`,
+        bbox: [97.3, 5.6, 105.7, 20.5],
+        limit: 1,
+        sortby: [{ field: "datetime", direction: "desc" }]
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      stacTileCache.set(layerId, { result: staticResult, expiresAt: Date.now() + STAC_CACHE_TTL });
+      return staticResult;
+    }
+
+    const payload = (await response.json()) as { features?: Array<{ properties?: { datetime?: string } }> };
+    const latestDate = payload.features?.[0]?.properties?.datetime?.slice(0, 10);
+
+    if (latestDate) {
+      const stacResult: StacTileResult = {
+        layerId,
+        url: gibsTileUrl(mapping.gibsLayer, latestDate, mapping.tileMatrix, mapping.format),
+        date: latestDate,
+        fallbackUrl: gibsTileUrl(mapping.gibsLayer, yesterday, mapping.tileMatrix, mapping.format),
+        fallbackDate: yesterday,
+        source: "stac"
+      };
+      stacTileCache.set(layerId, { result: stacResult, expiresAt: Date.now() + STAC_CACHE_TTL });
+      return stacResult;
+    }
+  } catch {
+    // STAC query failed — fall back to static dates
+  }
+
+  stacTileCache.set(layerId, { result: staticResult, expiresAt: Date.now() + STAC_CACHE_TTL });
+  return staticResult;
+}

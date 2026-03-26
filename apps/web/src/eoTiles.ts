@@ -18,6 +18,37 @@ export interface EoTileConfig {
   attribution: string;
   /** Source agency / program for display in legend */
   source?: string;
+  /** GIBS WMTS product name for STAC discovery */
+  gibsProductId?: string;
+  /** NASA CMR STAC collection concept ID */
+  stacCollectionId?: string;
+}
+
+/**
+ * STAC-first tile discovery. Queries the backend proxy which checks NASA CMR-STAC
+ * for the latest available date of a GIBS product. Returns a config with verified
+ * tile URLs, or null if STAC is unavailable (caller should fall back to static config).
+ *
+ * Best practice per STAC spec: discovery first, then partial COG reads.
+ * See: stacspec.org, cmr.earthdata.nasa.gov/stac
+ */
+export async function fetchStacVerifiedTileUrl(
+  layerId: EoLayerId,
+  apiBase: string
+): Promise<{ url: string; fallbackUrl: string } | null> {
+  try {
+    const response = await fetch(`${apiBase}/api/satellite/stac-tiles?layer=${layerId}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { url?: string; fallbackUrl?: string; source?: string };
+    if (data.url) {
+      return { url: data.url, fallbackUrl: data.fallbackUrl ?? data.url };
+    }
+  } catch {
+    // STAC proxy unreachable — caller uses static fallback
+  }
+  return null;
 }
 
 const gibsTileUrl = (
@@ -47,7 +78,9 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
       opacity: 0.54,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / MODIS",
-      source: "NASA MODIS (USA)"
+      source: "NASA MODIS (USA)",
+      gibsProductId: "MODIS_Combined_Value_Added_AOD",
+      stacCollectionId: "C1443528505-LAADS"
     },
     "eo-precipitation": {
       id: "eo-precipitation",
@@ -56,7 +89,9 @@ export function getEoTileConfigs(): Record<EoLayerId, EoTileConfig> {
       opacity: 0.58,
       maxNativeZoom: 6,
       attribution: "NASA GIBS / GPM IMERG",
-      source: "NASA-JAXA GPM (USA/Japan)"
+      source: "NASA-JAXA GPM (USA/Japan)",
+      gibsProductId: "IMERG_Precipitation_Rate",
+      stacCollectionId: "C1598621093-GES_DISC"
     },
     "eo-vegetation": {
       id: "eo-vegetation",

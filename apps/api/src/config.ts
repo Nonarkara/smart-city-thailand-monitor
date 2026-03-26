@@ -86,5 +86,11 @@ export const config = {
     process.env.SENTINEL_HUB_STATS_URL ?? "https://sh.dataspace.copernicus.eu/api/v1/statistics",
   sentinelHubCatalogSearchUrl:
     process.env.SENTINEL_HUB_CATALOG_URL ?? "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search",
+
+  /* STAC discovery sources — STAC + COG best practices (2026) */
+  nasaCmrStacUrl: process.env.NASA_CMR_STAC_URL ?? "https://cmr.earthdata.nasa.gov/stac",
+  planetaryComputerStacUrl:
+    process.env.PLANETARY_COMPUTER_STAC_URL ?? "https://planetarycomputer.microsoft.com/api/stac/v1",
+
   slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand"
 };

@@ -20,7 +20,9 @@ import {
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
-  sources as sourceSeed
+  sources as sourceSeed,
+  impactArenaEvents as impactArenaEventsSeed,
+  mttTrafficSnapshot as mttTrafficSnapshotSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -1630,6 +1632,10 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
     return ["smart-city-thailand", "weather", "pollution", "projects", "resilience"];
   }
 
+  if (citySlug === "muang-thong-thani") {
+    return ["mtt-grid", "projects", "itic-traffic", "cctv-cameras"];
+  }
+
   return [
     "weather",
     "pollution",
@@ -1836,10 +1842,12 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || "national") as DashboardView;
+  const defaultCity = (import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani";
+  const isMttSite = defaultCity === "muang-thong-thani";
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || (isMttSite ? "city" : "national")) as DashboardView;
   const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
-  const city = searchParams.get("city") ?? ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok");
+  const city = searchParams.get("city") ?? defaultCity;
   const district = searchParams.get("district") ?? "";
   const domain = searchParams.get("domain") ?? "";
   const rawLayers = searchParams.get("layers");
@@ -2220,6 +2228,7 @@ function DashboardPage() {
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
+  const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -2554,11 +2563,7 @@ function DashboardPage() {
       return localize(lang, leadDecision.title);
     }
 
-    if (topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
-      if (topAqiFeature.title === "Chiang Mai") {
-        return lang === "th" ? "ความเสี่ยงด้านอากาศเพิ่มขึ้นในเชียงใหม่" : "Air risk rising in Chiang Mai";
-      }
-
+    if (!isMuangThongCityView && topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
       return lang === "th"
         ? `ความเสี่ยงด้านอากาศเพิ่มขึ้นใน${topAqiFeature.title}`
         : `Air risk rising in ${topAqiFeature.title}`;
@@ -3818,6 +3823,7 @@ function DashboardPage() {
           <span className="version-badge">v{APP_VERSION}</span>
         </div>
         <div className="top-controls">
+          {isMuangThongCityView ? null : (
           <div className="compact-group scope-toggle">
             <button
               className={view === "national" ? "chip active" : "chip"}
@@ -3834,6 +3840,7 @@ function DashboardPage() {
               {lang === "th" ? "เมือง" : "City"}
             </button>
           </div>
+          )}
           <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
           <div className="compact-group">
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
@@ -3943,40 +3950,51 @@ function DashboardPage() {
         {/* Floating Alert Chips */}
         {activeTab === "map" ? (
           <div className="map-alerts-strip">
-            {topAqiFeature ? (
-              <button
-                type="button"
-                className="map-alert-chip warning"
-                onClick={() => {
-                  if (airRiskPreset?.run) {
-                    airRiskPreset.run();
-                    return;
-                  }
-                  focusCityWithLayer(topAqiCitySlug || city, "pollution");
-                }}
-              >
-                {`${lang === "th" ? "อากาศ" : "Air"}: ${aqiLabel(numericProperty(topAqiFeature, "aqi"), lang)} — ${topAqiFeature.title}`}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="map-alert-chip"
-              onClick={() => {
-                monsoonPreset?.run?.();
-              }}
-            >
-              {lang === "th" ? "เฝ้าระวังฝนและน้ำท่วม" : "Rain & Flood Watch"}
-            </button>
-            {hottestWeatherFeature ? (
-              <button type="button" className="map-alert-chip" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
-                {`${lang === "th" ? "ร้อน" : "Heat"}: ${numericProperty(hottestWeatherFeature, "temperatureC")}°C — ${hottestWeatherFeature.title}`}
-              </button>
-            ) : null}
-            {socialListening.mentionCount > 0 ? (
-              <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
-                {`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"}`}
-              </button>
-            ) : null}
+            {isMuangThongCityView ? (
+              <>
+                {mttTrafficSnapshotSeed.corridors.filter((c) => c.status === "congested" || c.status === "blocked").map((c) => (
+                  <button key={c.id} type="button" className="map-alert-chip warning" onClick={() => toggleLayer("itic-traffic")}>
+                    {`${localize(lang, c.label)} ${c.speedKmh} km/h`}
+                  </button>
+                ))}
+                {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
+                  <button key={e.id} type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                    {`${localize(lang, e.title)} ~${(e.expectedCrowd / 1000).toFixed(0)}k`}
+                  </button>
+                ))}
+                {cctvSamples.filter((s) => s.severity === "alert").slice(0, 1).map((s) => (
+                  <button key={s.id} type="button" className="map-alert-chip warning" onClick={() => setActiveTab("cctv")}>
+                    {`${localize(lang, s.detection)} · ${localize(lang, s.zone)}`}
+                  </button>
+                ))}
+                {socialListening.mentionCount > 0 ? (
+                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                    {`${socialListening.mentionCount} mentions`}
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <>
+                {topAqiFeature ? (
+                  <button type="button" className="map-alert-chip warning" onClick={() => focusCityWithLayer(topAqiCitySlug || city, "pollution")}>
+                    {`${lang === "th" ? "อากาศ" : "Air"}: AQI ${numericProperty(topAqiFeature, "aqi")} — ${topAqiFeature.title}`}
+                  </button>
+                ) : null}
+                <button type="button" className="map-alert-chip" onClick={() => { monsoonPreset?.run?.(); }}>
+                  {lang === "th" ? "เฝ้าระวังฝนและน้ำท่วม" : "Rain & Flood Watch"}
+                </button>
+                {hottestWeatherFeature ? (
+                  <button type="button" className="map-alert-chip" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+                    {`${lang === "th" ? "ร้อน" : "Heat"}: ${numericProperty(hottestWeatherFeature, "temperatureC")}°C — ${hottestWeatherFeature.title}`}
+                  </button>
+                ) : null}
+                {socialListening.mentionCount > 0 ? (
+                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                    {`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"}`}
+                  </button>
+                ) : null}
+              </>
+            )}
           </div>
         ) : null}
 
