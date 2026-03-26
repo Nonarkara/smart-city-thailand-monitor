@@ -4418,6 +4418,56 @@ function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            {/* API Explorer */}
+            <div className="data-section">
+              <div className="data-section-head">
+                <strong>{lang === "th" ? "API สำหรับนักพัฒนา" : "API Explorer"}</strong>
+                <span className="status-pill">42</span>
+              </div>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span></div>
+              <a className="data-item" href="https://air-quality-api.open-meteo.com/v1/air-quality" target="_blank" rel="noreferrer"><strong>Open-Meteo Air Quality</strong><small>PM2.5, PM10, AQI — free, no key needed</small></a>
+              <a className="data-item" href="https://api.openaq.org/v3/locations" target="_blank" rel="noreferrer"><strong>OpenAQ Monitoring</strong><small>Station-level air quality across Thailand</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather"}</span></div>
+              <a className="data-item" href="https://api.open-meteo.com/v1/forecast" target="_blank" rel="noreferrer"><strong>Open-Meteo Forecast</strong><small>Temperature, wind, rain — free, no key</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "ข่าวและสื่อ" : "News & Media"}</span></div>
+              <a className="data-item" href="https://newsapi.org/v2/everything" target="_blank" rel="noreferrer"><strong>NewsAPI</strong><small>Smart city news (requires API key)</small></a>
+              <a className="data-item" href="https://api.gdeltproject.org/api/v2/doc/doc" target="_blank" rel="noreferrer"><strong>GDELT Project</strong><small>Global media monitoring — free</small></a>
+              <a className="data-item" href="https://news.google.com/rss/search" target="_blank" rel="noreferrer"><strong>Google News RSS</strong><small>Thailand smart city headlines — free</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "จราจรและกล้อง" : "Traffic & Cameras"}</span></div>
+              <a className="data-item" href="https://event.longdo.com/feed/json" target="_blank" rel="noreferrer"><strong>iTIC Traffic Events</strong><small>Bangkok accidents, closures, construction</small></a>
+              <a className="data-item" href="https://camera.longdo.com/feed/?command=json" target="_blank" rel="noreferrer"><strong>iTIC Public CCTV</strong><small>Bangkok municipal camera feeds</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "ภาพถ่ายดาวเทียม" : "Earth Observation"}</span></div>
+              <a className="data-item" href="https://gibs.earthdata.nasa.gov" target="_blank" rel="noreferrer"><strong>NASA GIBS</strong><small>Aerosol, rain, vegetation tiles — free</small></a>
+              <a className="data-item" href="https://firms.modaps.eosdis.nasa.gov" target="_blank" rel="noreferrer"><strong>NASA FIRMS</strong><small>Active fire and thermal hotspots</small></a>
+              <a className="data-item" href="https://eonet.gsfc.nasa.gov/api/v3/events" target="_blank" rel="noreferrer"><strong>NASA EONET</strong><small>Natural disaster events — free</small></a>
+              <a className="data-item" href="https://data.earth.jaxa.jp/en/" target="_blank" rel="noreferrer"><strong>JAXA Earth Data</strong><small>Daily rainfall satellite imagery</small></a>
+              <a className="data-item" href="https://dataspace.copernicus.eu/ecosystem/services" target="_blank" rel="noreferrer"><strong>Copernicus Data Space</strong><small>Sentinel-1/2/5P — free with registration</small></a>
+              <a className="data-item" href="https://planetarycomputer.microsoft.com/api/stac/v1" target="_blank" rel="noreferrer"><strong>Microsoft Planetary Computer</strong><small>Free Sentinel, Landsat, MODIS catalog</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "เกษตรและน้ำ" : "Agriculture & Water"}</span></div>
+              <a className="data-item" href="https://eodashboard.org" target="_blank" rel="noreferrer"><strong>ESA EO Dashboard</strong><small>Agriculture monitoring collections</small></a>
+              <a className="data-item" href="https://global-surface-water.appspot.com" target="_blank" rel="noreferrer"><strong>JRC Global Surface Water</strong><small>Flood and wetland mapping</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "ข้อมูลเปิดไทย" : "Thai Open Data"}</span></div>
+              <a className="data-item" href="https://catalog.citydata.in.th/en" target="_blank" rel="noreferrer"><strong>CityData Thailand</strong><small>Smart city dataset catalog</small></a>
+              <a className="data-item" href="https://opend.data.go.th/en" target="_blank" rel="noreferrer"><strong>data.go.th</strong><small>Open government data portal</small></a>
+              <a className="data-item" href="https://disaster.gistda.or.th/services/open-api" target="_blank" rel="noreferrer"><strong>GISTDA Disaster</strong><small>Thai disaster and geospatial API</small></a>
+              <a className="data-item" href="https://iticfoundation.org/en/open-data-sharing/" target="_blank" rel="noreferrer"><strong>iTIC Foundation</strong><small>Open transport and infrastructure data</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "เศรษฐกิจ" : "Economy"}</span></div>
+              <a className="data-item" href="https://api.coingecko.com/api/v3/simple/price" target="_blank" rel="noreferrer"><strong>CoinGecko</strong><small>Bitcoin price context — free</small></a>
+              <a className="data-item" href="https://api.frankfurter.app/latest" target="_blank" rel="noreferrer"><strong>Frankfurter FX</strong><small>USD/THB exchange rate — free</small></a>
+
+              <div className="data-item"><span className="eyebrow">{lang === "th" ? "นโยบายและการพัฒนา" : "Policy & Development"}</span></div>
+              <a className="data-item" href="https://data.undp.org/access-all-data" target="_blank" rel="noreferrer"><strong>UNDP Data Hub</strong><small>Development datasets for policy layers</small></a>
+              <a className="data-item" href="https://www.datatopolicy.org" target="_blank" rel="noreferrer"><strong>Data to Policy</strong><small>Policy playbooks and templates</small></a>
+            </div>
           </div>
         ) : null}
 

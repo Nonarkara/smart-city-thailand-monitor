@@ -349,11 +349,9 @@ const siteTheme = "ops" as const;
 
 /* International base map tile sources */
 const basemapSources = {
-  /* CARTO tiles — dark for ops, light for editorial */
+  /* CARTO tiles — always use light for readability */
   darkMatter: {
-    url: siteTheme === "editorial"
-      ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 20
   },
