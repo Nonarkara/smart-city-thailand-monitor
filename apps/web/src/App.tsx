@@ -4084,6 +4084,76 @@ function DashboardPage() {
                 </div>
               </>
             ) : null}
+
+            {/* — Satellite API Best Practices Guide — */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คู่มือ API ดาวเทียม" : "Satellite API Guide"}</strong>
+              <small>{lang === "th" ? "มาตรฐานปี 2026" : "2026 Best Practices"}</small>
+            </div>
+
+            <div className="sat-guide">
+              <div className="guide-card">
+                <strong>STAC + COG: The Foundation</strong>
+                <p>STAC (SpatioTemporal Asset Catalog) is the universal standard for discovering satellite data. COG (Cloud Optimized GeoTIFF) enables reading only the pixels you need — no full downloads. Together, they turn petabytes into actionable queries.</p>
+                <div className="guide-tags">
+                  <span className="guide-tag">Search with bbox + datetime + cloud_cover</span>
+                  <span className="guide-tag">Always paginate results</span>
+                  <span className="guide-tag">Use POST for complex filters</span>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>Provider Quick Reference</strong>
+                <div className="guide-providers">
+                  <a href="https://cmr.earthdata.nasa.gov/stac" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>NASA Earthdata</strong>
+                    <small>CMR-STAC — Earthdata Login token. Nearly all data is cloud-hosted. Python-focused recipes.</small>
+                  </a>
+                  <a href="https://dataspace.copernicus.eu" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Copernicus / Sentinel Hub</strong>
+                    <small>OAuth credentials — Processing API with evalscript for on-demand NDVI, band math. Catalog API first, then process.</small>
+                  </a>
+                  <a href="https://planetarycomputer.microsoft.com/api/stac/v1" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Microsoft Planetary Computer</strong>
+                    <small>Easiest STAC access — use pystac_client with auto-signed tokens. Free Sentinel, Landsat, MODIS.</small>
+                  </a>
+                  <a href="https://earthengine.googleapis.com" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Google Earth Engine</strong>
+                    <small>Planetary-scale analysis — JS/Python API on analysis-ready catalogs. No storage management.</small>
+                  </a>
+                  <a href="https://www.planet.com/developers/" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Planet</strong>
+                    <small>Commercial high-resolution daily imagery. STAC-like API + notebooks. Check rate limits/credits.</small>
+                  </a>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>On-Demand Processing &gt; Downloads</strong>
+                <p>Never download full archives. Use Sentinel Hub Processing API to specify AOI, time range, cloud cover, and evalscript for band math — returns PNG/JPEG/GeoTIFF in seconds. Use COG partial reads with rioxarray for everything else.</p>
+              </div>
+
+              <div className="guide-card">
+                <strong>Analysis Ready Data (ARD)</strong>
+                <p>Prioritize CEOS-ARD compliant data — standardized corrections, per-pixel quality masks, and interoperability. Filter early by cloud cover and QA bands. Parallelize with Dask for large time-series.</p>
+                <div className="guide-tags">
+                  <span className="guide-tag">pystac-client for search</span>
+                  <span className="guide-tag">rioxarray / stackstac for loading</span>
+                  <span className="guide-tag">xarray + Dask for scale</span>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>Common Pitfalls</strong>
+                <div className="guide-tags">
+                  <span className="guide-tag warn">Downloading full archives</span>
+                  <span className="guide-tag warn">Ignoring cloud cover / QA</span>
+                  <span className="guide-tag warn">Hardcoding URLs (use STAC links)</span>
+                  <span className="guide-tag warn">Non-COG formats (slow/expensive)</span>
+                  <span className="guide-tag warn">Skipping catalog search before processing</span>
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -4487,7 +4557,38 @@ function DashboardPage() {
         </div>
 
         <section className="overview-shell">
-          {/* — Hero: Nonthaburi venue pulse — */}
+          {/* — At-a-Glance Summary Strip — */}
+          <section className="summary-strip">
+            <button type="button" className="summary-card" onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
+              <span className="summary-label">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
+              <strong className={`summary-value aqi-${topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown"}`}>
+                {topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
+              </strong>
+              <span className="summary-sub">{topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+              <span className="summary-label">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
+              <strong className="summary-value">{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
+              <span className="summary-sub">{hottestWeatherFeature?.title ?? ""}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
+              <span className="summary-label">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
+              <strong className={`summary-value ${decisionItems.length > 0 ? "has-actions" : ""}`}>{decisionItems.length}</strong>
+              <span className="summary-sub">{lang === "th" ? "รายการ" : "pending"}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("cctv")}>
+              <span className="summary-label">{lang === "th" ? "กล้อง" : "Cameras"}</span>
+              <strong className="summary-value">{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
+              <span className="summary-sub">{lang === "th" ? "ออนไลน์" : "online"}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
+              <span className="summary-label">{lang === "th" ? "กระแส" : "Public Mood"}</span>
+              <strong className="summary-value">{Math.round(socialListening.positiveShare * 100)}%</strong>
+              <span className="summary-sub">{`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "mentions"}`}</span>
+            </button>
+          </section>
+
+          {/* — Hero: city pulse — */}
           <section className="card overview-card hero">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "เมืองของคุณ" : "Your City"}</span>

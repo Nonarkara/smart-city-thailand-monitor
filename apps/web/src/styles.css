@@ -4134,6 +4134,72 @@ textarea:focus {
   align-content: start;
 }
 
+/* — At-a-Glance Summary Strip — */
+.summary-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.summary-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.6rem;
+  background: var(--panel);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.15rem;
+  text-align: center;
+  cursor: pointer;
+  transition: box-shadow 200ms ease, transform 100ms ease;
+  font: inherit;
+  color: inherit;
+}
+
+.summary-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.summary-label {
+  font-family: var(--body-font);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.summary-value {
+  font-family: var(--heading-font);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.summary-value.aqi-good { color: var(--green); }
+.summary-value.aqi-moderate { color: var(--amber); }
+.summary-value.aqi-unhealthy { color: var(--red); }
+.summary-value.has-actions { color: var(--red); }
+
+.summary-sub {
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .overview-card {
   min-height: 0;
   padding: 0.72rem;
@@ -4781,6 +4847,86 @@ textarea:focus {
 .sat-scene-item small {
   color: var(--muted);
   font-size: 0.55rem;
+}
+
+/* — Satellite API Guide — */
+.sat-guide {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.guide-card {
+  padding: 0.75rem;
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.guide-card strong {
+  font-family: var(--heading-font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.guide-card p {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink);
+  opacity: 0.85;
+}
+
+.guide-providers {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.guide-provider {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  text-decoration: none;
+  color: inherit;
+  transition: background 150ms ease;
+}
+
+.guide-provider:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.guide-provider strong {
+  font-size: 0.8rem;
+  color: var(--blue);
+}
+
+.guide-provider small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.guide-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.guide-tag {
+  padding: 0.2rem 0.55rem;
+  border-radius: 980px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--blue);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.guide-tag.warn {
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--red);
 }
 
 .cctv-event-grid {
