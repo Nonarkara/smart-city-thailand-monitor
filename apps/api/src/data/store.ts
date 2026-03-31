@@ -6,6 +6,7 @@ import {
   changePulse as changePulseSeed,
   cloneSeed,
   createCommandCenterSnapshot,
+  createMucSnapshot,
   createTimeSnapshot,
   decisionQueue as decisionQueueSeed,
   domains as domainSeed,
@@ -45,7 +46,10 @@ import type {
   SourceRecord,
   SyncHealthRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  MucSnapshot,
+  GateFlowBucket,
+  VehicleDetection
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { persistStoreSnapshot } from "./persistence.js";
@@ -71,6 +75,7 @@ interface StoreState {
   lastSyncAt: string;
   latestTime: TimeSnapshot;
   commandCenter: CommandCenterSnapshot;
+  mucSnapshot: MucSnapshot;
 }
 
 export type StoreSnapshot = StoreState;
@@ -150,7 +155,8 @@ function createState(): StoreState {
     syncHealth: [],
     lastSyncAt: new Date().toISOString(),
     latestTime: createTimeSnapshot(),
-    commandCenter: createCommandCenterSnapshot()
+    commandCenter: createCommandCenterSnapshot(),
+    mucSnapshot: createMucSnapshot()
   };
 }
 
@@ -504,6 +510,56 @@ export const store = {
       ...state.commandCenter,
       updatedAt: new Date().toISOString()
     });
+  },
+
+  getMucSnapshot() {
+    return cloneSeed({
+      ...state.mucSnapshot,
+      updatedAt: new Date().toISOString()
+    });
+  },
+
+  getGateFlow() {
+    return cloneSeed(state.mucSnapshot.gateFlow);
+  },
+
+  getTrafficFlow() {
+    return cloneSeed(state.mucSnapshot.trafficFlow);
+  },
+
+  getAirQuality() {
+    return cloneSeed(state.mucSnapshot.airQuality);
+  },
+
+  getCctvConsole() {
+    return cloneSeed(state.mucSnapshot.cctvConsole);
+  },
+
+  getGateFlowBuckets(filters?: { gate?: string; hours?: number }): GateFlowBucket[] {
+    let buckets = state.mucSnapshot.gateFlow.buckets;
+    if (filters?.gate) {
+      buckets = buckets.filter((b) => b.gateId === filters.gate);
+    }
+    if (filters?.hours) {
+      const cutoff = new Date(Date.now() - filters.hours * 3600_000).toISOString();
+      buckets = buckets.filter((b) => b.periodStart >= cutoff);
+    }
+    return cloneSeed(buckets);
+  },
+
+  getVehicleDetections(filters?: { camera?: string; gate?: string; limit?: number }): VehicleDetection[] {
+    let detections = state.mucSnapshot.gateFlow.recentDetections;
+    if (filters?.camera) {
+      detections = detections.filter((d) => d.cameraId === filters.camera);
+    }
+    if (filters?.gate) {
+      detections = detections.filter((d) => d.gateId === filters.gate);
+    }
+    detections = [...detections].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    if (filters?.limit) {
+      detections = detections.slice(0, filters.limit);
+    }
+    return cloneSeed(detections);
   },
 
   getMapLayers(filters?: { layers?: string[] }) {

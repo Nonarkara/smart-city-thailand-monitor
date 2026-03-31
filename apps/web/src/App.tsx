@@ -22,7 +22,8 @@ import {
   socialListening as socialListeningSeed,
   sources as sourceSeed,
   impactArenaEvents as impactArenaEventsSeed,
-  mttTrafficSnapshot as mttTrafficSnapshotSeed
+  mttTrafficSnapshot as mttTrafficSnapshotSeed,
+  createMucSnapshot
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -52,7 +53,9 @@ import type {
   SourceRecord,
   TimeRange,
   TimeSnapshot,
-  ImpactArenaEvent
+  ImpactArenaEvent,
+  MucSnapshot,
+  CctvGridLayout
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -232,7 +235,7 @@ interface ScreenshotScene {
   state: {
     view: DashboardView;
     city?: string;
-    basemap: "atlas" | "satellite";
+    basemap: "atlas" | "satellite" | "street" | "hybrid";
     timeRange: TimeRange;
     layers: string[];
   };
@@ -2133,6 +2136,15 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const mucFallback = createMucSnapshot();
+  const mucQuery = useQuery({
+    queryKey: ["muc"],
+    queryFn: () => fetchFromApi<MucSnapshot>("/api/muc", mucFallback, (v) => isObject(v) && isObject((v as Record<string, unknown>).gateFlow)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2162,7 +2174,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
-    arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed))
+    arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed)),
+    muc: mucQuery.data ?? mucFallback
   };
 }
 
@@ -2175,7 +2188,10 @@ function DashboardPage() {
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"map" | "satellite" | "cctv" | "insights" | "data">("map");
+  const [activeTab, setActiveTab] = useState<"map" | "satellite" | "cctv" | "traffic" | "air" | "insights" | "data">("map");
+  const [cctvGridLayout, setCctvGridLayout] = useState<CctvGridLayout>("3x3");
+  const [activeCctvGroup, setActiveCctvGroup] = useState<string | null>(null);
+  const [expandedCameraId, setExpandedCameraId] = useState<string | null>(null);
   const [layerPaletteOpen, setLayerPaletteOpen] = useState(false);
   const [opsDrawerState, setOpsDrawerState] = useState<OpsDrawerState | null>(null);
   const [timeCompareEnabled, setTimeCompareEnabled] = useState(false);
@@ -2200,7 +2216,11 @@ function DashboardPage() {
   const assistantStatus = assistantStatusQuery.data ?? null;
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
-  const basemap = searchParams.get("basemap") === "satellite" ? "satellite" : "atlas";
+  const basemap = ((): "atlas" | "satellite" | "street" | "hybrid" => {
+    const param = searchParams.get("basemap");
+    if (param === "satellite" || param === "street" || param === "hybrid") return param;
+    return "atlas";
+  })();
 
   useEffect(() => {
     document.title = PUBLIC_DASHBOARD_BRAND.title;
@@ -2233,13 +2253,50 @@ function DashboardPage() {
     publicCctvCameras,
     commandCenter,
     time,
-    arenaEvents
+    arenaEvents,
+    muc
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
   const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
+
+  /* ── MUC Operator Status ── */
+  const mucBottleneckCount = muc.trafficFlow.bottlenecks.filter((b) => b.severity === "bottleneck" || b.severity === "gridlock").length;
+  const mucAqiAlertCount = muc.airQuality.zones.filter((z) => z.isAboveThreshold).length;
+  const mucCctvAlertCount = muc.cctvConsole.detectionHistory.filter((d) => d.severity === "alert").length;
+  const mucOverCapGates = muc.gateFlow.gates.filter((g) => {
+    const nowH = new Date().getUTCHours();
+    const bucket = muc.gateFlow.buckets.find((b) => b.gateId === g.id && new Date(b.periodStart).getUTCHours() === nowH);
+    return bucket ? (bucket.countIn + bucket.countOut) > g.capacity : false;
+  }).length;
+  const mucIssueTotal = mucBottleneckCount + mucAqiAlertCount + mucCctvAlertCount + mucOverCapGates;
+  const mucStatus: "green" | "amber" | "red" = mucIssueTotal === 0 ? "green" : (mucBottleneckCount > 1 || mucAqiAlertCount > 1 || mucCctvAlertCount > 0) ? "red" : "amber";
+  const mucStatusParts: string[] = [];
+  if (mucBottleneckCount > 0) mucStatusParts.push(lang === "th" ? `${mucBottleneckCount} จุดคอขวด` : `${mucBottleneckCount} bottleneck${mucBottleneckCount > 1 ? "s" : ""}`);
+  if (mucAqiAlertCount > 0) mucStatusParts.push(lang === "th" ? `${mucAqiAlertCount} เขต AQI เกิน` : `${mucAqiAlertCount} AQI alert${mucAqiAlertCount > 1 ? "s" : ""}`);
+  if (mucCctvAlertCount > 0) mucStatusParts.push(lang === "th" ? `${mucCctvAlertCount} แจ้งเตือนกล้อง` : `${mucCctvAlertCount} camera alert${mucCctvAlertCount > 1 ? "s" : ""}`);
+  if (mucOverCapGates > 0) mucStatusParts.push(lang === "th" ? `${mucOverCapGates} ประตูเกินรองรับ` : `${mucOverCapGates} gate${mucOverCapGates > 1 ? "s" : ""} over capacity`);
+  const mucStatusLine = mucStatusParts.length > 0 ? mucStatusParts.join(" · ") : (lang === "th" ? "ปกติ — ไม่มีเหตุการณ์" : "All clear — no incidents");
+
+  const totalVehiclesToday = muc.gateFlow.buckets.reduce((s, b) => s + b.countIn + b.countOut, 0);
+  const peakHourData = muc.trafficFlow.hourlyPatterns.reduce((best, p) => (p.avgVolumeIn + p.avgVolumeOut) > (best.avgVolumeIn + best.avgVolumeOut) ? p : best, muc.trafficFlow.hourlyPatterns[0]);
+  const avgSpeedAll = muc.trafficFlow.hourlyPatterns.length > 0 ? Math.round(muc.trafficFlow.hourlyPatterns.reduce((s, p) => s + p.avgSpeedKmh, 0) / muc.trafficFlow.hourlyPatterns.length) : 0;
+  const peakGate = muc.gateFlow.gates.reduce((best, g) => {
+    const vol = muc.gateFlow.buckets.filter((b) => b.gateId === g.id).reduce((s, b) => s + b.countIn + b.countOut, 0);
+    const bestVol = muc.gateFlow.buckets.filter((b) => b.gateId === best.id).reduce((s, b) => s + b.countIn + b.countOut, 0);
+    return vol > bestVol ? g : best;
+  }, muc.gateFlow.gates[0]);
+  const liveCamCount = publicCctvCameras.filter((c) => c.status === "live").length;
+  const matchCount = muc.gateFlow.matches.length;
+  const nowHourBuckets = muc.gateFlow.buckets.filter((b) => new Date(b.periodStart).getUTCHours() === new Date().getUTCHours());
+  const vehiclesThisHour = nowHourBuckets.reduce((s, b) => s + b.countIn + b.countOut, 0);
+  const installedSensorCount = muc.airQuality.sensors.filter((s) => s.installed).length;
+  const activePhase = muc.airQuality.constructionPhases.find((p) => p.status === "active");
+
+  const todayEvents = arenaEvents.filter((e) => e.status === "confirmed").slice(0, 3);
+
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -2569,6 +2626,30 @@ function DashboardPage() {
     ? new Date(new Date(latestSyncSource.lastCheckedAt).getTime() + LIVE_POLL_INTERVAL_MS).toISOString()
     : "";
   const executiveSignal = (() => {
+    // MUC: Gridlock alerts take top priority
+    const gridlockBn = muc.trafficFlow.bottlenecks.find((b) => b.severity === "gridlock");
+    if (gridlockBn) {
+      return lang === "th"
+        ? `GRIDLOCK: ${localize(lang, gridlockBn.label)} — ${localize(lang, gridlockBn.suggestion)}`
+        : `GRIDLOCK: ${localize(lang, gridlockBn.label)} — ${localize(lang, gridlockBn.suggestion)}`;
+    }
+
+    // MUC: AQI zone rising above threshold
+    const risingAqiZone = muc.airQuality.zones.find((z) => z.isAboveThreshold && z.trend === "up");
+    if (risingAqiZone) {
+      return lang === "th"
+        ? `AQI เตือน: ${localize(lang, risingAqiZone.label)} เกินเกณฑ์ ${risingAqiZone.threshold} (ปัจจุบัน ${risingAqiZone.currentAqi})`
+        : `AQI ALERT: ${localize(lang, risingAqiZone.label)} above ${risingAqiZone.threshold} (now ${risingAqiZone.currentAqi})`;
+    }
+
+    // MUC: Bottleneck alerts
+    const worstBn = muc.trafficFlow.bottlenecks.find((b) => b.severity === "bottleneck");
+    if (worstBn) {
+      return lang === "th"
+        ? `คอขวด: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`
+        : `Bottleneck: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`;
+    }
+
     const leadDecision = filteredDecisions[0];
     if (leadDecision) {
       return localize(lang, leadDecision.title);
@@ -3150,7 +3231,7 @@ function DashboardPage() {
     reason: string;
     layers: string[];
     citySlug: string;
-    basemap: "atlas" | "satellite";
+    basemap: "atlas" | "satellite" | "street" | "hybrid";
     confidence: number;
     freshness: string;
   }>;
@@ -3516,7 +3597,7 @@ function DashboardPage() {
     view?: DashboardView;
     city?: string;
     domain?: string;
-    basemap?: "atlas" | "satellite";
+    basemap?: "atlas" | "satellite" | "street" | "hybrid";
     timeRange?: TimeRange;
     layers?: string[];
   }) {
@@ -3950,9 +4031,13 @@ function DashboardPage() {
 
         {/* Floating Map Controls */}
         <div className="map-floating-controls">
-          <button type="button" className="map-float-btn" onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")}>
-            {basemap === "satellite" ? "Atlas" : "Sat"}
-          </button>
+          <div className="basemap-switcher">
+            {(["atlas", "street", "satellite", "hybrid"] as const).map((bm) => (
+              <button key={bm} type="button" className={`basemap-btn ${basemap === bm ? "active" : ""}`} onClick={() => updateParam("basemap", bm)}>
+                {bm === "atlas" ? "Atlas" : bm === "street" ? "Street" : bm === "satellite" ? "Sat" : "Hybrid"}
+              </button>
+            ))}
+          </div>
           <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)}>
             {copy.recenter}
           </button>
@@ -4186,64 +4271,485 @@ function DashboardPage() {
           </div>
         ) : null}
 
-        {/* CCTV TAB */}
-        {activeTab === "cctv" ? (
-          <div className="tab-overlay cctv-gallery">
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "กล้อง CCTV สาธารณะ" : "Public CCTV Cameras"}</strong>
-              <small>{`${publicCctvCameras.length} cameras · ${cctvSamples.filter((c) => c.severity === "alert").length} alerts`}</small>
+        {/* CCTV OPERATIONS CONSOLE TAB */}
+        {activeTab === "cctv" ? (() => {
+          const cctvConsole = muc.cctvConsole;
+          const gateFlow = muc.gateFlow;
+          const filteredCams = activeCctvGroup
+            ? publicCctvCameras.filter((c) => {
+                const group = cctvConsole.groups.find((g) => g.id === activeCctvGroup);
+                return group ? group.cameraIds.includes(c.id) : true;
+              })
+            : publicCctvCameras;
+          const gridCols = cctvGridLayout === "2x2" ? 2 : cctvGridLayout === "3x3" ? 3 : 4;
+          const gridCount = gridCols * gridCols;
+          const displayCams = filteredCams.slice(0, gridCount);
+          const filteredDetections = activeCctvGroup
+            ? cctvConsole.detectionHistory.filter((d) => {
+                const group = cctvConsole.groups.find((g) => g.id === activeCctvGroup);
+                return group ? group.cameraIds.includes(d.cameraId) : true;
+              })
+            : cctvConsole.detectionHistory;
+          const currentHourBuckets = gateFlow.buckets.filter((b) => {
+            const h = new Date(b.periodStart).getUTCHours();
+            const now = new Date().getUTCHours();
+            return h === now;
+          });
+
+          return (
+          <div className="tab-overlay cctv-ops-console">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{liveCamCount}</span><span className="muc-qs-label">{lang === "th" ? "กล้องออนไลน์" : "Cameras Online"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucCctvAlertCount}</span><span className="muc-qs-label">{lang === "th" ? "แจ้งเตือน" : "Alerts"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{vehiclesThisHour.toLocaleString()}</span><span className="muc-qs-label">{lang === "th" ? "รถชม.นี้" : "Veh/Hour"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{matchCount}</span><span className="muc-qs-label">{lang === "th" ? "จับคู่เข้า-ออก" : "Matches"}</span></div>
+              </div>
             </div>
-            <div className="cctv-event-grid">
-              {cctvSamples.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`cctv-event-card severity-${item.severity}`}
-                  onClick={() => {
-                    applyDashboardScene({
-                      view: "city",
-                      city: selectedCity.slug,
-                      basemap: "atlas",
-                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
-                    });
-                    setActiveTab("map");
-                  }}
-                >
-                  <div className="cctv-event-head">
-                    <span className="eyebrow">{item.cameraId}</span>
-                    <span className={`status-tag ${item.severity === "alert" ? "delayed" : item.severity === "watch" ? "watch" : "live"}`}>{item.severity}</span>
+            <div className="muc-shift-summary">
+              <div className="shift-stat"><span className="shift-stat-value">{totalVehiclesToday.toLocaleString()}</span><span className="shift-stat-label">{lang === "th" ? "รถวันนี้" : "Vehicles Today"}</span></div>
+              <div className="shift-stat"><span className="shift-stat-value">{peakHourData ? `${String(peakHourData.hour).padStart(2, "0")}:00` : "--"}</span><span className="shift-stat-label">{lang === "th" ? "ชั่วโมงพีค" : "Peak Hour"}</span></div>
+              <div className="shift-stat"><span className="shift-stat-value">{mucCctvAlertCount + mucBottleneckCount}</span><span className="shift-stat-label">{lang === "th" ? "เหตุการณ์" : "Incidents"}</span></div>
+              <div className="shift-stat"><span className={`shift-stat-value trend-${muc.airQuality.overallTrend}`}>{muc.airQuality.overallTrend === "up" ? "↑" : muc.airQuality.overallTrend === "down" ? "↓" : "→"} AQI {muc.airQuality.overallAqi}</span><span className="shift-stat-label">{lang === "th" ? "แนวโน้มอากาศ" : "AQI Trend"}</span></div>
+            </div>
+            {todayEvents.length > 0 ? (
+              <div className="impact-events-strip">
+                <span className="impact-strip-label">{lang === "th" ? "กิจกรรม IMPACT วันนี้" : "IMPACT Events Today"}</span>
+                <div className="impact-chips-scroll">
+                  {todayEvents.map((ev) => (
+                    <div key={ev.id} className={`impact-chip parking-${ev.parkingPressure}`}>
+                      <strong>{localize(lang, ev.title)}</strong>
+                      <small>{ev.timeStart}–{ev.timeEnd}</small>
+                      <div className="impact-chip-badges">
+                        <span className="crowd-badge">{ev.expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</span>
+                        <span className={`parking-badge ${ev.parkingPressure}`}>{ev.parkingPressure}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Header: Grid layout + group tabs */}
+            <div className="cctv-console-header">
+              <div className="cctv-grid-selector">
+                {(["2x2", "3x3", "4x4"] as CctvGridLayout[]).map((layout) => (
+                  <button key={layout} type="button" className={cctvGridLayout === layout ? "grid-btn active" : "grid-btn"} onClick={() => setCctvGridLayout(layout)}>{layout}</button>
+                ))}
+              </div>
+              <div className="cctv-group-tabs">
+                <button type="button" className={activeCctvGroup === null ? "group-tab active" : "group-tab"} onClick={() => setActiveCctvGroup(null)}>{lang === "th" ? "ทั้งหมด" : "All"}</button>
+                {cctvConsole.groups.map((g) => (
+                  <button key={g.id} type="button" className={activeCctvGroup === g.id ? "group-tab active" : "group-tab"} onClick={() => setActiveCctvGroup(g.id)}>
+                    {localize(lang, g.label)}
+                    <span className="group-cam-count">{g.cameraIds.length}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expanded camera modal */}
+            {expandedCameraId ? (() => {
+              const cam = publicCctvCameras.find((c) => c.id === expandedCameraId);
+              const camDetections = cctvConsole.detectionHistory.filter((d) => d.cameraId === expandedCameraId);
+              const camGate = gateFlow.gates.find((g) => g.cameraIds.includes(expandedCameraId));
+              return cam ? (
+                <div className="camera-cell-enlarged" onClick={() => setExpandedCameraId(null)}>
+                  <div className="enlarged-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="enlarged-header">
+                      <strong>{localize(lang, cam.label)}</strong>
+                      <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                      <button type="button" className="close-btn" onClick={() => setExpandedCameraId(null)}>✕</button>
+                    </div>
+                    <div className="enlarged-preview">
+                      {cam.previewUrl ? <img src={cam.previewUrl} alt={localize(lang, cam.label)} loading="lazy" /> : <div className="no-preview">{lang === "th" ? "ไม่มีภาพ" : "No Preview"}</div>}
+                    </div>
+                    {camGate ? (
+                      <div className="enlarged-gate-info">
+                        <span className="eyebrow">{lang === "th" ? "ประตู" : "Gate"}: {localize(lang, camGate.label)}</span>
+                        <span>{camGate.direction === "entry" ? "→ IN" : camGate.direction === "exit" ? "← OUT" : "↔ BI"}</span>
+                      </div>
+                    ) : null}
+                    <div className="enlarged-detections">
+                      <strong>{lang === "th" ? "ประวัติตรวจจับ" : "Detection History"}</strong>
+                      {camDetections.slice(0, 5).map((d) => (
+                        <div key={d.id} className={`detection-row severity-${d.severity}`}>
+                          <span className={`status-tag ${d.severity === "alert" ? "delayed" : d.severity === "watch" ? "watch" : "live"}`}>{d.severity}</span>
+                          <span>{localize(lang, d.detail)}</span>
+                          <small>{formatConfidence(d.confidence)}</small>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <strong>{localize(lang, item.detection)}</strong>
-                  <small>{localize(lang, item.zone)}</small>
-                  <div className="signal-meta">
-                    <span>{`${formatConfidence(item.confidence)}`}</span>
-                    <span>{item.model}</span>
+                </div>
+              ) : null;
+            })() : null}
+
+            {/* Camera Grid */}
+            <div className="cctv-camera-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+              {displayCams.map((cam) => (
+                <button key={cam.id} type="button" className={`camera-cell cam-status-${cam.status}`} onClick={() => setExpandedCameraId(cam.id)}>
+                  <div className="camera-preview">
+                    {cam.previewUrl ? <img src={cam.previewUrl} alt={localize(lang, cam.label)} loading="lazy" /> : <div className="no-preview-small">{cam.cameraId}</div>}
+                  </div>
+                  <div className="camera-cell-footer">
+                    <span className="camera-label">{localize(lang, cam.label)}</span>
+                    <span className={`status-dot ${cam.status}`} />
                   </div>
                 </button>
               ))}
             </div>
-            {publicCctvCameras.length > 0 ? (
-              <>
+
+            {/* Bottom panels: Detection + Gate Counts */}
+            <div className="cctv-bottom-panels">
+              <div className="detection-panel">
                 <div className="sat-section-header">
-                  <strong>{lang === "th" ? "กล้องสด" : "Live Cameras"}</strong>
-                  <small>{`${publicCctvCameras.filter((c) => c.status === "live").length} online`}</small>
+                  <strong>{lang === "th" ? "AI ตรวจจับล่าสุด" : "AI Detection Feed"}</strong>
+                  <small>{filteredDetections.length} {lang === "th" ? "รายการ" : "events"}</small>
                 </div>
-                <div className="cctv-event-grid">
-                  {publicCctvCameras.slice(0, 12).map((cam) => (
-                    <article key={cam.id} className={`cctv-event-card cam-status-${cam.status}`}>
-                      <div className="cctv-event-head">
-                        <span className="eyebrow">{cam.cameraId}</span>
-                        <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                <div className="detection-list">
+                  {filteredDetections.slice(0, 8).map((d) => (
+                    <button key={d.id} type="button" className={`detection-item severity-${d.severity}`} onClick={() => setExpandedCameraId(d.cameraId)}>
+                      <div className="detection-item-head">
+                        <span className="eyebrow">{d.cameraId}</span>
+                        <span className={`status-tag ${d.severity === "alert" ? "delayed" : d.severity === "watch" ? "watch" : "live"}`}>{d.severity}</span>
                       </div>
-                      <strong>{localize(lang, cam.label)}</strong>
-                      <small>{cam.source} · {cam.zone}</small>
-                    </article>
+                      <span className="detection-detail">{localize(lang, d.detail)}</span>
+                      <div className="signal-meta">
+                        <span>{formatConfidence(d.confidence)}</span>
+                        <span>{d.detectionType}</span>
+                      </div>
+                    </button>
                   ))}
                 </div>
-              </>
-            ) : null}
+              </div>
+              <div className="gate-count-panel">
+                <div className="sat-section-header">
+                  <strong>{lang === "th" ? "ปริมาณรถ ณ ประตู" : "Gate Vehicle Counts"}</strong>
+                  <small>{lang === "th" ? "ชั่วโมงนี้" : "this hour"}</small>
+                </div>
+                <div className="gate-count-list">
+                  {gateFlow.gates.map((gate) => {
+                    const bucket = currentHourBuckets.find((b) => b.gateId === gate.id);
+                    const countIn = bucket?.countIn ?? 0;
+                    const countOut = bucket?.countOut ?? 0;
+                    const utilization = gate.capacity > 0 ? Math.round(((countIn + countOut) / gate.capacity) * 100) : 0;
+                    return (
+                      <div key={gate.id} className={`gate-count-card ${utilization > 100 ? "over-capacity" : utilization > 80 ? "high-load" : ""}`}>
+                        <div className="gate-count-head">
+                          <strong>{localize(lang, gate.label)}</strong>
+                          <span className="eyebrow">{gate.direction === "entry" ? "→ IN" : gate.direction === "exit" ? "← OUT" : "↔"}</span>
+                        </div>
+                        <div className="gate-count-numbers">
+                          <span className="count-in">▼ {countIn}</span>
+                          <span className="count-out">▲ {countOut}</span>
+                          <span className={`utilization ${utilization > 100 ? "critical" : utilization > 80 ? "warning" : ""}`}>{utilization}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-        ) : null}
+          );
+        })() : null}
+
+        {/* TRAFFIC FLOW INTELLIGENCE TAB */}
+        {activeTab === "traffic" ? (() => {
+          const tf = muc.trafficFlow;
+          const gf = muc.gateFlow;
+          const maxVolume = Math.max(...tf.hourlyPatterns.map((p) => p.avgVolumeIn + p.avgVolumeOut), 1);
+          const bnCount = tf.bottlenecks.filter((b) => b.severity === "bottleneck" || b.severity === "gridlock").length;
+          return (
+          <div className="tab-overlay traffic-flow-tab">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{totalVehiclesToday.toLocaleString()}</span><span className="muc-qs-label">{lang === "th" ? "รถวันนี้" : "Today"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucBottleneckCount}</span><span className="muc-qs-label">{lang === "th" ? "คอขวด" : "Bottlenecks"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{avgSpeedAll} <small>km/h</small></span><span className="muc-qs-label">{lang === "th" ? "เฉลี่ย" : "Avg Speed"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{peakGate ? localize(lang, peakGate.label).split(" ")[0] : "--"}</span><span className="muc-qs-label">{lang === "th" ? "ประตูพีค" : "Peak Gate"}</span></div>
+              </div>
+            </div>
+            {todayEvents.length > 0 ? (
+              <div className="impact-events-strip">
+                <span className="impact-strip-label">{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</span>
+                <div className="impact-chips-scroll">
+                  {todayEvents.map((ev) => (
+                    <div key={ev.id} className={`impact-chip parking-${ev.parkingPressure}`}>
+                      <strong>{localize(lang, ev.title)}</strong>
+                      <small>{ev.timeStart}–{ev.timeEnd} · {ev.expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
+                      <span className={`parking-badge ${ev.parkingPressure}`}>{ev.parkingPressure}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ระบบวิเคราะห์การจราจร" : "TRAFFIC FLOW INTELLIGENCE"}</strong>
+              <small>
+                <span className={`status-tag ${bnCount > 0 ? "delayed" : "live"}`}>{bnCount} {lang === "th" ? "จุดคอขวด" : "bottlenecks"}</span>
+                {" · "}{tf.flowLines.length} {lang === "th" ? "เส้นทาง" : "flow lines"}
+              </small>
+            </div>
+
+            {/* Bottleneck Alert Cards */}
+            <div className="bottleneck-cards">
+              {tf.bottlenecks.map((bn) => (
+                <button key={bn.id} type="button" className={`bottleneck-card severity-${bn.severity}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "itic-traffic"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="bottleneck-head">
+                    <strong>{localize(lang, bn.label)}</strong>
+                    <span className={`status-tag ${bn.severity === "bottleneck" || bn.severity === "gridlock" ? "delayed" : "watch"}`}>{bn.severity}</span>
+                  </div>
+                  <div className="bottleneck-metrics">
+                    <div className="metric-bar">
+                      <div className="metric-bar-fill" style={{ width: `${Math.min(bn.volumeRatio * 100, 200) / 2}%`, backgroundColor: bn.volumeRatio > 1.2 ? "#dc2626" : bn.volumeRatio > 0.9 ? "#f59e0b" : "#16a34a" }} />
+                      <span className="metric-bar-label">{Math.round(bn.volumeRatio * 100)}%</span>
+                    </div>
+                    <small>{bn.estimatedDelayMinutes} {lang === "th" ? "นาที ล่าช้า" : "min delay"}</small>
+                  </div>
+                  <div className="bottleneck-suggestion">{localize(lang, bn.suggestion)}</div>
+                  <button type="button" className={`operator-action-btn ${bn.severity === "gridlock" ? "warning" : ""}`} onClick={(e) => { e.stopPropagation(); }}>
+                    {bn.corridorId?.includes("impact") ? (lang === "th" ? "สั่ง Shuttle Bus" : "Dispatch Shuttle") : (lang === "th" ? "เปิดเส้นทางเลี่ยง" : "Open Alt Route")}
+                  </button>
+                </button>
+              ))}
+            </div>
+
+            {/* Hourly Pattern Chart */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "รูปแบบรายชั่วโมง" : "Hourly Traffic Pattern"}</strong>
+              <small>{lang === "th" ? "ปริมาณรถรวมทุกประตู" : "total volume all gates"}</small>
+            </div>
+            <div className="hourly-chart">
+              <svg viewBox="0 0 480 120" preserveAspectRatio="none">
+                {tf.hourlyPatterns.map((p, i) => {
+                  const total = p.avgVolumeIn + p.avgVolumeOut;
+                  const h = (total / maxVolume) * 100;
+                  const speedColor = p.avgSpeedKmh < 15 ? "#dc2626" : p.avgSpeedKmh < 25 ? "#f59e0b" : "#16a34a";
+                  return (
+                    <g key={p.hour}>
+                      <rect x={i * 20} y={110 - h} width="16" height={h} rx="2" fill={speedColor} opacity="0.8">
+                        <title>{`${String(p.hour).padStart(2, "0")}:00 — ${total} veh · ${p.avgSpeedKmh} km/h`}</title>
+                      </rect>
+                      {i % 3 === 0 ? <text x={i * 20 + 8} y={118} textAnchor="middle" fontSize="7" fill="#94a3b8">{String(p.hour).padStart(2, "0")}</text> : null}
+                    </g>
+                  );
+                })}
+              </svg>
+              <div className="chart-legend">
+                <span><span className="legend-dot" style={{ backgroundColor: "#16a34a" }} />{lang === "th" ? "ปกติ >25km/h" : "Normal >25km/h"}</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#f59e0b" }} />{lang === "th" ? "ช้า 15-25km/h" : "Slow 15-25km/h"}</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#dc2626" }} />{lang === "th" ? "ติดขัด <15km/h" : "Congested <15km/h"}</span>
+              </div>
+            </div>
+
+            {/* Gate Volume Cards */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ปริมาณรถ ณ ประตู — วันนี้" : "Gate Volumes — Today"}</strong>
+            </div>
+            <div className="gate-volume-cards">
+              {gf.gates.map((gate) => {
+                const gateBuckets = gf.buckets.filter((b) => b.gateId === gate.id);
+                const totalIn = gateBuckets.reduce((s, b) => s + b.countIn, 0);
+                const totalOut = gateBuckets.reduce((s, b) => s + b.countOut, 0);
+                const last8 = gateBuckets.slice(-8);
+                const sparkMax = Math.max(...last8.map((b) => b.countIn + b.countOut), 1);
+                return (
+                  <div key={gate.id} className="gate-volume-card">
+                    <div className="gate-vol-head">
+                      <strong>{localize(lang, gate.label)}</strong>
+                      <span className="eyebrow">{gate.direction}</span>
+                    </div>
+                    <div className="gate-vol-numbers">
+                      <span className="count-in">▼ {totalIn.toLocaleString()}</span>
+                      <span className="count-out">▲ {totalOut.toLocaleString()}</span>
+                    </div>
+                    <svg className="gate-sparkline" viewBox="0 0 80 24" preserveAspectRatio="none">
+                      {last8.map((b, i) => {
+                        const h = ((b.countIn + b.countOut) / sparkMax) * 20;
+                        return <rect key={i} x={i * 10} y={22 - h} width="8" height={h} rx="1" fill="#3b82f6" opacity="0.7" />;
+                      })}
+                    </svg>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Suggestions */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คำแนะนำ" : "Recommendations"}</strong>
+            </div>
+            <div className="traffic-suggestions">
+              {tf.suggestions.map((s, i) => (
+                <div key={i} className="suggestion-card">
+                  <span className="suggestion-num">{i + 1}</span>
+                  <span>{localize(lang, s)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })() : null}
+
+        {/* AIR QUALITY & CONSTRUCTION MONITORING TAB */}
+        {activeTab === "air" ? (() => {
+          const aq = muc.airQuality;
+          const maxAqi = Math.max(...aq.history.map((p) => p.aqi), 100);
+          const alertZones = aq.zones.filter((z) => z.isAboveThreshold);
+          return (
+          <div className="tab-overlay air-quality-tab">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{aq.overallAqi}</span><span className="muc-qs-label">AQI</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucAqiAlertCount}</span><span className="muc-qs-label">{lang === "th" ? "เขตเกิน" : "Over Limit"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{installedSensorCount}</span><span className="muc-qs-label">{lang === "th" ? "เซนเซอร์" : "Sensors"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{activePhase ? localize(lang, activePhase.label) : "--"}</span><span className="muc-qs-label">{lang === "th" ? "ขั้นตอน" : "Phase"}</span></div>
+              </div>
+            </div>
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คุณภาพอากาศ & การก่อสร้าง" : "AIR QUALITY & CONSTRUCTION"}</strong>
+              <small>
+                <span className={`status-tag ${aq.overallAqi >= 90 ? "delayed" : aq.overallAqi >= 60 ? "watch" : "live"}`}>AQI {aq.overallAqi}</span>
+                {" · "}{alertZones.length} {lang === "th" ? "เขตเกินเกณฑ์" : "zones above threshold"}
+              </small>
+            </div>
+
+            {/* Zone Cards */}
+            <div className="aqi-zone-cards">
+              {aq.zones.map((zone) => (
+                <button key={zone.id} type="button" className={`aqi-zone-card zone-${zone.zoneType} ${zone.isAboveThreshold ? "above-threshold" : ""}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "pollution", "weather"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="zone-card-head">
+                    <span className={`zone-type-badge ${zone.zoneType}`}>{zone.zoneType}</span>
+                    <span className={`trend-arrow ${zone.trend}`}>{zone.trend === "up" ? "↑" : zone.trend === "down" ? "↓" : "→"}</span>
+                  </div>
+                  <strong>{localize(lang, zone.label)}</strong>
+                  <div className="zone-aqi-display">
+                    <span className={`aqi-value ${zone.currentAqi >= 90 ? "critical" : zone.currentAqi >= 60 ? "moderate" : "good"}`}>{zone.currentAqi}</span>
+                    <small>AQI</small>
+                  </div>
+                  <div className="zone-pm-values">
+                    <span>PM2.5: {zone.pm25}</span>
+                    <span>PM10: {zone.pm10}</span>
+                  </div>
+                  <div className="zone-threshold">
+                    <div className="threshold-bar">
+                      <div className="threshold-fill" style={{ width: `${Math.min((zone.currentAqi / zone.threshold) * 100, 100)}%`, backgroundColor: zone.isAboveThreshold ? "#dc2626" : zone.currentAqi / zone.threshold > 0.8 ? "#f59e0b" : "#16a34a" }} />
+                      <span className="threshold-mark" style={{ left: "100%" }} />
+                    </div>
+                    <small>{lang === "th" ? "เกณฑ์" : "Threshold"}: {zone.threshold}</small>
+                  </div>
+                  {zone.constructionNote ? (
+                    <div className="construction-note">{localize(lang, zone.constructionNote)}</div>
+                  ) : null}
+                  <small className="zone-detail">{localize(lang, zone.detail)}</small>
+                  {zone.isAboveThreshold ? (
+                    <button type="button" className="operator-action-btn warning" onClick={(e) => { e.stopPropagation(); }}>
+                      {lang === "th" ? "แจ้งทีมบำรุงรักษา" : "Alert Maintenance"}
+                    </button>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+
+            {/* 30-Day AQI Trend */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "แนวโน้ม AQI 30 วัน" : "30-Day AQI Trend"}</strong>
+              <small>{lang === "th" ? "ผลกระทบจากก่อสร้าง" : "construction impact"}</small>
+            </div>
+            <div className="aqi-trend-chart">
+              <svg viewBox="0 0 300 100" preserveAspectRatio="none">
+                {/* Threshold lines */}
+                <line x1="0" y1={100 - (75 / maxAqi) * 90} x2="300" y2={100 - (75 / maxAqi) * 90} stroke="#f97316" strokeDasharray="4 2" strokeWidth="0.5" />
+                <text x="302" y={100 - (75 / maxAqi) * 90 + 3} fontSize="6" fill="#f97316">75</text>
+                <line x1="0" y1={100 - (100 / maxAqi) * 90} x2="300" y2={100 - (100 / maxAqi) * 90} stroke="#dc2626" strokeDasharray="4 2" strokeWidth="0.5" />
+                <text x="302" y={100 - (100 / maxAqi) * 90 + 3} fontSize="6" fill="#dc2626">100</text>
+                {/* AQI line */}
+                <polyline
+                  fill="none"
+                  stroke="#8b5cf6"
+                  strokeWidth="1.5"
+                  points={aq.history.map((p, i) => `${(i / (aq.history.length - 1)) * 296 + 2},${100 - (p.aqi / maxAqi) * 90}`).join(" ")}
+                />
+                {/* PM2.5 area */}
+                <polyline
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="0.8"
+                  strokeDasharray="3 2"
+                  points={aq.history.map((p, i) => `${(i / (aq.history.length - 1)) * 296 + 2},${100 - (p.pm25 / maxAqi) * 90}`).join(" ")}
+                />
+              </svg>
+              <div className="chart-legend">
+                <span><span className="legend-dot" style={{ backgroundColor: "#8b5cf6" }} />AQI</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#3b82f6" }} />PM2.5</span>
+                <span><span className="legend-line" style={{ borderColor: "#f97316" }} />{lang === "th" ? "เกณฑ์ก่อสร้าง 75" : "Construction 75"}</span>
+                <span><span className="legend-line" style={{ borderColor: "#dc2626" }} />{lang === "th" ? "เกณฑ์ปกติ 100" : "Normal 100"}</span>
+              </div>
+            </div>
+
+            {/* Construction Phase Timeline */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ขั้นตอนก่อสร้าง" : "Construction Phases"}</strong>
+            </div>
+            <div className="construction-timeline">
+              {aq.constructionPhases.map((phase) => (
+                <div key={phase.id} className={`construction-phase phase-${phase.status}`}>
+                  <div className="phase-indicator" />
+                  <div className="phase-content">
+                    <strong>{localize(lang, phase.label)}</strong>
+                    <small>{phase.startDate}{phase.endDate ? ` → ${phase.endDate}` : " → ..."}</small>
+                    <div className="phase-delta">
+                      <span className={phase.avgAqiDelta > 10 ? "delta-high" : "delta-low"}>+{phase.avgAqiDelta} AQI</span>
+                      <span className={`status-tag ${phase.status === "active" ? "watch" : phase.status === "completed" ? "live" : "manual"}`}>{phase.status}</span>
+                    </div>
+                    <small className="phase-detail">{localize(lang, phase.detail)}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sensor Status */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "เซนเซอร์คุณภาพอากาศ" : "Air Quality Sensors"}</strong>
+              <small>{aq.sensors.filter((s) => s.installed).length} {lang === "th" ? "ติดตั้งแล้ว" : "installed"} · {aq.sensors.filter((s) => !s.installed).length} {lang === "th" ? "แนะนำเพิ่ม" : "recommended"}</small>
+            </div>
+            <div className="sensor-list">
+              {aq.sensors.map((sensor) => (
+                <div key={sensor.id} className={`sensor-item ${sensor.installed ? "installed" : "recommended"}`}>
+                  <span className={`sensor-dot ${sensor.installed ? "filled" : "hollow"}`} />
+                  <span className="sensor-label">{localize(lang, sensor.label)}</span>
+                  <span className={`zone-type-badge ${sensor.zoneType}`}>{sensor.zoneType}</span>
+                  <small>{sensor.provider}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })() : null}
 
         {/* AI INSIGHTS TAB */}
         {activeTab === "insights" ? (
@@ -4572,16 +5078,25 @@ function DashboardPage() {
 
         {/* Tab Bar */}
         <div className="map-tab-bar">
-          {(["map", "satellite", "cctv", "insights", "data"] as const).map((tab) => (
+          {(["map", "satellite", "cctv", "traffic", "air", "insights", "data"] as const).map((tab) => {
+            const label = tab === "map" ? (lang === "th" ? "แผนที่" : "Map")
+              : tab === "satellite" ? (lang === "th" ? "ดาวเทียม" : "Earth")
+              : tab === "cctv" ? (lang === "th" ? "กล้อง" : "CCTV")
+              : tab === "traffic" ? (lang === "th" ? "จราจร" : "Traffic")
+              : tab === "air" ? (lang === "th" ? "อากาศ" : "Air")
+              : tab === "insights" ? (lang === "th" ? "AI" : "AI")
+              : (lang === "th" ? "ข้อมูล" : "Data");
+            return (
             <button
               key={tab}
               type="button"
               className={activeTab === tab ? "map-tab active" : "map-tab"}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === "map" ? (lang === "th" ? "แผนที่" : "Map") : tab === "satellite" ? (lang === "th" ? "ภาพโลก" : "Earth View") : tab === "cctv" ? (lang === "th" ? "กล้อง" : "Cameras") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย" : "Assistant") : (lang === "th" ? "แดชบอร์ด" : "Dashboard")}
+              {label}
             </button>
-          ))}
+            );
+          })}
         </div>
         </div>
 
@@ -4609,6 +5124,20 @@ function DashboardPage() {
               <span className="summary-label">{lang === "th" ? "กล้อง" : "Cameras"}</span>
               <strong className="summary-value">{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
               <span className="summary-sub">{lang === "th" ? "ออนไลน์" : "online"}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("traffic")}>
+              <span className="summary-label">{lang === "th" ? "จราจร" : "Traffic"}</span>
+              <strong className={`summary-value ${mucBottleneckCount > 0 ? "has-actions" : ""}`}>
+                {mucBottleneckCount}
+              </strong>
+              <span className="summary-sub">{lang === "th" ? "คอขวด" : "bottlenecks"}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("air")}>
+              <span className="summary-label">{lang === "th" ? "ก่อสร้าง AQI" : "Construction AQI"}</span>
+              <strong className={`summary-value ${mucAqiAlertCount > 0 ? "aqi-unhealthy" : "aqi-good"}`}>
+                {muc.airQuality.overallAqi}
+              </strong>
+              <span className="summary-sub">{`${mucAqiAlertCount} ${lang === "th" ? "เขตเกินเกณฑ์" : "alerts"}`}</span>
             </button>
             <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
               <span className="summary-label">{lang === "th" ? "กระแส" : "Public Mood"}</span>

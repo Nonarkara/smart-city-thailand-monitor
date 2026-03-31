@@ -151,8 +151,15 @@ const cityCenters: Record<
     label: { th: "นนทบุรี", en: "Nonthaburi" },
     lat: 13.8622,
     lon: 100.5144
+  },
+  "muang-thong-thani": {
+    label: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
+    lat: 13.9120,
+    lon: 100.5350
   }
 };
+
+const mttBounds = L.latLngBounds([13.895, 100.495], [13.935, 100.565]);
 
 const layerColors: Record<LayerId, string> = {
   "smart-city-thailand": "#ff5b57",
@@ -378,6 +385,18 @@ const basemapSources = {
     url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
     maxZoom: 17
+  },
+  /* Esri World Street Map — detailed street-level for operations */
+  esriStreets: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Tiles &copy; Esri",
+    maxZoom: 19
+  },
+  /* Google Hybrid — satellite + street labels, best for detail */
+  googleHybrid: {
+    url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    attribution: "Imagery &copy; Google",
+    maxZoom: 21
   }
 } as const;
 
@@ -1112,7 +1131,7 @@ interface InteractiveMapProps {
   citySlug: string;
   district?: DistrictProfile;
   domainSlug?: string;
-  basemap: "atlas" | "satellite";
+  basemap: "atlas" | "satellite" | "street" | "hybrid";
   layers: string[];
   overlayStyles: Record<
     string,
@@ -1149,6 +1168,8 @@ export default function InteractiveMap({
   const overlayRef = useRef<L.LayerGroup | null>(null);
   const atlasBaseRef = useRef<L.TileLayer | null>(null);
   const satelliteBaseRef = useRef<L.TileLayer | null>(null);
+  const streetBaseRef = useRef<L.TileLayer | null>(null);
+  const hybridBaseRef = useRef<L.TileLayer | null>(null);
   const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const satelliteLayersRef = useRef<Partial<Record<SatelliteLayerId, L.TileLayer>>>({});
   const jaxaLayerRef = useRef<L.Layer | null>(null);
@@ -1192,8 +1213,19 @@ export default function InteractiveMap({
       attribution: basemapSources.esriSatellite.attribution
     });
 
+    const streetLayer = L.tileLayer(basemapSources.esriStreets.url, {
+      maxZoom: basemapSources.esriStreets.maxZoom,
+      attribution: basemapSources.esriStreets.attribution
+    });
+    const hybridLayer = L.tileLayer(basemapSources.googleHybrid.url, {
+      maxZoom: basemapSources.googleHybrid.maxZoom,
+      attribution: basemapSources.googleHybrid.attribution
+    });
+
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;
+    streetBaseRef.current = streetLayer;
+    hybridBaseRef.current = hybridLayer;
     map.setMaxBounds(thailandBounds.pad(0.22));
 
     overlayRef.current = L.layerGroup().addTo(map);
@@ -1230,21 +1262,23 @@ export default function InteractiveMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    const atlasLayer = atlasBaseRef.current;
-    const satelliteLayer = satelliteBaseRef.current;
-    if (!map || !atlasLayer || !satelliteLayer) {
+    const allBases = [atlasBaseRef.current, satelliteBaseRef.current, streetBaseRef.current, hybridBaseRef.current].filter(Boolean) as L.TileLayer[];
+    if (!map || allBases.length === 0) {
       return;
     }
 
-    const activeBase = basemap === "satellite" ? satelliteLayer : atlasLayer;
-    const inactiveBase = basemap === "satellite" ? atlasLayer : satelliteLayer;
+    const baseMap: Record<string, L.TileLayer | null> = { atlas: atlasBaseRef.current, satellite: satelliteBaseRef.current, street: streetBaseRef.current, hybrid: hybridBaseRef.current };
+    const activeBase = baseMap[basemap] ?? atlasBaseRef.current;
+    if (!activeBase) return;
+
+    for (const layer of allBases) {
+      if (layer !== activeBase && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    }
 
     if (!map.hasLayer(activeBase)) {
       activeBase.addTo(map);
-    }
-
-    if (map.hasLayer(inactiveBase)) {
-      map.removeLayer(inactiveBase);
     }
 
     activeBase.bringToBack();
@@ -1313,6 +1347,11 @@ export default function InteractiveMap({
 
     if (district?.center) {
       map.setView([district.center[1], district.center[0]], 12);
+      return;
+    }
+
+    if (citySlug === "muang-thong-thani") {
+      map.fitBounds(mttBounds, { padding: [18, 18] });
       return;
     }
 

@@ -35,7 +35,25 @@ import type {
   WorkflowBoardStatus,
   PublicCctvCamera,
   ImpactArenaEvent,
-  MttTrafficSnapshot
+  MttTrafficSnapshot,
+  MttGate,
+  VehicleDetection,
+  GateFlowBucket,
+  EntryExitMatch,
+  GateFlowSnapshot,
+  TrafficFlowLine,
+  TrafficBottleneck,
+  TrafficHourlyPattern,
+  TrafficFlowSnapshot,
+  AqiSensorPlacement,
+  AqiZoneCard,
+  AqiHistoryPoint,
+  AqiConstructionPhase,
+  AqiConstructionSnapshot,
+  CctvCameraGroup,
+  CctvDetectionHistoryItem,
+  CctvConsoleSnapshot,
+  MucSnapshot
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -4957,6 +4975,351 @@ export const mttTrafficSnapshot: MttTrafficSnapshot = {
   overallStatus: "moderate",
   source: seedMeta("ITIC / Longdo Traffic", "https://traffic.longdo.com", "live")
 };
+
+/* ══════════════════════════════════════════════════════════
+   MUC (Municipal Operations Center) — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const mttGates: MttGate[] = [
+  {
+    id: "gate-chaengwattana",
+    label: { th: "ประตูแจ้งวัฒนะ (หลัก)", en: "Chaengwattana Main Gate" },
+    direction: "entry",
+    lat: 13.9055, lon: 100.5510,
+    corridorId: "chaengwattana-inbound",
+    cameraIds: ["pk-001", "pk-002", "pk-025"],
+    capacity: 280
+  },
+  {
+    id: "gate-tiwanon",
+    label: { th: "ประตูติวานนท์ / Popular", en: "Tiwanon / Popular Gate" },
+    direction: "entry",
+    lat: 13.9105, lon: 100.5100,
+    corridorId: "tiwanon-outbound",
+    cameraIds: ["pk-003", "pk-004"],
+    capacity: 220
+  },
+  {
+    id: "gate-ngamwongwan",
+    label: { th: "ประตูงามวงศ์วาน", en: "Ngamwongwan Side Gate" },
+    direction: "entry",
+    lat: 13.9000, lon: 100.5350,
+    corridorId: "ngamwongwan-inbound",
+    cameraIds: ["pk-005", "pk-006"],
+    capacity: 180
+  },
+  {
+    id: "gate-impact",
+    label: { th: "ประตู IMPACT Arena", en: "IMPACT Arena Gate" },
+    direction: "bidirectional",
+    lat: 13.9134, lon: 100.5530,
+    corridorId: "impact-roundabout",
+    cameraIds: ["pk-007", "pk-008", "pk-009"],
+    capacity: 350
+  },
+  {
+    id: "gate-lakefront",
+    label: { th: "ประตู Lakefront / Cosmo", en: "Lakefront / Cosmo Gate" },
+    direction: "exit",
+    lat: 13.9120, lon: 100.5460,
+    cameraIds: ["pk-010", "pk-011"],
+    capacity: 200
+  },
+  {
+    id: "gate-bond-street",
+    label: { th: "ประตู Bond Street", en: "Bond Street Gate" },
+    direction: "exit",
+    lat: 13.9072, lon: 100.5350,
+    cameraIds: ["pk-012", "pk-013"],
+    capacity: 160
+  }
+];
+
+function generateGateFlowBuckets(): GateFlowBucket[] {
+  const buckets: GateFlowBucket[] = [];
+  const baseDate = "2026-03-30T";
+  const profiles: Record<string, { peakIn: number; peakOut: number; baseIn: number; baseOut: number }> = {
+    "gate-chaengwattana": { peakIn: 310, peakOut: 120, baseIn: 80, baseOut: 60 },
+    "gate-tiwanon": { peakIn: 240, peakOut: 90, baseIn: 60, baseOut: 45 },
+    "gate-ngamwongwan": { peakIn: 160, peakOut: 70, baseIn: 40, baseOut: 30 },
+    "gate-impact": { peakIn: 280, peakOut: 260, baseIn: 50, baseOut: 50 },
+    "gate-lakefront": { peakIn: 40, peakOut: 180, baseIn: 20, baseOut: 50 },
+    "gate-bond-street": { peakIn: 30, peakOut: 140, baseIn: 15, baseOut: 35 }
+  };
+  for (const gate of mttGates) {
+    const p = profiles[gate.id]!;
+    for (let h = 0; h < 24; h++) {
+      const isMorningPeak = h >= 7 && h <= 9;
+      const isEveningPeak = h >= 17 && h <= 19;
+      const isDay = h >= 6 && h <= 22;
+      const inMul = isMorningPeak ? 1.0 : isEveningPeak ? 0.5 : isDay ? 0.4 : 0.1;
+      const outMul = isEveningPeak ? 1.0 : isMorningPeak ? 0.4 : isDay ? 0.4 : 0.1;
+      const countIn = Math.round(p.baseIn + (p.peakIn - p.baseIn) * inMul);
+      const countOut = Math.round(p.baseOut + (p.peakOut - p.baseOut) * outMul);
+      buckets.push({
+        gateId: gate.id,
+        periodStart: `${baseDate}${String(h).padStart(2, "0")}:00:00Z`,
+        periodMinutes: 60,
+        countIn,
+        countOut,
+        byClass: {
+          car: { in: Math.round(countIn * 0.6), out: Math.round(countOut * 0.6) },
+          pickup: { in: Math.round(countIn * 0.2), out: Math.round(countOut * 0.2) },
+          motorcycle: { in: Math.round(countIn * 0.12), out: Math.round(countOut * 0.12) },
+          bus: { in: Math.round(countIn * 0.03), out: Math.round(countOut * 0.03) },
+          truck: { in: Math.round(countIn * 0.05), out: Math.round(countOut * 0.05) }
+        },
+        avgSpeedKmh: isMorningPeak || isEveningPeak ? 14 + Math.random() * 8 : 35 + Math.random() * 15
+      });
+    }
+  }
+  return buckets;
+}
+
+const mttGateFlowBuckets = generateGateFlowBuckets();
+
+export const mttVehicleDetections: VehicleDetection[] = [
+  { id: "det-001", cameraId: "pk-001", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:12:34Z", detectionType: "plate-read", plateText: "กท-1234", plateConfidence: 0.94, vehicleClass: "car", direction: "in", confidence: 0.94, model: "LPR-TH v2.1" },
+  { id: "det-002", cameraId: "pk-002", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:12:41Z", detectionType: "vehicle-count", vehicleClass: "pickup", direction: "in", confidence: 0.88, model: "YOLOv8-Vehicle" },
+  { id: "det-003", cameraId: "pk-003", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:13:02Z", detectionType: "plate-read", plateText: "นบ-5678", plateConfidence: 0.91, vehicleClass: "car", direction: "in", confidence: 0.91, model: "LPR-TH v2.1" },
+  { id: "det-004", cameraId: "pk-007", gateId: "gate-impact", timestamp: "2026-03-30T08:14:15Z", detectionType: "vehicle-count", vehicleClass: "bus", direction: "in", confidence: 0.96, model: "YOLOv8-Vehicle" },
+  { id: "det-005", cameraId: "pk-010", gateId: "gate-lakefront", timestamp: "2026-03-30T08:15:22Z", detectionType: "plate-read", plateText: "กท-9012", plateConfidence: 0.87, vehicleClass: "car", direction: "out", confidence: 0.87, model: "LPR-TH v2.1" },
+  { id: "det-006", cameraId: "pk-005", gateId: "gate-ngamwongwan", timestamp: "2026-03-30T08:16:45Z", detectionType: "vehicle-count", vehicleClass: "motorcycle", direction: "in", confidence: 0.82, model: "YOLOv8-Vehicle" },
+  { id: "det-007", cameraId: "pk-012", gateId: "gate-bond-street", timestamp: "2026-03-30T08:17:30Z", detectionType: "plate-read", plateText: "ปท-3456", plateConfidence: 0.93, vehicleClass: "pickup", direction: "out", confidence: 0.93, model: "LPR-TH v2.1" },
+  { id: "det-008", cameraId: "pk-008", gateId: "gate-impact", timestamp: "2026-03-30T08:18:12Z", detectionType: "vehicle-classify", vehicleClass: "truck", direction: "in", confidence: 0.79, model: "YOLOv8-Vehicle" },
+  { id: "det-009", cameraId: "pk-001", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:19:05Z", detectionType: "plate-read", plateText: "กท-7890", plateConfidence: 0.96, vehicleClass: "van", direction: "in", confidence: 0.96, model: "LPR-TH v2.1" },
+  { id: "det-010", cameraId: "pk-004", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:20:33Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "in", confidence: 0.90, model: "YOLOv8-Vehicle" },
+  { id: "det-011", cameraId: "pk-009", gateId: "gate-impact", timestamp: "2026-03-30T08:21:44Z", detectionType: "plate-read", plateText: "นบ-2345", plateConfidence: 0.89, vehicleClass: "car", direction: "out", confidence: 0.89, model: "LPR-TH v2.1" },
+  { id: "det-012", cameraId: "pk-011", gateId: "gate-lakefront", timestamp: "2026-03-30T08:22:18Z", detectionType: "vehicle-count", vehicleClass: "pickup", direction: "out", confidence: 0.85, model: "YOLOv8-Vehicle" },
+  { id: "det-013", cameraId: "pk-006", gateId: "gate-ngamwongwan", timestamp: "2026-03-30T08:23:55Z", detectionType: "vehicle-classify", vehicleClass: "bus", direction: "in", confidence: 0.92, model: "YOLOv8-Vehicle" },
+  { id: "det-014", cameraId: "pk-013", gateId: "gate-bond-street", timestamp: "2026-03-30T08:24:40Z", detectionType: "plate-read", plateText: "กท-4567", plateConfidence: 0.90, vehicleClass: "car", direction: "out", confidence: 0.90, model: "LPR-TH v2.1" },
+  { id: "det-015", cameraId: "pk-025", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:25:12Z", detectionType: "vehicle-count", vehicleClass: "motorcycle", direction: "in", confidence: 0.78, model: "YOLOv8-Vehicle" },
+  { id: "det-016", cameraId: "pk-002", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:26:00Z", detectionType: "plate-read", plateText: "ปท-8901", plateConfidence: 0.95, vehicleClass: "car", direction: "in", confidence: 0.95, model: "LPR-TH v2.1" },
+  { id: "det-017", cameraId: "pk-007", gateId: "gate-impact", timestamp: "2026-03-30T08:27:15Z", detectionType: "vehicle-count", vehicleClass: "van", direction: "in", confidence: 0.84, model: "YOLOv8-Vehicle" },
+  { id: "det-018", cameraId: "pk-010", gateId: "gate-lakefront", timestamp: "2026-03-30T08:28:33Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "out", confidence: 0.91, model: "YOLOv8-Vehicle" },
+  { id: "det-019", cameraId: "pk-003", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:29:45Z", detectionType: "plate-read", plateText: "นบ-6789", plateConfidence: 0.88, vehicleClass: "pickup", direction: "in", confidence: 0.88, model: "LPR-TH v2.1" },
+  { id: "det-020", cameraId: "pk-012", gateId: "gate-bond-street", timestamp: "2026-03-30T08:30:20Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "out", confidence: 0.86, model: "YOLOv8-Vehicle" }
+];
+
+export const mttEntryExitMatches: EntryExitMatch[] = [
+  { id: "match-001", entryGateId: "gate-chaengwattana", exitGateId: "gate-bond-street", entryTime: "2026-03-30T07:45:00Z", exitTime: "2026-03-30T07:57:00Z", transitMinutes: 12, vehicleClass: "car", plateHash: "a3f8c1", confidence: 0.91 },
+  { id: "match-002", entryGateId: "gate-tiwanon", exitGateId: "gate-lakefront", entryTime: "2026-03-30T07:50:00Z", exitTime: "2026-03-30T07:58:00Z", transitMinutes: 8, vehicleClass: "car", plateHash: "b7d2e4", confidence: 0.88 },
+  { id: "match-003", entryGateId: "gate-chaengwattana", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:02:00Z", exitTime: "2026-03-30T08:11:00Z", transitMinutes: 9, vehicleClass: "pickup", plateHash: "c5a9f0", confidence: 0.85 },
+  { id: "match-004", entryGateId: "gate-ngamwongwan", exitGateId: "gate-bond-street", entryTime: "2026-03-30T08:05:00Z", exitTime: "2026-03-30T08:12:00Z", transitMinutes: 7, vehicleClass: "car", plateHash: "d1b3c7", confidence: 0.93 },
+  { id: "match-005", entryGateId: "gate-impact", exitGateId: "gate-chaengwattana", entryTime: "2026-03-30T08:10:00Z", exitTime: "2026-03-30T08:25:00Z", transitMinutes: 15, vehicleClass: "bus", confidence: 0.76 },
+  { id: "match-006", entryGateId: "gate-chaengwattana", exitGateId: "gate-impact", entryTime: "2026-03-30T08:15:00Z", exitTime: "2026-03-30T08:28:00Z", transitMinutes: 13, vehicleClass: "van", plateHash: "e8f2a6", confidence: 0.82 },
+  { id: "match-007", entryGateId: "gate-tiwanon", exitGateId: "gate-bond-street", entryTime: "2026-03-30T08:20:00Z", exitTime: "2026-03-30T08:31:00Z", transitMinutes: 11, vehicleClass: "car", plateHash: "f4c1d9", confidence: 0.90 },
+  { id: "match-008", entryGateId: "gate-ngamwongwan", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:22:00Z", exitTime: "2026-03-30T08:28:00Z", transitMinutes: 6, vehicleClass: "motorcycle", confidence: 0.72 },
+  { id: "match-009", entryGateId: "gate-impact", exitGateId: "gate-tiwanon", entryTime: "2026-03-30T08:30:00Z", exitTime: "2026-03-30T08:42:00Z", transitMinutes: 12, vehicleClass: "pickup", plateHash: "a2d7b5", confidence: 0.87 },
+  { id: "match-010", entryGateId: "gate-chaengwattana", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:35:00Z", exitTime: "2026-03-30T08:46:00Z", transitMinutes: 11, vehicleClass: "car", plateHash: "b9e3c8", confidence: 0.92 }
+];
+
+export const mttTrafficFlowLines: TrafficFlowLine[] = [
+  { id: "flow-cw-bs", fromGateId: "gate-chaengwattana", toGateId: "gate-bond-street", volumePerHour: 185, avgTransitMinutes: 12, status: "bottleneck", coordinates: [[13.9055, 100.5510], [13.9060, 100.5450], [13.9065, 100.5400], [13.9072, 100.5350]] },
+  { id: "flow-tw-lf", fromGateId: "gate-tiwanon", toGateId: "gate-lakefront", volumePerHour: 142, avgTransitMinutes: 8, status: "building", coordinates: [[13.9105, 100.5100], [13.9110, 100.5200], [13.9115, 100.5350], [13.9120, 100.5460]] },
+  { id: "flow-cw-lf", fromGateId: "gate-chaengwattana", toGateId: "gate-lakefront", volumePerHour: 120, avgTransitMinutes: 9, status: "clear", coordinates: [[13.9055, 100.5510], [13.9070, 100.5490], [13.9100, 100.5470], [13.9120, 100.5460]] },
+  { id: "flow-ng-bs", fromGateId: "gate-ngamwongwan", toGateId: "gate-bond-street", volumePerHour: 95, avgTransitMinutes: 7, status: "clear", coordinates: [[13.9000, 100.5350], [13.9030, 100.5350], [13.9050, 100.5350], [13.9072, 100.5350]] },
+  { id: "flow-im-cw", fromGateId: "gate-impact", toGateId: "gate-chaengwattana", volumePerHour: 210, avgTransitMinutes: 15, status: "bottleneck", coordinates: [[13.9134, 100.5530], [13.9110, 100.5520], [13.9080, 100.5515], [13.9055, 100.5510]] },
+  { id: "flow-cw-im", fromGateId: "gate-chaengwattana", toGateId: "gate-impact", volumePerHour: 165, avgTransitMinutes: 13, status: "building", coordinates: [[13.9055, 100.5510], [13.9080, 100.5515], [13.9110, 100.5520], [13.9134, 100.5530]] },
+  { id: "flow-tw-bs", fromGateId: "gate-tiwanon", toGateId: "gate-bond-street", volumePerHour: 88, avgTransitMinutes: 11, status: "clear", coordinates: [[13.9105, 100.5100], [13.9090, 100.5200], [13.9080, 100.5280], [13.9072, 100.5350]] },
+  { id: "flow-ng-lf", fromGateId: "gate-ngamwongwan", toGateId: "gate-lakefront", volumePerHour: 72, avgTransitMinutes: 6, status: "clear", coordinates: [[13.9000, 100.5350], [13.9040, 100.5400], [13.9080, 100.5440], [13.9120, 100.5460]] }
+];
+
+export const mttTrafficBottlenecks: TrafficBottleneck[] = [
+  {
+    id: "bn-chaengwattana", corridorId: "chaengwattana-inbound",
+    label: { th: "แจ้งวัฒนะขาเข้า — เกินรองรับ", en: "Chaengwattana Inbound — Over Capacity" },
+    severity: "bottleneck", volumeRatio: 1.42, estimatedDelayMinutes: 12,
+    suggestion: { th: "เปลี่ยนเส้นทางผ่านงามวงศ์วาน ความจุว่าง 38%", en: "Redirect via Ngamwongwan — 38% capacity available" },
+    lat: 13.9055, lon: 100.5510
+  },
+  {
+    id: "bn-impact", corridorId: "impact-roundabout",
+    label: { th: "วงเวียน IMPACT — งาน Expo", en: "IMPACT Roundabout — Expo Event" },
+    severity: "building", volumeRatio: 1.18, estimatedDelayMinutes: 8,
+    suggestion: { th: "แนะนำ shuttle bus จาก MRT แจ้งวัฒนะ", en: "Recommend shuttle bus from MRT Chaengwattana" },
+    lat: 13.9134, lon: 100.5530
+  },
+  {
+    id: "bn-bond-street", corridorId: "bond-street-exit",
+    label: { th: "Bond Street — กำลังสะสม", en: "Bond Street — Building Up" },
+    severity: "building", volumeRatio: 0.95, estimatedDelayMinutes: 4,
+    suggestion: { th: "เปิดเลน Lakefront เสริมขาออก", en: "Open Lakefront lane as additional exit" },
+    lat: 13.9072, lon: 100.5350
+  }
+];
+
+export const mttTrafficHourlyPatterns: TrafficHourlyPattern[] = Array.from({ length: 24 }, (_, h) => {
+  const isMorningPeak = h >= 7 && h <= 9;
+  const isEveningPeak = h >= 17 && h <= 19;
+  const isDay = h >= 6 && h <= 22;
+  const base = isDay ? 400 : 50;
+  const peakAdd = isMorningPeak ? 800 : isEveningPeak ? 700 : 0;
+  return {
+    hour: h,
+    avgVolumeIn: base + peakAdd + Math.round(Math.random() * 50),
+    avgVolumeOut: base + (isEveningPeak ? 800 : isMorningPeak ? 300 : 0) + Math.round(Math.random() * 50),
+    avgSpeedKmh: isMorningPeak || isEveningPeak ? 12 + Math.round(Math.random() * 6) : 38 + Math.round(Math.random() * 12),
+    peakGateId: isMorningPeak ? "gate-chaengwattana" : isEveningPeak ? "gate-lakefront" : undefined
+  };
+});
+
+export const mttAqiSensors: AqiSensorPlacement[] = [
+  { id: "aq-s01", label: { th: "เซนเซอร์แจ้งวัฒนะ", en: "Chaengwattana Sensor" }, lat: 13.9055, lon: 100.5510, installed: true, provider: "Open-Meteo", zoneType: "commercial" },
+  { id: "aq-s02", label: { th: "เซนเซอร์ Lakefront", en: "Lakefront Sensor" }, lat: 13.9120, lon: 100.5460, installed: true, provider: "Open-Meteo", zoneType: "green-space" },
+  { id: "aq-s03", label: { th: "เซนเซอร์ IMPACT", en: "IMPACT Sensor" }, lat: 13.9134, lon: 100.5530, installed: true, provider: "OpenAQ", zoneType: "commercial" },
+  { id: "aq-s04", label: { th: "เซนเซอร์ Zone 1 ที่พักอาศัย", en: "Zone 1 Residential Sensor" }, lat: 13.9080, lon: 100.5400, installed: true, provider: "Open-Meteo", zoneType: "residential" },
+  { id: "aq-s05", label: { th: "เซนเซอร์ Zone 2 ที่พักอาศัย", en: "Zone 2 Residential Sensor" }, lat: 13.9040, lon: 100.5300, installed: true, provider: "Open-Meteo", zoneType: "residential" },
+  { id: "aq-s06", label: { th: "เซนเซอร์ก่อสร้างเหนือ", en: "Construction North Sensor" }, lat: 13.9150, lon: 100.5400, installed: true, provider: "MTT-IoT", zoneType: "construction" },
+  { id: "aq-s07", label: { th: "เซนเซอร์ก่อสร้างตะวันออก", en: "Construction East Sensor" }, lat: 13.9090, lon: 100.5560, installed: true, provider: "MTT-IoT", zoneType: "construction" },
+  { id: "aq-s08", label: { th: "เซนเซอร์ Bond Street", en: "Bond Street Sensor" }, lat: 13.9072, lon: 100.5350, installed: true, provider: "Open-Meteo", zoneType: "commercial" },
+  { id: "aq-s09", label: { th: "แนะนำ: สวนสาธารณะกลาง", en: "Recommended: Central Park" }, lat: 13.9100, lon: 100.5380, installed: false, provider: "planned-mtt", zoneType: "green-space" },
+  { id: "aq-s10", label: { th: "แนะนำ: โรงเรียนนานาชาติ", en: "Recommended: International School" }, lat: 13.9060, lon: 100.5420, installed: false, provider: "planned-mtt", zoneType: "residential" },
+  { id: "aq-s11", label: { th: "แนะนำ: ถนนงามวงศ์วาน", en: "Recommended: Ngamwongwan Road" }, lat: 13.9000, lon: 100.5350, installed: false, provider: "planned-mtt", zoneType: "mixed" },
+  { id: "aq-s12", label: { th: "แนะนำ: ก่อสร้างใต้", en: "Recommended: Construction South" }, lat: 13.9020, lon: 100.5480, installed: false, provider: "planned-mtt", zoneType: "construction" }
+];
+
+export const mttAqiZones: AqiZoneCard[] = [
+  {
+    id: "zone-residential-1", label: { th: "เขตที่อยู่อาศัย Zone 1-2", en: "Residential Zone 1-2" }, zoneType: "residential",
+    currentAqi: 62, pm25: 22, pm10: 38, threshold: 100, isAboveThreshold: false, trend: "steady",
+    detail: { th: "คุณภาพอากาศพอใช้ ฝุ่นจากก่อสร้างลดลง", en: "Moderate air quality, construction dust reduced" },
+    sensorIds: ["aq-s04", "aq-s05"]
+  },
+  {
+    id: "zone-construction-n", label: { th: "เขตก่อสร้างเหนือ", en: "Construction North Zone" }, zoneType: "construction",
+    currentAqi: 92, pm25: 38, pm10: 65, threshold: 75, isAboveThreshold: true, trend: "up",
+    detail: { th: "เกินเกณฑ์เขตก่อสร้าง — งานเสาเข็ม active", en: "Above construction threshold — active piling work" },
+    sensorIds: ["aq-s06"],
+    constructionNote: { th: "งานเสาเข็มอาคาร C — ฝุ่น PM10 สูง", en: "Building C piling work — high PM10 dust" }
+  },
+  {
+    id: "zone-construction-e", label: { th: "เขตก่อสร้างตะวันออก", en: "Construction East Zone" }, zoneType: "construction",
+    currentAqi: 84, pm25: 34, pm10: 58, threshold: 75, isAboveThreshold: true, trend: "steady",
+    detail: { th: "เกินเกณฑ์ — งานถนนและท่อระบาย", en: "Above threshold — road and drainage work" },
+    sensorIds: ["aq-s07"],
+    constructionNote: { th: "วางท่อระบาย + ปรับพื้นถนน", en: "Drainage pipes + road resurfacing" }
+  },
+  {
+    id: "zone-commercial", label: { th: "เขตพาณิชย์", en: "Commercial Zone" }, zoneType: "commercial",
+    currentAqi: 58, pm25: 19, pm10: 32, threshold: 100, isAboveThreshold: false, trend: "down",
+    detail: { th: "คุณภาพดี ลมช่วยระบาย", en: "Good quality, wind-assisted ventilation" },
+    sensorIds: ["aq-s01", "aq-s03", "aq-s08"]
+  },
+  {
+    id: "zone-lakefront", label: { th: "สวน Lakefront", en: "Lakefront Park" }, zoneType: "green-space",
+    currentAqi: 45, pm25: 14, pm10: 24, threshold: 80, isAboveThreshold: false, trend: "down",
+    detail: { th: "คุณภาพดีมาก ต้นไม้ช่วยกรอง", en: "Very good quality, trees filter particles" },
+    sensorIds: ["aq-s02"]
+  }
+];
+
+function generateAqiHistory(): AqiHistoryPoint[] {
+  const points: AqiHistoryPoint[] = [];
+  for (let d = 29; d >= 0; d--) {
+    const date = new Date(2026, 2, 30);
+    date.setDate(date.getDate() - d);
+    const constructionRamp = Math.max(0, (30 - d) / 30) * 25;
+    const baseAqi = 55 + constructionRamp + (Math.random() * 10 - 5);
+    const aqi = Math.round(Math.min(100, Math.max(40, baseAqi)));
+    points.push({
+      timestamp: date.toISOString().split("T")[0] + "T12:00:00Z",
+      aqi,
+      pm25: Math.round(aqi * 0.38 + Math.random() * 3),
+      pm10: Math.round(aqi * 0.65 + Math.random() * 5)
+    });
+  }
+  return points;
+}
+
+export const mttAqiHistory = generateAqiHistory();
+
+export const mttConstructionPhases: AqiConstructionPhase[] = [
+  {
+    id: "phase-foundation", label: { th: "ขั้นฐานราก", en: "Foundation Phase" },
+    startDate: "2025-06-01", endDate: "2025-12-15", status: "completed", avgAqiDelta: 8,
+    detail: { th: "เจาะเสาเข็ม + ขุดดิน — ฝุ่นปานกลาง", en: "Pile driving + excavation — moderate dust" }
+  },
+  {
+    id: "phase-structure", label: { th: "ขั้นโครงสร้าง", en: "Structure Phase" },
+    startDate: "2026-01-05", status: "active", avgAqiDelta: 18,
+    detail: { th: "งานคอนกรีต + เหล็ก — ฝุ่นสูงสุด", en: "Concrete + steel work — peak dust generation" }
+  },
+  {
+    id: "phase-finishing", label: { th: "ขั้นตกแต่ง", en: "Finishing Phase" },
+    startDate: "2026-08-01", status: "planned", avgAqiDelta: 5,
+    detail: { th: "ตกแต่งภายใน + ภูมิทัศน์ — ฝุ่นต่ำ", en: "Interior + landscaping — low dust expected" }
+  }
+];
+
+export const mttCctvGroups: CctvCameraGroup[] = mttGates.map((g) => ({
+  id: `group-${g.id}`,
+  label: g.label,
+  gateId: g.id,
+  zone: g.id.replace("gate-", ""),
+  cameraIds: g.cameraIds
+}));
+
+export const mttCctvDetectionHistory: CctvDetectionHistoryItem[] = [
+  { id: "dh-001", cameraId: "pk-001", timestamp: "2026-03-30T08:12:34Z", detectionType: "plate-read", detail: { th: "กท-1234 รถเก๋ง ขาเข้า", en: "กท-1234 sedan entering" }, severity: "stable", confidence: 0.94 },
+  { id: "dh-002", cameraId: "pk-007", timestamp: "2026-03-30T08:14:15Z", detectionType: "vehicle-count", detail: { th: "รถบัสใหญ่ ขาเข้า IMPACT", en: "Large bus entering IMPACT" }, severity: "watch", confidence: 0.96 },
+  { id: "dh-003", cameraId: "pk-002", timestamp: "2026-03-30T08:10:22Z", detectionType: "vehicle-classify", detail: { th: "รถบรรทุก 10 ล้อ — ตรวจน้ำหนัก", en: "10-wheel truck — weight check" }, severity: "alert", confidence: 0.89 },
+  { id: "dh-004", cameraId: "pk-010", timestamp: "2026-03-30T08:09:45Z", detectionType: "plate-read", detail: { th: "กท-9012 ออก Lakefront", en: "กท-9012 exiting Lakefront" }, severity: "stable", confidence: 0.87 },
+  { id: "dh-005", cameraId: "pk-003", timestamp: "2026-03-30T08:08:33Z", detectionType: "vehicle-count", detail: { th: "นับรถ 45 คัน/15 นาที ติวานนท์", en: "Count: 45 vehicles/15min Tiwanon" }, severity: "stable", confidence: 0.90 },
+  { id: "dh-006", cameraId: "pk-005", timestamp: "2026-03-30T08:07:12Z", detectionType: "vehicle-classify", detail: { th: "จักรยานยนต์ 3 คัน ซอยลัด", en: "3 motorcycles via shortcut alley" }, severity: "watch", confidence: 0.82 },
+  { id: "dh-007", cameraId: "pk-012", timestamp: "2026-03-30T08:06:00Z", detectionType: "plate-read", detail: { th: "ปท-3456 ออก Bond Street", en: "ปท-3456 exiting Bond Street" }, severity: "stable", confidence: 0.93 },
+  { id: "dh-008", cameraId: "pk-008", timestamp: "2026-03-30T08:05:15Z", detectionType: "vehicle-classify", detail: { th: "รถหกล้อก่อสร้าง — ใบอนุญาตตรวจแล้ว", en: "Construction 6-wheeler — permit verified" }, severity: "watch", confidence: 0.79 },
+  { id: "dh-009", cameraId: "pk-025", timestamp: "2026-03-30T08:04:30Z", detectionType: "vehicle-count", detail: { th: "คิวรถยาว 120 ม. แจ้งวัฒนะ", en: "Queue length 120m Chaengwattana" }, severity: "alert", confidence: 0.85 },
+  { id: "dh-010", cameraId: "pk-009", timestamp: "2026-03-30T08:03:20Z", detectionType: "plate-read", detail: { th: "นบ-2345 ออก IMPACT", en: "นบ-2345 exiting IMPACT" }, severity: "stable", confidence: 0.89 },
+  { id: "dh-011", cameraId: "pk-004", timestamp: "2026-03-30T08:02:10Z", detectionType: "vehicle-count", detail: { th: "นับรถ 38 คัน/15 นาที Popular", en: "Count: 38 vehicles/15min Popular" }, severity: "stable", confidence: 0.88 },
+  { id: "dh-012", cameraId: "pk-011", timestamp: "2026-03-30T08:01:00Z", detectionType: "vehicle-classify", detail: { th: "รถตู้ VIP 2 คัน — ผ่านเลน fast-track", en: "2 VIP vans — fast-track lane" }, severity: "stable", confidence: 0.91 },
+  { id: "dh-013", cameraId: "pk-006", timestamp: "2026-03-30T08:00:05Z", detectionType: "vehicle-count", detail: { th: "นับรถ 22 คัน/15 นาที งามวงศ์วาน", en: "Count: 22 vehicles/15min Ngamwongwan" }, severity: "stable", confidence: 0.84 },
+  { id: "dh-014", cameraId: "pk-013", timestamp: "2026-03-30T07:58:45Z", detectionType: "plate-read", detail: { th: "กท-4567 ออก Bond Street — ซ้ำ 3 ครั้ง/สัปดาห์", en: "กท-4567 exiting Bond Street — 3x/week repeat" }, severity: "watch", confidence: 0.90 },
+  { id: "dh-015", cameraId: "pk-001", timestamp: "2026-03-30T07:57:30Z", detectionType: "vehicle-classify", detail: { th: "รถพยาบาล — เปิดเลนฉุกเฉิน", en: "Ambulance detected — emergency lane opened" }, severity: "alert", confidence: 0.97 }
+];
+
+export function createMucSnapshot(): MucSnapshot {
+  return {
+    updatedAt: seededAt,
+    gateFlow: {
+      updatedAt: seededAt,
+      gates: mttGates,
+      buckets: mttGateFlowBuckets,
+      recentDetections: mttVehicleDetections,
+      matches: mttEntryExitMatches,
+      source: seedMeta("MTT Gate AI", "https://mtt.ai/gate-flow", "live")
+    },
+    trafficFlow: {
+      updatedAt: seededAt,
+      flowLines: mttTrafficFlowLines,
+      bottlenecks: mttTrafficBottlenecks,
+      hourlyPatterns: mttTrafficHourlyPatterns,
+      suggestions: [
+        { th: "เปลี่ยนเส้นทางผ่านงามวงศ์วาน — ความจุว่าง 38%", en: "Redirect via Ngamwongwan — 38% capacity available" },
+        { th: "เปิดบริการ shuttle bus MRT แจ้งวัฒนะ ↔ IMPACT", en: "Activate shuttle MRT Chaengwattana ↔ IMPACT" },
+        { th: "เปิดเลน Lakefront เสริมขาออกช่วง 17:00-19:00", en: "Open Lakefront lane for exit 17:00-19:00" }
+      ],
+      source: seedMeta("MTT Traffic Intelligence", "https://mtt.ai/traffic", "live")
+    },
+    airQuality: {
+      updatedAt: seededAt,
+      overallAqi: 68,
+      overallTrend: "up" as const,
+      zones: mttAqiZones,
+      sensors: mttAqiSensors,
+      history: mttAqiHistory,
+      constructionPhases: mttConstructionPhases,
+      alertCount: mttAqiZones.filter((z) => z.isAboveThreshold).length,
+      source: seedMeta("Open-Meteo + MTT-IoT", "https://open-meteo.com", "live")
+    },
+    cctvConsole: {
+      updatedAt: seededAt,
+      groups: mttCctvGroups,
+      detectionHistory: mttCctvDetectionHistory,
+      source: seedMeta("MTT CCTV AI", "https://mtt.ai/cctv", "live")
+    }
+  };
+}
 
 export function localize(locale: Locale, value: { th: string; en: string }): string {
   return value[locale];

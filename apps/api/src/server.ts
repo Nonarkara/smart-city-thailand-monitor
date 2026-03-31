@@ -180,6 +180,29 @@ export async function createServer() {
   app.get("/api/markets", async () => store.getMarketSnapshot());
   app.get("/api/sources", async () => store.getSources());
   app.get("/api/command-center", async () => store.getCommandCenter());
+
+  /* ── MUC (Municipal Operations Center) ── */
+  app.get("/api/muc", async () => store.getMucSnapshot());
+  app.get("/api/muc/gate-flow", async () => store.getGateFlow());
+  app.get("/api/muc/gate-flow/buckets", async (request) => {
+    const query = request.query as Record<string, string>;
+    return store.getGateFlowBuckets({
+      gate: query.gate || undefined,
+      hours: query.hours ? Number(query.hours) : undefined
+    });
+  });
+  app.get("/api/muc/gate-flow/detections", async (request) => {
+    const query = request.query as Record<string, string>;
+    return store.getVehicleDetections({
+      camera: query.camera || undefined,
+      gate: query.gate || undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    });
+  });
+  app.get("/api/muc/traffic-flow", async () => store.getTrafficFlow());
+  app.get("/api/muc/air-quality", async () => store.getAirQuality());
+  app.get("/api/muc/cctv-console", async () => store.getCctvConsole());
+
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
   app.get("/api/satellite/search", async (request) => {

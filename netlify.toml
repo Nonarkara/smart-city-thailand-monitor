@@ -1,0 +1,14 @@
+[build]
+  command = "npm ci && npm run build -w packages/shared && npm run build -w apps/web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_DEFAULT_CITY = "muang-thong-thani"
+  VITE_DEFAULT_VIEW = "city"
+  VITE_SITE_TITLE = "Muang Thong Thani Super Dashboard"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

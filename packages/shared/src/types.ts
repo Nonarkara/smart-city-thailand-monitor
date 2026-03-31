@@ -584,3 +584,202 @@ export interface MttTrafficSnapshot {
   overallStatus: TrafficCorridorStatus;
   source: SourceMeta;
 }
+
+/* ── MUC (Municipal Operations Center) ── */
+
+/* Gate & Vehicle Intelligence */
+export type VehicleClass = "car" | "pickup" | "van" | "bus" | "truck" | "motorcycle";
+export type DetectionType = "plate-read" | "vehicle-count" | "vehicle-classify";
+export type GateDirection = "entry" | "exit" | "bidirectional";
+
+export interface MttGate {
+  id: string;
+  label: LocalizedText;
+  direction: GateDirection;
+  lat: number;
+  lon: number;
+  corridorId?: string;
+  cameraIds: string[];
+  capacity: number; // vehicles per hour
+}
+
+export interface VehicleDetection {
+  id: string;
+  cameraId: string;
+  gateId: string;
+  timestamp: string;
+  detectionType: DetectionType;
+  plateText?: string;
+  plateConfidence?: number;
+  vehicleClass: VehicleClass;
+  direction: "in" | "out";
+  confidence: number;
+  model: string;
+}
+
+export interface GateFlowBucket {
+  gateId: string;
+  periodStart: string;
+  periodMinutes: number; // 15 or 60
+  countIn: number;
+  countOut: number;
+  byClass: Partial<Record<VehicleClass, { in: number; out: number }>>;
+  avgSpeedKmh?: number;
+}
+
+export interface EntryExitMatch {
+  id: string;
+  entryGateId: string;
+  exitGateId: string;
+  entryTime: string;
+  exitTime: string;
+  transitMinutes: number;
+  vehicleClass: VehicleClass;
+  plateHash?: string; // anonymized
+  confidence: number;
+}
+
+export interface GateFlowSnapshot {
+  updatedAt: string;
+  gates: MttGate[];
+  buckets: GateFlowBucket[];
+  recentDetections: VehicleDetection[];
+  matches: EntryExitMatch[];
+  source: SourceMeta;
+}
+
+/* Traffic Flow Intelligence */
+export type BottleneckSeverity = "clear" | "building" | "bottleneck" | "gridlock";
+
+export interface TrafficFlowLine {
+  id: string;
+  fromGateId: string;
+  toGateId: string;
+  volumePerHour: number;
+  avgTransitMinutes: number;
+  status: BottleneckSeverity;
+  coordinates: [number, number][]; // polyline [lat, lon][]
+}
+
+export interface TrafficBottleneck {
+  id: string;
+  corridorId: string;
+  label: LocalizedText;
+  severity: BottleneckSeverity;
+  volumeRatio: number; // current / capacity, e.g. 1.42 = 142%
+  estimatedDelayMinutes: number;
+  suggestion: LocalizedText;
+  lat: number;
+  lon: number;
+}
+
+export interface TrafficHourlyPattern {
+  hour: number; // 0-23
+  avgVolumeIn: number;
+  avgVolumeOut: number;
+  avgSpeedKmh: number;
+  peakGateId?: string;
+}
+
+export interface TrafficFlowSnapshot {
+  updatedAt: string;
+  flowLines: TrafficFlowLine[];
+  bottlenecks: TrafficBottleneck[];
+  hourlyPatterns: TrafficHourlyPattern[];
+  suggestions: LocalizedText[];
+  source: SourceMeta;
+}
+
+/* Air Quality Construction Monitoring */
+export type AqiZoneType = "residential" | "construction" | "commercial" | "mixed" | "green-space";
+
+export interface AqiSensorPlacement {
+  id: string;
+  label: LocalizedText;
+  lat: number;
+  lon: number;
+  installed: boolean; // true = real, false = recommended
+  provider: string;
+  zoneType: AqiZoneType;
+}
+
+export interface AqiZoneCard {
+  id: string;
+  label: LocalizedText;
+  zoneType: AqiZoneType;
+  currentAqi: number;
+  pm25: number;
+  pm10: number;
+  threshold: number; // 75 for construction, 100 for normal
+  isAboveThreshold: boolean;
+  trend: TrendDirection;
+  detail: LocalizedText;
+  sensorIds: string[];
+  constructionNote?: LocalizedText;
+}
+
+export interface AqiHistoryPoint {
+  timestamp: string;
+  aqi: number;
+  pm25: number;
+  pm10: number;
+}
+
+export interface AqiConstructionPhase {
+  id: string;
+  label: LocalizedText;
+  startDate: string;
+  endDate?: string;
+  status: "active" | "completed" | "planned";
+  avgAqiDelta: number; // how much AQI rose vs baseline
+  detail: LocalizedText;
+}
+
+export interface AqiConstructionSnapshot {
+  updatedAt: string;
+  overallAqi: number;
+  overallTrend: TrendDirection;
+  zones: AqiZoneCard[];
+  sensors: AqiSensorPlacement[];
+  history: AqiHistoryPoint[];
+  constructionPhases: AqiConstructionPhase[];
+  alertCount: number;
+  source: SourceMeta;
+}
+
+/* CCTV Operations Console */
+export type CctvGridLayout = "2x2" | "3x3" | "4x4";
+
+export interface CctvCameraGroup {
+  id: string;
+  label: LocalizedText;
+  gateId?: string;
+  zone: string;
+  cameraIds: string[];
+}
+
+export interface CctvDetectionHistoryItem {
+  id: string;
+  cameraId: string;
+  timestamp: string;
+  detectionType: DetectionType;
+  detail: LocalizedText;
+  severity: "watch" | "alert" | "stable";
+  confidence: number;
+}
+
+export interface CctvConsoleSnapshot {
+  updatedAt: string;
+  groups: CctvCameraGroup[];
+  detectionHistory: CctvDetectionHistoryItem[];
+  source: SourceMeta;
+}
+
+/* MUC Top-Level */
+export interface MucSnapshot {
+  updatedAt: string;
+  gateFlow: GateFlowSnapshot;
+  trafficFlow: TrafficFlowSnapshot;
+  airQuality: AqiConstructionSnapshot;
+  cctvConsole: CctvConsoleSnapshot;
+}
