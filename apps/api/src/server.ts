@@ -203,6 +203,63 @@ export async function createServer() {
   app.get("/api/muc/air-quality", async () => store.getAirQuality());
   app.get("/api/muc/cctv-console", async () => store.getCctvConsole());
 
+  /* ── Incidents ── */
+  app.get("/api/incidents", async (request) => {
+    const query = request.query as Record<string, string>;
+    return store.getIncidents({
+      status: query.status || undefined,
+      category: query.category || undefined,
+      zone: query.zone || undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    });
+  });
+  app.get("/api/incidents/:id", async (request) => {
+    const { id } = request.params as { id: string };
+    const item = store.getIncidentById(id);
+    if (!item) return { error: "Not found" };
+    return item;
+  });
+  app.post("/api/incidents", async (request) => {
+    const body = request.body as Record<string, unknown>;
+    return store.createIncident(body as any);
+  });
+  app.patch("/api/incidents/:id", async (request) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as Record<string, unknown>;
+    const updated = store.updateIncident(id, body as any);
+    if (!updated) return { error: "Not found" };
+    return updated;
+  });
+
+  /* ── Vision Pipeline ── */
+  app.get("/api/vision/pipelines", async () => store.getVisionPipelines());
+  app.get("/api/vision/pipelines/:cameraId", async (request) => {
+    const { cameraId } = request.params as { cameraId: string };
+    return store.getVisionPipelineByCamera(cameraId) ?? { error: "Not found" };
+  });
+  app.get("/api/vision/results", async (request) => {
+    const query = request.query as Record<string, string>;
+    return store.getVisionResults({
+      camera: query.camera || undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    });
+  });
+  app.post("/api/vision/frame/:cameraId", async (request) => {
+    const { cameraId } = request.params as { cameraId: string };
+    // Stub: returns mock detection — real inference will connect here
+    return {
+      status: "stub",
+      cameraId,
+      message: "Vision pipeline stub — connect onnxruntime-node + YOLOv8 for real inference",
+      recommendedStack: [
+        "onnxruntime-node — YOLOv8 vehicle detection",
+        "node-rtsp-stream or rtsp-ffmpeg — RTSP frame capture",
+        "OpenALPR Docker — Thai license plate recognition",
+        "fluent-ffmpeg — video processing"
+      ]
+    };
+  });
+
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
   app.get("/api/satellite/search", async (request) => {

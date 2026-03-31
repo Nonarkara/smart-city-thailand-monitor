@@ -23,7 +23,8 @@ import {
   sources as sourceSeed,
   impactArenaEvents as impactArenaEventsSeed,
   mttTrafficSnapshot as mttTrafficSnapshotSeed,
-  createMucSnapshot
+  createMucSnapshot,
+  mttIncidents as incidentSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -55,7 +56,8 @@ import type {
   TimeSnapshot,
   ImpactArenaEvent,
   MucSnapshot,
-  CctvGridLayout
+  CctvGridLayout,
+  IncidentRecord
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -1637,7 +1639,7 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
   }
 
   if (citySlug === "muang-thong-thani") {
-    return ["mtt-grid", "projects", "itic-traffic", "cctv-cameras"];
+    return ["mtt-boundary", "mtt-zones", "mtt-grid", "projects", "itic-traffic", "cctv-cameras", "incidents"];
   }
 
   return [
@@ -2145,6 +2147,12 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const incidentQuery = useQuery({
+    queryKey: ["incidents"],
+    queryFn: () => fetchFromApi<IncidentRecord[]>("/api/incidents", cloneSeed(incidentSeed), Array.isArray),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2175,7 +2183,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
     arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed)),
-    muc: mucQuery.data ?? mucFallback
+    muc: mucQuery.data ?? mucFallback,
+    incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed))
   };
 }
 
@@ -2254,7 +2263,8 @@ function DashboardPage() {
     commandCenter,
     time,
     arenaEvents,
-    muc
+    muc,
+    incidents
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
@@ -4845,6 +4855,31 @@ function DashboardPage() {
               )) : (
                 <div className="data-item"><strong>{lang === "th" ? "ไม่มีรายการค้าง" : "Queue clear"}</strong></div>
               )}
+            </div>
+
+            {/* Incidents / Maintenance */}
+            <div className="data-section">
+              <div className="data-section-head">
+                <strong>{lang === "th" ? "แจ้งเหตุ / ซ่อมบำรุง" : "Incidents / Maintenance"}</strong>
+                <span className="status-pill">{incidents.filter((i) => i.status !== "closed" && i.status !== "resolved").length}</span>
+              </div>
+              {incidents.filter((i) => i.status !== "closed").slice(0, 8).map((inc) => (
+                <button key={inc.id} type="button" className={`data-item severity-${inc.urgency === "critical" ? "urgent" : inc.urgency === "high" ? "watch" : "monitor"}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "incidents"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="stack-title">
+                    <strong>{localize(lang, inc.title)}</strong>
+                    <span className={`status-tag ${inc.status === "new" ? "delayed" : inc.status === "resolved" ? "live" : "watch"}`}>{inc.status}</span>
+                  </div>
+                  <div className="incident-meta">
+                    <span className={`urgency-badge urgency-${inc.urgency}`}>{inc.urgency}</span>
+                    <span className="incident-category">{inc.category}</span>
+                    {inc.assignedTo ? <span className="incident-assigned">{inc.assignedTo}</span> : null}
+                  </div>
+                  <small>{localize(lang, inc.description)}</small>
+                </button>
+              ))}
             </div>
 
             <div className="data-section">

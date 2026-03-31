@@ -9,6 +9,9 @@ import {
   createMucSnapshot,
   createTimeSnapshot,
   decisionQueue as decisionQueueSeed,
+  mttIncidents as incidentSeed,
+  mttVisionPipelines as visionPipelineSeed,
+  mttVisionResults as visionResultSeed,
   domains as domainSeed,
   districts as districtSeed,
   mapFeatureCollections as mapFeatureSeed,
@@ -49,7 +52,10 @@ import type {
   TimeSnapshot,
   MucSnapshot,
   GateFlowBucket,
-  VehicleDetection
+  VehicleDetection,
+  IncidentRecord,
+  VisionPipelineConfig,
+  VisionDetectionResult
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { persistStoreSnapshot } from "./persistence.js";
@@ -76,6 +82,9 @@ interface StoreState {
   latestTime: TimeSnapshot;
   commandCenter: CommandCenterSnapshot;
   mucSnapshot: MucSnapshot;
+  incidents: IncidentRecord[];
+  visionPipelines: VisionPipelineConfig[];
+  visionResults: VisionDetectionResult[];
 }
 
 export type StoreSnapshot = StoreState;
@@ -156,7 +165,10 @@ function createState(): StoreState {
     lastSyncAt: new Date().toISOString(),
     latestTime: createTimeSnapshot(),
     commandCenter: createCommandCenterSnapshot(),
-    mucSnapshot: createMucSnapshot()
+    mucSnapshot: createMucSnapshot(),
+    incidents: cloneSeed(incidentSeed),
+    visionPipelines: cloneSeed(visionPipelineSeed),
+    visionResults: cloneSeed(visionResultSeed)
   };
 }
 
@@ -560,6 +572,70 @@ export const store = {
       detections = detections.slice(0, filters.limit);
     }
     return cloneSeed(detections);
+  },
+
+  /* ── Incidents ── */
+  getIncidents(filters?: { status?: string; category?: string; zone?: string; limit?: number }): IncidentRecord[] {
+    let items = state.incidents;
+    if (filters?.status) items = items.filter((i) => i.status === filters.status);
+    if (filters?.category) items = items.filter((i) => i.category === filters.category);
+    if (filters?.zone) items = items.filter((i) => i.zoneId === filters.zone);
+    items = [...items].sort((a, b) => {
+      const urgRank: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      const ua = urgRank[a.urgency] ?? 9;
+      const ub = urgRank[b.urgency] ?? 9;
+      if (ua !== ub) return ua - ub;
+      return b.reportedAt.localeCompare(a.reportedAt);
+    });
+    if (filters?.limit) items = items.slice(0, filters.limit);
+    return cloneSeed(items);
+  },
+
+  getIncidentById(id: string): IncidentRecord | null {
+    const item = state.incidents.find((i) => i.id === id);
+    return item ? cloneSeed(item) : null;
+  },
+
+  createIncident(data: Omit<IncidentRecord, "id" | "ticketNumber" | "updatedAt">): IncidentRecord {
+    const seq = state.incidents.length + 1;
+    const record: IncidentRecord = {
+      ...data,
+      id: `inc-${Date.now()}-${seq}`,
+      ticketNumber: `MTT-${String(seq).padStart(4, "0")}`,
+      updatedAt: new Date().toISOString()
+    };
+    state.incidents.unshift(record);
+    persistCurrentState();
+    return cloneSeed(record);
+  },
+
+  updateIncident(id: string, patch: Partial<Pick<IncidentRecord, "status" | "assignedTo" | "resolvedAt" | "urgency" | "aiSummary">>): IncidentRecord | null {
+    const idx = state.incidents.findIndex((i) => i.id === id);
+    if (idx === -1) return null;
+    Object.assign(state.incidents[idx], patch, { updatedAt: new Date().toISOString() });
+    if (patch.status === "resolved" && !patch.resolvedAt) {
+      state.incidents[idx].resolvedAt = new Date().toISOString();
+    }
+    persistCurrentState();
+    return cloneSeed(state.incidents[idx]);
+  },
+
+  /* ── Vision Pipeline ── */
+  getVisionPipelines(): VisionPipelineConfig[] {
+    return cloneSeed(state.visionPipelines);
+  },
+
+  getVisionPipelineByCamera(cameraId: string): VisionPipelineConfig | null {
+    const item = state.visionPipelines.find((p) => p.cameraId === cameraId);
+    return item ? cloneSeed(item) : null;
+  },
+
+  getVisionResults(filters?: { camera?: string; limit?: number }): VisionDetectionResult[] {
+    let items = state.visionResults;
+    if (filters?.camera) items = items.filter((r) => r.cameraId === filters.camera);
+    items = [...items].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    if (filters?.limit) items = items.slice(0, filters.limit);
+    return cloneSeed(items);
   },
 
   getMapLayers(filters?: { layers?: string[] }) {

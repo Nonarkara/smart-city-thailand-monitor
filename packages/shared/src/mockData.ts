@@ -53,7 +53,10 @@ import type {
   CctvCameraGroup,
   CctvDetectionHistoryItem,
   CctvConsoleSnapshot,
-  MucSnapshot
+  MucSnapshot,
+  IncidentRecord,
+  VisionPipelineConfig,
+  VisionDetectionResult
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -3728,6 +3731,83 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: gistdaDisasterMeta
       }
     ]
+  },
+  /* ── MTT Boundary ── */
+  {
+    layerId: "mtt-boundary",
+    updatedAt: seededAt,
+    bounds: [13.895, 100.495, 13.935, 100.565],
+    source: seedMeta("MTT Land Office", "https://mtt.co.th", "manual"),
+    features: [
+      {
+        id: "mtt-boundary-main",
+        layerId: "mtt-boundary",
+        geometryType: "Polygon" as const,
+        coordinates: [[[100.4960, 13.8950], [100.5050, 13.8950], [100.5200, 13.8955], [100.5350, 13.8960], [100.5480, 13.8965], [100.5580, 13.8970], [100.5600, 13.9000], [100.5610, 13.9100], [100.5600, 13.9180], [100.5570, 13.9220], [100.5450, 13.9240], [100.5300, 13.9250], [100.5150, 13.9240], [100.5000, 13.9230], [100.4960, 13.9200], [100.4950, 13.9100], [100.4960, 13.8950]]],
+        title: "Muang Thong Thani",
+        description: "Private town boundary — Nonthaburi, Thailand",
+        properties: { name: "Muang Thong Thani", area_km2: 3.2, type: "private-town", population: 100000, developer: "Bangkok Land" },
+        source: seedMeta("MTT Land Office", "https://mtt.co.th", "manual")
+      }
+    ]
+  },
+  /* ── MTT Internal Zones ── */
+  {
+    layerId: "mtt-zones",
+    updatedAt: seededAt,
+    bounds: [13.895, 100.495, 13.935, 100.565],
+    source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual"),
+    features: [
+      {
+        id: "zone-impact", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5480, 13.9120], [100.5580, 13.9120], [100.5580, 13.9190], [100.5480, 13.9190], [100.5480, 13.9120]]],
+        title: "IMPACT Arena Complex",
+        properties: { name: "IMPACT Arena Complex", zoneType: "commercial", capacity: 80000, manager: "IMPACT Exhibition Management", status: "active" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-residential-1", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5200, 13.9040], [100.5450, 13.9040], [100.5450, 13.9140], [100.5200, 13.9140], [100.5200, 13.9040]]],
+        title: "Residential Zone 1-2",
+        properties: { name: "Residential Zone 1-2", zoneType: "residential", capacity: 35000, manager: "MTT Residential Services", status: "active" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-commercial", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5250, 13.8980], [100.5450, 13.8980], [100.5450, 13.9060], [100.5250, 13.9060], [100.5250, 13.8980]]],
+        title: "Commercial / Bond Street",
+        properties: { name: "Commercial / Bond Street", zoneType: "commercial", capacity: 15000, manager: "MTT Commercial", status: "active" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-lakefront", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5400, 13.9080], [100.5500, 13.9080], [100.5500, 13.9160], [100.5400, 13.9160], [100.5400, 13.9080]]],
+        title: "Lakefront Park",
+        properties: { name: "Lakefront Park", zoneType: "green-space", capacity: 5000, manager: "MTT Parks", status: "active" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-government", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.4980, 13.9050], [100.5150, 13.9050], [100.5150, 13.9120], [100.4980, 13.9120], [100.4980, 13.9050]]],
+        title: "Government Complex",
+        properties: { name: "Government Complex", zoneType: "government", capacity: 10000, manager: "Government Center Office", status: "active" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-construction-n", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5300, 13.9140], [100.5480, 13.9140], [100.5480, 13.9200], [100.5300, 13.9200], [100.5300, 13.9140]]],
+        title: "Construction Zone North",
+        properties: { name: "Construction Zone North", zoneType: "construction", status: "active", phase: "structure", contractor: "Thai Build Co." },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      },
+      {
+        id: "zone-construction-e", layerId: "mtt-zones", geometryType: "Polygon" as const,
+        coordinates: [[[100.5500, 13.9000], [100.5600, 13.9000], [100.5600, 13.9100], [100.5500, 13.9100], [100.5500, 13.9000]]],
+        title: "Construction Zone East",
+        properties: { name: "Construction Zone East", zoneType: "construction", status: "active", phase: "foundation", contractor: "Nonthaburi Dev" },
+        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
+      }
+    ]
   }
 ];
 
@@ -5276,6 +5356,54 @@ export const mttCctvDetectionHistory: CctvDetectionHistoryItem[] = [
   { id: "dh-013", cameraId: "pk-006", timestamp: "2026-03-30T08:00:05Z", detectionType: "vehicle-count", detail: { th: "นับรถ 22 คัน/15 นาที งามวงศ์วาน", en: "Count: 22 vehicles/15min Ngamwongwan" }, severity: "stable", confidence: 0.84 },
   { id: "dh-014", cameraId: "pk-013", timestamp: "2026-03-30T07:58:45Z", detectionType: "plate-read", detail: { th: "กท-4567 ออก Bond Street — ซ้ำ 3 ครั้ง/สัปดาห์", en: "กท-4567 exiting Bond Street — 3x/week repeat" }, severity: "watch", confidence: 0.90 },
   { id: "dh-015", cameraId: "pk-001", timestamp: "2026-03-30T07:57:30Z", detectionType: "vehicle-classify", detail: { th: "รถพยาบาล — เปิดเลนฉุกเฉิน", en: "Ambulance detected — emergency lane opened" }, severity: "alert", confidence: 0.97 }
+];
+
+/* ══════════════════════════════════════════════════════════
+   Incident / Maintenance Tracker — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+let incidentSeq = 1;
+function nextTicket() { return `MTT-${String(incidentSeq++).padStart(4, "0")}`; }
+
+export const mttIncidents: IncidentRecord[] = [
+  { id: "inc-001", ticketNumber: nextTicket(), title: { th: "ท่อน้ำแตก ซอย 12", en: "Broken water pipe Soi 12" }, description: { th: "น้ำรั่วตลอดวัน ถนนลื่น", en: "Water leaking all day, road slippery" }, category: "water", urgency: "high", status: "assigned", lat: 13.9080, lon: 100.5320, zoneId: "zone-residential-1", reportedAt: "2026-03-30T06:15:00Z", assignedTo: "Water Team A", photoUrls: [], updatedAt: "2026-03-30T07:00:00Z" },
+  { id: "inc-002", ticketNumber: nextTicket(), title: { th: "ไฟถนนดับ แจ้งวัฒนะฝั่งเข้า", en: "Streetlight out Chaengwattana entry" }, description: { th: "ไฟดับ 3 ต้น ตั้งแต่เมื่อวาน", en: "3 lights out since yesterday" }, category: "electrical", urgency: "medium", status: "in-progress", lat: 13.9055, lon: 100.5510, zoneId: "zone-commercial", reportedAt: "2026-03-29T18:30:00Z", assignedTo: "Electrical Team B", photoUrls: [], updatedAt: "2026-03-30T08:00:00Z" },
+  { id: "inc-003", ticketNumber: nextTicket(), title: { th: "ถนนพัง หน้า IMPACT", en: "Road damage near IMPACT" }, description: { th: "หลุมบ่อขนาดใหญ่จากรถบรรทุกก่อสร้าง", en: "Large pothole from construction trucks" }, category: "road", urgency: "high", status: "new", lat: 13.9130, lon: 100.5520, zoneId: "zone-impact", reportedAt: "2026-03-30T07:45:00Z", photoUrls: [], updatedAt: "2026-03-30T07:45:00Z" },
+  { id: "inc-004", ticketNumber: nextTicket(), title: { th: "เสียงดังจากไซต์ก่อสร้าง กลางคืน", en: "Night construction noise" }, description: { th: "เสียงตอกเสาเข็มหลัง 22:00", en: "Piling noise after 22:00" }, category: "noise", urgency: "medium", status: "resolved", lat: 13.9160, lon: 100.5400, zoneId: "zone-construction-n", reportedAt: "2026-03-28T22:30:00Z", assignedTo: "Compliance Officer", resolvedAt: "2026-03-29T10:00:00Z", photoUrls: [], updatedAt: "2026-03-29T10:00:00Z" },
+  { id: "inc-005", ticketNumber: nextTicket(), title: { th: "ขยะไม่เก็บ ซอย 8", en: "Missed garbage collection Soi 8" }, description: { th: "ไม่มีรถขยะมา 2 วัน", en: "No garbage truck for 2 days" }, category: "waste", urgency: "low", status: "assigned", lat: 13.9070, lon: 100.5280, zoneId: "zone-residential-1", reportedAt: "2026-03-30T05:00:00Z", assignedTo: "Sanitation Team", photoUrls: [], updatedAt: "2026-03-30T06:30:00Z" },
+  { id: "inc-006", ticketNumber: nextTicket(), title: { th: "รปภ. ไม่อยู่ประจำจุด Gate Lakefront", en: "Security guard absent Lakefront Gate" }, description: { th: "ไม่มีคนอยู่ตั้งแต่ 06:00", en: "No guard since 06:00" }, category: "security", urgency: "high", status: "in-progress", lat: 13.9120, lon: 100.5460, zoneId: "zone-lakefront", reportedAt: "2026-03-30T06:30:00Z", assignedTo: "Security Supervisor", matchedCameraId: "pk-010", photoUrls: [], updatedAt: "2026-03-30T07:15:00Z" },
+  { id: "inc-007", ticketNumber: nextTicket(), title: { th: "ฝุ่นก่อสร้างเข้าบ้าน Zone 2", en: "Construction dust entering Zone 2 homes" }, description: { th: "ฝุ่นหนักมากจากไซต์ตะวันออก ผ้าม่านเปลี่ยนสีภายใน 1 วัน", en: "Heavy dust from east site, curtains discolored in 1 day" }, category: "construction", urgency: "high", status: "new", lat: 13.9050, lon: 100.5480, zoneId: "zone-construction-e", reportedAt: "2026-03-30T08:00:00Z", photoUrls: [], updatedAt: "2026-03-30T08:00:00Z", aiSummary: { th: "PM10 เกินเกณฑ์ในเขตนี้ — สอดคล้องกับเซนเซอร์ aq-s07", en: "PM10 above threshold in this zone — correlates with sensor aq-s07" } },
+  { id: "inc-008", ticketNumber: nextTicket(), title: { th: "น้ำท่วมขัง Bond Street", en: "Flooding at Bond Street" }, description: { th: "ฝนตกหนักทำให้น้ำท่วมสูง 15 ซม.", en: "Heavy rain caused 15cm flooding" }, category: "water", urgency: "critical", status: "assigned", lat: 13.9072, lon: 100.5350, zoneId: "zone-commercial", reportedAt: "2026-03-30T04:30:00Z", assignedTo: "Drainage Team", photoUrls: [], updatedAt: "2026-03-30T05:00:00Z" },
+  { id: "inc-009", ticketNumber: nextTicket(), title: { th: "ต้นไม้ล้มขวางทาง Lakefront", en: "Fallen tree blocking Lakefront path" }, description: { th: "ต้นไม้ใหญ่ล้มจากลมแรงเมื่อคืน", en: "Large tree fell from strong winds last night" }, category: "road", urgency: "medium", status: "resolved", lat: 13.9100, lon: 100.5440, zoneId: "zone-lakefront", reportedAt: "2026-03-29T23:00:00Z", assignedTo: "Parks Team", resolvedAt: "2026-03-30T06:00:00Z", photoUrls: [], updatedAt: "2026-03-30T06:00:00Z" },
+  { id: "inc-010", ticketNumber: nextTicket(), title: { th: "ลิฟต์เสีย อาคาร T5", en: "Elevator broken Building T5" }, description: { th: "ลิฟต์ตัวที่ 2 ไม่ทำงาน 3 ชั่วโมงแล้ว", en: "Elevator #2 not working for 3 hours" }, category: "electrical", urgency: "medium", status: "new", lat: 13.9095, lon: 100.5350, zoneId: "zone-residential-1", reportedAt: "2026-03-30T09:00:00Z", photoUrls: [], updatedAt: "2026-03-30T09:00:00Z" }
+];
+
+/* ══════════════════════════════════════════════════════════
+   AI Vision Pipeline — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const mttVisionPipelines: VisionPipelineConfig[] = mttGates.map((gate) => ({
+  id: `vp-${gate.id}`,
+  cameraId: gate.cameraIds[0],
+  modelId: "yolov8-vehicle" as const,
+  enabled: true,
+  interval: 2000,
+  confidenceThreshold: 0.7,
+  status: "waiting-camera" as const,
+  detectionCount: 0
+}));
+
+export const mttVisionResults: VisionDetectionResult[] = [
+  { id: "vr-001", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-001", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:12:34Z", detections: [{ label: "car", confidence: 0.94, bbox: [0.2, 0.3, 0.15, 0.1], metadata: { color: "white" } }, { label: "car", confidence: 0.91, bbox: [0.5, 0.35, 0.14, 0.09] }], processingMs: 42 },
+  { id: "vr-002", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-001", modelId: "lpr-th-v2", timestamp: "2026-03-30T08:12:35Z", detections: [{ label: "plate:กท-1234", confidence: 0.94, bbox: [0.22, 0.38, 0.08, 0.03] }], processingMs: 68 },
+  { id: "vr-003", pipelineId: "vp-gate-impact", cameraId: "pk-007", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:14:15Z", detections: [{ label: "bus", confidence: 0.96, bbox: [0.1, 0.2, 0.4, 0.3] }, { label: "car", confidence: 0.88, bbox: [0.6, 0.4, 0.12, 0.08] }], processingMs: 55 },
+  { id: "vr-004", pipelineId: "vp-gate-tiwanon", cameraId: "pk-003", modelId: "crowd-flow", timestamp: "2026-03-30T08:13:02Z", detections: [{ label: "person", confidence: 0.82, bbox: [0.3, 0.5, 0.05, 0.12] }, { label: "person", confidence: 0.79, bbox: [0.4, 0.48, 0.04, 0.11] }], processingMs: 38 },
+  { id: "vr-005", pipelineId: "vp-gate-ngamwongwan", cameraId: "pk-005", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:16:45Z", detections: [{ label: "motorcycle", confidence: 0.82, bbox: [0.7, 0.6, 0.06, 0.08] }], processingMs: 31 },
+  { id: "vr-006", pipelineId: "vp-gate-lakefront", cameraId: "pk-010", modelId: "lpr-th-v2", timestamp: "2026-03-30T08:15:22Z", detections: [{ label: "plate:กท-9012", confidence: 0.87, bbox: [0.45, 0.55, 0.07, 0.03] }], processingMs: 72 },
+  { id: "vr-007", pipelineId: "vp-gate-bond-street", cameraId: "pk-012", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:17:30Z", detections: [{ label: "pickup", confidence: 0.93, bbox: [0.3, 0.25, 0.18, 0.12] }, { label: "car", confidence: 0.89, bbox: [0.55, 0.3, 0.14, 0.09] }], processingMs: 44 },
+  { id: "vr-008", pipelineId: "vp-gate-impact", cameraId: "pk-007", modelId: "incident-sense", timestamp: "2026-03-30T08:18:00Z", detections: [{ label: "congestion", confidence: 0.76, bbox: [0.0, 0.0, 1.0, 1.0], metadata: { queue_length_m: 120, wait_time_s: 180 } }], processingMs: 95 },
+  { id: "vr-009", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-002", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:26:00Z", detections: [{ label: "truck", confidence: 0.91, bbox: [0.15, 0.1, 0.35, 0.25] }], processingMs: 48 },
+  { id: "vr-010", pipelineId: "vp-gate-tiwanon", cameraId: "pk-004", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:20:33Z", detections: [{ label: "car", confidence: 0.90, bbox: [0.4, 0.35, 0.13, 0.09] }, { label: "van", confidence: 0.84, bbox: [0.6, 0.3, 0.16, 0.11] }], processingMs: 40 }
 ];
 
 export function createMucSnapshot(): MucSnapshot {

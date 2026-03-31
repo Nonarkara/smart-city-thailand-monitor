@@ -783,3 +783,63 @@ export interface MucSnapshot {
   airQuality: AqiConstructionSnapshot;
   cctvConsole: CctvConsoleSnapshot;
 }
+
+/* ── AI Vision Pipeline ── */
+export type VisionModelId = "yolov8-vehicle" | "lpr-th-v2" | "crowd-flow" | "incident-sense";
+
+export interface VisionPipelineConfig {
+  id: string;
+  cameraId: string;
+  modelId: VisionModelId;
+  enabled: boolean;
+  interval: number;
+  confidenceThreshold: number;
+  rtspUrl?: string;
+  mjpegUrl?: string;
+  status: "ready" | "active" | "error" | "waiting-camera";
+  lastFrameAt?: string;
+  lastDetectionAt?: string;
+  detectionCount: number;
+}
+
+export interface VisionDetectionItem {
+  label: string;
+  confidence: number;
+  bbox: [number, number, number, number];
+  metadata?: Record<string, string | number>;
+}
+
+export interface VisionDetectionResult {
+  id: string;
+  pipelineId: string;
+  cameraId: string;
+  modelId: VisionModelId;
+  timestamp: string;
+  frameUrl?: string;
+  detections: VisionDetectionItem[];
+  processingMs: number;
+}
+
+/* ── Incident / Maintenance Tracker ── */
+export type IncidentCategory = "water" | "road" | "electrical" | "security" | "waste" | "noise" | "construction" | "other";
+export type IncidentStatus = "new" | "assigned" | "in-progress" | "resolved" | "closed";
+
+export interface IncidentRecord {
+  id: string;
+  ticketNumber: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  category: IncidentCategory;
+  urgency: "low" | "medium" | "high" | "critical";
+  status: IncidentStatus;
+  lat: number;
+  lon: number;
+  zoneId?: string;
+  reportedAt: string;
+  assignedTo?: string;
+  resolvedAt?: string;
+  photoUrls: string[];
+  aiSummary?: LocalizedText;
+  matchedCameraId?: string;
+  updatedAt: string;
+}

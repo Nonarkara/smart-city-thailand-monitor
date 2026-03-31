@@ -6480,3 +6480,24 @@ textarea:focus {
 }
 .basemap-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
 .basemap-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
+
+/* ══════════════════════════════════════════════════════════
+   Incidents / Maintenance
+   ══════════════════════════════════════════════════════════ */
+.incident-meta { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin: 0.15rem 0; }
+.urgency-badge {
+  font-size: 0.55rem; padding: 0.1rem 0.3rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;
+}
+.urgency-badge.urgency-critical { background: rgba(239,68,68,0.2); color: #ef4444; }
+.urgency-badge.urgency-high { background: rgba(245,158,11,0.2); color: #f59e0b; }
+.urgency-badge.urgency-medium { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.urgency-badge.urgency-low { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+.incident-category { font-size: 0.55rem; color: var(--text-secondary); }
+.incident-assigned { font-size: 0.55rem; color: #22c55e; }
+
+/* Zone label tooltip on map */
+.zone-label-tip {
+  background: rgba(0,0,0,0.75); border: none; color: #fff;
+  font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px;
+  box-shadow: none;
+}

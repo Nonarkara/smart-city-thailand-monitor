@@ -74,6 +74,9 @@ type LayerId =
   | "disaster"
   | "itic-traffic"
   | "cctv-cameras"
+  | "mtt-boundary"
+  | "mtt-zones"
+  | "incidents"
 ;
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
@@ -196,6 +199,9 @@ const layerColors: Record<LayerId, string> = {
   disaster: "#cf5c00",
   "itic-traffic": "#ef4444",
   "cctv-cameras": "#34d399",
+  "mtt-boundary": "#10b981",
+  "mtt-zones": "#6366f1",
+  incidents: "#ef4444",
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = [
@@ -1093,6 +1099,35 @@ function renderFeatureCollections(
       if (feature.geometryType === "Polygon") {
         const latLngs = toLeafletLatLngs(feature.coordinates);
         if (latLngs.length < 3) {
+          return;
+        }
+
+        // MTT boundary: dashed emerald outline
+        if (collection.layerId === "mtt-boundary") {
+          const boundary = L.polygon(latLngs, {
+            color: "#10b981", weight: 3, dashArray: "8 4",
+            fillColor: "#10b981", fillOpacity: 0.03
+          });
+          boundary.bindPopup(popupContent);
+          boundary.addTo(target);
+          return;
+        }
+
+        // MTT zones: colored by zone type
+        if (collection.layerId === "mtt-zones") {
+          const zt = String(feature.properties.zoneType ?? "");
+          const zoneColorMap: Record<string, string> = {
+            residential: "#3b82f6", commercial: "#8b5cf6", "green-space": "#22c55e",
+            construction: "#f97316", government: "#64748b", mixed: "#f59e0b"
+          };
+          const zc = zoneColorMap[zt] ?? "#6366f1";
+          const zone = L.polygon(latLngs, {
+            color: zc, weight: 1.5, fillColor: zc, fillOpacity: 0.12,
+            dashArray: zt === "construction" ? "4 3" : undefined
+          });
+          zone.bindPopup(`<strong>${feature.title}</strong><br/>${zt}<br/>${feature.description ?? ""}`);
+          zone.bindTooltip(feature.title, { permanent: false, direction: "center", className: "zone-label-tip" });
+          zone.addTo(target);
           return;
         }
 
