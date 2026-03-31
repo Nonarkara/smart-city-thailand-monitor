@@ -6501,3 +6501,76 @@ textarea:focus {
   font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px;
   box-shadow: none;
 }
+
+/* ══════════════════════════════════════════════════════════
+   Thai Time Badge
+   ══════════════════════════════════════════════════════════ */
+.thai-time-badge {
+  font-size: 0.6rem; color: #60a5fa; font-weight: 500;
+  padding: 0.1rem 0.4rem; background: rgba(59,130,246,0.1);
+  border-radius: 3px; white-space: nowrap; margin-left: 0.5rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Flood & Water Gauges
+   ══════════════════════════════════════════════════════════ */
+.flood-gauges { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.3rem 0; }
+.flood-gauge { display: flex; gap: 0.4rem; min-width: 120px; flex-shrink: 0; }
+.gauge-bar-wrap {
+  width: 8px; height: 48px; background: rgba(255,255,255,0.06); border-radius: 4px;
+  position: relative; overflow: hidden;
+}
+.gauge-bar {
+  position: absolute; bottom: 0; width: 100%; border-radius: 4px;
+  transition: height 0.5s;
+}
+.gauge-normal .gauge-bar { background: #22c55e; }
+.gauge-watch .gauge-bar { background: #f59e0b; }
+.gauge-warning .gauge-bar { background: #ef4444; }
+.gauge-critical .gauge-bar { background: #dc2626; animation: pulse-border 1s infinite; }
+.gauge-warning-line {
+  position: absolute; width: 100%; height: 2px; background: rgba(245,158,11,0.6);
+  border-radius: 1px;
+}
+.gauge-info { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.55rem; }
+.gauge-info strong { font-size: 0.6rem; }
+.gauge-status { font-weight: 600; text-transform: uppercase; }
+.gauge-status.normal { color: #22c55e; }
+.gauge-status.watch { color: #f59e0b; }
+.gauge-status.warning { color: #ef4444; }
+.gauge-status.critical { color: #dc2626; }
+
+.flood-forecast {
+  display: flex; gap: 0.75rem; font-size: 0.6rem; color: var(--text-secondary);
+  margin-top: 0.3rem; padding-top: 0.3rem; border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Transit Connections
+   ══════════════════════════════════════════════════════════ */
+.transit-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.transit-item {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem;
+  border-radius: 4px; background: rgba(0,0,0,0.08);
+}
+.transit-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.transit-dot.status-normal { background: #22c55e; }
+.transit-dot.status-delayed { background: #f59e0b; }
+.transit-dot.status-disrupted { background: #ef4444; }
+.transit-dot.status-closed { background: #64748b; }
+
+.line-mrt-purple .transit-dot { border: 2px solid #7c3aed; }
+.line-mrt-blue .transit-dot { border: 2px solid #2563eb; }
+.line-bts-sukhumvit .transit-dot { border: 2px solid #16a34a; }
+.line-bus .transit-dot { border: 2px solid #f59e0b; }
+.line-shuttle .transit-dot { border: 2px solid #06b6d4; }
+
+.transit-info { flex: 1; display: flex; flex-direction: column; }
+.transit-info strong { font-size: 0.65rem; }
+.transit-info small { font-size: 0.55rem; color: var(--text-secondary); }
+.transit-status { font-size: 0.55rem; font-weight: 600; text-transform: uppercase; }
+.transit-status.normal { color: #22c55e; }
+.transit-status.delayed { color: #f59e0b; }
+.transit-status.disrupted { color: #ef4444; }

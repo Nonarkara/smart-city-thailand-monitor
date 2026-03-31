@@ -24,7 +24,9 @@ import {
   impactArenaEvents as impactArenaEventsSeed,
   mttTrafficSnapshot as mttTrafficSnapshotSeed,
   createMucSnapshot,
-  mttIncidents as incidentSeed
+  mttIncidents as incidentSeed,
+  mttFloodRisk as floodRiskSeed,
+  mttTransit as transitSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -57,7 +59,9 @@ import type {
   ImpactArenaEvent,
   MucSnapshot,
   CctvGridLayout,
-  IncidentRecord
+  IncidentRecord,
+  FloodRiskSnapshot,
+  TransitSnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -2153,6 +2157,18 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchInterval: LIVE_POLL_INTERVAL_MS
   });
 
+  const floodRiskQuery = useQuery({
+    queryKey: ["flood-risk"],
+    queryFn: () => fetchFromApi<FloodRiskSnapshot>("/api/flood-risk", cloneSeed(floodRiskSeed), (v) => isObject(v) && Array.isArray((v as Record<string, unknown>).stations)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
+  });
+
+  const transitQuery = useQuery({
+    queryKey: ["transit"],
+    queryFn: () => fetchFromApi<TransitSnapshot>("/api/transit", cloneSeed(transitSeed), (v) => isObject(v) && Array.isArray((v as Record<string, unknown>).connections)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2184,7 +2200,9 @@ function useDashboardData(searchParams: URLSearchParams) {
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
     arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed)),
     muc: mucQuery.data ?? mucFallback,
-    incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed))
+    incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed)),
+    floodRisk: floodRiskQuery.data ?? cloneSeed(floodRiskSeed),
+    transit: transitQuery.data ?? cloneSeed(transitSeed)
   };
 }
 
@@ -2264,7 +2282,9 @@ function DashboardPage() {
     time,
     arenaEvents,
     muc,
-    incidents
+    incidents,
+    floodRisk,
+    transit
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
@@ -2658,6 +2678,20 @@ function DashboardPage() {
       return lang === "th"
         ? `คอขวด: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`
         : `Bottleneck: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`;
+    }
+
+    // Flood risk warning
+    if (floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical") {
+      return lang === "th"
+        ? `เตือนน้ำท่วม: ระดับความเสี่ยง ${floodRisk.floodRiskLevel} — ฝนคาด ${floodRisk.precipitationForecast24h} มม./24ชม.`
+        : `FLOOD WARNING: Risk level ${floodRisk.floodRiskLevel} — ${floodRisk.precipitationForecast24h}mm rain forecast 24h`;
+    }
+
+    // Heavy rain warning
+    if (floodRisk.precipitationForecast24h > 30) {
+      return lang === "th"
+        ? `เตือนฝนหนัก: คาดฝน ${floodRisk.precipitationForecast24h} มม. ใน 24 ชม. — เฝ้าระวังน้ำท่วม`
+        : `RAIN WARNING: ${floodRisk.precipitationForecast24h}mm expected in 24h — flood watch`;
     }
 
     const leadDecision = filteredDecisions[0];
@@ -4313,6 +4347,7 @@ function DashboardPage() {
               <div className="muc-status-left">
                 <span className={`muc-status-dot ${mucStatus}`} />
                 <span className="muc-status-text">{mucStatusLine}</span>
+                {time.thaiTime ? <span className="thai-time-badge">{time.thaiTime} · {time.thaiDate}</span> : null}
               </div>
               <div className="muc-quick-stats">
                 <div className="muc-qs-item"><span className="muc-qs-value">{liveCamCount}</span><span className="muc-qs-label">{lang === "th" ? "กล้องออนไลน์" : "Cameras Online"}</span></div>
@@ -5360,6 +5395,54 @@ function DashboardPage() {
               <span className="eyebrow">Air Quality</span>
               <strong>{localize(lang, resilience.pollutionSummary)}</strong>
             </div>
+          </div>
+          </section>
+
+          {/* — Flood & Water Risk — */}
+          <section className="card overview-card flood-risk">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "น้ำท่วม & ระดับน้ำ" : "Flood & Water"}</span>
+            <span className={`status-pill ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "delayed" : floodRisk.floodRiskLevel === "moderate" ? "watch" : "live"}`}>{floodRisk.floodRiskLevel}</span>
+          </div>
+          <div className="flood-gauges">
+            {floodRisk.stations.map((st) => (
+              <div key={st.id} className={`flood-gauge gauge-${st.status}`}>
+                <div className="gauge-bar-wrap">
+                  <div className="gauge-bar" style={{ height: `${Math.min((st.currentLevelM / st.criticalLevelM) * 100, 100)}%` }} />
+                  <div className="gauge-warning-line" style={{ bottom: `${(st.warningLevelM / st.criticalLevelM) * 100}%` }} />
+                </div>
+                <div className="gauge-info">
+                  <strong>{localize(lang, st.label)}</strong>
+                  <span>{st.currentLevelM.toFixed(2)}m</span>
+                  <span className={`gauge-status ${st.status}`}>{st.status}{st.trend === "up" ? " ↑" : st.trend === "down" ? " ↓" : ""}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flood-forecast">
+            <span>{lang === "th" ? "ฝนคาด 24 ชม." : "Rain 24h"}: <strong>{floodRisk.precipitationForecast24h}mm</strong></span>
+            <span>{lang === "th" ? "48 ชม." : "48h"}: <strong>{floodRisk.precipitationForecast48h}mm</strong></span>
+            <span>{lang === "th" ? "ระบบสูบ" : "Pumps"}: <strong>{floodRisk.drainagePumpStatus === "all-operational" ? (lang === "th" ? "ปกติ" : "OK") : floodRisk.drainagePumpStatus}</strong></span>
+          </div>
+          </section>
+
+          {/* — Transit Connections — */}
+          <section className="card overview-card transit">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ขนส่งสาธารณะ" : "Transit"}</span>
+            <span className="status-pill">{transit.connections.length} {lang === "th" ? "เส้นทาง" : "routes"}</span>
+          </div>
+          <div className="transit-list">
+            {transit.connections.slice(0, 5).map((conn) => (
+              <div key={conn.id} className={`transit-item line-${conn.line}`}>
+                <span className={`transit-dot status-${conn.status}`} />
+                <div className="transit-info">
+                  <strong>{conn.routeNumber ? `${conn.routeNumber} ` : ""}{localize(lang, conn.station)}</strong>
+                  <small>{conn.distanceKm > 0 ? `${conn.distanceKm} km · ` : ""}{conn.travelMinutes} min{conn.frequency ? ` · ${conn.frequency}` : ""}</small>
+                </div>
+                <span className={`transit-status ${conn.status}`}>{conn.status}</span>
+              </div>
+            ))}
           </div>
           </section>
 

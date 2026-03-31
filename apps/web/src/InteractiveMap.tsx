@@ -1230,12 +1230,17 @@ export default function InteractiveMap({
       return;
     }
 
+    const isMtt = citySlug === "muang-thong-thani";
+    const nonthaburiBounds = L.latLngBounds([13.82, 100.45], [13.97, 100.62]);
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true,
-      minZoom: 5,
+      minZoom: isMtt ? 11 : 5,
       maxBoundsViscosity: 0.85
     });
+    if (isMtt) {
+      map.setMaxBounds(nonthaburiBounds.pad(0.1));
+    }
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
@@ -1261,7 +1266,9 @@ export default function InteractiveMap({
     satelliteBaseRef.current = satelliteLayer;
     streetBaseRef.current = streetLayer;
     hybridBaseRef.current = hybridLayer;
-    map.setMaxBounds(thailandBounds.pad(0.22));
+    if (!isMtt) {
+      map.setMaxBounds(thailandBounds.pad(0.22));
+    }
 
     overlayRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();

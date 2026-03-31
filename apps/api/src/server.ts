@@ -260,6 +260,18 @@ export async function createServer() {
     };
   });
 
+  /* ── Flood & Water ── */
+  app.get("/api/flood-risk", async () => {
+    const { getFloodRiskSnapshot } = await import("./adapters/floodWaterAdapter.js");
+    return getFloodRiskSnapshot();
+  });
+
+  /* ── Transit ── */
+  app.get("/api/transit", async () => {
+    const { getTransitSnapshot } = await import("./adapters/transitAdapter.js");
+    return getTransitSnapshot();
+  });
+
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
   app.get("/api/satellite/search", async (request) => {

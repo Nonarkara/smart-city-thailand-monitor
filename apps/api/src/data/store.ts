@@ -55,7 +55,9 @@ import type {
   VehicleDetection,
   IncidentRecord,
   VisionPipelineConfig,
-  VisionDetectionResult
+  VisionDetectionResult,
+  FloodRiskSnapshot,
+  TransitSnapshot
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { persistStoreSnapshot } from "./persistence.js";

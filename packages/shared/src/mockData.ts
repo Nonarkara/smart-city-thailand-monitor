@@ -56,7 +56,11 @@ import type {
   MucSnapshot,
   IncidentRecord,
   VisionPipelineConfig,
-  VisionDetectionResult
+  VisionDetectionResult,
+  WaterLevelStation,
+  FloodRiskSnapshot,
+  TransitConnection,
+  TransitSnapshot
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -4752,6 +4756,15 @@ export function createTimeSnapshot(): TimeSnapshot {
     updatedAt: now.toISOString(),
     utcIso: now.toISOString(),
     bangkokIso: `${bangkokValue("year")}-${bangkokValue("month")}-${bangkokValue("day")}T${bangkokValue("hour")}:${bangkokValue("minute")}:${bangkokValue("second")}+07:00`,
+    thaiTime: `${bangkokValue("hour")}:${bangkokValue("minute")}:${bangkokValue("second")} ICT`,
+    thaiDate: (() => {
+      const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const d = Number(bangkokValue("day"));
+      const m = Number(bangkokValue("month")) - 1;
+      const y = Number(bangkokValue("year")) + 543;
+      return `${d} ${thaiMonths[m]} ${y}`;
+    })(),
+    buddhistYear: Number(bangkokValue("year")) + 543,
     zones: [
       { label: "Bangkok", timeZone: "Asia/Bangkok", localTime: format("Asia/Bangkok") },
       { label: "UTC", timeZone: "UTC", localTime: format("UTC") },
@@ -4891,7 +4904,8 @@ export const impactArenaEvents: ImpactArenaEvent[] = [
     expectedCrowd: 12000,
     category: "expo",
     parkingPressure: "high",
-    status: "confirmed"
+    status: "confirmed",
+    hall: "Challenger 1-3", hallCapacity: 60000, organizer: "Grand Prix International"
   },
   {
     id: "evt-smart-energy",
@@ -4951,7 +4965,8 @@ export const impactArenaEvents: ImpactArenaEvent[] = [
     expectedCrowd: 10000,
     category: "concert",
     parkingPressure: "high",
-    status: "confirmed"
+    status: "confirmed",
+    hall: "Arena", hallCapacity: 12000, organizer: "Feld Entertainment"
   },
   {
     id: "evt-cat-lovers",
@@ -5404,6 +5419,59 @@ export const mttVisionResults: VisionDetectionResult[] = [
   { id: "vr-008", pipelineId: "vp-gate-impact", cameraId: "pk-007", modelId: "incident-sense", timestamp: "2026-03-30T08:18:00Z", detections: [{ label: "congestion", confidence: 0.76, bbox: [0.0, 0.0, 1.0, 1.0], metadata: { queue_length_m: 120, wait_time_s: 180 } }], processingMs: 95 },
   { id: "vr-009", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-002", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:26:00Z", detections: [{ label: "truck", confidence: 0.91, bbox: [0.15, 0.1, 0.35, 0.25] }], processingMs: 48 },
   { id: "vr-010", pipelineId: "vp-gate-tiwanon", cameraId: "pk-004", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:20:33Z", detections: [{ label: "car", confidence: 0.90, bbox: [0.4, 0.35, 0.13, 0.09] }, { label: "van", confidence: 0.84, bbox: [0.6, 0.3, 0.16, 0.11] }], processingMs: 40 }
+];
+
+/* ══════════════════════════════════════════════════════════
+   Flood & Water Monitoring — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const mttWaterStations: WaterLevelStation[] = [
+  { id: "ws-prapa", label: { th: "คลองประปา ฝั่งแจ้งวัฒนะ", en: "Khlong Prapa — Chaengwattana" }, lat: 13.9200, lon: 100.5500, provider: "thaiwater", currentLevelM: 1.35, warningLevelM: 1.80, criticalLevelM: 2.20, status: "normal", trend: "steady", lastUpdated: seededAt },
+  { id: "ws-bangtalat", label: { th: "คลองบางตลาด", en: "Khlong Bang Talat" }, lat: 13.9000, lon: 100.5200, provider: "rid", currentLevelM: 1.62, warningLevelM: 1.80, criticalLevelM: 2.10, status: "watch", trend: "up", lastUpdated: seededAt },
+  { id: "ws-drain-cw", label: { th: "สถานีสูบน้ำแจ้งวัฒนะ", en: "Chaengwattana Drainage Pump" }, lat: 13.9055, lon: 100.5510, provider: "bma-drainage", currentLevelM: 0.85, warningLevelM: 1.20, criticalLevelM: 1.50, status: "normal", trend: "steady", lastUpdated: seededAt },
+  { id: "ws-lakefront", label: { th: "บ่อหน่วงน้ำ Lakefront", en: "Lakefront Retention Pond" }, lat: 13.9110, lon: 100.5450, provider: "manual", currentLevelM: 1.95, warningLevelM: 2.30, criticalLevelM: 2.80, status: "normal", trend: "down", lastUpdated: seededAt }
+];
+
+export const mttFloodRisk: FloodRiskSnapshot = {
+  updatedAt: seededAt,
+  stations: mttWaterStations,
+  precipitationForecast24h: 12,
+  precipitationForecast48h: 28,
+  floodRiskLevel: "moderate",
+  drainagePumpStatus: "all-operational",
+  activeWarnings: [
+    { th: "เฝ้าระวังคลองบางตลาด — ระดับน้ำใกล้จุดเตือน", en: "Watch: Khlong Bang Talat — water level approaching warning" },
+    { th: "คาดว่าจะมีฝนปานกลาง 48 ชม. ข้างหน้า", en: "Moderate rainfall expected in next 48 hours" }
+  ],
+  source: seedMeta("ThaiWater + TMD", "https://www.thaiwater.net", "live")
+};
+
+/* ══════════════════════════════════════════════════════════
+   Public Transit — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const mttTransit: TransitSnapshot = {
+  updatedAt: seededAt,
+  connections: [
+    { id: "tr-mrt-khaerai", line: "mrt-purple", station: { th: "สถานี MRT แคราย", en: "MRT Khae Rai Station" }, direction: { th: "ไป เตาปูน", en: "To Tao Poon" }, distanceKm: 1.8, travelMinutes: 15, status: "normal", frequency: "every 6-8 min", provider: "mrt", note: { th: "เดินเท้า 15 นาทีจากประตูแจ้งวัฒนะ", en: "15 min walk from Chaengwattana Gate" } },
+    { id: "tr-mrt-health", line: "mrt-purple", station: { th: "สถานี MRT กระทรวงสาธารณสุข", en: "MRT Ministry of Public Health" }, direction: { th: "ไป คลองบางไผ่", en: "To Khlong Bang Phai" }, distanceKm: 2.2, travelMinutes: 20, status: "normal", frequency: "every 6-8 min", provider: "mrt" },
+    { id: "tr-bus-166", line: "bus", routeNumber: "166", station: { th: "ป้ายหน้าเมืองทองธานี", en: "MTT Bus Stop" }, direction: { th: "ปากเกร็ด → อนุสาวรีย์ชัย", en: "Pak Kret → Victory Monument" }, distanceKm: 0.3, travelMinutes: 3, status: "normal", frequency: "every 12-15 min", provider: "bmta" },
+    { id: "tr-bus-356", line: "bus", routeNumber: "356", station: { th: "ป้ายเมืองทองธานี", en: "MTT Main Stop" }, direction: { th: "เมืองทองธานี → หมอชิต", en: "MTT → Mor Chit BTS" }, distanceKm: 0.2, travelMinutes: 2, status: "normal", frequency: "every 15-20 min", provider: "bmta" },
+    { id: "tr-shuttle", line: "shuttle", station: { th: "รถรับส่ง MTT", en: "MTT Internal Shuttle" }, direction: { th: "Lakefront → IMPACT → ประตูหลัก", en: "Lakefront → IMPACT → Main Gate" }, distanceKm: 0, travelMinutes: 10, status: "normal", frequency: "every 10 min", provider: "mtt-shuttle" },
+    { id: "tr-bts-mochit", line: "bts-sukhumvit", station: { th: "BTS หมอชิต (เชื่อมต่อ)", en: "BTS Mo Chit (Transfer Hub)" }, distanceKm: 8, travelMinutes: 25, status: "normal", frequency: "every 4-6 min", provider: "bts", note: { th: "ต่อรถ 356 จาก MTT → หมอชิต", en: "Take Bus 356 from MTT → Mo Chit" } }
+  ],
+  source: seedMeta("BMTA + MRT + MTT Shuttle", "https://www.viabus.co", "manual")
+};
+
+/* ══════════════════════════════════════════════════════════
+   SET Stock Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const setStockSeed: Array<{ id: string; label: { th: string; en: string }; value: string; changeText: { th: string; en: string }; tone: "positive" | "neutral" | "warning" }> = [
+  { id: "set-index", label: { th: "SET Index", en: "SET Index" }, value: "1,385.42", changeText: { th: "24 ชม. +0.8%", en: "24h +0.8%" }, tone: "positive" },
+  { id: "set-impact", label: { th: "IMPACT Growth REIT", en: "IMPACT Growth REIT" }, value: "฿12.50", changeText: { th: "24 ชม. +1.2%", en: "24h +1.2%" }, tone: "positive" },
+  { id: "set-bts", label: { th: "BTS Group", en: "BTS Group Holdings" }, value: "฿6.85", changeText: { th: "24 ชม. -0.7%", en: "24h -0.7%" }, tone: "warning" },
+  { id: "set-lh", label: { th: "Land & Houses", en: "Land and Houses" }, value: "฿8.20", changeText: { th: "24 ชม. +0.3%", en: "24h +0.3%" }, tone: "neutral" }
 ];
 
 export function createMucSnapshot(): MucSnapshot {

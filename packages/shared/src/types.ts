@@ -286,6 +286,9 @@ export interface TimeSnapshot {
   updatedAt: string;
   utcIso: string;
   bangkokIso: string;
+  thaiTime?: string;
+  thaiDate?: string;
+  buddhistYear?: number;
   zones: Array<{
     label: string;
     timeZone: string;
@@ -564,6 +567,10 @@ export interface ImpactArenaEvent {
   category: EventCategory;
   parkingPressure: "low" | "moderate" | "high";
   status: "confirmed" | "tentative" | "cancelled";
+  hall?: string;
+  hallCapacity?: number;
+  organizer?: string;
+  ticketUrl?: string;
 }
 
 /* ── MTT Traffic Corridors ── */
@@ -842,4 +849,54 @@ export interface IncidentRecord {
   aiSummary?: LocalizedText;
   matchedCameraId?: string;
   updatedAt: string;
+}
+
+/* ── Flood & Water Monitoring ── */
+export interface WaterLevelStation {
+  id: string;
+  label: LocalizedText;
+  lat: number;
+  lon: number;
+  provider: "thaiwater" | "rid" | "bma-drainage" | "manual";
+  currentLevelM: number;
+  warningLevelM: number;
+  criticalLevelM: number;
+  status: "normal" | "watch" | "warning" | "critical";
+  trend: TrendDirection;
+  lastUpdated: string;
+}
+
+export interface FloodRiskSnapshot {
+  updatedAt: string;
+  stations: WaterLevelStation[];
+  precipitationForecast24h: number;
+  precipitationForecast48h: number;
+  floodRiskLevel: "low" | "moderate" | "high" | "critical";
+  drainagePumpStatus: "all-operational" | "partial" | "emergency";
+  activeWarnings: LocalizedText[];
+  source: SourceMeta;
+}
+
+/* ── Public Transit ── */
+export type TransitLine = "mrt-purple" | "mrt-blue" | "bts-sukhumvit" | "bts-silom" | "shuttle" | "bus";
+
+export interface TransitConnection {
+  id: string;
+  line: TransitLine;
+  routeNumber?: string;
+  station: LocalizedText;
+  direction?: LocalizedText;
+  distanceKm: number;
+  travelMinutes: number;
+  status: "normal" | "delayed" | "disrupted" | "closed";
+  nextArrival?: string;
+  frequency?: string;
+  provider: "bmta" | "bts" | "mrt" | "mtt-shuttle" | "viabus";
+  note?: LocalizedText;
+}
+
+export interface TransitSnapshot {
+  updatedAt: string;
+  connections: TransitConnection[];
+  source: SourceMeta;
 }
