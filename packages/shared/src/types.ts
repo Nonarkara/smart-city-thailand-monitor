@@ -900,3 +900,30 @@ export interface TransitSnapshot {
   connections: TransitConnection[];
   source: SourceMeta;
 }
+
+/* ── Community Intelligence Feeds ── */
+export interface CommunityIntelSnapshot {
+  updatedAt: string;
+  uvIndex: number;
+  uvLabel: string;
+  sunriseLocal: string;
+  sunsetLocal: string;
+  flightsOverhead: number;
+  nearbyEarthquakes: Array<{
+    magnitude: number;
+    place: string;
+    time: string;
+    distanceKm: number;
+  }>;
+  thaiHolidays: Array<{
+    date: string;
+    localName: string;
+    name: string;
+  }>;
+  lotteryLatest?: {
+    date: string;
+    firstPrize: string;
+  };
+  populationThailand: number;
+  githubLastCommit?: string;
+}

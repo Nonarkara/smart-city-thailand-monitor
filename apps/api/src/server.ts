@@ -260,6 +260,12 @@ export async function createServer() {
     };
   });
 
+  /* ── Community Intelligence ── */
+  app.get("/api/community-intel", async () => {
+    const { getCommunityIntel } = await import("./adapters/communityIntelAdapter.js");
+    return getCommunityIntel();
+  });
+
   /* ── Flood & Water ── */
   app.get("/api/flood-risk", async () => {
     const { getFloodRiskSnapshot } = await import("./adapters/floodWaterAdapter.js");

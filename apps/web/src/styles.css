@@ -6574,3 +6574,22 @@ textarea:focus {
 .transit-status.normal { color: #22c55e; }
 .transit-status.delayed { color: #f59e0b; }
 .transit-status.disrupted { color: #ef4444; }
+
+/* ══════════════════════════════════════════════════════════
+   Community Intelligence
+   ══════════════════════════════════════════════════════════ */
+.intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
+.intel-item {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem;
+  background: rgba(0,0,0,0.06); border-radius: 4px;
+}
+.intel-icon { font-size: 1rem; width: 1.4rem; text-align: center; flex-shrink: 0; }
+.intel-data { display: flex; flex-direction: column; min-width: 0; }
+.intel-data strong { font-size: 0.7rem; line-height: 1.2; }
+.intel-data small { font-size: 0.5rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.uv-low { color: #22c55e; }
+.uv-moderate { color: #f59e0b; }
+.uv-high { color: #f97316; }
+.uv-very-high { color: #ef4444; }
+.uv-extreme { color: #dc2626; font-weight: 700; }

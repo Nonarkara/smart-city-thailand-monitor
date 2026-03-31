@@ -61,7 +61,8 @@ import type {
   CctvGridLayout,
   IncidentRecord,
   FloodRiskSnapshot,
-  TransitSnapshot
+  TransitSnapshot,
+  CommunityIntelSnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -2157,6 +2158,13 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchInterval: LIVE_POLL_INTERVAL_MS
   });
 
+  const communityIntelFallback: CommunityIntelSnapshot = { updatedAt: new Date().toISOString(), uvIndex: 8.2, uvLabel: "very-high", sunriseLocal: "06:12", sunsetLocal: "18:28", flightsOverhead: 14, nearbyEarthquakes: [], thaiHolidays: [{ date: "2026-04-06", localName: "วันจักรี", name: "Chakri Memorial Day" }, { date: "2026-04-13", localName: "วันสงกรานต์", name: "Songkran" }], populationThailand: 71801279, lotteryLatest: { date: "2026-03-16", firstPrize: "835127" } };
+  const communityIntelQuery = useQuery({
+    queryKey: ["community-intel"],
+    queryFn: () => fetchFromApi<CommunityIntelSnapshot>("/api/community-intel", communityIntelFallback, (v) => isObject(v) && typeof (v as Record<string, unknown>).uvIndex === "number"),
+    refetchInterval: 600_000 // 10 min
+  });
+
   const floodRiskQuery = useQuery({
     queryKey: ["flood-risk"],
     queryFn: () => fetchFromApi<FloodRiskSnapshot>("/api/flood-risk", cloneSeed(floodRiskSeed), (v) => isObject(v) && Array.isArray((v as Record<string, unknown>).stations)),
@@ -2202,7 +2210,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     muc: mucQuery.data ?? mucFallback,
     incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed)),
     floodRisk: floodRiskQuery.data ?? cloneSeed(floodRiskSeed),
-    transit: transitQuery.data ?? cloneSeed(transitSeed)
+    transit: transitQuery.data ?? cloneSeed(transitSeed),
+    communityIntel: communityIntelQuery.data ?? communityIntelFallback
   };
 }
 
@@ -2284,7 +2293,8 @@ function DashboardPage() {
     muc,
     incidents,
     floodRisk,
-    transit
+    transit,
+    communityIntel
   } = useDashboardData(searchParams);
 
   const copy = copyDeck[lang];
@@ -5443,6 +5453,72 @@ function DashboardPage() {
                 <span className={`transit-status ${conn.status}`}>{conn.status}</span>
               </div>
             ))}
+          </div>
+          </section>
+
+          {/* — Community Intelligence — */}
+          <section className="card overview-card community-intel">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ข้อมูลชุมชน" : "Community Intel"}</span>
+            <span className="status-pill">live</span>
+          </div>
+          <div className="intel-grid">
+            <div className="intel-item">
+              <span className="intel-icon">☀️</span>
+              <div className="intel-data">
+                <strong className={`uv-${communityIntel.uvLabel}`}>UV {communityIntel.uvIndex}</strong>
+                <small>{communityIntel.uvLabel} · {communityIntel.sunriseLocal}–{communityIntel.sunsetLocal}</small>
+              </div>
+            </div>
+            <div className="intel-item">
+              <span className="intel-icon">✈️</span>
+              <div className="intel-data">
+                <strong>{communityIntel.flightsOverhead}</strong>
+                <small>{lang === "th" ? "เที่ยวบินเหนือ MTT" : "flights over MTT now"}</small>
+              </div>
+            </div>
+            {communityIntel.nearbyEarthquakes.length > 0 ? (
+              <div className="intel-item">
+                <span className="intel-icon">🌍</span>
+                <div className="intel-data">
+                  <strong>M{communityIntel.nearbyEarthquakes[0].magnitude}</strong>
+                  <small>{communityIntel.nearbyEarthquakes[0].place} · {communityIntel.nearbyEarthquakes[0].distanceKm}km</small>
+                </div>
+              </div>
+            ) : (
+              <div className="intel-item">
+                <span className="intel-icon">🌍</span>
+                <div className="intel-data">
+                  <strong>{lang === "th" ? "ไม่มี" : "None"}</strong>
+                  <small>{lang === "th" ? "แผ่นดินไหวใกล้เคียง" : "nearby earthquakes"}</small>
+                </div>
+              </div>
+            )}
+            {communityIntel.thaiHolidays.length > 0 ? (
+              <div className="intel-item">
+                <span className="intel-icon">🇹🇭</span>
+                <div className="intel-data">
+                  <strong>{communityIntel.thaiHolidays[0].localName}</strong>
+                  <small>{communityIntel.thaiHolidays[0].date} · {communityIntel.thaiHolidays[0].name}</small>
+                </div>
+              </div>
+            ) : null}
+            {communityIntel.lotteryLatest?.firstPrize ? (
+              <div className="intel-item">
+                <span className="intel-icon">🎰</span>
+                <div className="intel-data">
+                  <strong>{communityIntel.lotteryLatest.firstPrize}</strong>
+                  <small>{lang === "th" ? "ลอตเตอรี่รางวัลที่ 1" : "lottery 1st prize"} · {communityIntel.lotteryLatest.date}</small>
+                </div>
+              </div>
+            ) : null}
+            <div className="intel-item">
+              <span className="intel-icon">👥</span>
+              <div className="intel-data">
+                <strong>{(communityIntel.populationThailand / 1_000_000).toFixed(1)}M</strong>
+                <small>{lang === "th" ? "ประชากรไทย" : "Thailand population"}</small>
+              </div>
+            </div>
           </div>
           </section>
 
