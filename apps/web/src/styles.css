@@ -5965,6 +5965,156 @@ textarea:focus {
 }
 
 /* ===================================================================
+   OPS-DARK THEME — Night shift operations center
+   =================================================================== */
+[data-theme="ops-dark"] {
+  color-scheme: dark;
+  --bg: #0a0e1a; --panel: #111827; --panel-strong: #1e293b; --panel-soft: #0f172a;
+  --line: rgba(148,163,184,0.1); --line-strong: rgba(148,163,184,0.18);
+  --ink: #e2e8f0; --muted: #94a3b8;
+  --blue: #3b82f6; --green: #22c55e; --amber: #f59e0b; --red: #ef4444;
+  --focus: rgba(59,130,246,0.25); --shadow: 0 2px 8px rgba(0,0,0,0.4); --radius: 12px;
+  --glow-blue: rgba(59,130,246,0.08); --glow-green: rgba(34,197,94,0.08);
+  --overlay-bg: rgba(10,14,26,0.95);
+  --topbar-height: 48px; --bottomstrip-height: 52px; --tab-height: 42px;
+  --sidebar-width: 0px; --context-width: 0px; --footer-height: var(--bottomstrip-height);
+  --heading-font: "Manrope", -apple-system, BlinkMacSystemFont, "Noto Sans Thai", sans-serif;
+  --body-font: "Inter", -apple-system, BlinkMacSystemFont, "Noto Sans Thai", sans-serif;
+  --mono-font: "SF Mono", "Fira Code", ui-monospace, monospace;
+}
+[data-theme="ops-dark"] html, [data-theme="ops-dark"] body { background: #0a0e1a; color: #e2e8f0; }
+[data-theme="ops-dark"] .topbar { background: rgba(10,14,26,0.92); border-bottom: 1px solid rgba(59,130,246,0.12); backdrop-filter: blur(12px); }
+[data-theme="ops-dark"] .card, [data-theme="ops-dark"] .overview-card { background: #111827; border: 1px solid rgba(59,130,246,0.08); }
+[data-theme="ops-dark"] .card:hover, [data-theme="ops-dark"] .overview-card:hover { border-color: rgba(59,130,246,0.2); }
+[data-theme="ops-dark"] .tab-overlay { background: rgba(10,14,26,0.95); }
+[data-theme="ops-dark"] .data-item { background: rgba(30,41,59,0.5); border-color: rgba(148,163,184,0.08); }
+[data-theme="ops-dark"] .map-tab-bar { background: rgba(10,14,26,0.88); border-top: 1px solid rgba(59,130,246,0.1); }
+[data-theme="ops-dark"] .map-tab.active { color: #60a5fa; border-color: #3b82f6; }
+[data-theme="ops-dark"] .bottombar { background: rgba(10,14,26,0.9); border-top: 1px solid rgba(59,130,246,0.08); }
+[data-theme="ops-dark"] .status-pill { background: rgba(59,130,246,0.12); color: #60a5fa; }
+[data-theme="ops-dark"] .eyebrow { color: #94a3b8; }
+[data-theme="ops-dark"] .ai-status-line { background: rgba(15,23,42,0.9); border-color: rgba(59,130,246,0.12); }
+[data-theme="ops-dark"] .cctv-event-card { background: rgba(30,41,59,0.5); border-color: rgba(148,163,184,0.08); }
+[data-theme="ops-dark"] .sitrep { background: rgba(15,23,42,0.8); border-color: rgba(59,130,246,0.1); }
+[data-theme="ops-dark"] .kpi-scoreboard { background: #0f172a; }
+
+/* ===================================================================
+   ANIMATIONS — Real-time feel
+   =================================================================== */
+@keyframes pulse-live { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.5; } }
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+@keyframes gauge-fill-anim { from { height: 0; } }
+@keyframes data-flash { 0% { background: rgba(59,130,246,0.15); } 100% { background: transparent; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.status-dot.live { animation: pulse-live 2s ease-in-out infinite; }
+.muc-status-dot.green { animation: heartbeat 2.5s ease-in-out infinite; }
+.muc-status-dot.amber { animation: heartbeat 1.8s ease-in-out infinite; }
+.muc-status-dot.red { animation: heartbeat 1s ease-in-out infinite; }
+.gauge-bar { animation: gauge-fill-anim 0.8s ease-out; }
+.overview-card { animation: slide-up 0.3s ease-out; }
+
+/* ===================================================================
+   KPI SCOREBOARD — Airport-board style, readable from 3m
+   =================================================================== */
+.kpi-scoreboard {
+  display: flex; gap: 0; padding: 0; margin: 0 -0.5rem;
+  background: #0f172a; border-radius: 8px; overflow: hidden;
+}
+.kpi-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0.6rem 0.4rem; border-right: 1px solid rgba(255,255,255,0.06);
+  min-width: 0;
+}
+.kpi-item:last-child { border-right: none; }
+.kpi-value {
+  font-family: var(--mono-font, "SF Mono", monospace); font-size: 1.6rem; font-weight: 700;
+  line-height: 1.1; color: #e2e8f0; letter-spacing: -0.02em;
+}
+.kpi-value.green { color: #22c55e; }
+.kpi-value.amber { color: #f59e0b; }
+.kpi-value.red { color: #ef4444; }
+.kpi-label { font-size: 0.5rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem; }
+@media (max-width: 768px) { .kpi-value { font-size: 1.1rem; } .kpi-scoreboard { flex-wrap: wrap; } .kpi-item { min-width: 33%; } }
+
+/* ===================================================================
+   FULLSCREEN MAP
+   =================================================================== */
+.dashboard-layout.map-fullscreen .overview-shell { display: none !important; }
+.dashboard-layout.map-fullscreen .map-container { grid-column: 1 / -1; }
+.fullscreen-exit-btn {
+  position: fixed; top: 60px; right: 16px; z-index: 150;
+  padding: 0.4rem 0.8rem; font-size: 0.65rem; font-weight: 600;
+  background: rgba(0,0,0,0.7); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; cursor: pointer; backdrop-filter: blur(8px);
+}
+.fullscreen-exit-btn:hover { background: rgba(0,0,0,0.85); }
+.map-expand-btn {
+  padding: 0.25rem 0.5rem; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff; cursor: pointer;
+}
+
+/* ===================================================================
+   SHIFT HANDOVER MODAL
+   =================================================================== */
+.shift-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 300;
+  display: flex; align-items: center; justify-content: center; padding: 2rem;
+}
+.shift-modal {
+  background: var(--panel, #fff); border: 1px solid var(--line); border-radius: 12px;
+  max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.5rem;
+}
+.shift-modal h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+.shift-section { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
+.shift-section h3 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.3rem; }
+.shift-metric { display: flex; justify-content: space-between; padding: 0.2rem 0; font-size: 0.7rem; }
+.shift-metric strong { font-weight: 600; }
+.shift-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.shift-actions button { padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.7rem; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--ink); }
+.shift-actions button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+@media print { .shift-modal-overlay { position: static; background: #fff; } .shift-modal { max-width: 100%; max-height: none; box-shadow: none; border: none; } .shift-actions { display: none; } .topbar, .bottombar, .map-tab-bar { display: none !important; } }
+
+/* ===================================================================
+   AUDIO CONTROL
+   =================================================================== */
+.audio-toggle {
+  padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent;
+  border: 1px solid var(--line); border-radius: 4px; cursor: pointer; color: var(--muted);
+}
+.audio-toggle.muted { opacity: 0.4; }
+
+/* ===================================================================
+   PUBLIC RESIDENT PAGE
+   =================================================================== */
+.public-page {
+  max-width: 480px; margin: 0 auto; padding: 1rem; font-family: var(--body-font);
+  background: #fff; color: #18181b; min-height: 100vh;
+}
+.public-header { text-align: center; padding: 1rem 0; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; }
+.public-header h1 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+.public-header small { color: #71717a; }
+.public-card {
+  background: #f4f4f5; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem;
+}
+.public-card h3 { font-size: 0.8rem; color: #71717a; margin: 0 0 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.public-big-value { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.public-big-value.good { color: #16a34a; }
+.public-big-value.moderate { color: #d97706; }
+.public-big-value.bad { color: #dc2626; }
+.public-sub { font-size: 0.75rem; color: #71717a; margin-top: 0.2rem; }
+.public-event { padding: 0.5rem 0; border-bottom: 1px solid #e5e5e5; }
+.public-event:last-child { border-bottom: none; }
+.public-event strong { font-size: 0.8rem; display: block; }
+.public-event small { color: #71717a; }
+.public-incident { padding: 0.4rem 0; display: flex; align-items: center; gap: 0.5rem; }
+.public-incident-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.public-incident-dot.critical { background: #dc2626; }
+.public-incident-dot.high { background: #f59e0b; }
+.public-incident-dot.medium { background: #3b82f6; }
+.public-incident-dot.low { background: #94a3b8; }
+
+/* ===================================================================
    EDITORIAL THEME OVERRIDES — light Monocle aesthetic
    =================================================================== */
 

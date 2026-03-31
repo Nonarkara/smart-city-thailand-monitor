@@ -66,9 +66,11 @@ import type {
 } from "@smart-city/shared";
 import {
   startTransition,
+  useCallback,
   useEffect,
   useDeferredValue,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { NavLink, Route, Routes, useSearchParams } from "react-router-dom";
@@ -3955,10 +3957,94 @@ function DashboardPage() {
     }
   }
 
-  const siteTheme = "ops" as const;
+  const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
+    try { return (localStorage.getItem("mtt-theme") as "light" | "dark") || "dark"; } catch { return "dark"; }
+  });
+  const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(() => {
+    try { return localStorage.getItem("mtt-audio-muted") === "true"; } catch { return false; }
+  });
+
+  const siteTheme = themeMode === "dark" ? "ops-dark" : "ops";
+
+  // Persist theme
+  useEffect(() => { try { localStorage.setItem("mtt-theme", themeMode); } catch {} }, [themeMode]);
+  useEffect(() => { try { localStorage.setItem("mtt-audio-muted", String(audioMuted)); } catch {} }, [audioMuted]);
+
+  // Escape key for fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape" && mapFullscreen) setMapFullscreen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mapFullscreen]);
+
+  // Audio alert system (Web Audio API)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const playAlertTone = useCallback((level: "info" | "warning" | "critical") => {
+    if (audioMuted) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      const freqs = level === "critical" ? [440, 520, 660] : level === "warning" ? [520, 520] : [440];
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq; osc.type = "sine";
+        gain.gain.value = 0.08;
+        const start = ctx.currentTime + i * 0.18;
+        osc.start(start); osc.stop(start + 0.12);
+      });
+    } catch {}
+  }, [audioMuted]);
 
   return (
-    <div className="shell" data-theme={siteTheme}>
+    <div className={`shell ${mapFullscreen ? "dashboard-layout map-fullscreen" : ""}`} data-theme={siteTheme}>
+      {/* Fullscreen exit button */}
+      {mapFullscreen ? <button type="button" className="fullscreen-exit-btn" onClick={() => setMapFullscreen(false)}>{lang === "th" ? "ออกเต็มจอ" : "Exit Fullscreen"} (Esc)</button> : null}
+
+      {/* Shift Handover Modal */}
+      {shiftModalOpen ? (
+        <div className="shift-modal-overlay" onClick={() => setShiftModalOpen(false)}>
+          <div className="shift-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>{lang === "th" ? "รายงานกะ — สรุป 8 ชั่วโมง" : "Shift Report — 8 Hour Summary"}</h2>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "เหตุการณ์" : "Incidents"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "เปิดใหม่" : "Opened"}</span><strong>{incidents.filter((i) => i.status === "new").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "แก้ไขแล้ว" : "Resolved"}</span><strong>{incidents.filter((i) => i.status === "resolved").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ยังดำเนินการ" : "Still Active"}</span><strong>{incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "จราจร" : "Traffic"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "รถวันนี้" : "Vehicles Today"}</span><strong>{totalVehiclesToday.toLocaleString()}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "คอขวด" : "Bottlenecks"}</span><strong>{mucBottleneckCount}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ชั่วโมงพีค" : "Peak Hour"}</span><strong>{peakHourData ? `${String(peakHourData.hour).padStart(2, "0")}:00` : "--"}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</h3>
+              <div className="shift-metric"><span>AQI</span><strong>{muc.airQuality.overallAqi}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "เขตเกินเกณฑ์" : "Zones Above Threshold"}</span><strong>{mucAqiAlertCount}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "จำนวนงาน" : "Events"}</span><strong>{arenaEvents.filter((e) => e.status === "confirmed").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "คนคาด" : "Expected Crowd"}</span><strong>{arenaEvents.filter((e) => e.status === "confirmed").reduce((s, e) => s + e.expectedCrowd, 0).toLocaleString()}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "น้ำท่วม" : "Flood Risk"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "ระดับความเสี่ยง" : "Risk Level"}</span><strong>{floodRisk.floodRiskLevel}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ฝนคาด 24 ชม." : "Rain 24h"}</span><strong>{floodRisk.precipitationForecast24h}mm</strong></div>
+            </div>
+            <div className="shift-actions">
+              <button type="button" className="primary" onClick={() => { navigator.clipboard?.writeText(`Shift Report — ${time.thaiDate || new Date().toLocaleDateString()}\nIncidents: ${incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length} active\nVehicles: ${totalVehiclesToday}\nAQI: ${muc.airQuality.overallAqi}\nFlood: ${floodRisk.floodRiskLevel}`); }}>{lang === "th" ? "คัดลอก" : "Copy"}</button>
+              <button type="button" onClick={() => window.print()}>{lang === "th" ? "พิมพ์" : "Print"}</button>
+              <button type="button" onClick={() => setShiftModalOpen(false)}>{lang === "th" ? "ปิด" : "Close"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
@@ -3992,6 +4078,9 @@ function DashboardPage() {
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
             <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
           </div>
+          <button type="button" className="audio-toggle" onClick={() => setAudioMuted((m) => !m)} title={audioMuted ? "Unmute alerts" : "Mute alerts"}>{audioMuted ? "🔇" : "🔊"}</button>
+          <button type="button" className="chip" onClick={() => setThemeMode((t) => t === "dark" ? "light" : "dark")} title="Toggle dark/light">{themeMode === "dark" ? "☀️" : "🌙"}</button>
+          <button type="button" className="chip" onClick={() => setShiftModalOpen(true)} title="Shift Report">{lang === "th" ? "กะ" : "Shift"}</button>
           <button className="share-button" onClick={copyLink}>{copiedLink ? copy.copied : copy.share}</button>
         </div>
       </header>
@@ -4085,6 +4174,7 @@ function DashboardPage() {
 
         {/* Floating Map Controls */}
         <div className="map-floating-controls">
+          <button type="button" className="map-expand-btn" onClick={() => setMapFullscreen((f) => !f)} title={mapFullscreen ? "Exit fullscreen" : "Expand map"}>{mapFullscreen ? "✕" : "⛶"}</button>
           <div className="basemap-switcher">
             {(["atlas", "street", "satellite", "hybrid"] as const).map((bm) => (
               <button key={bm} type="button" className={`basemap-btn ${basemap === bm ? "active" : ""}`} onClick={() => updateParam("basemap", bm)}>
@@ -5182,6 +5272,16 @@ function DashboardPage() {
 
         <section className="overview-shell">
           {/* — At-a-Glance Summary Strip — */}
+          {/* KPI Scoreboard — large airport-board numbers */}
+          <div className="kpi-scoreboard">
+            <div className="kpi-item"><span className="kpi-value">{totalVehiclesToday.toLocaleString()}</span><span className="kpi-label">{lang === "th" ? "รถวันนี้" : "Vehicles"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${muc.airQuality.overallAqi >= 90 ? "red" : muc.airQuality.overallAqi >= 60 ? "amber" : "green"}`}>{muc.airQuality.overallAqi}</span><span className="kpi-label">AQI</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${mucBottleneckCount > 0 ? "red" : "green"}`}>{mucBottleneckCount}</span><span className="kpi-label">{lang === "th" ? "คอขวด" : "Bottleneck"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length > 0 ? "amber" : "green"}`}>{incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length}</span><span className="kpi-label">{lang === "th" ? "เหตุการณ์" : "Incidents"}</span></div>
+            <div className="kpi-item"><span className="kpi-value green">{liveCamCount}</span><span className="kpi-label">{lang === "th" ? "กล้อง" : "Cameras"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "red" : floodRisk.floodRiskLevel === "moderate" ? "amber" : "green"}`}>{floodRisk.floodRiskLevel === "low" ? "OK" : floodRisk.floodRiskLevel.toUpperCase()}</span><span className="kpi-label">{lang === "th" ? "น้ำท่วม" : "Flood"}</span></div>
+          </div>
+
           <section className="summary-strip">
             <button type="button" className="summary-card" onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
               <span className="summary-label">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
@@ -5831,10 +5931,91 @@ function AdminConsolePage() {
   );
 }
 
+/* ── Public Resident Page ── */
+function PublicPage() {
+  const [lang] = useState<"th" | "en">("th");
+  const overviewQ = useQuery({ queryKey: ["pub-overview"], queryFn: () => fetch("/api/overview?view=city&city=muang-thong-thani").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const arenaQ = useQuery({ queryKey: ["pub-arena"], queryFn: () => fetch("/api/arena-events").then((r) => r.ok ? r.json() : []), staleTime: 60000 });
+  const incidentQ = useQuery({ queryKey: ["pub-incidents"], queryFn: () => fetch("/api/incidents?limit=5").then((r) => r.ok ? r.json() : []), staleTime: 30000 });
+  const floodQ = useQuery({ queryKey: ["pub-flood"], queryFn: () => fetch("/api/flood-risk").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const transitQ = useQuery({ queryKey: ["pub-transit"], queryFn: () => fetch("/api/transit").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+
+  const events = (Array.isArray(arenaQ.data) ? arenaQ.data : []).filter((e: any) => e.status === "confirmed").slice(0, 4);
+  const activeIncidents = (Array.isArray(incidentQ.data) ? incidentQ.data : []).filter((i: any) => i.status !== "resolved" && i.status !== "closed").slice(0, 5);
+  const flood = floodQ.data as any;
+  const transitData = transitQ.data as any;
+
+  return (
+    <div className="public-page">
+      <div className="public-header">
+        <h1>เมืองทองธานี</h1>
+        <small>Muang Thong Thani — Resident Info</small>
+      </div>
+
+      <div className="public-card">
+        <h3>{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</h3>
+        <div className={`public-big-value ${68 >= 90 ? "bad" : 68 >= 60 ? "moderate" : "good"}`}>AQI 68</div>
+        <div className="public-sub">PM2.5: 22 · PM10: 38</div>
+      </div>
+
+      {flood ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "ความเสี่ยงน้ำท่วม" : "Flood Risk"}</h3>
+          <div className={`public-big-value ${flood.floodRiskLevel === "high" || flood.floodRiskLevel === "critical" ? "bad" : flood.floodRiskLevel === "moderate" ? "moderate" : "good"}`}>{flood.floodRiskLevel?.toUpperCase() || "OK"}</div>
+          <div className="public-sub">{lang === "th" ? "ฝนคาด" : "Rain forecast"}: {flood.precipitationForecast24h || 0}mm / 24h</div>
+        </div>
+      ) : null}
+
+      <div className="public-card">
+        <h3>{lang === "th" ? "กิจกรรม IMPACT วันนี้" : "IMPACT Events Today"}</h3>
+        {events.length > 0 ? events.map((e: any) => (
+          <div key={e.id} className="public-event">
+            <strong>{e.title?.th || e.title?.en || "Event"}</strong>
+            <small>{e.venue?.en} · {e.timeStart}–{e.timeEnd} · {(e.expectedCrowd || 0).toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
+          </div>
+        )) : <div className="public-sub">{lang === "th" ? "ไม่มีกิจกรรมวันนี้" : "No events today"}</div>}
+      </div>
+
+      {activeIncidents.length > 0 ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "แจ้งซ่อมบำรุง" : "Maintenance Notices"}</h3>
+          {activeIncidents.map((inc: any) => (
+            <div key={inc.id} className="public-incident">
+              <span className={`public-incident-dot ${inc.urgency}`} />
+              <div>
+                <strong style={{ fontSize: "0.8rem" }}>{inc.title?.th || inc.title?.en}</strong>
+                <small style={{ display: "block", color: "#71717a" }}>{inc.category} · {inc.status}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {transitData?.connections ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "ขนส่งสาธารณะ" : "Transit"}</h3>
+          {transitData.connections.slice(0, 4).map((c: any) => (
+            <div key={c.id} className="public-event">
+              <strong>{c.routeNumber ? `${c.routeNumber} ` : ""}{c.station?.th || c.station?.en}</strong>
+              <small>{c.distanceKm > 0 ? `${c.distanceKm}km · ` : ""}{c.travelMinutes} min · {c.frequency || ""}</small>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div style={{ textAlign: "center", padding: "1rem", color: "#a1a1aa", fontSize: "0.65rem" }}>
+        Muang Thong Thani Smart City Dashboard<br />
+        <a href="/" style={{ color: "#3b82f6" }}>{lang === "th" ? "เข้าสู่แดชบอร์ดปฏิบัติการ" : "Operations Dashboard"}</a>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
+      <Route path="/public" element={<PublicPage />} />
       <Route path="/admin" element={<AdminConsolePage />} />
     </Routes>
   );
