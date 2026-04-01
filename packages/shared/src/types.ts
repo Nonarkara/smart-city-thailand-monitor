@@ -902,6 +902,26 @@ export interface TransitSnapshot {
 }
 
 /* ── Community Intelligence Feeds ── */
+/* ── Utility / Infrastructure ── */
+export type UtilityType = "power" | "water" | "waste" | "internet";
+
+export interface UtilityStatusItem {
+  id: string;
+  type: UtilityType;
+  label: LocalizedText;
+  status: "normal" | "degraded" | "outage";
+  metric: string;
+  detail: LocalizedText;
+  lastUpdated: string;
+}
+
+export interface UtilitySnapshot {
+  updatedAt: string;
+  items: UtilityStatusItem[];
+  source: SourceMeta;
+}
+
+/* ── Community Intelligence Feeds ── */
 export interface CommunityIntelSnapshot {
   updatedAt: string;
   uvIndex: number;

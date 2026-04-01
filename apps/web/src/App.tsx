@@ -26,7 +26,8 @@ import {
   createMucSnapshot,
   mttIncidents as incidentSeed,
   mttFloodRisk as floodRiskSeed,
-  mttTransit as transitSeed
+  mttTransit as transitSeed,
+  utilitySnapshot as utilitySeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -62,7 +63,8 @@ import type {
   IncidentRecord,
   FloodRiskSnapshot,
   TransitSnapshot,
-  CommunityIntelSnapshot
+  CommunityIntelSnapshot,
+  UtilitySnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -4112,6 +4114,7 @@ function DashboardPage() {
           featureCollections={mapFeaturesForView}
           publicCctvCameras={publicCctvCameras}
           recenterSignal={recenterSignal}
+          themeMode={themeMode}
         />
 
         {/* Floating Layer Palette Toggle */}
@@ -5328,29 +5331,35 @@ function DashboardPage() {
 
           {/* ── Row 1: Hero (span 2) + Arena Events ── */}
           <section className="card overview-card hero">
-          <div className="card-header">
-            <span className="eyebrow">Muang Thong Thani</span>
-            <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
+          <div className="hero-command-row">
+            <div className="hero-time">
+              <span className="hero-time-value">{time.thaiTime || "00:00:00 ICT"}</span>
+              <span className="hero-time-date">{time.thaiDate || ""}</span>
+            </div>
+            <div className="hero-weather">
+              <span className="hero-temp">{resilience.weatherTemperatureC}°C</span>
+              <small>{localize(lang, resilience.weatherSummary).substring(0, 40)}</small>
+            </div>
+          </div>
+          <div className="hero-status-pills">
+            <span className={`hero-pill ${mttTrafficSnapshotSeed.overallStatus === "congested" || mttTrafficSnapshotSeed.overallStatus === "blocked" ? "critical" : mttTrafficSnapshotSeed.overallStatus === "moderate" ? "warn" : "ok"}`}>{lang === "th" ? "จราจร" : "Traffic"}: {mttTrafficSnapshotSeed.overallStatus}</span>
+            <span className={`hero-pill ${muc.airQuality.overallAqi >= 90 ? "critical" : muc.airQuality.overallAqi >= 60 ? "warn" : "ok"}`}>AQI: {muc.airQuality.overallAqi}</span>
+            <span className={`hero-pill ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "critical" : floodRisk.floodRiskLevel === "moderate" ? "warn" : "ok"}`}>{lang === "th" ? "น้ำท่วม" : "Flood"}: {floodRisk.floodRiskLevel}</span>
+            <span className="hero-pill ok">{lang === "th" ? "กิจกรรม" : "Events"}: {arenaEvents.filter((e) => e.status === "confirmed").length}</span>
           </div>
           <div className="terminal-callout compact">
-            <span className="eyebrow">{lang === "th" ? "สถานะ" : "Status"}</span>
             <strong>{executiveSignal}</strong>
           </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
-              <strong>{formatPopulation(selectedCity.population)}</strong>
-              <small>{lang === "th" ? "พื้นที่ปฏิบัติการ" : "Venue district"}</small>
+          {todayEvents.length > 0 ? (
+            <div className="hero-next-event">
+              <span className="eyebrow">{lang === "th" ? "กิจกรรมถัดไป" : "Next Event"}</span>
+              <strong>{localize(lang, todayEvents[0].title)}</strong>
+              <small>{localize(lang, todayEvents[0].venue)} · {todayEvents[0].timeStart} · {todayEvents[0].expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
-              <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
-              <small>{`${publicCctvCameras.length} total feeds`}</small>
-            </div>
-          </div>
+          ) : null}
           </section>
 
-          <section className="card overview-card arena-events">
+          <section className="card overview-card arena-events category-community">
             <div className="card-header">
               <span className="eyebrow">IMPACT Arena</span>
               <span className="status-pill">{arenaEvents.filter((e) => e.status !== "cancelled").length} events</span>
@@ -5373,7 +5382,7 @@ function DashboardPage() {
           </section>
 
           {/* ── Row 2: CCTV + AI Vision ── */}
-          <section className="card overview-card cctv-overview">
+          <section className="card overview-card cctv-overview category-safety">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "กล้องสด" : "Live Cameras"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
@@ -5399,7 +5408,7 @@ function DashboardPage() {
           </section>
 
           {/* ── Row 3: Traffic, Trends, Briefing ── */}
-          <section className="card overview-card traffic">
+          <section className="card overview-card traffic category-infra">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "การจราจร" : "Traffic"}</span>
               <span className={`status-tag ${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
@@ -5430,7 +5439,7 @@ function DashboardPage() {
             </div>
           </section>
 
-          <section className="card overview-card briefing">
+          <section className="card overview-card briefing category-community">
           <div className="card-header">
             <span className="eyebrow">{copy.briefing}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
@@ -5440,7 +5449,7 @@ function DashboardPage() {
           </section>
 
           {/* — Decision Queue — */}
-          <section className="card overview-card queue">
+          <section className="card overview-card queue category-safety">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
@@ -5471,7 +5480,7 @@ function DashboardPage() {
           </section>
 
           {/* — News — */}
-          <section className="card overview-card news">
+          <section className="card overview-card news category-community">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
@@ -5489,7 +5498,7 @@ function DashboardPage() {
           </section>
 
           {/* — Resilience: weather + pollution — */}
-          <section className="card overview-card resilience">
+          <section className="card overview-card resilience category-env">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather & Air"}</span>
             <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
@@ -5509,7 +5518,7 @@ function DashboardPage() {
           </section>
 
           {/* — Flood & Water Risk — */}
-          <section className="card overview-card flood-risk">
+          <section className="card overview-card flood-risk category-infra">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "น้ำท่วม & ระดับน้ำ" : "Flood & Water"}</span>
             <span className={`status-pill ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "delayed" : floodRisk.floodRiskLevel === "moderate" ? "watch" : "live"}`}>{floodRisk.floodRiskLevel}</span>
@@ -5537,7 +5546,7 @@ function DashboardPage() {
           </section>
 
           {/* — Transit Connections — */}
-          <section className="card overview-card transit">
+          <section className="card overview-card transit category-infra">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "ขนส่งสาธารณะ" : "Transit"}</span>
             <span className="status-pill">{transit.connections.length} {lang === "th" ? "เส้นทาง" : "routes"}</span>
@@ -5551,6 +5560,43 @@ function DashboardPage() {
                   <small>{conn.distanceKm > 0 ? `${conn.distanceKm} km · ` : ""}{conn.travelMinutes} min{conn.frequency ? ` · ${conn.frequency}` : ""}</small>
                 </div>
                 <span className={`transit-status ${conn.status}`}>{conn.status}</span>
+              </div>
+            ))}
+          </div>
+          </section>
+
+          {/* — Markets — */}
+          <section className="card overview-card markets category-community">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
+            <span className="status-pill">{markets.source.freshnessStatus}</span>
+          </div>
+          <div className="market-grid">
+            {markets.items.map((item) => (
+              <div key={item.id} className={`market-item tone-${item.tone}`}>
+                <span className="market-label">{localize(lang, item.label)}</span>
+                <strong className="market-value">{item.value}</strong>
+                <small className="market-change">{localize(lang, item.changeText)}</small>
+              </div>
+            ))}
+          </div>
+          </section>
+
+          {/* — Utility / Infrastructure — */}
+          <section className="card overview-card utility category-infra">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "สาธารณูปโภค" : "Infrastructure"}</span>
+            <span className="status-pill">{utilitySeed.items.every((u) => u.status === "normal") ? "live" : "watch"}</span>
+          </div>
+          <div className="utility-grid">
+            {utilitySeed.items.map((item) => (
+              <div key={item.id} className={`utility-item status-${item.status}`}>
+                <span className="utility-icon">{item.type === "power" ? "⚡" : item.type === "water" ? "💧" : item.type === "waste" ? "🗑️" : "🌐"}</span>
+                <div className="utility-info">
+                  <strong>{localize(lang, item.label)}</strong>
+                  <small>{item.metric} · {localize(lang, item.detail)}</small>
+                </div>
+                <span className={`status-tag ${item.status === "normal" ? "live" : item.status === "degraded" ? "watch" : "delayed"}`}>{item.status}</span>
               </div>
             ))}
           </div>

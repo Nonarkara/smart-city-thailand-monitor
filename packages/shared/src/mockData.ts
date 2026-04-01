@@ -60,7 +60,8 @@ import type {
   WaterLevelStation,
   FloodRiskSnapshot,
   TransitConnection,
-  TransitSnapshot
+  TransitSnapshot,
+  UtilitySnapshot
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -5473,6 +5474,21 @@ export const setStockSeed: Array<{ id: string; label: { th: string; en: string }
   { id: "set-bts", label: { th: "BTS Group", en: "BTS Group Holdings" }, value: "฿6.85", changeText: { th: "24 ชม. -0.7%", en: "24h -0.7%" }, tone: "warning" },
   { id: "set-lh", label: { th: "Land & Houses", en: "Land and Houses" }, value: "฿8.20", changeText: { th: "24 ชม. +0.3%", en: "24h +0.3%" }, tone: "neutral" }
 ];
+
+/* ══════════════════════════════════════════════════════════
+   Utility / Infrastructure — Seed Data
+   ══════════════════════════════════════════════════════════ */
+
+export const utilitySnapshot: UtilitySnapshot = {
+  updatedAt: seededAt,
+  items: [
+    { id: "util-power", type: "power", label: { th: "ไฟฟ้า (PEA นนทบุรี)", en: "Power (PEA Nonthaburi)" }, status: "normal", metric: "48.2 MW", detail: { th: "โหลดปกติ — สำรอง 32%", en: "Normal load — 32% reserve" }, lastUpdated: seededAt },
+    { id: "util-water", type: "water", label: { th: "ประปา (MWA)", en: "Water Supply (MWA)" }, status: "normal", metric: "2.8 bar", detail: { th: "แรงดันปกติ ทุกโซน", en: "Normal pressure all zones" }, lastUpdated: seededAt },
+    { id: "util-waste", type: "waste", label: { th: "ขยะ / ทำความสะอาด", en: "Waste Collection" }, status: "normal", metric: "06:30 / 18:00", detail: { th: "เก็บเช้า 06:30 เก็บเย็น 18:00", en: "Morning 06:30 · Evening 18:00" }, lastUpdated: seededAt },
+    { id: "util-internet", type: "internet", label: { th: "อินเทอร์เน็ต (TRUE/AIS)", en: "Internet (TRUE/AIS)" }, status: "normal", metric: "1 Gbps", detail: { th: "Backbone ปกติ — latency 4ms", en: "Backbone normal — 4ms latency" }, lastUpdated: seededAt }
+  ],
+  source: seedMeta("MTT Infrastructure", "https://mtt.co.th", "live")
+};
 
 export function createMucSnapshot(): MucSnapshot {
   return {

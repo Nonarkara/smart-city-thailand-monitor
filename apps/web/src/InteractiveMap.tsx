@@ -362,9 +362,15 @@ const siteTheme = "ops" as const;
 
 /* International base map tile sources */
 const basemapSources = {
-  /* CARTO tiles — always use light for readability */
+  /* CARTO Light tiles */
   darkMatter: {
     url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 20
+  },
+  /* CARTO Dark tiles — for dark theme */
+  cartoDark: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 20
   },
@@ -1181,6 +1187,7 @@ interface InteractiveMapProps {
   featureCollections: MapFeatureCollection[];
   publicCctvCameras: PublicCctvCamera[];
   recenterSignal: number;
+  themeMode?: "light" | "dark";
 }
 
 export default function InteractiveMap({
@@ -1196,7 +1203,8 @@ export default function InteractiveMap({
   news,
   featureCollections,
   publicCctvCameras,
-  recenterSignal
+  recenterSignal,
+  themeMode = "dark"
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -1244,9 +1252,10 @@ export default function InteractiveMap({
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    const atlasLayer = L.tileLayer(basemapSources.darkMatter.url, {
-      maxZoom: basemapSources.darkMatter.maxZoom,
-      attribution: basemapSources.darkMatter.attribution
+    const atlasSource = themeMode === "dark" ? basemapSources.cartoDark : basemapSources.darkMatter;
+    const atlasLayer = L.tileLayer(atlasSource.url, {
+      maxZoom: atlasSource.maxZoom,
+      attribution: atlasSource.attribution
     }).addTo(map);
     const satelliteLayer = L.tileLayer(basemapSources.esriSatellite.url, {
       maxZoom: basemapSources.esriSatellite.maxZoom,
@@ -1325,6 +1334,14 @@ export default function InteractiveMap({
 
     activeBase.bringToBack();
   }, [basemap]);
+
+  // Swap atlas tile URL when theme changes
+  useEffect(() => {
+    if (atlasBaseRef.current && basemap === "atlas") {
+      const src = themeMode === "dark" ? basemapSources.cartoDark : basemapSources.darkMatter;
+      atlasBaseRef.current.setUrl(src.url);
+    }
+  }, [themeMode, basemap]);
 
   useEffect(() => {
     if (recenterSignal > 0) {

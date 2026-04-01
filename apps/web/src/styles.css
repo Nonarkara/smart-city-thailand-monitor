@@ -6852,3 +6852,80 @@ textarea:focus {
 .uv-high { color: #f97316; }
 .uv-very-high { color: #ef4444; }
 .uv-extreme { color: #dc2626; font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════════
+   Card Category Accent Borders
+   ══════════════════════════════════════════════════════════ */
+.overview-card.category-safety { border-top: 3px solid #ef4444; }
+.overview-card.category-infra { border-top: 3px solid #3b82f6; }
+.overview-card.category-env { border-top: 3px solid #22c55e; }
+.overview-card.category-community { border-top: 3px solid #8b5cf6; }
+[data-theme="ops-dark"] .overview-card.category-safety { border-top-color: #f87171; box-shadow: 0 -2px 8px rgba(239,68,68,0.1), 0 2px 12px rgba(0,0,0,0.3); }
+[data-theme="ops-dark"] .overview-card.category-infra { border-top-color: #60a5fa; box-shadow: 0 -2px 8px rgba(59,130,246,0.1), 0 2px 12px rgba(0,0,0,0.3); }
+[data-theme="ops-dark"] .overview-card.category-env { border-top-color: #4ade80; box-shadow: 0 -2px 8px rgba(34,197,94,0.1), 0 2px 12px rgba(0,0,0,0.3); }
+[data-theme="ops-dark"] .overview-card.category-community { border-top-color: #a78bfa; box-shadow: 0 -2px 8px rgba(139,92,246,0.1), 0 2px 12px rgba(0,0,0,0.3); }
+
+/* Arena Events grid fix */
+.overview-card.arena-events { grid-column: 1 / -1; }
+
+/* ══════════════════════════════════════════════════════════
+   Hero Command Card
+   ══════════════════════════════════════════════════════════ */
+.hero-command-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.hero-time { display: flex; flex-direction: column; }
+.hero-time-value { font-family: var(--mono-font, "SF Mono", monospace); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--ink); }
+.hero-time-date { font-size: 0.6rem; color: var(--muted); margin-top: 0.1rem; }
+.hero-weather { text-align: right; }
+.hero-temp { font-size: 1.2rem; font-weight: 700; }
+.hero-weather small { font-size: 0.55rem; color: var(--muted); display: block; }
+
+.hero-status-pills { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.hero-pill {
+  font-size: 0.55rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.hero-pill.ok { background: rgba(34,197,94,0.12); color: #22c55e; }
+.hero-pill.warn { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.hero-pill.critical { background: rgba(239,68,68,0.15); color: #ef4444; }
+[data-theme="ops-dark"] .hero-pill.ok { box-shadow: 0 0 6px rgba(34,197,94,0.15); }
+[data-theme="ops-dark"] .hero-pill.warn { box-shadow: 0 0 6px rgba(245,158,11,0.15); }
+[data-theme="ops-dark"] .hero-pill.critical { box-shadow: 0 0 8px rgba(239,68,68,0.2); }
+[data-theme="ops-dark"] .hero-time-value { color: #e2e8f0; text-shadow: 0 0 12px rgba(226,232,240,0.1); }
+
+.hero-next-event { padding: 0.3rem 0.5rem; background: rgba(139,92,246,0.06); border-left: 2px solid #8b5cf6; border-radius: 0 4px 4px 0; margin-top: 0.3rem; }
+.hero-next-event .eyebrow { font-size: 0.5rem; }
+.hero-next-event strong { font-size: 0.7rem; display: block; }
+.hero-next-event small { font-size: 0.55rem; color: var(--muted); }
+
+/* ══════════════════════════════════════════════════════════
+   Markets Grid
+   ══════════════════════════════════════════════════════════ */
+.market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
+.market-item {
+  display: flex; flex-direction: column; padding: 0.3rem; border-radius: 4px;
+  background: rgba(0,0,0,0.04);
+}
+[data-theme="ops-dark"] .market-item { background: rgba(15,23,42,0.5); }
+.market-label { font-size: 0.5rem; color: var(--muted); }
+.market-value { font-family: var(--mono-font, monospace); font-size: 0.75rem; font-weight: 700; }
+.market-change { font-size: 0.5rem; }
+.market-item.tone-positive .market-change { color: #22c55e; }
+.market-item.tone-warning .market-change { color: #ef4444; }
+.market-item.tone-neutral .market-change { color: var(--muted); }
+
+/* ══════════════════════════════════════════════════════════
+   Utility / Infrastructure Grid
+   ══════════════════════════════════════════════════════════ */
+.utility-grid { display: flex; flex-direction: column; gap: 0.25rem; }
+.utility-item {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem;
+  background: rgba(0,0,0,0.04); border-radius: 4px; border-left: 3px solid transparent;
+}
+[data-theme="ops-dark"] .utility-item { background: rgba(15,23,42,0.4); }
+.utility-item.status-normal { border-left-color: #22c55e; }
+.utility-item.status-degraded { border-left-color: #f59e0b; }
+.utility-item.status-outage { border-left-color: #ef4444; }
+.utility-icon { font-size: 1rem; width: 1.4rem; text-align: center; flex-shrink: 0; }
+.utility-info { flex: 1; min-width: 0; }
+.utility-info strong { font-size: 0.65rem; display: block; }
+.utility-info small { font-size: 0.5rem; color: var(--muted); }
