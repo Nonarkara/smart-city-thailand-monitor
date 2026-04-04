@@ -550,6 +550,42 @@ export interface CommandCenterSnapshot {
   expansionTracks: ExpansionTrack[];
 }
 
+/* ── Bangkok Governor's IOC — Traffy Fondue ── */
+
+export interface TraffyReport {
+  ticketId: string;
+  category: LocalizedText;
+  status: "received" | "in-progress" | "resolved";
+  lat: number;
+  lon: number;
+  district: string;
+  photoUrl?: string;
+  timestamp: string;
+  description?: string;
+}
+
+export interface TraffyFondueSnapshot {
+  totalOpen: number;
+  resolvedToday: number;
+  resolutionRate: number;
+  categoryBreakdown: { category: string; count: number }[];
+  districtBreakdown: { district: string; count: number }[];
+  recentReports: TraffyReport[];
+  updatedAt: string;
+}
+
+/* ── Bangkok Governor's IOC — Flood Status ── */
+
+export type FloodLevel = "normal" | "watch" | "warning" | "critical";
+
+export interface BangkokFloodStatus {
+  level: FloodLevel;
+  activeFloodPoints: number;
+  drainagePumpStatus: { active: number; total: number };
+  rainfallLast24h: number;
+  updatedAt: string;
+}
+
 /* ── IMPACT Arena & Venue Events ── */
 export type EventCategory = "concert" | "expo" | "convention" | "sport" | "graduation" | "other";
 

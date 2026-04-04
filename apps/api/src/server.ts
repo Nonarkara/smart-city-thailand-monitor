@@ -1,6 +1,8 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import type { AssistantQueryRequest, DashboardView, TimeRange } from "@smart-city/shared";
+import { config } from "./config.js";
+import { getDurableStorageMode } from "./data/durableStore.js";
 import { requireAdmin } from "./lib/adminAuth.js";
 import { store } from "./data/store.js";
 import { getAssistantStatus, queryAssistant } from "./services/knowledgeAssistant.js";
@@ -33,11 +35,31 @@ export async function createServer() {
     origin: true
   });
 
-  app.get("/health", async () => ({
-    ok: true,
-    service: "smart-city-monitor-api",
-    updatedAt: new Date().toISOString()
-  }));
+  app.get("/health", async () => {
+    const sources = store.getSources();
+    const syncHealth = store.getSyncHealth();
+    const liveSourceCount = sources.filter((source) => source.freshnessStatus === "live").length;
+    const staleSourceCount = sources.filter((source) => source.freshnessStatus === "stale").length;
+    const latestSyncAt =
+      syncHealth[0]?.fetchedAt ??
+      [...sources]
+        .sort((left, right) => right.lastCheckedAt.localeCompare(left.lastCheckedAt))[0]?.lastCheckedAt ??
+      new Date().toISOString();
+
+    return {
+      ok: true,
+      degraded: staleSourceCount > 0,
+      service: "smart-city-monitor-api",
+      updatedAt: new Date().toISOString(),
+      lastSyncAt: latestSyncAt,
+      liveSourceCount,
+      staleSourceCount,
+      durableStorage: getDurableStorageMode(),
+      autoSyncEnabled: config.autoSyncEnabled,
+      opsSyncIntervalMs: config.opsSyncIntervalMs,
+      fullSyncIntervalMs: config.syncIntervalMs
+    };
+  });
 
   app.get("/api/overview", async (request) => {
     const query = request.query as {
@@ -179,6 +201,11 @@ export async function createServer() {
   app.get("/api/markets", async () => store.getMarketSnapshot());
   app.get("/api/sources", async () => store.getSources());
   app.get("/api/command-center", async () => store.getCommandCenter());
+
+  /* ── Bangkok Governor's IOC endpoints ── */
+  app.get("/api/traffy-fondue", async () => store.getTraffyFondue());
+  app.get("/api/flood-status", async () => store.getFloodStatus());
+
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
   app.get("/api/satellite/search", async (request) => {

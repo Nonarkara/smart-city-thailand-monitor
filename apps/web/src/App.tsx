@@ -22,7 +22,9 @@ import {
   socialListening as socialListeningSeed,
   sources as sourceSeed,
   impactArenaEvents as impactArenaEventsSeed,
-  mttTrafficSnapshot as mttTrafficSnapshotSeed
+  mttTrafficSnapshot as mttTrafficSnapshotSeed,
+  traffyFondueSeed,
+  bangkokFloodStatusSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -51,13 +53,16 @@ import type {
   SocialListeningSnapshot,
   SourceRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  TraffyFondueSnapshot,
+  BangkokFloodStatus
 } from "@smart-city/shared";
 import {
   startTransition,
   useEffect,
   useDeferredValue,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { NavLink, Route, Routes, useSearchParams } from "react-router-dom";
@@ -87,13 +92,14 @@ function getApiBaseCandidates() {
 const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 180000;
+const FAST_POLL_INTERVAL_MS = 60000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 const APP_VERSION = "3.0.0";
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Smart City Thailand Monitor",
+  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Smart City Thailand Command Center",
   eyebrow: {
-    th: "สมาร์ทซิตี้ ไทยแลนด์",
-    en: "Smart City Thailand"
+    th: "ระบบปฏิบัติการเมืองแบบเรียลไทม์",
+    en: "Real-time Urban Operations"
   }
 });
 const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
@@ -622,10 +628,15 @@ const reporterSampleTemplates: ReporterSampleTemplate[] = [
 const operationalLayerToggleIds = [
   "smart-city-thailand",
   "bangkok-passages",
+  "traffy-fondue",
   "cctv-cameras",
   "weather",
   "pollution",
+  "air4thai",
   "itic-traffic",
+  "bma-flood-gates",
+  "bma-health-centers",
+  "bma-districts",
   "projects",
   "news",
   "resilience",
@@ -1636,13 +1647,25 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
     return ["mtt-grid", "projects", "itic-traffic", "cctv-cameras"];
   }
 
+  if (citySlug === "bangkok") {
+    return [
+      "traffy-fondue",
+      "itic-traffic",
+      "cctv-cameras",
+      "projects",
+      "resilience",
+      "bangkok-passages",
+      "eo-aerosol",
+      "eo-precipitation"
+    ];
+  }
+
   return [
     "weather",
     "pollution",
     "projects",
     "itic-traffic",
-    "resilience",
-    ...(citySlug === "bangkok" ? ["bangkok-passages"] : [])
+    "resilience"
   ];
 }
 
@@ -1842,9 +1865,10 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultCity = (import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani";
+  const defaultCity = (import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok";
   const isMttSite = defaultCity === "muang-thong-thani";
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || (isMttSite ? "city" : "national")) as DashboardView;
+  const isBangkokSite = defaultCity === "bangkok";
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || (isMttSite || isBangkokSite ? "city" : "national")) as DashboardView;
   const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? defaultCity;
@@ -2124,6 +2148,32 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchInterval: 1000
   });
 
+  const traffyFondueQuery = useQuery({
+    queryKey: ["traffy-fondue"],
+    queryFn: () =>
+      fetchFromApi<TraffyFondueSnapshot>(
+        "/api/traffy-fondue",
+        cloneSeed(traffyFondueSeed),
+        (value) => isObject(value) && typeof value.totalOpen === "number"
+      ),
+    refetchInterval: FAST_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
+  const floodStatusQuery = useQuery({
+    queryKey: ["flood-status"],
+    queryFn: () =>
+      fetchFromApi<BangkokFloodStatus>(
+        "/api/flood-status",
+        cloneSeed(bangkokFloodStatusSeed),
+        (value) => isObject(value) && typeof value.level === "string"
+      ),
+    refetchInterval: FAST_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2152,7 +2202,9 @@ function useDashboardData(searchParams: URLSearchParams) {
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
-    time: normalizeTimeSnapshot(timeQuery.data, timeFallback)
+    time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
+    traffyFondue: traffyFondueQuery.data ?? cloneSeed(traffyFondueSeed),
+    floodStatus: floodStatusQuery.data ?? cloneSeed(bangkokFloodStatusSeed)
   };
 }
 
@@ -2190,7 +2242,15 @@ function DashboardPage() {
   const assistantStatus = assistantStatusQuery.data ?? null;
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
-  const basemap = searchParams.get("basemap") === "satellite" ? "satellite" : "atlas";
+  const defaultBasemap = ((import.meta.env.VITE_DEFAULT_BASEMAP as string | undefined) || "satellite") as "atlas" | "satellite";
+  const basemap = (searchParams.get("basemap") === "atlas" ? "atlas" : searchParams.get("basemap") === "satellite" ? "satellite" : defaultBasemap) as "atlas" | "satellite";
+
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [kpiHistory, setKpiHistory] = useState<{ aqi: number[]; reports: number[]; resolved: number[]; temp: number[]; flood: number[]; rain: number[] }>({
+    aqi: [], reports: [], resolved: [], temp: [], flood: [], rain: []
+  });
+  const [kpiChanged, setKpiChanged] = useState<Set<string>>(new Set());
+  const prevKpiRef = useRef({ aqi: 0, reports: 0, resolved: 0, temp: 0, flood: 0, rain: 0 });
 
   useEffect(() => {
     document.title = PUBLIC_DASHBOARD_BRAND.title;
@@ -2222,8 +2282,108 @@ function DashboardPage() {
     mediaFeeds,
     publicCctvCameras,
     commandCenter,
-    time
+    time,
+    traffyFondue,
+    floodStatus
   } = useDashboardData(searchParams);
+
+  /* — KPI history: append latest values for sparklines (max 24 samples) — */
+  useEffect(() => {
+    setKpiHistory((prev) => {
+      const cap = (arr: number[], val: number) => [...arr.slice(-23), val];
+      return {
+        aqi: cap(prev.aqi, resilience.aqi),
+        reports: cap(prev.reports, traffyFondue.totalOpen),
+        resolved: cap(prev.resolved, Math.round(traffyFondue.resolutionRate * 100)),
+        temp: cap(prev.temp, resilience.weatherTemperatureC),
+        flood: cap(prev.flood, floodStatus.activeFloodPoints),
+        rain: cap(prev.rain, floodStatus.rainfallLast24h)
+      };
+    });
+  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h]);
+
+  /* — KPI change detection: flash cards when values update — */
+  useEffect(() => {
+    const prev = prevKpiRef.current;
+    const changed = new Set<string>();
+    if (prev.aqi !== resilience.aqi && prev.aqi !== 0) changed.add("aqi");
+    if (prev.reports !== traffyFondue.totalOpen && prev.reports !== 0) changed.add("reports");
+    if (prev.temp !== resilience.weatherTemperatureC && prev.temp !== 0) changed.add("temp");
+    if (prev.flood !== floodStatus.activeFloodPoints) changed.add("flood");
+    if (prev.rain !== floodStatus.rainfallLast24h) changed.add("rain");
+    const resolvedPct = Math.round(traffyFondue.resolutionRate * 100);
+    if (prev.resolved !== resolvedPct && prev.resolved !== 0) changed.add("resolved");
+
+    prevKpiRef.current = { aqi: resilience.aqi, reports: traffyFondue.totalOpen, resolved: resolvedPct, temp: resilience.weatherTemperatureC, flood: floodStatus.activeFloodPoints, rain: floodStatus.rainfallLast24h };
+    if (changed.size > 0) {
+      setKpiChanged(changed);
+      const timer = setTimeout(() => setKpiChanged(new Set()), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h]);
+
+  /* — Auto-rotate satellite presets every 60s for wall display — */
+  useEffect(() => {
+    if (!autoRotate) return;
+    let index = 0;
+    const presetIds = SATELLITE_PRESETS.map((p) => p.layers.join(","));
+    const timer = setInterval(() => {
+      index = (index + 1) % presetIds.length;
+      const next = buildStableParams();
+      next.set("layers", presetIds[index]);
+      setSearchParams(next, { replace: true });
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [autoRotate]);
+
+  /* — Sitrep export: generate markdown summary — */
+  function generateSitrep() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const lines = [
+      `# Bangkok IOC Daily Brief — ${dateStr}`,
+      `Generated: ${timeStr} ICT`,
+      "",
+      "## At a Glance",
+      `| Metric | Value |`,
+      `|--------|-------|`,
+      `| AQI | ${resilience.aqi} |`,
+      `| Temperature | ${resilience.weatherTemperatureC}°C |`,
+      `| Open Reports (Traffy) | ${traffyFondue.totalOpen} |`,
+      `| Resolution Rate | ${Math.round(traffyFondue.resolutionRate * 100)}% |`,
+      `| Flood Level | ${floodStatus.level} |`,
+      `| Active Flood Points | ${floodStatus.activeFloodPoints} |`,
+      `| Rainfall 24h | ${floodStatus.rainfallLast24h}mm |`,
+      `| Drainage Pumps | ${floodStatus.drainagePumpStatus.active}/${floodStatus.drainagePumpStatus.total} |`,
+      `| Live Cameras | ${publicCctvCameras.filter((c) => c.status === "live").length} |`,
+      "",
+      "## Top Citizen Report Categories",
+      ...traffyFondue.categoryBreakdown.slice(0, 6).map((c) => `- ${c.category}: ${c.count}`),
+      "",
+      "## Top Districts by Reports",
+      ...traffyFondue.districtBreakdown.slice(0, 5).map((d) => `- ${d.district}: ${d.count}`),
+      "",
+      "## Pending Actions",
+      ...decisions.slice(0, 5).map((d) => `- [${d.severity}] ${localize(lang, d.title)}`),
+      "",
+      "## Latest News",
+      ...news.slice(0, 3).map((n) => `- ${localize(lang, n.title)} (${n.source.sourceName})`),
+      "",
+      `---`,
+      `${PUBLIC_DASHBOARD_BRAND.title} · ${publicCctvCameras.length} camera feeds · ${sources.filter((s) => s.freshnessStatus === "live").length} live data sources`
+    ];
+    return lines.join("\n");
+  }
+
+  async function copySitrep() {
+    const md = generateSitrep();
+    try {
+      await navigator.clipboard.writeText(md);
+    } catch {
+      /* clipboard may be blocked */
+    }
+  }
 
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
@@ -2548,7 +2708,7 @@ function DashboardPage() {
       return "";
     }
 
-    return new Date(lastCheckMs + 300000).toISOString();
+    return new Date(lastCheckMs + LIVE_POLL_INTERVAL_MS).toISOString();
   })();
   const latestSyncSource =
     [...sources].sort(
@@ -2561,6 +2721,22 @@ function DashboardPage() {
     const leadDecision = filteredDecisions[0];
     if (leadDecision) {
       return localize(lang, leadDecision.title);
+    }
+
+    if (city === "bangkok" && floodStatus.level !== "normal") {
+      return lang === "th"
+        ? `เฝ้าระวังน้ำท่วม ${floodStatus.activeFloodPoints} จุดในกรุงเทพฯ`
+        : `Flood watch active across ${floodStatus.activeFloodPoints} Bangkok points`;
+    }
+
+    if (topTrafficFeature) {
+      const trafficClass = stringProperty(topTrafficFeature, "eventClass").toLowerCase();
+      const trafficStatus = stringProperty(topTrafficFeature, "status").toLowerCase();
+      if (trafficClass.includes("accident") || trafficClass.includes("closure") || trafficStatus.includes("active")) {
+        return lang === "th"
+          ? `จราจร: ${formatSignalLabel(stringProperty(topTrafficFeature, "eventClass"))} ใน${topTrafficFeature.title}`
+          : `Traffic: ${formatSignalLabel(stringProperty(topTrafficFeature, "eventClass"))} near ${topTrafficFeature.title}`;
+      }
     }
 
     if (!isMuangThongCityView && topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
@@ -3211,8 +3387,7 @@ function DashboardPage() {
     }
   ];
   const workspaceTitle = PUBLIC_DASHBOARD_BRAND.title;
-  const workspaceNarrative =
-    localize(lang, commandCenter.screenMode);
+  const brandContextLine = `${primaryScopeLabel} · ${primaryScopeDetail}`;
   const reporterStatusMeta = {
     received: {
       label: lang === "th" ? "Received" : "Received",
@@ -3818,9 +3993,13 @@ function DashboardPage() {
           <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
           <div className="brand-copy">
             <h1>{workspaceTitle}</h1>
-            <small className="brand-subline">{primaryScopeDetail}</small>
+            <small className="brand-subline">{brandContextLine}</small>
           </div>
           <span className="version-badge">v{APP_VERSION}</span>
+          <span className="ioc-clock" title="Bangkok time" role="status" aria-live="polite">
+            <span className="clock-label">BKK</span>
+            <strong className="clock-time">{time.bangkokIso ? new Date(time.bangkokIso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "--:--:--"}</strong>
+          </span>
         </div>
         <div className="top-controls">
           {isMuangThongCityView ? null : (
@@ -4606,65 +4785,143 @@ function DashboardPage() {
             </button>
           </section>
 
-          {/* — Hero: city pulse — */}
-          <section className="card overview-card hero">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "เมืองของคุณ" : "Your City"}</span>
-            <span className="status-pill">{lang === "th" ? "นนทบุรี" : "Nonthaburi"}</span>
-          </div>
-          <div className="terminal-callout compact">
-            <span className="eyebrow">{lang === "th" ? "สถานะ" : "Status"}</span>
-            <strong>{executiveSignal}</strong>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "ประชากร" : "Population"}</span>
-              <strong>{formatPopulation(selectedCity.population)}</strong>
-              <small>{lang === "th" ? "พื้นที่ปฏิบัติการ" : "Venue district"}</small>
+          {/* — Live KPI Strip — */}
+          {city === "bangkok" && (
+          <section className="card overview-card governor-kpi">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กรุงเทพฯ วันนี้" : "Bangkok Today"}</span>
+              <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level === "normal" ? (lang === "th" ? "ปกติ" : "Normal") : floodStatus.level.toUpperCase()}</span>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
-              <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
-              <small>{`${publicCctvCameras.length} total feeds`}</small>
+            <div className="governor-kpi-grid">
+              <div className={`kpi-item${resilience.aqi > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${resilience.aqi}`}>
+                <span className="eyebrow">AQI</span>
+                <strong className={resilience.aqi > 100 ? "tone-warning" : resilience.aqi > 50 ? "tone-neutral" : "tone-positive"}>{resilience.aqi}</strong>
+                {kpiHistory.aqi.length > 2 && <Sparkline values={kpiHistory.aqi} />}
+              </div>
+              <div className={`kpi-item${traffyFondue.totalOpen > 500 ? " kpi-alert" : ""}${kpiChanged.has("reports") ? " data-changed data-refreshed" : ""}`} aria-label={`${traffyFondue.totalOpen} open citizen reports`}>
+                <span className="eyebrow">{lang === "th" ? "ร้องเรียน" : "Reports"}</span>
+                <strong className="tone-warning">{traffyFondue.totalOpen}</strong>
+                {kpiHistory.reports.length > 2 && <Sparkline values={kpiHistory.reports} />}
+              </div>
+              <div className={`kpi-item${kpiChanged.has("resolved") ? " data-changed data-refreshed" : ""}`} aria-label={`${Math.round(traffyFondue.resolutionRate * 100)}% resolution rate`}>
+                <span className="eyebrow">{lang === "th" ? "แก้ไขแล้ว" : "Resolved"}</span>
+                <strong className="tone-positive">{Math.round(traffyFondue.resolutionRate * 100)}%</strong>
+                {kpiHistory.resolved.length > 2 && <Sparkline values={kpiHistory.resolved} />}
+              </div>
+              <div className={`kpi-item${kpiChanged.has("temp") ? " data-changed data-refreshed" : ""}`} aria-label={`Temperature ${resilience.weatherTemperatureC} degrees celsius`}>
+                <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temp"}</span>
+                <strong>{resilience.weatherTemperatureC}°C</strong>
+                {kpiHistory.temp.length > 2 && <Sparkline values={kpiHistory.temp} />}
+              </div>
+              <div className={`kpi-item${floodStatus.level !== "normal" ? " kpi-alert" : ""}${kpiChanged.has("flood") ? " data-changed data-refreshed" : ""}`} aria-label={`${floodStatus.activeFloodPoints} active flood points`}>
+                <span className="eyebrow">{lang === "th" ? "น้ำท่วม" : "Flood"}</span>
+                <strong className={floodStatus.level === "normal" ? "tone-positive" : "tone-warning"}>{floodStatus.activeFloodPoints}</strong>
+                {kpiHistory.flood.length > 2 && <Sparkline values={kpiHistory.flood} />}
+              </div>
+              <div className={`kpi-item${floodStatus.rainfallLast24h > 50 ? " kpi-alert" : ""}${kpiChanged.has("rain") ? " data-changed data-refreshed" : ""}`} aria-label={`${floodStatus.rainfallLast24h} millimeters rainfall in 24 hours`}>
+                <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
+                <strong>{floodStatus.rainfallLast24h}mm</strong>
+                {kpiHistory.rain.length > 2 && <Sparkline values={kpiHistory.rain} />}
+              </div>
             </div>
-          </div>
-          </section>
-
-          {/* — CCTV: prominent camera feeds — */}
-          <section className="card overview-card cctv-overview">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "กล้องสด" : "Live Cameras"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
-              {publicCctvCameras.filter((cam) => cam.status === "live").length} live
-            </button>
-          </div>
-          <div className="overview-inline-list">
-            {publicCctvCameras.slice(0, 6).map((cam) => (
-              <button key={cam.id} type="button" className={`data-item`} onClick={() => setActiveTab("cctv")}>
-                <div className="stack-title">
-                  <strong>{localize(lang, cam.label)}</strong>
-                  <span className={`status-tag ${cam.status}`}>{cam.status}</span>
-                </div>
-                <small>{cam.source} · {cam.zone}</small>
+            <div className="governor-presets">
+              {SATELLITE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className="preset-btn"
+                  aria-pressed={preset.layers.every((layerId) => layers.includes(layerId))}
+                  onClick={() => updateParam("layers", preset.layers.join(","))}
+                >
+                  {localize(lang, preset.label)}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="preset-btn"
+                aria-pressed={basemap === "satellite"}
+                onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")}
+              >
+                {basemap === "satellite" ? (lang === "th" ? "แผนที่ฐาน" : "Atlas Base") : (lang === "th" ? "ภาพดาวเทียม" : "Satellite Base")}
               </button>
-            ))}
-            {publicCctvCameras.length > 6 ? (
-              <button type="button" className="data-item" onClick={() => setActiveTab("cctv")}>
-                <strong>{`+${publicCctvCameras.length - 6} more cameras`}</strong>
+              <button
+                type="button"
+                className={`preset-btn${autoRotate ? " active" : ""}`}
+                aria-pressed={autoRotate}
+                onClick={() => setAutoRotate(!autoRotate)}
+              >
+                {autoRotate ? (lang === "th" ? "หยุดหมุน" : "Stop Rotate") : (lang === "th" ? "หมุนอัตโนมัติ" : "Auto-rotate")}
               </button>
-            ) : null}
-          </div>
+              <button type="button" className="preset-btn" onClick={copySitrep}>
+                {lang === "th" ? "รายงานสถานการณ์" : "Copy Sitrep"}
+              </button>
+            </div>
           </section>
+          )}
 
-          {/* — Briefing — */}
-          <section className="card overview-card briefing">
-          <div className="card-header">
+          {/* — Briefing: single compact line — */}
+          <section className="card overview-card briefing-compact" onClick={() => setActiveTab("insights")}>
             <span className="eyebrow">{copy.briefing}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
-          </div>
-          <strong>{localize(lang, overview.briefing.headline)}</strong>
-          <p>{localize(lang, overview.briefing.body)}</p>
+            <strong>{localize(lang, overview.briefing.headline)}</strong>
           </section>
+
+          {/* — Traffy Fondue: citizen reports — */}
+          {city === "bangkok" && (
+          <section className="card overview-card traffy-fondue">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ร้องเรียนประชาชน" : "Citizen Reports"}</span>
+              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("map")}>
+                {traffyFondue.totalOpen} {lang === "th" ? "รายการ" : "open"}
+              </button>
+            </div>
+            <div className="traffy-categories">
+              {traffyFondue.categoryBreakdown.slice(0, 6).map((cat) => (
+                <div key={cat.category} className="traffy-cat-row">
+                  <span className="traffy-cat-label">{cat.category}</span>
+                  <div className="traffy-cat-bar">
+                    <div className="traffy-cat-fill" style={{ width: `${Math.min(100, (cat.count / (traffyFondue.categoryBreakdown[0]?.count || 1)) * 100)}%` }} />
+                  </div>
+                  <span className="traffy-cat-count">{cat.count}</span>
+                </div>
+              ))}
+            </div>
+            <div className="traffy-districts">
+              <span className="eyebrow">{lang === "th" ? "เขตที่ร้องเรียนสูงสุด" : "Top Districts"}</span>
+              <div className="overview-inline-list">
+                {traffyFondue.districtBreakdown.slice(0, 5).map((d) => (
+                  <div key={d.district} className="data-item">
+                    <strong>{d.district}</strong>
+                    <small>{d.count} {lang === "th" ? "รายการ" : "reports"}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+          )}
+
+          {/* — Flood Status — */}
+          {city === "bangkok" && floodStatus.level !== "normal" && (
+          <section className={`card overview-card flood-alert flood-${floodStatus.level}`}>
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "สถานะน้ำท่วม" : "Flood Status"}</span>
+              <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level.toUpperCase()}</span>
+            </div>
+            <div className="overview-hero-metrics">
+              <div className="data-item">
+                <span className="eyebrow">{lang === "th" ? "จุดน้ำท่วม" : "Flood Points"}</span>
+                <strong>{floodStatus.activeFloodPoints}</strong>
+              </div>
+              <div className="data-item">
+                <span className="eyebrow">{lang === "th" ? "สูบน้ำ" : "Pumps"}</span>
+                <strong>{floodStatus.drainagePumpStatus.active}/{floodStatus.drainagePumpStatus.total}</strong>
+              </div>
+              <div className="data-item">
+                <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
+                <strong>{floodStatus.rainfallLast24h}mm</strong>
+              </div>
+            </div>
+          </section>
+          )}
 
           {/* — Decision Queue — */}
           <section className="card overview-card queue">
@@ -4715,62 +4972,38 @@ function DashboardPage() {
           </div>
           </section>
 
-          {/* — Resilience: weather + pollution — */}
-          <section className="card overview-card resilience">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather & Air"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-              {resilience.source.freshnessStatus}
-            </button>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">Weather</span>
-              <strong>{localize(lang, resilience.weatherSummary)}</strong>
+          {/* — System Status: compact grid of weather + sources + EO — */}
+          <section className="card overview-card system-status">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ระบบ" : "System"}</span>
+              <span className="status-pill">{formatUtcClock(latestSyncSource?.lastCheckedAt)}</span>
             </div>
-            <div className="data-item">
-              <span className="eyebrow">Air Quality</span>
-              <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+            <div className="system-status-grid">
+              <button type="button" className="sys-item" onClick={() => setActiveTab("satellite")}>
+                <span className="sys-label">{lang === "th" ? "อากาศ" : "Weather"}</span>
+                <span className={`sys-value ${resilience.source.freshnessStatus}`}>{resilience.weatherTemperatureC}°C</span>
+              </button>
+              <button type="button" className="sys-item" onClick={() => focusCityWithLayer(city, "pollution")}>
+                <span className="sys-label">AQI</span>
+                <span className={`sys-value ${resilience.aqi > 100 ? "warning" : resilience.aqi > 50 ? "delayed" : "live"}`}>{resilience.aqi}</span>
+              </button>
+              <button type="button" className="sys-item" onClick={() => setActiveTab("cctv")}>
+                <span className="sys-label">{lang === "th" ? "กล้อง" : "CCTV"}</span>
+                <span className="sys-value live">{publicCctvCameras.filter((c) => c.status === "live").length}</span>
+              </button>
+              <button type="button" className="sys-item" onClick={() => setActiveTab("satellite")}>
+                <span className="sys-label">EO</span>
+                <span className="sys-value live">{activeSatelliteLayers.length}</span>
+              </button>
+              <button type="button" className="sys-item" onClick={() => setActiveTab("data")}>
+                <span className="sys-label">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
+                <span className="sys-value live">{apiReadyCount}/{apiWatchSources.length}</span>
+              </button>
+              <button type="button" className="sys-item" onClick={() => setActiveTab("data")}>
+                <span className="sys-label">{lang === "th" ? "อัปเดต" : "Sync"}</span>
+                <span className="sys-value live">{resilience.source.freshnessStatus}</span>
+              </button>
             </div>
-          </div>
-          </section>
-
-          {/* — Sources — */}
-          <section className="card overview-card sources">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Data Sources"}</span>
-            <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
-          </div>
-          <div className="overview-inline-list">
-            {overviewSources.map((source) => (
-              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
-                <div className="stack-title">
-                  <strong>{source.name}</strong>
-                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
-                </div>
-              </a>
-            ))}
-          </div>
-          </section>
-
-          {/* — Satellite — */}
-          <section className="card overview-card ranking">
-          <div className="card-header">
-            <span className="eyebrow">{lang === "th" ? "ภาพจากดาวเทียม" : "Earth Observation"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
-              {activeSatelliteLayers.length} layers
-            </button>
-          </div>
-          <div className="overview-hero-metrics">
-            <div className="data-item">
-              <span className="eyebrow">Mode</span>
-              <strong>{satelliteDigest.status.mode}</strong>
-            </div>
-            <div className="data-item">
-              <span className="eyebrow">Sync</span>
-              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
-            </div>
-          </div>
           </section>
         </section>
       </div>
@@ -4806,6 +5039,30 @@ function DashboardPage() {
             <span className="eyebrow">{lang === "th" ? "เมือง" : "Cities"}</span>
             <strong>{coverageFeatureCount}</strong>
           </div>
+          {city === "bangkok" && (
+          <>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "ร้องเรียน" : "Traffy"}</span>
+            <strong>{traffyFondue.totalOpen}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "แก้ไข" : "Resolved"}</span>
+            <strong>{Math.round(traffyFondue.resolutionRate * 100)}%</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "น้ำท่วม" : "Flood"}</span>
+            <strong className={floodStatus.level !== "normal" ? "tone-warning" : ""}>{floodStatus.level}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "ฝน" : "Rain"}</span>
+            <strong>{floodStatus.rainfallLast24h}mm</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "สูบน้ำ" : "Pumps"}</span>
+            <strong>{floodStatus.drainagePumpStatus.active}/{floodStatus.drainagePumpStatus.total}</strong>
+          </div>
+          </>
+          )}
         </div>
         <div className="bottomstrip-row actions">
           <div className="bottomstrip-actions">

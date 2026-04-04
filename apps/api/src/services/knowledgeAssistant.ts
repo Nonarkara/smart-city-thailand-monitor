@@ -388,7 +388,7 @@ async function askGemini(
       .join("\n");
 
     const systemInstruction = [
-      "You are the AI assistant for the Smart City Thailand Monitor dashboard.",
+      "You are the AI assistant for the Smart City Thailand Command Center dashboard.",
       "Answer concisely in the requested language. Use the provided local knowledge context and dashboard state to ground your answer.",
       "If the context does not contain enough information, say so honestly but still try to provide useful insight.",
       `Dashboard context: ${contextSummary.en}`,

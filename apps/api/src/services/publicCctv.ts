@@ -1,9 +1,8 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { cloneSeed, publicCctvCameras as seededPublicCctvCameras } from "@smart-city/shared";
 import type { LocalizedText, PublicCctvCamera } from "@smart-city/shared";
 import { fetchJsonOrNull } from "../adapters/common.js";
 import { config } from "../config.js";
+import { loadDurableJsonSnapshot, persistDurableJsonSnapshot } from "../data/durableStore.js";
 
 interface LongdoCameraFeedItem {
   title?: string;
@@ -74,16 +73,6 @@ function getCandidatePreviewUrls(camera: PublicCctvCamera) {
   return uniqueUrls([camera.previewUrl ?? "", camera.imageUrl, getPakKretFallbackPreview(camera.cameraId)]);
 }
 
-function resolveCctvSnapshotPath() {
-  if (!config.cctvSnapshotPath) {
-    return "";
-  }
-
-  return path.isAbsolute(config.cctvSnapshotPath)
-    ? config.cctvSnapshotPath
-    : path.resolve(process.cwd(), config.cctvSnapshotPath);
-}
-
 function isLocalizedText(value: unknown): value is LocalizedText {
   return Boolean(
     value &&
@@ -112,36 +101,21 @@ function isPublicCctvCameraRecord(value: unknown): value is PublicCctvCamera {
   );
 }
 
-async function writeSnapshotFile(payload: string) {
-  const targetPath = resolveCctvSnapshotPath();
-  if (!targetPath) {
-    return;
-  }
-
-  try {
-    await mkdir(path.dirname(targetPath), { recursive: true });
-    const tempPath = `${targetPath}.tmp`;
-    await writeFile(tempPath, payload, "utf8");
-    await rename(tempPath, targetPath);
-  } catch (error) {
-    console.warn("Failed to persist public CCTV snapshot", error);
-  }
-}
-
 function persistPublicCctvSnapshot(cameras: PublicCctvCamera[], updatedAt: string) {
-  const payload = JSON.stringify(
-    {
-      updatedAt,
-      total: cameras.length,
-      live: cameras.filter((camera) => camera.status === "live").length,
-      offline: cameras.filter((camera) => camera.status === "offline").length,
-      cameras
-    },
-    null,
-    2
-  );
+  const payload = {
+    updatedAt,
+    total: cameras.length,
+    live: cameras.filter((camera) => camera.status === "live").length,
+    offline: cameras.filter((camera) => camera.status === "offline").length,
+    cameras
+  };
 
-  writeQueue = writeQueue.then(() => writeSnapshotFile(payload));
+  writeQueue = writeQueue
+    .then(() => persistDurableJsonSnapshot("public-cctv", config.cctvSnapshotPath, payload))
+    .catch((error) => {
+      console.warn("Failed to persist public CCTV snapshot", error);
+    });
+
   return writeQueue;
 }
 
@@ -151,14 +125,15 @@ async function ensurePersistedCacheLoaded() {
   }
 
   cacheLoaded = true;
-  const targetPath = resolveCctvSnapshotPath();
-  if (!targetPath) {
-    return;
-  }
 
   try {
-    const raw = await readFile(targetPath, "utf8");
-    const parsed = JSON.parse(raw) as { updatedAt?: string; cameras?: unknown };
+    const parsed = await loadDurableJsonSnapshot<{ updatedAt?: string; cameras?: unknown }>(
+      "public-cctv",
+      config.cctvSnapshotPath
+    );
+    if (!parsed) {
+      return;
+    }
     const persistedCameras = Array.isArray(parsed.cameras)
       ? parsed.cameras.filter((camera): camera is PublicCctvCamera => isPublicCctvCameraRecord(camera))
       : [];

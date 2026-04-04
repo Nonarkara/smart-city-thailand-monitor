@@ -35,7 +35,10 @@ import type {
   WorkflowBoardStatus,
   PublicCctvCamera,
   ImpactArenaEvent,
-  MttTrafficSnapshot
+  MttTrafficSnapshot,
+  TraffyFondueSnapshot,
+  BangkokFloodStatus,
+  TraffyReport
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -1617,6 +1620,52 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
     message: "Embed-safe and link-safe live media references for the monitor."
+  },
+  /* ── Bangkok Governor's IOC Sources ── */
+  {
+    id: "traffy-fondue",
+    name: "Traffy Fondue (BMA)",
+    category: "catalog",
+    url: "https://traffy.in.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Real-time citizen reports via LINE chatbot for Bangkok."
+  },
+  {
+    id: "air4thai",
+    name: "Air4Thai / WAQI (PCD)",
+    category: "environment",
+    url: "http://air4thai.pcd.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Official Thai government AQI stations for Bangkok metro area."
+  },
+  {
+    id: "tmd-weather",
+    name: "Thai Meteorological Dept",
+    category: "environment",
+    url: "https://www.tmd.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "TMD forecasts and weather warnings for Central Thailand."
+  },
+  {
+    id: "bma-gis",
+    name: "BMA GIS Portal",
+    category: "geospatial",
+    url: "https://bmagis.bangkok.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "ArcGIS FeatureServer layers for BMA infrastructure."
+  },
+  {
+    id: "bma-flood",
+    name: "BMA Flood Management",
+    category: "environment",
+    url: "https://flood.bangkok.go.th",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Bangkok flood nowcasting and drainage status."
   }
 ];
 
@@ -1829,6 +1878,62 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "gistda-disaster",
     legendLabel: "Disaster",
     zIndex: 16
+  },
+  /* ── Bangkok Governor's IOC layers ── */
+  {
+    id: "traffy-fondue",
+    label: { th: "ร้องเรียน Traffy", en: "Citizen Reports" },
+    active: true,
+    color: "#f97316",
+    kind: "signal",
+    defaultViews: ["bangkok"],
+    sourceId: "traffy-fondue",
+    legendLabel: "Traffy Fondue",
+    zIndex: 50
+  },
+  {
+    id: "bma-flood-gates",
+    label: { th: "ประตูระบายน้ำ", en: "Flood Gates" },
+    active: false,
+    color: "#0ea5e9",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Flood Gates",
+    zIndex: 44
+  },
+  {
+    id: "bma-health-centers",
+    label: { th: "ศูนย์สุขภาพ", en: "Health Centers" },
+    active: false,
+    color: "#10b981",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Health",
+    zIndex: 38
+  },
+  {
+    id: "bma-districts",
+    label: { th: "เขต กทม.", en: "BKK Districts" },
+    active: false,
+    color: "#94a3b8",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Districts",
+    zIndex: 5
+  },
+  {
+    id: "air4thai",
+    label: { th: "คุณภาพอากาศ PCD", en: "Official AQI" },
+    active: false,
+    color: "#a855f7",
+    kind: "signal",
+    defaultViews: ["bangkok"],
+    sourceId: "air4thai",
+    legendLabel: "Air4Thai",
+    zIndex: 46
   }
 ];
 
@@ -4895,6 +5000,129 @@ export const mttTrafficSnapshot: MttTrafficSnapshot = {
   ],
   overallStatus: "moderate",
   source: seedMeta("ITIC / Longdo Traffic", "https://traffic.longdo.com", "live")
+};
+
+/* ── Bangkok Governor's IOC — Traffy Fondue Seed ── */
+
+const traffySeedReports: TraffyReport[] = [
+  {
+    ticketId: "TF-2026-001",
+    category: { th: "ถนนชำรุด", en: "Road damage" },
+    status: "received",
+    lat: 13.7563,
+    lon: 100.5018,
+    district: "พระนคร",
+    timestamp: seededAt,
+    description: "หลุมกลางถนน ถ.ราชดำเนิน"
+  },
+  {
+    ticketId: "TF-2026-002",
+    category: { th: "น้ำท่วม", en: "Flooding" },
+    status: "in-progress",
+    lat: 13.8211,
+    lon: 100.5142,
+    district: "บางซื่อ",
+    timestamp: seededAt,
+    description: "น้ำท่วมขัง ซ.ประชาราษฎร์"
+  },
+  {
+    ticketId: "TF-2026-003",
+    category: { th: "ขยะ", en: "Waste" },
+    status: "received",
+    lat: 13.7280,
+    lon: 100.5231,
+    district: "สาทร",
+    timestamp: seededAt,
+    description: "ขยะตกค้างริมถนน"
+  },
+  {
+    ticketId: "TF-2026-004",
+    category: { th: "ไฟฟ้า / แสงสว่าง", en: "Lighting" },
+    status: "resolved",
+    lat: 13.7466,
+    lon: 100.5392,
+    district: "บางรัก",
+    timestamp: seededAt,
+    description: "ไฟส่องสว่างดับ ซ.เจริญกรุง 30"
+  },
+  {
+    ticketId: "TF-2026-005",
+    category: { th: "ทางเท้า", en: "Sidewalk" },
+    status: "in-progress",
+    lat: 13.7449,
+    lon: 100.4980,
+    district: "ปทุมวัน",
+    timestamp: seededAt,
+    description: "ทางเท้าชำรุด หน้าสยามพารากอน"
+  },
+  {
+    ticketId: "TF-2026-006",
+    category: { th: "ถนนชำรุด", en: "Road damage" },
+    status: "received",
+    lat: 13.6898,
+    lon: 100.5310,
+    district: "บางคอแหลม",
+    timestamp: seededAt,
+    description: "พื้นถนนแตกร้าว ถ.เจริญราษฎร์"
+  },
+  {
+    ticketId: "TF-2026-007",
+    category: { th: "ระบบระบายน้ำ", en: "Drainage" },
+    status: "in-progress",
+    lat: 13.7738,
+    lon: 100.5703,
+    district: "ห้วยขวาง",
+    timestamp: seededAt,
+    description: "ท่อระบายน้ำอุดตัน ซ.ลาดพร้าว 48"
+  },
+  {
+    ticketId: "TF-2026-008",
+    category: { th: "ต้นไม้", en: "Trees" },
+    status: "received",
+    lat: 13.8057,
+    lon: 100.5471,
+    district: "จตุจักร",
+    timestamp: seededAt,
+    description: "กิ่งไม้ล้มขวางทาง สวนจตุจักร"
+  }
+];
+
+export const traffyFondueSeed: TraffyFondueSnapshot = {
+  totalOpen: 347,
+  resolvedToday: 89,
+  resolutionRate: 0.72,
+  categoryBreakdown: [
+    { category: "Road damage", count: 98 },
+    { category: "Flooding", count: 67 },
+    { category: "Waste", count: 52 },
+    { category: "Lighting", count: 41 },
+    { category: "Sidewalk", count: 35 },
+    { category: "Drainage", count: 28 },
+    { category: "Trees", count: 16 },
+    { category: "Other", count: 10 }
+  ],
+  districtBreakdown: [
+    { district: "บางซื่อ", count: 42 },
+    { district: "จตุจักร", count: 38 },
+    { district: "ห้วยขวาง", count: 35 },
+    { district: "พระนคร", count: 29 },
+    { district: "สาทร", count: 27 },
+    { district: "บางรัก", count: 24 },
+    { district: "ปทุมวัน", count: 22 },
+    { district: "บางคอแหลม", count: 19 },
+    { district: "ดินแดง", count: 18 },
+    { district: "ลาดพร้าว", count: 15 }
+  ],
+  recentReports: traffySeedReports,
+  updatedAt: seededAt
+};
+
+export const bangkokFloodStatusSeed: BangkokFloodStatus = {
+  level: "normal",
+  activeFloodPoints: 3,
+  drainagePumpStatus: { active: 187, total: 214 },
+  rainfallLast24h: 12.4,
+  updatedAt: seededAt
 };
 
 export function localize(locale: Locale, value: { th: string; en: string }): string {

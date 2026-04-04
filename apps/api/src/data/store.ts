@@ -1,6 +1,7 @@
 import {
   activityLog as activityLogSeed,
   auditTrail as auditTrailSeed,
+  bangkokFloodStatusSeed,
   briefing as briefingSeed,
   cities as citySeed,
   changePulse as changePulseSeed,
@@ -20,11 +21,13 @@ import {
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
-  sources as sourceSeed
+  sources as sourceSeed,
+  traffyFondueSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
   AuditEventRecord,
+  BangkokFloodStatus,
   BriefingNote,
   CommandCenterSnapshot,
   ChangePulse,
@@ -45,7 +48,8 @@ import type {
   SourceRecord,
   SyncHealthRecord,
   TimeRange,
-  TimeSnapshot
+  TimeSnapshot,
+  TraffyFondueSnapshot
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { persistStoreSnapshot } from "./persistence.js";
@@ -71,6 +75,8 @@ interface StoreState {
   lastSyncAt: string;
   latestTime: TimeSnapshot;
   commandCenter: CommandCenterSnapshot;
+  traffyFondue: TraffyFondueSnapshot;
+  floodStatus: BangkokFloodStatus;
 }
 
 export type StoreSnapshot = StoreState;
@@ -150,7 +156,9 @@ function createState(): StoreState {
     syncHealth: [],
     lastSyncAt: new Date().toISOString(),
     latestTime: createTimeSnapshot(),
-    commandCenter: createCommandCenterSnapshot()
+    commandCenter: createCommandCenterSnapshot(),
+    traffyFondue: cloneSeed(traffyFondueSeed),
+    floodStatus: cloneSeed(bangkokFloodStatusSeed)
   };
 }
 
@@ -301,6 +309,14 @@ export const store = {
       ...cloneSeed(seeded.mapFeaturesByLayer),
       ...(snapshot.mapFeaturesByLayer ? cloneSeed(snapshot.mapFeaturesByLayer) : {})
     };
+
+    state.traffyFondue =
+      snapshot.traffyFondue && snapshot.traffyFondue.totalOpen > 0
+        ? cloneSeed(snapshot.traffyFondue)
+        : seeded.traffyFondue;
+    state.floodStatus = snapshot.floodStatus
+      ? cloneSeed(snapshot.floodStatus)
+      : seeded.floodStatus;
 
     return this.getSnapshot();
   },
@@ -493,6 +509,14 @@ export const store = {
 
   getMarketSnapshot() {
     return cloneSeed(state.marketSnapshot);
+  },
+
+  getTraffyFondue() {
+    return cloneSeed(state.traffyFondue);
+  },
+
+  getFloodStatus() {
+    return cloneSeed(state.floodStatus);
   },
 
   getSources() {
@@ -704,12 +728,22 @@ export const store = {
   applySyncResults(results: AdapterSyncResult[]) {
     const syncTimestamp = new Date().toISOString();
     state.lastSyncAt = syncTimestamp;
-    state.syncHealth = results.map((result) => ({
-      sourceId: result.sourceId,
-      status: result.status,
-      fetchedAt: result.fetchedAt,
-      message: result.message
-    }));
+    const syncHealthMap = new Map(
+      state.syncHealth.map((record) => [record.sourceId, cloneSeed(record)])
+    );
+
+    results.forEach((result) => {
+      syncHealthMap.set(result.sourceId, {
+        sourceId: result.sourceId,
+        status: result.status,
+        fetchedAt: result.fetchedAt,
+        message: result.message
+      });
+    });
+
+    state.syncHealth = [...syncHealthMap.values()].sort((left, right) =>
+      right.fetchedAt.localeCompare(left.fetchedAt)
+    );
 
     const sourceMap = new Map(state.sources.map((source) => [source.id, source]));
     results.forEach((result) => {
@@ -759,6 +793,20 @@ export const store = {
 
       if (result.timeSnapshot) {
         state.latestTime = result.timeSnapshot;
+      }
+
+      if (result.traffyFonduePatch) {
+        state.traffyFondue = {
+          ...state.traffyFondue,
+          ...result.traffyFonduePatch
+        };
+      }
+
+      if (result.floodStatusPatch) {
+        state.floodStatus = {
+          ...state.floodStatus,
+          ...result.floodStatusPatch
+        };
       }
     });
 

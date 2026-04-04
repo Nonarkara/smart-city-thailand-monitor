@@ -13,9 +13,11 @@
     "@fastify/cors": "^10.0.1",
     "@google/genai": "^1.43.0",
     "@smart-city/shared": "file:../../packages/shared",
+    "@types/pg": "^8.20.0",
     "dotenv": "^17.3.1",
     "fast-xml-parser": "^5.4.1",
-    "fastify": "^5.1.0"
+    "fastify": "^5.1.0",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

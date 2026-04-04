@@ -1,20 +1,20 @@
 :root {
-  color-scheme: light;
-  --bg: #ffffff;
-  --panel: #ffffff;
-  --panel-strong: #fafafa;
-  --panel-soft: #f5f5f7;
-  --line: #e5e5e5;
-  --line-strong: #d2d2d7;
-  --ink: #1d1d1f;
-  --muted: #86868b;
-  --blue: #0071e3;
-  --green: #34c759;
-  --amber: #ff9f0a;
-  --red: #ff3b30;
-  --focus: rgba(0, 113, 227, 0.2);
-  --radius: 12px;
-  --shadow: none;
+  color-scheme: dark;
+  --bg: #0a0e14;
+  --panel: #111720;
+  --panel-strong: #161d28;
+  --panel-soft: #0d1219;
+  --line: #1e2a3a;
+  --line-strong: #2a3a4e;
+  --ink: #e8edf3;
+  --muted: #6b7a8d;
+  --blue: #38bdf8;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --focus: rgba(56, 189, 248, 0.2);
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -2726,31 +2726,31 @@ textarea {
 /* === OPS THEME (Smart City Thailand — 2013 Jony Ive flat Apple design) === */
 /* === OPS THEME — Dr. Non Stack: Manrope + Inter, Ive × Rams === */
 [data-theme="ops"] {
-  color-scheme: light;
+  color-scheme: dark;
   --topbar-height: 48px;
   --bottomstrip-height: 52px;
   --tab-height: 42px;
-  --bg: #fafafa;
-  --panel: #ffffff;
-  --panel-strong: #ffffff;
-  --panel-soft: #f4f4f5;
-  --line: rgba(24, 24, 27, 0.08);
-  --line-strong: rgba(24, 24, 27, 0.12);
-  --ink: #18181b;
-  --muted: #a1a1aa;
-  --blue: #2563eb;
-  --green: #16a34a;
-  --amber: #d97706;
-  --red: #dc2626;
-  --focus: rgba(37, 99, 235, 0.18);
-  --shadow: 0 1px 3px rgba(0,0,0,0.04);
-  --radius: 12px;
-  --glow-blue: transparent;
-  --glow-green: transparent;
+  --bg: #0a0e14;
+  --panel: #111720;
+  --panel-strong: #161d28;
+  --panel-soft: #0d1219;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --ink: #e8edf3;
+  --muted: #6b7a8d;
+  --blue: #38bdf8;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --focus: rgba(56, 189, 248, 0.2);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --radius: 8px;
+  --glow-blue: rgba(56, 189, 248, 0.08);
+  --glow-green: rgba(52, 211, 153, 0.08);
   --sidebar-width: 0px;
   --context-width: 0px;
   --footer-height: var(--bottomstrip-height);
-  --overlay-bg: rgba(250, 250, 250, 0.92);
+  --overlay-bg: rgba(10, 14, 20, 0.92);
   --heading-font: "Manrope", -apple-system, BlinkMacSystemFont, "Noto Sans Thai", sans-serif;
   --body-font: "Inter", -apple-system, BlinkMacSystemFont, "Noto Sans Thai", sans-serif;
   --mono-font: "SF Mono", "Fira Code", ui-monospace, monospace;
@@ -2791,8 +2791,8 @@ textarea {
 [data-theme="ops"],
 [data-theme="ops"] html,
 [data-theme="ops"] body {
-  background: #fafafa;
-  color: #18181b;
+  background: #0a0e14;
+  color: #e8edf3;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Noto Sans Thai", sans-serif;
   font-weight: 400;
   font-size: 16px;
@@ -4307,6 +4307,746 @@ textarea:focus {
   cursor: pointer;
 }
 
+/* ── Bangkok Governor's IOC ── */
+
+.overview-card.governor-kpi {
+  grid-column: 1 / -1;
+  background: linear-gradient(165deg, rgba(56, 189, 248, 0.08) 0%, rgba(17, 23, 32, 0.95) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.overview-card.governor-kpi::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), transparent);
+}
+
+.governor-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.kpi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.3rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.kpi-item .eyebrow {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.kpi-item strong {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-family: var(--heading-font);
+  letter-spacing: -0.02em;
+}
+
+.tone-positive { color: #34d399; }
+.tone-warning { color: #fbbf24; }
+.tone-neutral { color: #60a5fa; }
+
+.overview-card.traffy-fondue {
+  grid-column: 1 / -1;
+}
+
+.traffy-categories {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.traffy-cat-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 35px;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 0.2rem 0;
+}
+
+.traffy-cat-label {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.traffy-cat-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+.traffy-cat-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.traffy-cat-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: bar-shine 2.5s infinite;
+}
+
+@keyframes bar-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.traffy-cat-count {
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.traffy-districts {
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 0.6rem;
+  margin-top: 0.2rem;
+}
+
+.overview-card.flood-alert {
+  grid-column: 1 / -1;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.overview-card.flood-alert::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.flood-alert.flood-watch::before { background: var(--amber); }
+.flood-alert.flood-warning::before { background: #f97316; }
+.flood-alert.flood-critical::before { background: var(--red); }
+
+.flood-alert.flood-warning {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(17, 23, 32, 0.9));
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.flood-alert.flood-critical {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), rgba(17, 23, 32, 0.9));
+  border-color: rgba(239, 68, 68, 0.3);
+  animation: outline-pulse 2s infinite;
+}
+
+@keyframes outline-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.status-pill.flood-normal { background: var(--green); color: #fff; box-shadow: 0 2px 5px rgba(34,197,94,0.3); }
+.status-pill.flood-watch { background: var(--amber); color: #fff; box-shadow: 0 2px 5px rgba(245,158,11,0.3); }
+.status-pill.flood-warning { background: #f97316; color: #fff; box-shadow: 0 2px 5px rgba(249,115,22,0.3); }
+.status-pill.flood-critical { background: var(--red); color: #fff; box-shadow: 0 2px 5px rgba(239,68,68,0.3); }
+
+@media (max-width: 600px) {
+  .governor-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.governor-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.3rem;
+}
+
+.preset-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.preset-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--blue);
+}
+
+/* — IOC Live Clock — */
+.ioc-clock {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.06);
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-label {
+  font-size: 0.5rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.clock-time {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--blue);
+  font-family: var(--mono-font, "SF Mono", monospace);
+}
+
+/* — Compact Briefing — */
+.overview-card.briefing-compact {
+  grid-column: 1 / -1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.overview-card.briefing-compact .eyebrow {
+  flex-shrink: 0;
+}
+
+.overview-card.briefing-compact strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+}
+
+/* — System Status Grid — */
+.overview-card.system-status {
+  grid-column: 1 / -1;
+}
+
+.system-status-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.2rem;
+}
+
+.sys-item {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  padding: 0.2rem 0.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.sys-item:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+.sys-label {
+  font-size: 0.45rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sys-value {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.sys-value.live { color: var(--green); }
+.sys-value.delayed { color: var(--amber); }
+.sys-value.warning { color: var(--red); }
+.sys-value.stale { color: var(--muted); }
+
+/* — KPI Alert Pulse — */
+.kpi-item.kpi-alert {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.08);
+  animation: kpi-pulse 2s ease-in-out infinite;
+}
+
+@keyframes kpi-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(248, 113, 113, 0.25); }
+}
+
+/* — Sparkline inside KPI — */
+.kpi-item .sparkline {
+  width: 100%;
+  height: 16px;
+  margin-top: 0.1rem;
+}
+
+.kpi-item .sparkline polyline {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.kpi-item.kpi-alert .sparkline polyline {
+  stroke: var(--red);
+}
+
+/* — Auto-rotate active — */
+.preset-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--blue);
+}
+
+.preset-btn[aria-pressed="true"] {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--blue);
+}
+
+/* — Map HUD: coordinates + layer counts — */
+.map-hud {
+  position: absolute;
+  bottom: 96px;
+  left: 12px;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  z-index: 800;
+  pointer-events: none;
+}
+
+.hud-coords {
+  font-size: 0.55rem;
+  font-family: var(--mono-font, "SF Mono", monospace);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.hud-counts {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.hud-count {
+  font-size: 0.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  border-left: 3px solid;
+  backdrop-filter: blur(4px);
+}
+
+/* — Map Measure Tool — */
+.map-measure-btn {
+  position: absolute;
+  bottom: 96px;
+  right: 120px;
+  z-index: 800;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+}
+
+.map-measure-btn:hover,
+.map-measure-btn.active {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.map-measure-result {
+  position: absolute;
+  bottom: 134px;
+  right: 100px;
+  z-index: 800;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(8px);
+}
+
+.measure-points {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.measure-clear {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.5rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.measure-clear:hover {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #f87171;
+}
+
+.measure-label {
+  background: rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  color: #38bdf8 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  padding: 1px 4px !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+
+.measure-label::before {
+  border-top-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* — Map Feature Detail Card — */
+.map-feature-card {
+  position: absolute;
+  top: 56px;
+  right: 8px;
+  z-index: 800;
+  width: 280px;
+  background: rgba(17, 23, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: grid;
+  gap: 0.3rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: card-slide-in 0.2s ease-out;
+}
+
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feature-card-layer {
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-left: 3px solid;
+  padding-left: 0.3rem;
+}
+
+.feature-card-close {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.1rem;
+}
+
+.feature-card-close:hover {
+  color: var(--red);
+}
+
+.feature-card-title {
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.feature-card-desc {
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.feature-card-props {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.15rem;
+}
+
+.feature-card-prop {
+  display: flex;
+  flex-direction: column;
+  padding: 0.15rem 0.2rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.prop-key {
+  font-size: 0.45rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.prop-val {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.feature-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.45rem;
+  color: var(--muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 0.2rem;
+}
+
+/* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
+
+/* — Tabular numbers globally — */
+strong, .summary-value, .sys-value, .hud-coords, .hud-count, .clock-time,
+.traffy-cat-count, .prop-val, .bottomstrip-metric strong {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* — KPI number count animation on data change — */
+@keyframes count-pop {
+  0% { transform: scale(1); filter: brightness(1); }
+  30% { transform: scale(1.12); filter: brightness(1.3); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.kpi-item.data-changed strong {
+  animation: count-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* — Data refresh pulse (cyan, distinct from alert red) — */
+@keyframes data-refresh {
+  0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.3); }
+  50% { box-shadow: 0 0 8px 2px rgba(56, 189, 248, 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+
+.kpi-item.data-refreshed {
+  animation: data-refresh 0.6s ease-out;
+}
+
+/* — Shimmer loading placeholder — */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 4px;
+  min-height: 1em;
+}
+
+/* — Typography refinement for 72" — */
+.kpi-item strong {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em;
+}
+
+.eyebrow {
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+/* — Sparkline draw-in animation — */
+@keyframes sparkline-draw {
+  from { stroke-dashoffset: 300; }
+  to { stroke-dashoffset: 0; }
+}
+
+.sparkline polyline {
+  stroke-dasharray: 300;
+  animation: sparkline-draw 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* — Panel hover depth — */
+.overview-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.overview-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.kpi-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* — Map point fade-in — */
+.leaflet-interactive {
+  transition: opacity 0.3s ease;
+}
+
+/* — Feature card slide-in (already exists but enhance easing) — */
+.map-feature-card {
+  animation: card-slide-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* — Accessibility: focus-visible — */
+button:focus-visible,
+a:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.kpi-item:focus-visible,
+.preset-btn:focus-visible,
+.summary-card:focus-visible,
+.sys-item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* — Status pill micro-animation — */
+.status-pill {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.status-pill:hover {
+  transform: scale(1.05);
+}
+
+/* — Traffy bar fill shimmer on load — */
+.traffy-cat-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.traffy-cat-fill::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: bar-shine 2s ease-in-out infinite;
+}
+
+/* — IOC clock pulse dot — */
+.ioc-clock::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── End Bangkok Governor's IOC ── */
+
 @media (max-width: 1480px) {
   .dashboard-stage {
     grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.95fr);
@@ -4324,7 +5064,10 @@ textarea:focus {
 
   .overview-card.hero,
   .overview-card.cctv-overview,
-  .overview-card.briefing {
+  .overview-card.briefing,
+  .overview-card.governor-kpi,
+  .overview-card.traffy-fondue,
+  .overview-card.flood-alert {
     grid-column: 1 / -1;
   }
 
@@ -5713,8 +6456,8 @@ textarea:focus {
 
 /* Topbar: frosted glass, ultra-clean hairline */
 [data-theme="ops"] .topbar {
-  border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
-  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 14, 20, 0.85);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
@@ -5960,8 +6703,8 @@ textarea:focus {
 
 /* Map alert chip warning: amber tint */
 [data-theme="ops"] .map-alert-chip.warning {
-  background: rgba(255, 149, 0, 0.12);
-  color: #c77800;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
 }
 
 /* ===================================================================
@@ -6150,4 +6893,168 @@ textarea:focus {
 [data-theme="editorial"] .sitrep-header {
   color: var(--red);
   border-bottom-color: rgba(200, 16, 46, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════
+   72" IOC Dense Layout — War Room / Large Display
+   ═══════════════════════════════════════════════════ */
+
+@media (min-width: 1920px) {
+  /* — More map, tighter sidebar — */
+  .dashboard-stage {
+    grid-template-columns: minmax(0, 2.2fr) minmax(480px, 1fr);
+  }
+
+  /* — 3-column panel grid — */
+  .overview-shell {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+    gap: 0.3rem;
+    padding: 0.3rem;
+  }
+
+  /* — Summary strip spans all 3 cols — */
+  .summary-strip {
+    grid-column: 1 / -1;
+    gap: 0.25rem;
+  }
+
+  .summary-card {
+    padding: 0.3rem 0.4rem;
+  }
+
+  .summary-card .summary-label {
+    font-size: 0.5rem;
+  }
+
+  .summary-card .summary-value {
+    font-size: 0.85rem;
+  }
+
+  .summary-card .summary-sub {
+    font-size: 0.45rem;
+  }
+
+  /* — Governor KPI spans all 3 cols — */
+  .overview-card.governor-kpi {
+    grid-column: 1 / -1;
+  }
+
+  .governor-kpi-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.2rem;
+  }
+
+  .kpi-item {
+    padding: 0.2rem 0.15rem;
+  }
+
+  .kpi-item strong {
+    font-size: 0.95rem;
+  }
+
+  /* — Compact cards — */
+  .overview-card {
+    padding: 0.35rem 0.4rem;
+  }
+
+  .overview-card .card-header {
+    margin-bottom: 0.05rem;
+  }
+
+  .overview-card strong {
+    font-size: 0.7rem;
+    line-height: 1.15;
+  }
+
+  .overview-card > p,
+  .overview-card .data-item small,
+  .overview-card small {
+    font-size: 0.55rem;
+  }
+
+  .overview-card .data-item {
+    padding: 0.28rem 0.35rem;
+  }
+
+  .overview-card .terminal-callout strong {
+    font-size: 0.82rem;
+  }
+
+  .overview-hero-metrics {
+    gap: 0.25rem;
+  }
+
+  .overview-inline-list {
+    gap: 0.25rem;
+  }
+
+  /* — Traffy panel spans 2 cols for more room — */
+  .overview-card.traffy-fondue {
+    grid-column: span 2;
+  }
+
+  .traffy-cat-row {
+    font-size: 0.58rem;
+  }
+
+  /* — Full-width cards on IOC — */
+  .overview-card.hero {
+    grid-column: 1 / -1;
+  }
+
+  .overview-card.flood-alert {
+    grid-column: 1 / -1;
+  }
+
+  /* — Eyebrow labels — */
+  .eyebrow {
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* — Status pills — */
+  .status-pill {
+    font-size: 0.5rem;
+    padding: 0.12rem 0.4rem;
+  }
+
+  /* — Bottom strip: more columns — */
+  .bottomstrip-row.metrics {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  /* — Topbar compact — */
+  .topbar-select {
+    min-width: 90px;
+    font-size: 0.62rem;
+    padding: 0.18rem 0.25rem;
+  }
+}
+
+/* Ultra-wide: 4K / 3840px+ */
+@media (min-width: 3200px) {
+  .dashboard-stage {
+    grid-template-columns: minmax(0, 2.5fr) minmax(600px, 1.2fr);
+  }
+
+  .overview-shell {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+
+  .overview-card.governor-kpi,
+  .overview-card.hero,
+  .overview-card.flood-alert {
+    grid-column: 1 / -1;
+  }
+
+  .overview-card.traffy-fondue {
+    grid-column: span 2;
+  }
+
+  .bottomstrip-row.metrics {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+  }
 }

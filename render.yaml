@@ -17,8 +17,10 @@ services:
         value: bangkok
       - key: VITE_DEFAULT_VIEW
         value: national
+      - key: VITE_DEFAULT_BASEMAP
+        value: satellite
       - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Monitor v3.0"
+        value: "Smart City Thailand Command Center"
     routes:
       - type: rewrite
         source: /*
@@ -42,8 +44,10 @@ services:
         value: bangkok
       - key: VITE_DEFAULT_VIEW
         value: national
+      - key: VITE_DEFAULT_BASEMAP
+        value: satellite
       - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Monitor v3.0"
+        value: "Smart City Thailand Command Center"
     routes:
       - type: rewrite
         source: /*
@@ -66,8 +70,14 @@ services:
         sync: false
       - key: ALLOW_LIVE_FETCH
         value: "true"
+      - key: AUTO_SYNC_ENABLED
+        value: "true"
+      - key: OPS_SYNC_INTERVAL_MS
+        value: "60000"
       - key: SYNC_INTERVAL_MS
         value: "180000"
+      - key: DATABASE_URL
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL

@@ -3,12 +3,15 @@ export const config = {
   host: process.env.HOST ?? "127.0.0.1",
   adminToken: process.env.ADMIN_TOKEN ?? "change-me",
   allowLiveFetch: process.env.ALLOW_LIVE_FETCH !== "false",
+  autoSyncEnabled: process.env.AUTO_SYNC_ENABLED !== "false",
   syncIntervalMs: Number(process.env.SYNC_INTERVAL_MS ?? 180000),
+  opsSyncIntervalMs: Number(process.env.OPS_SYNC_INTERVAL_MS ?? 60000),
   stateSnapshotPath: process.env.STATE_SNAPSHOT_PATH ?? "tmp/api-state.json",
   cctvSnapshotPath: process.env.CCTV_SNAPSHOT_PATH ?? "tmp/public-cctv-state.json",
   cctvCacheTtlMs: Number(process.env.CCTV_CACHE_TTL_MS ?? 300000),
   cctvProbeTimeoutMs: Number(process.env.CCTV_PROBE_TIMEOUT_MS ?? 2500),
   cctvProbeConcurrency: Number(process.env.CCTV_PROBE_CONCURRENCY ?? 8),
+  databaseUrl: process.env.DATABASE_URL ?? "",
   maxDailyAiInquiries: Number(process.env.MAX_DAILY_AI_INQUIRIES ?? 200),
   knowledgeDir: process.env.KNOWLEDGE_DIR ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
@@ -92,5 +95,17 @@ export const config = {
   planetaryComputerStacUrl:
     process.env.PLANETARY_COMPUTER_STAC_URL ?? "https://planetarycomputer.microsoft.com/api/stac/v1",
 
-  slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand"
+  slicThailandUrl: process.env.SLIC_THAILAND_URL ?? "https://slic-index.onrender.com/thailand",
+
+  /* ── Bangkok Governor's IOC Sources ── */
+  traffyFondueEndpoint:
+    process.env.TRAFFY_FONDUE_ENDPOINT ?? "https://publicapi.traffy.in.th/ud/search",
+  waqiApiToken: process.env.WAQI_API_TOKEN ?? "demo",
+  air4thaiEndpoint:
+    process.env.AIR4THAI_ENDPOINT ?? "http://air4thai.pcd.go.th/services/getNewAQI_JSON.php",
+  tmdRssEndpoint:
+    process.env.TMD_RSS_ENDPOINT ?? "https://www.tmd.go.th/api/xml/region-daily-forecast?regionid=7",
+  bmaGisBaseUrl:
+    process.env.BMA_GIS_BASE_URL ?? "https://bmagis.bangkok.go.th/arcgis/rest/services",
+  bmaFloodEndpoint: process.env.BMA_FLOOD_ENDPOINT ?? ""
 };
