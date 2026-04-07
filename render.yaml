@@ -16,38 +16,11 @@ services:
       - key: VITE_DEFAULT_CITY
         value: bangkok
       - key: VITE_DEFAULT_VIEW
-        value: national
+        value: city
       - key: VITE_DEFAULT_BASEMAP
         value: satellite
       - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Command Center"
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
-  - type: web
-    name: smart-city-monitor-web
-    runtime: static
-    buildCommand: set -e && npm ci && npm run build -w packages/shared && npm run build -w apps/web && ls -la apps/web/dist/assets/
-    staticPublishPath: ./apps/web/dist
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-    envVars:
-      - key: NODE_VERSION
-        value: 20.18.0
-      - key: VITE_API_BASE_URL
-        value: https://smart-city-monitor-api.onrender.com
-      - key: VITE_DEFAULT_CITY
-        value: bangkok
-      - key: VITE_DEFAULT_VIEW
-        value: national
-      - key: VITE_DEFAULT_BASEMAP
-        value: satellite
-      - key: VITE_SITE_TITLE
-        value: "Smart City Thailand Command Center"
+        value: "Bangkok Governor's IOC"
     routes:
       - type: rewrite
         source: /*
