@@ -5338,7 +5338,7 @@ function DashboardPage() {
             </div>
             <div className="hero-weather">
               <span className="hero-temp">{resilience.weatherTemperatureC}°C</span>
-              <small>{localize(lang, resilience.weatherSummary).substring(0, 40)}</small>
+              <small>{localize(lang, resilience.weatherSummary)}</small>
             </div>
           </div>
           <div className="hero-status-pills">
@@ -5991,17 +5991,23 @@ function PublicPage() {
   const flood = floodQ.data as any;
   const transitData = transitQ.data as any;
 
+  const mucQ = useQuery({ queryKey: ["pub-muc"], queryFn: () => fetch("/api/muc").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const aq = (mucQ.data as any)?.airQuality;
+  const aqiValue = aq?.overallAqi ?? 68;
+  const nowThai = new Date().toLocaleTimeString("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
+
   return (
     <div className="public-page">
       <div className="public-header">
         <h1>เมืองทองธานี</h1>
         <small>Muang Thong Thani — Resident Info</small>
+        <span className="public-time">{nowThai} ICT</span>
       </div>
 
       <div className="public-card">
         <h3>{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</h3>
-        <div className={`public-big-value ${68 >= 90 ? "bad" : 68 >= 60 ? "moderate" : "good"}`}>AQI 68</div>
-        <div className="public-sub">PM2.5: 22 · PM10: 38</div>
+        <div className={`public-big-value ${aqiValue >= 90 ? "bad" : aqiValue >= 60 ? "moderate" : "good"}`}>AQI {aqiValue}</div>
+        <div className="public-sub">{aq ? `PM2.5: ${aq.zones?.[0]?.pm25 ?? "--"} · PM10: ${aq.zones?.[0]?.pm10 ?? "--"}` : "PM2.5: -- · PM10: --"}</div>
       </div>
 
       {flood ? (

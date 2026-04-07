@@ -1,0 +1,11 @@
+# Cloudflare Pages — Static frontend deployment
+# Deploy: npx wrangler pages deploy apps/web/dist --project-name=mtt-dashboard
+# Or connect GitHub repo via Cloudflare dashboard
+
+name = "mtt-dashboard"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "apps/web/dist"
+
+[vars]
+VITE_DEFAULT_CITY = "muang-thong-thani"
+VITE_DEFAULT_VIEW = "city"
