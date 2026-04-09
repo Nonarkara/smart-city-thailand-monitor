@@ -13,7 +13,11 @@ export default defineConfig(({ mode }) => {
     env.VITE_API_BASE_URL?.trim() ||
     "http://127.0.0.1:4000";
 
+  const isGHPages = process.env.GITHUB_PAGES === "true" || process.env.BASE_PATH;
+  const basePath = isGHPages ? (process.env.BASE_PATH || "/smart-city-thailand-monitor/") : "/";
+
   return {
+    base: basePath,
     plugins: [react()],
     resolve: {
       alias: {
