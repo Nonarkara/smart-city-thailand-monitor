@@ -1934,6 +1934,50 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "air4thai",
     legendLabel: "Air4Thai",
     zIndex: 46
+  },
+  {
+    id: "bangkok-highways",
+    label: { th: "ทางด่วน/มอเตอร์เวย์", en: "Highways" },
+    active: false,
+    color: "#ef4444",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Highways",
+    zIndex: 35
+  },
+  {
+    id: "bangkok-arterials",
+    label: { th: "ถนนสายหลัก", en: "Main Roads" },
+    active: false,
+    color: "#f59e0b",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Arterials",
+    zIndex: 34
+  },
+  {
+    id: "road-labels",
+    label: { th: "ป้ายถนน", en: "Road Labels" },
+    active: false,
+    color: "#64748b",
+    kind: "external",
+    defaultViews: ["bangkok"],
+    sourceId: "carto-osm",
+    legendLabel: "Road Labels",
+    zIndex: 33
+  },
+  {
+    id: "bangkok-waterways",
+    label: { th: "คลอง/แม่น้ำ", en: "Waterways" },
+    active: false,
+    color: "#0ea5e9",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Waterways",
+    zIndex: 36
   }
 ];
 

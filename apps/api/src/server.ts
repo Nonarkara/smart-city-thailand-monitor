@@ -16,6 +16,7 @@ import {
 } from "./services/satellite.js";
 import { getPublicCctvCameras } from "./services/publicCctv.js";
 import { runSourceSync } from "./services/sync.js";
+import { fetchOverpassLayer } from "./adapters/overpassAdapter.js";
 
 function parseList(value: unknown) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -237,6 +238,20 @@ export async function createServer() {
     }
     reply.header("Cache-Control", "public, max-age=1800, stale-while-revalidate=300");
     return getStacTileInfo(query.layer);
+  });
+
+  /* ── Overpass road & waterway layers ── */
+  app.get("/api/layers/bangkok-highways", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return fetchOverpassLayer("bangkok-highways");
+  });
+  app.get("/api/layers/bangkok-arterials", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return fetchOverpassLayer("bangkok-arterials");
+  });
+  app.get("/api/layers/bangkok-waterways", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return fetchOverpassLayer("bangkok-waterways");
   });
 
   app.get("/api/briefings/latest", async () => store.getBriefing());

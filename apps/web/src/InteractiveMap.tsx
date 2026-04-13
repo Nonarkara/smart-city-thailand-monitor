@@ -79,6 +79,10 @@ type LayerId =
   | "bma-health-centers"
   | "bma-districts"
   | "air4thai"
+  | "bangkok-highways"
+  | "bangkok-arterials"
+  | "bangkok-waterways"
+  | "road-labels"
 ;
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
@@ -199,6 +203,10 @@ const layerColors: Record<LayerId, string> = {
   "bma-health-centers": "#10b981",
   "bma-districts": "#94a3b8",
   "air4thai": "#a855f7",
+  "bangkok-highways": "#ef4444",
+  "bangkok-arterials": "#f59e0b",
+  "bangkok-waterways": "#0ea5e9",
+  "road-labels": "#64748b",
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = [
@@ -1079,12 +1087,18 @@ function renderFeatureCollections(
         const line = L.polyline(latLngs, {
           color: pointColor,
           weight:
-            collection.layerId === "economy" || collection.layerId === "water"
-              ? 5
-              : collection.layerId === "agriculture"
-                ? 4.5
-                : 4,
-          opacity: 0.82,
+            collection.layerId === "bangkok-highways"
+              ? 4
+              : collection.layerId === "bangkok-arterials"
+                ? 3
+                : collection.layerId === "bangkok-waterways"
+                  ? 3
+                  : collection.layerId === "economy" || collection.layerId === "water"
+                    ? 5
+                    : collection.layerId === "agriculture"
+                      ? 4.5
+                      : 4,
+          opacity: collection.layerId === "bangkok-waterways" ? 0.7 : 0.82,
           dashArray: collection.layerId === "disaster" ? "10 6" : undefined
         });
 
@@ -1187,6 +1201,7 @@ export default function InteractiveMap({
   const satelliteBaseRef = useRef<L.TileLayer | null>(null);
   const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const satelliteLayersRef = useRef<Partial<Record<SatelliteLayerId, L.TileLayer>>>({});
+  const roadLabelsRef = useRef<L.TileLayer | null>(null);
   const jaxaLayerRef = useRef<L.Layer | null>(null);
   const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
@@ -1267,6 +1282,11 @@ export default function InteractiveMap({
         return [id, layer];
       })
     ) as Partial<Record<SatelliteLayerId, L.TileLayer>>;
+
+    roadLabelsRef.current = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png",
+      { attribution: "&copy; OpenStreetMap &copy; CARTO", opacity: 0.45, maxZoom: 19, crossOrigin: true }
+    );
 
     mapRef.current = map;
 
@@ -1427,6 +1447,16 @@ export default function InteractiveMap({
           map.removeLayer(layer);
         }
       });
+
+      /* Road labels tile overlay toggle */
+      const rlLayer = roadLabelsRef.current;
+      if (rlLayer) {
+        if (activeLayers.has("road-labels")) {
+          if (!map.hasLayer(rlLayer)) rlLayer.addTo(map);
+        } else if (map.hasLayer(rlLayer)) {
+          map.removeLayer(rlLayer);
+        }
+      }
     }
   }, [citySlug, domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles, publicCctvCameras, view]);
 

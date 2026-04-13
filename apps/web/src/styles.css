@@ -4126,8 +4126,8 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0.5rem;
+  gap: 0.3rem;
+  padding: 0.3rem;
   background: var(--bg);
   border-left: 0.5px solid var(--line);
   min-height: 0;
@@ -4140,7 +4140,7 @@ textarea:focus {
 .summary-strip {
   grid-column: 1 / -1;
   display: flex;
-  gap: 0.4rem;
+  gap: 0.2rem;
   padding: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -4153,7 +4153,7 @@ textarea:focus {
 .summary-card {
   flex: 1;
   min-width: 0;
-  padding: 0.65rem 0.6rem;
+  padding: 0.4rem 0.35rem;
   background: var(--panel);
   border: none;
   border-radius: var(--radius);
@@ -4204,7 +4204,7 @@ textarea:focus {
 
 .overview-card {
   min-height: 0;
-  padding: 0.55rem;
+  padding: 0.4rem;
   overflow: hidden;
   border: none;
   border-radius: var(--radius);
@@ -4259,7 +4259,7 @@ textarea:focus {
 
 .overview-inline-list {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.2rem;
   align-content: start;
 }
 
@@ -4297,7 +4297,7 @@ textarea:focus {
 }
 
 .overview-card .data-item {
-  padding: 0.4rem 0.46rem;
+  padding: 0.25rem 0.35rem;
 }
 
 .overview-card .terminal-callout strong {
@@ -4333,7 +4333,7 @@ textarea:focus {
 .governor-kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
+  gap: 0.25rem;
   text-align: center;
 }
 
@@ -4640,6 +4640,118 @@ textarea:focus {
 @keyframes kpi-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
   50% { box-shadow: 0 0 12px 2px rgba(248, 113, 113, 0.25); }
+}
+
+/* ── NEW: Market Ticker ── */
+.market-pills { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.market-pill {
+  font-size: 0.68rem;
+  padding: 0.12rem 0.35rem;
+  border: 0.5px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  white-space: nowrap;
+}
+.market-pill.tone-positive strong { color: #22c55e; }
+.market-pill.tone-warning strong { color: #ef4444; }
+.market-pill.tone-neutral strong { color: #94a3b8; }
+
+/* ── NEW: Social Pulse ── */
+.social-keywords { display: flex; gap: 0.2rem; flex-wrap: wrap; }
+.keyword-pill {
+  font-size: 0.62rem;
+  padding: 0.08rem 0.3rem;
+  background: rgba(56,189,248,0.1);
+  color: #38bdf8;
+  border: 0.5px solid rgba(56,189,248,0.2);
+}
+.social-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.58rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+/* ── NEW: Activity Feed compact items ── */
+.data-item.compact {
+  padding: 0.12rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.status-dot.synced, .status-dot.live { background: #22c55e; }
+.status-dot.pending, .status-dot.delayed { background: #f59e0b; }
+.status-dot.error, .status-dot.stale { background: #ef4444; }
+
+/* ── NEW: Media + Trends 2-column ── */
+.media-trends-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+}
+.media-trends-grid .eyebrow {
+  display: block;
+  margin-bottom: 0.1rem;
+}
+.media-trends-grid .data-item.compact strong {
+  font-size: 0.62rem;
+  line-height: 1.2;
+}
+
+/* ── Briefing inline ── */
+.overview-card.briefing-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+}
+.overview-card.briefing-compact .eyebrow {
+  flex-shrink: 0;
+}
+.overview-card.briefing-compact strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.72rem;
+}
+
+/* ── Traffy compact categories ── */
+.traffy-cats-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.15rem;
+}
+.traffy-cat-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.1rem 0.2rem;
+  font-size: 0.62rem;
+}
+.traffy-cat-compact strong {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+.traffy-district-pills {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+.traffy-district-pill {
+  font-size: 0.58rem;
+  padding: 0.06rem 0.25rem;
+  background: rgba(249,115,22,0.1);
+  border: 0.5px solid rgba(249,115,22,0.25);
+  color: #fb923c;
 }
 
 /* — Sparkline inside KPI — */
@@ -7255,9 +7367,9 @@ a:focus-visible,
 .ticker-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 0.35rem;
+  gap: 0.25rem;
   align-items: start;
-  padding: 0.4rem 0.5rem;
+  padding: 0.25rem 0.35rem;
   border: none;
   border-radius: 0;
   border-left: 3px solid #475569;

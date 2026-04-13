@@ -645,7 +645,11 @@ const operationalLayerToggleIds = [
   "water",
   "land-use",
   "agriculture",
-  "disaster"
+  "disaster",
+  "bangkok-highways",
+  "bangkok-arterials",
+  "road-labels",
+  "bangkok-waterways"
 ] as const;
 
 const satelliteToggleOptions: ToggleOption[] = [
@@ -2186,7 +2190,37 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const ROAD_REFETCH_MS = 60 * 60 * 1000; // 1 hour — backend caches 24h
+  const isBangkok = city === "bangkok";
+
+  const highwaysQuery = useQuery({
+    queryKey: ["bangkok-highways"],
+    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-highways", { layerId: "bangkok-highways", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
+    refetchInterval: ROAD_REFETCH_MS,
+    enabled: isBangkok && layers.some((l) => l === "bangkok-highways")
+  });
+
+  const arterialsQuery = useQuery({
+    queryKey: ["bangkok-arterials"],
+    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-arterials", { layerId: "bangkok-arterials", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
+    refetchInterval: ROAD_REFETCH_MS,
+    enabled: isBangkok && layers.some((l) => l === "bangkok-arterials")
+  });
+
+  const waterwaysQuery = useQuery({
+    queryKey: ["bangkok-waterways"],
+    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-waterways", { layerId: "bangkok-waterways", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
+    refetchInterval: ROAD_REFETCH_MS,
+    enabled: isBangkok && layers.some((l) => l === "bangkok-waterways")
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
+
+  const baseMapFeatures = safeArray(mapFeaturesQuery.data, mapFeaturesFallback);
+  const overpassLayers: MapFeatureCollection[] = [];
+  if (highwaysQuery.data?.features?.length) overpassLayers.push(highwaysQuery.data);
+  if (arterialsQuery.data?.features?.length) overpassLayers.push(arterialsQuery.data);
+  if (waterwaysQuery.data?.features?.length) overpassLayers.push(waterwaysQuery.data);
 
   return {
     lang,
@@ -2210,7 +2244,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     markets: marketQuery.data ?? cloneSeed(marketSnapshotSeed),
     sources: safeArray(sourcesQuery.data, sourcesFallback),
     satelliteDigest: satelliteDigestQuery.data ?? createSatelliteDigestFallback(),
-    mapFeatures: safeArray(mapFeaturesQuery.data, mapFeaturesFallback),
+    mapFeatures: [...baseMapFeatures, ...overpassLayers],
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
@@ -2742,14 +2776,15 @@ function DashboardPage() {
       return mapFeatures;
     }
 
+      const bangkokOnlyLayers = new Set(["bangkok-passages", "bangkok-highways", "bangkok-arterials", "bangkok-waterways"]);
       return mapFeatures
       .map((collection) => {
-        if (collection.layerId === "bangkok-passages") {
+        if (bangkokOnlyLayers.has(collection.layerId)) {
           if (city !== "bangkok") {
             return { ...collection, features: [] };
           }
 
-          const features = selectedDistrict
+          const features = selectedDistrict && collection.layerId === "bangkok-passages"
             ? collection.features.filter((feature) => featureMatchesDistrict(feature, selectedDistrict.slug))
             : collection.features;
           return { ...collection, features };
@@ -3406,9 +3441,9 @@ function DashboardPage() {
   const scopePopulationValue = view === "national" ? formatPopulation(trackedPopulation) : formatPopulation(selectedCity.population);
   const scopeDomainScores = view === "national" ? nationalTopDomains : topCityScores;
   const overviewWarnings = resilience.warnings.slice(0, 3);
-  const overviewQueue = decisionItems.slice(0, 3);
-  const overviewOfficialNews = officialNews.slice(0, 2);
-  const overviewExternalNews = externalNews.slice(0, 2);
+  const overviewQueue = decisionItems.slice(0, 5);
+  const overviewOfficialNews = officialNews.slice(0, 3);
+  const overviewExternalNews = externalNews.slice(0, 3);
   const overviewProjects = compactProjects.slice(0, 3);
   const overviewSources = apiWatchSources.slice(0, 4);
   const compareRows = [
@@ -4940,32 +4975,25 @@ function DashboardPage() {
                 </span>
               </div>
               <div className="ticker-scroll">
-                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 12).map((feature) => {
+                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 8).map((feature) => {
                   const eventClass = stringProperty(feature, "eventClass") || "traffic";
                   const severity = stringProperty(feature, "severity") || "low";
                   const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
                   const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
-                  const desc = feature.description || "";
-                  const contributor = stringProperty(feature, "contributor");
                   return (
-                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={desc || feature.title}>
+                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={feature.description || feature.title}>
                       <span className={`ticker-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
                       <span className="ticker-detail">
                         <span className="ticker-title">{feature.title}</span>
-                        {desc ? <span className="ticker-desc">{desc}</span> : null}
                       </span>
                       <span className="ticker-end">
-                        <span className="ticker-time">{formatUtcDateTime(stamp)}</span>
-                        {contributor ? <span className="ticker-source">{contributor}</span> : <span className="ticker-source">iTIC / Longdo</span>}
+                        <span className="ticker-time">{formatUtcClock(stamp)}</span>
                       </span>
                     </button>
                   );
                 }) : (
                   <div className="ticker-empty">{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</div>
                 )}
-              </div>
-              <div className="ticker-footer">
-                <span className="ticker-source-attr">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} iTIC Foundation / Longdo Traffic — event.longdo.com</span>
               </div>
             </section>
           )}
@@ -5050,6 +5078,24 @@ function DashboardPage() {
             <strong>{localize(lang, overview.briefing.headline)}</strong>
           </section>
 
+          {/* — Social Pulse — */}
+          <section className="card overview-card social-pulse">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กระแสสังคม" : "Social Pulse"}</span>
+              <span className="status-pill">{socialListening.mentionCount} {lang === "th" ? "คนพูดถึง" : "mentions"}</span>
+            </div>
+            <div className="social-keywords">
+              {socialListening.topTerms.slice(0, 6).map((term) => (
+                <span key={term} className="keyword-pill">{term}</span>
+              ))}
+            </div>
+            <div className="social-meta">
+              <span>{lang === "th" ? "ความรู้สึก" : "Sentiment"}: {socialListening.sentimentScore >= 0 ? "+" : ""}{socialListening.sentimentScore}</span>
+              <span>{Math.round(socialListening.positiveShare * 100)}% {lang === "th" ? "เชิงบวก" : "positive"}</span>
+              <span>{socialListening.dominantSource}</span>
+            </div>
+          </section>
+
           {/* — Traffy Fondue: citizen reports — */}
           {city === "bangkok" && (
           <section className="card overview-card traffy-fondue">
@@ -5059,29 +5105,19 @@ function DashboardPage() {
                 {traffyFondue.totalOpen} {lang === "th" ? "รายการ" : "open"}
               </button>
             </div>
-            <div className="traffy-categories">
-              {traffyFondue.categoryBreakdown.slice(0, 6).map((cat) => (
-                <div key={cat.category} className="traffy-cat-row">
-                  <span className="traffy-cat-label">{cat.category}</span>
-                  <div className="traffy-cat-bar">
-                    <div className="traffy-cat-fill" style={{ width: `${Math.min(100, (cat.count / (traffyFondue.categoryBreakdown[0]?.count || 1)) * 100)}%` }} />
-                  </div>
-                  <span className="traffy-cat-count">{cat.count}</span>
+            <div className="traffy-cats-compact">
+              {traffyFondue.categoryBreakdown.slice(0, 4).map((cat) => (
+                <div key={cat.category} className="traffy-cat-compact">
+                  <span>{cat.category}</span>
+                  <strong>{cat.count}</strong>
                 </div>
               ))}
             </div>
-            <div className="traffy-districts">
-              <span className="eyebrow">{lang === "th" ? "เขตที่ร้องเรียนสูงสุด" : "Top Districts"}</span>
-              <div className="overview-inline-list">
-                {traffyFondue.districtBreakdown.slice(0, 5).map((d) => (
-                  <div key={d.district} className="data-item">
-                    <strong>{d.district}</strong>
-                    <small>{d.count} {lang === "th" ? "รายการ" : "reports"}</small>
-                  </div>
-                ))}
-              </div>
+            <div className="traffy-district-pills">
+              {traffyFondue.districtBreakdown.slice(0, 3).map((d) => (
+                <span key={d.district} className="traffy-district-pill">{d.district} {d.count}</span>
+              ))}
             </div>
-            <div className="panel-source">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} Traffy Fondue — traffy.in.th</div>
           </section>
           )}
 
@@ -5143,25 +5179,36 @@ function DashboardPage() {
           </div>
           <div className="overview-inline-list">
             {overviewQueue.length > 0 ? (
-              overviewQueue.map((item) => {
-                const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
-                const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
-                return (
-                  <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
-                    <div className="stack-title">
-                      <strong>{localize(lang, item.title)}</strong>
-                      <span className={`status-tag ${item.status}`}>{item.status}</span>
-                    </div>
-                    <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
+              overviewQueue.map((item) => (
+                  <button key={item.id} type="button" className={`data-item compact severity-${item.severity}`} onClick={() => focusDecision(item)}>
+                    <span className={`status-dot ${item.severity === "urgent" ? "error" : item.severity === "watch" ? "pending" : "live"}`} />
+                    <strong>{localize(lang, item.title)}</strong>
+                    <span className={`status-tag ${item.status}`}>{item.status}</span>
                   </button>
-                );
-              })
+              ))
             ) : (
               <div className="data-item">
                 <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
               </div>
             )}
           </div>
+          </section>
+
+          {/* — Activity Feed — */}
+          <section className="card overview-card activity-feed" onClick={() => navigateToTab("data")}>
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กิจกรรม" : "Activity"}</span>
+              <span className="status-pill">{activityItems.length}</span>
+            </div>
+            <div className="overview-inline-list">
+              {activityItems.slice(0, 4).map((item) => (
+                <div key={item.id} className={`data-item compact ${item.status}`}>
+                  <span className={`status-dot ${item.status}`} />
+                  <strong>{item.label}</strong>
+                  <small>{formatUtcClock(item.timestamp)}</small>
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* — News — */}
@@ -5174,12 +5221,49 @@ function DashboardPage() {
           </div>
           <div className="overview-inline-list">
             {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-              <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+              <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}>
                 <strong>{localize(lang, item.title)}</strong>
-                <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
               </a>
             ))}
           </div>
+          </section>
+
+          {/* — Media & Trends — */}
+          <section className="card overview-card media-trends">
+            <div className="media-trends-grid">
+              <div>
+                <span className="eyebrow">{lang === "th" ? "สื่อ" : "Media"}</span>
+                {compactMedia.map((item) => (
+                  <a key={item.id} className="data-item compact" href={item.externalUrl || item.embedUrl || "#"} target="_blank" rel="noreferrer">
+                    <strong>{item.label}</strong>
+                  </a>
+                ))}
+              </div>
+              <div>
+                <span className="eyebrow">{lang === "th" ? "แนวโน้ม" : "Trends"}</span>
+                {visibleTrends.map((item) => (
+                  <div key={item.id} className="data-item compact">
+                    <strong>{localize(lang, item.term)}</strong>
+                    <small>{localize(lang, item.category)}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* — Market Ticker — */}
+          <section className="card overview-card market-ticker">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
+              <span className="status-pill">{markets.source.freshnessStatus}</span>
+            </div>
+            <div className="market-pills">
+              {markets.items.map((item) => (
+                <span key={item.id} className={`market-pill tone-${item.tone}`}>
+                  {localize(lang, item.label)} <strong>{item.value}</strong>
+                </span>
+              ))}
+            </div>
           </section>
 
           {/* — System Status: compact grid of weather + sources + EO — */}
