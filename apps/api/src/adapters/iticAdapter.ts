@@ -413,13 +413,76 @@ export async function runIticSync(): Promise<AdapterSyncResult> {
     (event) => event.status === "scheduled" && event.eventClass === "closure"
   ).length;
 
+  /* — Compute synthetic traffic congestion index from event data — */
+  const bangkokEvents = normalizedEvents.filter(
+    (e) => e.status === "active" && e.city?.slug === "bangkok"
+  );
+
+  const classWeights: Record<string, number> = {
+    accident: 12,
+    closure: 10,
+    breakdown: 4,
+    construction: 3,
+    traffic: 2
+  };
+
+  const rawScore = bangkokEvents.reduce((sum, e) => {
+    const classWeight = classWeights[e.eventClass] ?? 2;
+    const severityMultiplier = 1 + (e.severityScore ?? 0) * 0.5;
+    return sum + classWeight * severityMultiplier;
+  }, 0);
+
+  const congestionIndex = Math.min(100, Math.round(rawScore * 1.5));
+
+  const congestionLevel =
+    congestionIndex >= 80 ? "gridlock" as const
+    : congestionIndex >= 55 ? "heavy" as const
+    : congestionIndex >= 30 ? "moderate" as const
+    : congestionIndex >= 10 ? "light" as const
+    : "free" as const;
+
+  /* — Group events into Bangkok corridors — */
+  const corridorDefs = [
+    { name: "Sukhumvit", lat: 13.73, lon: 100.56, radius: 0.04 },
+    { name: "Rama IV", lat: 13.72, lon: 100.53, radius: 0.035 },
+    { name: "Phahon Yothin", lat: 13.82, lon: 100.55, radius: 0.05 },
+    { name: "Ratchadaphisek", lat: 13.78, lon: 100.57, radius: 0.04 },
+    { name: "Chaeng Watthana", lat: 13.88, lon: 100.57, radius: 0.035 },
+    { name: "Rama III", lat: 13.69, lon: 100.52, radius: 0.03 },
+    { name: "Silom / Sathorn", lat: 13.72, lon: 100.52, radius: 0.025 },
+    { name: "Lat Phrao", lat: 13.80, lon: 100.58, radius: 0.04 }
+  ];
+
+  const corridors = corridorDefs.map((c) => {
+    const nearby = bangkokEvents.filter(
+      (e) => Math.abs(e.latitude - c.lat) < c.radius && Math.abs(e.longitude - c.lon) < c.radius
+    );
+    return {
+      name: c.name,
+      events: nearby.length,
+      level: nearby.length >= 4 ? "heavy" as const : nearby.length >= 2 ? "moderate" as const : nearby.length >= 1 ? "light" as const : "free" as const
+    };
+  });
+
+  const trafficCongestion = {
+    index: congestionIndex,
+    level: congestionLevel,
+    activeIncidents: bangkokEvents.length,
+    accidents: bangkokEvents.filter((e) => e.eventClass === "accident").length,
+    closures: bangkokEvents.filter((e) => e.eventClass === "closure").length,
+    breakdowns: bangkokEvents.filter((e) => e.eventClass === "breakdown").length,
+    corridors,
+    updatedAt: fetchedAt
+  };
+
   return buildResult({
     sourceId,
     sourceUrl,
     status: "live",
-    message: `Synchronized ${activeEvents} active traffic events, ${scheduledClosures} scheduled closures, and ${mediaFeeds.length} cameras.`,
+    message: `Synchronized ${activeEvents} active traffic events, ${scheduledClosures} scheduled closures, and ${mediaFeeds.length} cameras. Congestion index: ${congestionIndex} (${congestionLevel}).`,
     newsItems,
     mapFeatureCollections,
-    mediaFeeds
+    mediaFeeds,
+    trafficCongestionPatch: trafficCongestion
   });
 }

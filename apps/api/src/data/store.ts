@@ -29,6 +29,7 @@ import type {
   AuditEventRecord,
   BangkokFloodStatus,
   BriefingNote,
+  TrafficCongestionSnapshot,
   CommandCenterSnapshot,
   ChangePulse,
   DashboardView,
@@ -77,6 +78,7 @@ interface StoreState {
   commandCenter: CommandCenterSnapshot;
   traffyFondue: TraffyFondueSnapshot;
   floodStatus: BangkokFloodStatus;
+  trafficCongestion: TrafficCongestionSnapshot;
 }
 
 export type StoreSnapshot = StoreState;
@@ -158,7 +160,8 @@ function createState(): StoreState {
     latestTime: createTimeSnapshot(),
     commandCenter: createCommandCenterSnapshot(),
     traffyFondue: cloneSeed(traffyFondueSeed),
-    floodStatus: cloneSeed(bangkokFloodStatusSeed)
+    floodStatus: cloneSeed(bangkokFloodStatusSeed),
+    trafficCongestion: { index: 0, level: "free", activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() }
   };
 }
 
@@ -519,6 +522,10 @@ export const store = {
     return cloneSeed(state.floodStatus);
   },
 
+  getTrafficCongestion() {
+    return cloneSeed(state.trafficCongestion);
+  },
+
   getSources() {
     return cloneSeed(state.sources);
   },
@@ -806,6 +813,13 @@ export const store = {
         state.floodStatus = {
           ...state.floodStatus,
           ...result.floodStatusPatch
+        };
+      }
+
+      if (result.trafficCongestionPatch) {
+        state.trafficCongestion = {
+          ...state.trafficCongestion,
+          ...result.trafficCongestionPatch
         };
       }
     });

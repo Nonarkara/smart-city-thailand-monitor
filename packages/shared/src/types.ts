@@ -586,6 +586,19 @@ export interface BangkokFloodStatus {
   updatedAt: string;
 }
 
+/* ── Bangkok Governor's IOC — Traffic Congestion ── */
+
+export interface TrafficCongestionSnapshot {
+  index: number;
+  level: "free" | "light" | "moderate" | "heavy" | "gridlock";
+  activeIncidents: number;
+  accidents: number;
+  closures: number;
+  breakdowns: number;
+  corridors: { name: string; events: number; level: "free" | "light" | "moderate" | "heavy" }[];
+  updatedAt: string;
+}
+
 /* ── IMPACT Arena & Venue Events ── */
 export type EventCategory = "concert" | "expo" | "convention" | "sport" | "graduation" | "other";
 

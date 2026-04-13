@@ -11,6 +11,7 @@ import type {
   SocialListeningSnapshot,
   SyncHealthRecord,
   TimeSnapshot,
+  TrafficCongestionSnapshot,
   TraffyFondueSnapshot
 } from "@smart-city/shared";
 import { config } from "../config.js";
@@ -157,6 +158,7 @@ export interface AdapterSyncResult {
   timeSnapshot?: TimeSnapshot;
   traffyFonduePatch?: TraffyFondueSnapshot;
   floodStatusPatch?: BangkokFloodStatus;
+  trafficCongestionPatch?: TrafficCongestionSnapshot;
 }
 
 export async function fetchJsonOrNull<T>(url: string, init?: RequestInit): Promise<T | null> {
@@ -226,6 +228,7 @@ export function buildResult(input: {
   timeSnapshot?: TimeSnapshot;
   traffyFonduePatch?: TraffyFondueSnapshot;
   floodStatusPatch?: BangkokFloodStatus;
+  trafficCongestionPatch?: TrafficCongestionSnapshot;
 }): AdapterSyncResult {
   return {
     sourceId: input.sourceId,

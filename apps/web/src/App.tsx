@@ -55,7 +55,8 @@ import type {
   TimeRange,
   TimeSnapshot,
   TraffyFondueSnapshot,
-  BangkokFloodStatus
+  BangkokFloodStatus,
+  TrafficCongestionSnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
@@ -2174,6 +2175,19 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
+  const trafficCongestionQuery = useQuery({
+    queryKey: ["traffic-congestion"],
+    queryFn: () =>
+      fetchFromApi<TrafficCongestionSnapshot>(
+        "/api/traffic-congestion",
+        { index: 0, level: "free", activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() },
+        (value) => isObject(value) && typeof value.index === "number"
+      ),
+    refetchInterval: FAST_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
+  });
+
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
 
   return {
@@ -2204,7 +2218,8 @@ function useDashboardData(searchParams: URLSearchParams) {
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
     traffyFondue: traffyFondueQuery.data ?? cloneSeed(traffyFondueSeed),
-    floodStatus: floodStatusQuery.data ?? cloneSeed(bangkokFloodStatusSeed)
+    floodStatus: floodStatusQuery.data ?? cloneSeed(bangkokFloodStatusSeed),
+    trafficCongestion: trafficCongestionQuery.data ?? { index: 0, level: "free" as const, activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() }
   };
 }
 
@@ -2246,8 +2261,8 @@ function DashboardPage() {
   const basemap = (searchParams.get("basemap") === "atlas" ? "atlas" : searchParams.get("basemap") === "satellite" ? "satellite" : defaultBasemap) as "atlas" | "satellite";
 
   const [autoRotate, setAutoRotate] = useState(false);
-  const [kpiHistory, setKpiHistory] = useState<{ aqi: number[]; reports: number[]; resolved: number[]; temp: number[]; flood: number[]; rain: number[] }>({
-    aqi: [], reports: [], resolved: [], temp: [], flood: [], rain: []
+  const [kpiHistory, setKpiHistory] = useState<{ aqi: number[]; reports: number[]; resolved: number[]; temp: number[]; flood: number[]; rain: number[]; traffic: number[] }>({
+    aqi: [], reports: [], resolved: [], temp: [], flood: [], rain: [], traffic: []
   });
   const [kpiChanged, setKpiChanged] = useState<Set<string>>(new Set());
   const prevKpiRef = useRef({ aqi: 0, reports: 0, resolved: 0, temp: 0, flood: 0, rain: 0 });
@@ -2284,7 +2299,8 @@ function DashboardPage() {
     commandCenter,
     time,
     traffyFondue,
-    floodStatus
+    floodStatus,
+    trafficCongestion
   } = useDashboardData(searchParams);
 
   /* — KPI history: append latest values for sparklines (max 24 samples) — */
@@ -2297,10 +2313,11 @@ function DashboardPage() {
         resolved: cap(prev.resolved, Math.round(traffyFondue.resolutionRate * 100)),
         temp: cap(prev.temp, resilience.weatherTemperatureC),
         flood: cap(prev.flood, floodStatus.activeFloodPoints),
-        rain: cap(prev.rain, floodStatus.rainfallLast24h)
+        rain: cap(prev.rain, floodStatus.rainfallLast24h),
+        traffic: cap(prev.traffic, trafficCongestion.index)
       };
     });
-  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h]);
+  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h, trafficCongestion.index]);
 
   /* — KPI change detection: flash cards when values update — */
   useEffect(() => {
@@ -4813,10 +4830,10 @@ function DashboardPage() {
                 <strong>{resilience.weatherTemperatureC}°C</strong>
                 {kpiHistory.temp.length > 2 && <Sparkline values={kpiHistory.temp} />}
               </div>
-              <div className={`kpi-item${floodStatus.level !== "normal" ? " kpi-alert" : ""}${kpiChanged.has("flood") ? " data-changed data-refreshed" : ""}`} aria-label={`${floodStatus.activeFloodPoints} active flood points`}>
-                <span className="eyebrow">{lang === "th" ? "น้ำท่วม" : "Flood"}</span>
-                <strong className={floodStatus.level === "normal" ? "tone-positive" : "tone-warning"}>{floodStatus.activeFloodPoints}</strong>
-                {kpiHistory.flood.length > 2 && <Sparkline values={kpiHistory.flood} />}
+              <div className={`kpi-item${trafficCongestion.index > 55 ? " kpi-alert" : ""}`} aria-label={`Traffic congestion index ${trafficCongestion.index}`}>
+                <span className="eyebrow">{lang === "th" ? "รถติด" : "Traffic"}</span>
+                <strong className={trafficCongestion.index > 55 ? "tone-warning" : trafficCongestion.index > 30 ? "tone-neutral" : "tone-positive"}>{trafficCongestion.index}</strong>
+                {kpiHistory.traffic.length > 2 && <Sparkline values={kpiHistory.traffic} />}
               </div>
               <div className={`kpi-item${floodStatus.rainfallLast24h > 50 ? " kpi-alert" : ""}${kpiChanged.has("rain") ? " data-changed data-refreshed" : ""}`} aria-label={`${floodStatus.rainfallLast24h} millimeters rainfall in 24 hours`}>
                 <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
@@ -4919,6 +4936,29 @@ function DashboardPage() {
                 <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
                 <strong>{floodStatus.rainfallLast24h}mm</strong>
               </div>
+            </div>
+          </section>
+          )}
+
+          {/* — Traffic Corridors — */}
+          {city === "bangkok" && trafficCongestion.corridors.length > 0 && (
+          <section className="card overview-card traffic-corridors">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ถนนสายหลัก" : "Traffic Corridors"}</span>
+              <span className={`status-pill traffic-${trafficCongestion.level}`}>{trafficCongestion.level}</span>
+            </div>
+            <div className="corridor-grid">
+              {trafficCongestion.corridors.map((c) => (
+                <div key={c.name} className={`corridor-item corridor-${c.level}`}>
+                  <span className="corridor-name">{c.name}</span>
+                  <span className="corridor-badge">{c.events > 0 ? c.events : ""}</span>
+                </div>
+              ))}
+            </div>
+            <div className="corridor-summary">
+              <span>{trafficCongestion.accidents > 0 ? `${trafficCongestion.accidents} ${lang === "th" ? "อุบัติเหตุ" : "accidents"}` : ""}</span>
+              <span>{trafficCongestion.closures > 0 ? `${trafficCongestion.closures} ${lang === "th" ? "ปิดถนน" : "closures"}` : ""}</span>
+              <span>{trafficCongestion.breakdowns > 0 ? `${trafficCongestion.breakdowns} ${lang === "th" ? "เสีย" : "breakdowns"}` : ""}</span>
             </div>
           </section>
           )}

@@ -205,6 +205,7 @@ export async function createServer() {
   /* ── Bangkok Governor's IOC endpoints ── */
   app.get("/api/traffy-fondue", async () => store.getTraffyFondue());
   app.get("/api/flood-status", async () => store.getFloodStatus());
+  app.get("/api/traffic-congestion", async () => store.getTrafficCongestion());
 
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
