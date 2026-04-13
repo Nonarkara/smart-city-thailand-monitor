@@ -2232,7 +2232,10 @@ function DashboardPage() {
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"map" | "satellite" | "cctv" | "insights" | "data">("map");
+  type TabId = "map" | "satellite" | "cctv" | "insights" | "data";
+  const [activeTab, setActiveTab] = useState<TabId>("map");
+  const [tabHistory, setTabHistory] = useState<TabId[]>(["map"]);
+  const [tabHistoryIndex, setTabHistoryIndex] = useState(0);
   const [layerPaletteOpen, setLayerPaletteOpen] = useState(false);
   const [opsDrawerState, setOpsDrawerState] = useState<OpsDrawerState | null>(null);
   const [timeCompareEnabled, setTimeCompareEnabled] = useState(false);
@@ -2267,9 +2270,63 @@ function DashboardPage() {
   const [kpiChanged, setKpiChanged] = useState<Set<string>>(new Set());
   const prevKpiRef = useRef({ aqi: 0, reports: 0, resolved: 0, temp: 0, flood: 0, rain: 0 });
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   useEffect(() => {
     document.title = PUBLIC_DASHBOARD_BRAND.title;
   }, []);
+
+  /* — Immersion: trap browser back button so users stay on the dashboard — */
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+    const handler = () => { window.history.pushState(null, "", window.location.href); };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
+
+  /* — Immersion: warn before closing/navigating away — */
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  /* — Fullscreen / Kiosk mode — */
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  }
+
+  /* — In-app navigation stack for back/forward — */
+  function navigateToTab(tab: TabId) {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    setTabHistory((prev) => [...prev.slice(0, tabHistoryIndex + 1), tab].slice(-20));
+    setTabHistoryIndex((prev) => Math.min(prev + 1, 19));
+  }
+  function navigateBack() {
+    if (tabHistoryIndex > 0) {
+      const i = tabHistoryIndex - 1;
+      setTabHistoryIndex(i);
+      setActiveTab(tabHistory[i]);
+    }
+  }
+  function navigateForward() {
+    if (tabHistoryIndex < tabHistory.length - 1) {
+      const i = tabHistoryIndex + 1;
+      setTabHistoryIndex(i);
+      setActiveTab(tabHistory[i]);
+    }
+  }
 
   const {
     lang,
@@ -3790,7 +3847,7 @@ function DashboardPage() {
 
     startTransition(() => {
       setSearchParams(next);
-      setActiveTab("map");
+      navigateToTab("map");
       setRecenterSignal((value) => value + 1);
     });
   }
@@ -4053,7 +4110,7 @@ function DashboardPage() {
       <div className="dashboard-stage">
         <div className="map-zone">
         {/* AI Status Line - floating at top of map */}
-        <button type="button" className="ai-status-line" onClick={() => setActiveTab("insights")}>
+        <button type="button" className="ai-status-line" onClick={() => navigateToTab("insights")}>
           <span className="ai-dot" />
           <span>{executiveSignal}</span>
         </button>
@@ -4080,8 +4137,9 @@ function DashboardPage() {
           type="button"
           className="layer-palette-toggle"
           onClick={() => setLayerPaletteOpen((v) => !v)}
+          title={lang === "th" ? "เปิด/ปิดรายการชั้นข้อมูลดาวเทียมและปฏิบัติการ" : "Toggle satellite & operational data layer list"}
         >
-          {lang === "th" ? `ตัวกรองแผนที่ (${layers.length})` : `Map Filters (${layers.length})`}
+          {lang === "th" ? `ชั้นข้อมูล (${layers.length})` : `Layers (${layers.length})`}
         </button>
 
         {/* Floating Layer Palette */}
@@ -4135,13 +4193,31 @@ function DashboardPage() {
 
         {/* Floating Map Controls */}
         <div className="map-floating-controls">
-          <button type="button" className="map-float-btn" onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")}>
-            {basemap === "satellite" ? "Atlas" : "Sat"}
+          <button type="button" className="map-float-btn" onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")} title={basemap === "satellite" ? (lang === "th" ? "สลับเป็นแผนที่เส้น" : "Switch to atlas map") : (lang === "th" ? "สลับเป็นภาพถ่ายดาวเทียม" : "Switch to satellite imagery")}>
+            {basemap === "satellite" ? (lang === "th" ? "แผนที่" : "Atlas") : (lang === "th" ? "ดาวเทียม" : "Satellite")}
           </button>
-          <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)}>
+          <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)} title={lang === "th" ? "กลับไปจุดเริ่มต้น" : "Reset map to default view"}>
             {copy.recenter}
           </button>
         </div>
+
+        {/* Active Layer Legend — always visible on map surface */}
+        {(() => {
+          const activeSatItems = satelliteToggleOptions.filter((item) => layers.includes(item.id));
+          const activeOpsItems = operationalLayerOptions.filter((item) => layers.includes(item.id));
+          const allActive = [...activeOpsItems.map((item) => ({ id: item.id, label: item.label, color: item.color, kind: "ops" as const })), ...activeSatItems.map((item) => ({ id: item.id, label: item.label, color: item.color, kind: "sat" as const }))];
+          return allActive.length > 0 ? (
+            <div className="active-layers-legend">
+              {allActive.map((item) => (
+                <button key={item.id} type="button" className="legend-chip" onClick={() => item.kind === "sat" ? toggleSatelliteLayer(item.id) : toggleLayer(item.id)} title={lang === "th" ? "คลิกเพื่อปิดชั้นข้อมูลนี้" : "Click to toggle this layer off"}>
+                  <span className="legend-dot" style={{ background: item.color }} />
+                  <span className="legend-label">{localize(lang, item.label)}</span>
+                  <span className="legend-x">×</span>
+                </button>
+              ))}
+            </div>
+          ) : null;
+        })()}
 
         {/* Floating Alert Chips */}
         {activeTab === "map" ? (
@@ -4154,17 +4230,17 @@ function DashboardPage() {
                   </button>
                 ))}
                 {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
-                  <button key={e.id} type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                  <button key={e.id} type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
                     {`${localize(lang, e.title)} ~${(e.expectedCrowd / 1000).toFixed(0)}k`}
                   </button>
                 ))}
                 {cctvSamples.filter((s) => s.severity === "alert").slice(0, 1).map((s) => (
-                  <button key={s.id} type="button" className="map-alert-chip warning" onClick={() => setActiveTab("cctv")}>
+                  <button key={s.id} type="button" className="map-alert-chip warning" onClick={() => navigateToTab("cctv")}>
                     {`${localize(lang, s.detection)} · ${localize(lang, s.zone)}`}
                   </button>
                 ))}
                 {socialListening.mentionCount > 0 ? (
-                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                  <button type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
                     {`${socialListening.mentionCount} mentions`}
                   </button>
                 ) : null}
@@ -4185,7 +4261,7 @@ function DashboardPage() {
                   </button>
                 ) : null}
                 {socialListening.mentionCount > 0 ? (
-                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
+                  <button type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
                     {`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"}`}
                   </button>
                 ) : null}
@@ -4271,7 +4347,7 @@ function DashboardPage() {
                       setSearchParams(next);
                       setRecenterSignal((v) => v + 1);
                     });
-                    setActiveTab("map");
+                    navigateToTab("map");
                   }}
                 >
                   <span className="sat-tile-label">{item.title}</span>
@@ -4391,7 +4467,7 @@ function DashboardPage() {
                       basemap: "atlas",
                       layers: Array.from(new Set([...layers, ...item.targetLayers]))
                     });
-                    setActiveTab("map");
+                    navigateToTab("map");
                   }}
                 >
                   <div className="cctv-event-head">
@@ -4514,7 +4590,7 @@ function DashboardPage() {
                 <span className="status-pill">{decisionItems.length}</span>
               </div>
               {decisionItems.length > 0 ? decisionItems.map((item) => (
-                <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => { focusDecision(item); setActiveTab("map"); }}>
+                <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => { focusDecision(item); navigateToTab("map"); }}>
                   <div className="stack-title">
                     <strong>{localize(lang, item.title)}</strong>
                     <span className={`status-tag ${item.status}`}>{item.status}</span>
@@ -4544,7 +4620,7 @@ function DashboardPage() {
                     className="data-item"
                     onClick={() => {
                       focusCityWithLayer(mappedCitySlug, "itic-traffic");
-                      setActiveTab("map");
+                      navigateToTab("map");
                     }}
                   >
                     <div className="stack-title">
@@ -4586,7 +4662,7 @@ function DashboardPage() {
                 <span className="status-pill">{filteredProjects.length}</span>
               </div>
               {compactProjects.map((project) => (
-                <button key={project.id} type="button" className="data-item" onClick={() => { focusCityWithLayer(project.citySlug, "projects"); setActiveTab("map"); }}>
+                <button key={project.id} type="button" className="data-item" onClick={() => { focusCityWithLayer(project.citySlug, "projects"); navigateToTab("map"); }}>
                   <div className="stack-title">
                     <strong>{localize(lang, project.title)}</strong>
                     <span className={`status-tag ${project.status}`}>{project.status}</span>
@@ -4757,50 +4833,90 @@ function DashboardPage() {
 
         {/* Tab Bar */}
         <div className="map-tab-bar">
+          <button type="button" className="map-tab nav-back-btn" disabled={tabHistoryIndex <= 0} onClick={navigateBack} title={lang === "th" ? "ย้อนกลับ" : "Go back"}>
+            ◀
+          </button>
           {(["map", "satellite", "cctv", "insights", "data"] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               className={activeTab === tab ? "map-tab active" : "map-tab"}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => navigateToTab(tab)}
+              title={tab === "map" ? (lang === "th" ? "แผนที่ปฏิบัติการ — ดูข้อมูลทุกชั้น" : "Operational map — view all data layers") : tab === "satellite" ? (lang === "th" ? "ภาพดาวเทียมและข้อมูลโลก" : "Satellite imagery & Earth observation data") : tab === "cctv" ? (lang === "th" ? "กล้องวงจรปิดสาธารณะ" : "Public CCTV camera feeds") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย AI — ถามคำถาม" : "AI assistant — ask questions about the data") : (lang === "th" ? "แดชบอร์ด — จราจร ข่าว โครงการ" : "Dashboard — traffic, news, projects, APIs")}
             >
               {tab === "map" ? (lang === "th" ? "แผนที่" : "Map") : tab === "satellite" ? (lang === "th" ? "ภาพโลก" : "Earth View") : tab === "cctv" ? (lang === "th" ? "กล้อง" : "Cameras") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย" : "Assistant") : (lang === "th" ? "แดชบอร์ด" : "Dashboard")}
             </button>
           ))}
+          <button type="button" className="map-tab nav-fwd-btn" disabled={tabHistoryIndex >= tabHistory.length - 1} onClick={navigateForward} title={lang === "th" ? "ถัดไป" : "Go forward"}>
+            ▶
+          </button>
+          <button type="button" className="map-tab kiosk-btn" onClick={toggleFullscreen} title={isFullscreen ? (lang === "th" ? "ออกจากโหมดเต็มจอ" : "Exit fullscreen") : (lang === "th" ? "โหมดเต็มจอ (Kiosk)" : "Fullscreen kiosk mode")}>
+            {isFullscreen ? "⊡" : "⊞"}
+          </button>
         </div>
         </div>
 
         <section className="overview-shell">
           {/* — At-a-Glance Summary Strip — */}
           <section className="summary-strip">
-            <button type="button" className="summary-card" onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
+            <button type="button" className="summary-card" title={lang === "th" ? "ดัชนีคุณภาพอากาศ — คลิกเพื่อดูแผนที่มลพิษ" : "Air Quality Index — click to view pollution map"} onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
               <span className="summary-label">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
               <strong className={`summary-value aqi-${topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown"}`}>
                 {topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
               </strong>
               <span className="summary-sub">{topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบัน — คลิกเพื่อดูแผนที่สภาพอากาศ" : "Current temperature — click to view weather map"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
               <span className="summary-label">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
               <strong className="summary-value">{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
               <span className="summary-sub">{hottestWeatherFeature?.title ?? ""}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
+            <button type="button" className="summary-card" onClick={() => navigateToTab("data")}>
               <span className="summary-label">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
               <strong className={`summary-value ${decisionItems.length > 0 ? "has-actions" : ""}`}>{decisionItems.length}</strong>
               <span className="summary-sub">{lang === "th" ? "รายการ" : "pending"}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => setActiveTab("cctv")}>
+            <button type="button" className="summary-card" onClick={() => navigateToTab("cctv")}>
               <span className="summary-label">{lang === "th" ? "กล้อง" : "Cameras"}</span>
               <strong className="summary-value">{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
               <span className="summary-sub">{lang === "th" ? "ออนไลน์" : "online"}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
+            <button type="button" className="summary-card" onClick={() => navigateToTab("data")}>
               <span className="summary-label">{lang === "th" ? "กระแส" : "Public Mood"}</span>
               <strong className="summary-value">{Math.round(socialListening.positiveShare * 100)}%</strong>
               <span className="summary-sub">{`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "mentions"}`}</span>
             </button>
           </section>
+
+          {/* — Always-Visible Live Traffic Ticker — */}
+          {city === "bangkok" && (
+            <section className="card overview-card traffic-ticker">
+              <div className="card-header">
+                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic"}</strong>
+                <span className="ticker-meta">
+                  <span className={`status-pill congestion-${trafficCongestion.level}`}>{trafficCongestion.level === "free" ? (lang === "th" ? "ว่าง" : "Free") : trafficCongestion.level === "light" ? (lang === "th" ? "เบา" : "Light") : trafficCongestion.level === "moderate" ? (lang === "th" ? "ปานกลาง" : "Moderate") : trafficCongestion.level === "heavy" ? (lang === "th" ? "หนัก" : "Heavy") : (lang === "th" ? "ติดขัด" : "Gridlock")}</span>
+                  <span className="status-pill">{trafficWatchItems.length}</span>
+                </span>
+              </div>
+              <div className="ticker-scroll">
+                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 8).map((feature) => {
+                  const eventClass = stringProperty(feature, "eventClass") || "traffic";
+                  const severity = stringProperty(feature, "severity") || "low";
+                  const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
+                  const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
+                  return (
+                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={feature.description || feature.title}>
+                      <span className={`ticker-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
+                      <span className="ticker-title">{feature.title}</span>
+                      <span className="ticker-time">{formatUtcDateTime(stamp)}</span>
+                    </button>
+                  );
+                }) : (
+                  <div className="ticker-empty">{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* — Live KPI Strip — */}
           {city === "bangkok" && (
@@ -4810,12 +4926,12 @@ function DashboardPage() {
               <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level === "normal" ? (lang === "th" ? "ปกติ" : "Normal") : floodStatus.level.toUpperCase()}</span>
             </div>
             <div className="governor-kpi-grid">
-              <div className={`kpi-item${resilience.aqi > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${resilience.aqi}`}>
+              <div className={`kpi-item${resilience.aqi > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${resilience.aqi}`} title={lang === "th" ? `ดัชนีคุณภาพอากาศ: ${resilience.aqi} (0-50 ดี, 51-100 ปานกลาง, >100 ไม่ดี)` : `Air Quality Index: ${resilience.aqi} (0-50 Good, 51-100 Moderate, >100 Unhealthy)`}>
                 <span className="eyebrow">AQI</span>
                 <strong className={resilience.aqi > 100 ? "tone-warning" : resilience.aqi > 50 ? "tone-neutral" : "tone-positive"}>{resilience.aqi}</strong>
                 {kpiHistory.aqi.length > 2 && <Sparkline values={kpiHistory.aqi} />}
               </div>
-              <div className={`kpi-item${traffyFondue.totalOpen > 500 ? " kpi-alert" : ""}${kpiChanged.has("reports") ? " data-changed data-refreshed" : ""}`} aria-label={`${traffyFondue.totalOpen} open citizen reports`}>
+              <div className={`kpi-item${traffyFondue.totalOpen > 500 ? " kpi-alert" : ""}${kpiChanged.has("reports") ? " data-changed data-refreshed" : ""}`} aria-label={`${traffyFondue.totalOpen} open citizen reports`} title={lang === "th" ? `เรื่องร้องเรียนจาก Traffy Fondue ที่ยังไม่ได้แก้ไข: ${traffyFondue.totalOpen}` : `Open citizen reports via Traffy Fondue: ${traffyFondue.totalOpen}`}>
                 <span className="eyebrow">{lang === "th" ? "ร้องเรียน" : "Reports"}</span>
                 <strong className="tone-warning">{traffyFondue.totalOpen}</strong>
                 {kpiHistory.reports.length > 2 && <Sparkline values={kpiHistory.reports} />}
@@ -4830,7 +4946,7 @@ function DashboardPage() {
                 <strong>{resilience.weatherTemperatureC}°C</strong>
                 {kpiHistory.temp.length > 2 && <Sparkline values={kpiHistory.temp} />}
               </div>
-              <div className={`kpi-item${trafficCongestion.index > 55 ? " kpi-alert" : ""}`} aria-label={`Traffic congestion index ${trafficCongestion.index}`}>
+              <div className={`kpi-item${trafficCongestion.index > 55 ? " kpi-alert" : ""}`} aria-label={`Traffic congestion index ${trafficCongestion.index}`} title={lang === "th" ? `ดัชนีรถติด: ${trafficCongestion.index}/100 — อุบัติเหตุ ${trafficCongestion.accidents} ปิดถนน ${trafficCongestion.closures}` : `Traffic index: ${trafficCongestion.index}/100 — ${trafficCongestion.accidents} accidents, ${trafficCongestion.closures} closures`}>
                 <span className="eyebrow">{lang === "th" ? "รถติด" : "Traffic"}</span>
                 <strong className={trafficCongestion.index > 55 ? "tone-warning" : trafficCongestion.index > 30 ? "tone-neutral" : "tone-positive"}>{trafficCongestion.index}</strong>
                 {kpiHistory.traffic.length > 2 && <Sparkline values={kpiHistory.traffic} />}
@@ -4877,7 +4993,7 @@ function DashboardPage() {
           )}
 
           {/* — Briefing: single compact line — */}
-          <section className="card overview-card briefing-compact" onClick={() => setActiveTab("insights")}>
+          <section className="card overview-card briefing-compact" onClick={() => navigateToTab("insights")}>
             <span className="eyebrow">{copy.briefing}</span>
             <strong>{localize(lang, overview.briefing.headline)}</strong>
           </section>
@@ -4887,7 +5003,7 @@ function DashboardPage() {
           <section className="card overview-card traffy-fondue">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "ร้องเรียนประชาชน" : "Citizen Reports"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => setActiveTab("map")}>
+              <button type="button" className="status-pill status-button" onClick={() => navigateToTab("map")}>
                 {traffyFondue.totalOpen} {lang === "th" ? "รายการ" : "open"}
               </button>
             </div>
@@ -4967,7 +5083,7 @@ function DashboardPage() {
           <section className="card overview-card queue">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
+            <button type="button" className="status-pill status-button" onClick={() => navigateToTab("data")}>
               {decisionItems.length}
             </button>
           </div>
@@ -4998,7 +5114,7 @@ function DashboardPage() {
           <section className="card overview-card news">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
-            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
+            <button type="button" className="status-pill status-button" onClick={() => navigateToTab("data")}>
               {filteredNews.length}
             </button>
           </div>
@@ -5019,7 +5135,7 @@ function DashboardPage() {
               <span className="status-pill">{formatUtcClock(latestSyncSource?.lastCheckedAt)}</span>
             </div>
             <div className="system-status-grid">
-              <button type="button" className="sys-item" onClick={() => setActiveTab("satellite")}>
+              <button type="button" className="sys-item" onClick={() => navigateToTab("satellite")}>
                 <span className="sys-label">{lang === "th" ? "อากาศ" : "Weather"}</span>
                 <span className={`sys-value ${resilience.source.freshnessStatus}`}>{resilience.weatherTemperatureC}°C</span>
               </button>
@@ -5027,19 +5143,19 @@ function DashboardPage() {
                 <span className="sys-label">AQI</span>
                 <span className={`sys-value ${resilience.aqi > 100 ? "warning" : resilience.aqi > 50 ? "delayed" : "live"}`}>{resilience.aqi}</span>
               </button>
-              <button type="button" className="sys-item" onClick={() => setActiveTab("cctv")}>
+              <button type="button" className="sys-item" onClick={() => navigateToTab("cctv")}>
                 <span className="sys-label">{lang === "th" ? "กล้อง" : "CCTV"}</span>
                 <span className="sys-value live">{publicCctvCameras.filter((c) => c.status === "live").length}</span>
               </button>
-              <button type="button" className="sys-item" onClick={() => setActiveTab("satellite")}>
+              <button type="button" className="sys-item" onClick={() => navigateToTab("satellite")}>
                 <span className="sys-label">EO</span>
                 <span className="sys-value live">{activeSatelliteLayers.length}</span>
               </button>
-              <button type="button" className="sys-item" onClick={() => setActiveTab("data")}>
+              <button type="button" className="sys-item" onClick={() => navigateToTab("data")}>
                 <span className="sys-label">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
                 <span className="sys-value live">{apiReadyCount}/{apiWatchSources.length}</span>
               </button>
-              <button type="button" className="sys-item" onClick={() => setActiveTab("data")}>
+              <button type="button" className="sys-item" onClick={() => navigateToTab("data")}>
                 <span className="sys-label">{lang === "th" ? "อัปเดต" : "Sync"}</span>
                 <span className="sys-value live">{resilience.source.freshnessStatus}</span>
               </button>
@@ -5113,7 +5229,7 @@ function DashboardPage() {
                 className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
                 onClick={() => {
                   action.onClick?.();
-                  setActiveTab("map");
+                  navigateToTab("map");
                 }}
               >
                 {action.label}
