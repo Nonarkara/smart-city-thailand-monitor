@@ -1,5 +1,6 @@
 import { syncAir4Thai } from "../adapters/air4thaiAdapter.js";
 import { syncBmaFlood } from "../adapters/bmaFloodAdapter.js";
+import { syncBmaCityData } from "../adapters/bmaCityDataAdapter.js";
 import { syncBmaGis } from "../adapters/bmaGisAdapter.js";
 import { syncCitydataCatalog } from "../adapters/citydataAdapter.js";
 import type { AdapterSyncResult } from "../adapters/common.js";
@@ -18,6 +19,8 @@ import { syncOpenMeteoAirQuality } from "../adapters/openMeteoAirQualityAdapter.
 import { syncOpenMeteoWeather } from "../adapters/openMeteoWeatherAdapter.js";
 import { syncTalkwalkerAlerts } from "../adapters/talkwalkerAlertsAdapter.js";
 import { syncTimeSnapshot } from "../adapters/timeSyncService.js";
+import { syncTatTourism } from "../adapters/tatTourismAdapter.js";
+import { syncTcebMice } from "../adapters/tcebAdapter.js";
 import { syncTmdWeather } from "../adapters/tmdWeatherAdapter.js";
 import { syncTraffyFondue } from "../adapters/traffyFondueAdapter.js";
 import { syncUrbanis } from "../adapters/urbanisAdapter.js";
@@ -56,6 +59,9 @@ const fullSyncTasks: SyncTask[] = [
   { sourceId: "market-context", run: syncMarketSignals },
   { sourceId: "nasa-eonet", run: syncEonetEvents },
   { sourceId: "bma-gis", run: syncBmaGis },
+  { sourceId: "bma-citydata", run: syncBmaCityData },
+  { sourceId: "tat-tourism", run: syncTatTourism },
+  { sourceId: "tceb-mice", run: syncTcebMice },
   ...opsSyncTasks
 ];
 

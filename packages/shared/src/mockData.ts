@@ -1666,6 +1666,33 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
     message: "Bangkok flood nowcasting and drainage status."
+  },
+  {
+    id: "bma-citydata",
+    name: "BMA City Data Portal",
+    category: "catalog",
+    url: "https://citydataportal.bangkok.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Official Bangkok open data CKAN portal with municipal datasets on infrastructure, budget, and services."
+  },
+  {
+    id: "tat-tourism",
+    name: "TAT Open Data",
+    category: "catalog",
+    url: "https://datacatalog.tat.or.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Tourism Authority of Thailand open data catalog with visitor statistics, hotel occupancy, and event data."
+  },
+  {
+    id: "tceb-mice",
+    name: "TCEB Open Data",
+    category: "catalog",
+    url: "https://opendata.tceb.or.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Thailand Convention & Exhibition Bureau open data for MICE events, convention traffic, and business travel."
   }
 ];
 

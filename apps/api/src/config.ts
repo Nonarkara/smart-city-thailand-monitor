@@ -107,5 +107,16 @@ export const config = {
     process.env.TMD_RSS_ENDPOINT ?? "https://www.tmd.go.th/api/xml/region-daily-forecast?regionid=7",
   bmaGisBaseUrl:
     process.env.BMA_GIS_BASE_URL ?? "https://bmagis.bangkok.go.th/arcgis/rest/services",
-  bmaFloodEndpoint: process.env.BMA_FLOOD_ENDPOINT ?? ""
+  bmaFloodEndpoint: process.env.BMA_FLOOD_ENDPOINT ?? "",
+
+  /* ── Bangkok Open Data Sources ── */
+  bmaCityDataEndpoint:
+    process.env.BMA_CITYDATA_ENDPOINT ??
+    "https://citydataportal.bangkok.go.th/api/3/action/package_search?q=bangkok&rows=12&sort=metadata_modified+desc",
+  tatTourismEndpoint:
+    process.env.TAT_TOURISM_ENDPOINT ??
+    "https://datacatalog.tat.or.th/api/3/action/package_search?q=tourism+bangkok&rows=10&sort=metadata_modified+desc",
+  tcebEndpoint:
+    process.env.TCEB_ENDPOINT ??
+    "https://opendata.tceb.or.th/api/3/action/package_search?q=mice+event&rows=10&sort=metadata_modified+desc"
 };
