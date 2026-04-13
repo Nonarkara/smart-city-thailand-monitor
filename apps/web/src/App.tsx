@@ -1655,9 +1655,7 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
       "cctv-cameras",
       "projects",
       "resilience",
-      "bangkok-passages",
-      "eo-aerosol",
-      "eo-precipitation"
+      "bangkok-passages"
     ];
   }
 
@@ -4895,25 +4893,37 @@ function DashboardPage() {
                 <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic"}</strong>
                 <span className="ticker-meta">
                   <span className={`status-pill congestion-${trafficCongestion.level}`}>{trafficCongestion.level === "free" ? (lang === "th" ? "ว่าง" : "Free") : trafficCongestion.level === "light" ? (lang === "th" ? "เบา" : "Light") : trafficCongestion.level === "moderate" ? (lang === "th" ? "ปานกลาง" : "Moderate") : trafficCongestion.level === "heavy" ? (lang === "th" ? "หนัก" : "Heavy") : (lang === "th" ? "ติดขัด" : "Gridlock")}</span>
+                  <span className="status-pill">{trafficCongestion.accidents > 0 ? `${trafficCongestion.accidents} ${lang === "th" ? "อุบัติเหตุ" : "accidents"}` : ""}{trafficCongestion.closures > 0 ? ` ${trafficCongestion.closures} ${lang === "th" ? "ปิดถนน" : "closures"}` : ""}</span>
                   <span className="status-pill">{trafficWatchItems.length}</span>
                 </span>
               </div>
               <div className="ticker-scroll">
-                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 8).map((feature) => {
+                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 12).map((feature) => {
                   const eventClass = stringProperty(feature, "eventClass") || "traffic";
                   const severity = stringProperty(feature, "severity") || "low";
                   const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
                   const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
+                  const desc = feature.description || "";
+                  const contributor = stringProperty(feature, "contributor");
                   return (
-                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={feature.description || feature.title}>
+                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={desc || feature.title}>
                       <span className={`ticker-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
-                      <span className="ticker-title">{feature.title}</span>
-                      <span className="ticker-time">{formatUtcDateTime(stamp)}</span>
+                      <span className="ticker-detail">
+                        <span className="ticker-title">{feature.title}</span>
+                        {desc ? <span className="ticker-desc">{desc}</span> : null}
+                      </span>
+                      <span className="ticker-end">
+                        <span className="ticker-time">{formatUtcDateTime(stamp)}</span>
+                        {contributor ? <span className="ticker-source">{contributor}</span> : <span className="ticker-source">iTIC / Longdo</span>}
+                      </span>
                     </button>
                   );
                 }) : (
                   <div className="ticker-empty">{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</div>
                 )}
+              </div>
+              <div className="ticker-footer">
+                <span className="ticker-source-attr">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} iTIC Foundation / Longdo Traffic — event.longdo.com</span>
               </div>
             </section>
           )}
@@ -5029,6 +5039,7 @@ function DashboardPage() {
                 ))}
               </div>
             </div>
+            <div className="panel-source">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} Traffy Fondue — traffy.in.th</div>
           </section>
           )}
 
@@ -5053,6 +5064,7 @@ function DashboardPage() {
                 <strong>{floodStatus.rainfallLast24h}mm</strong>
               </div>
             </div>
+            <div className="panel-source">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} BMA / Open-Meteo</div>
           </section>
           )}
 
