@@ -4105,6 +4105,57 @@ function DashboardPage() {
 
       {/* Manual and ops panels removed — content consolidated into tabs */}
 
+      {/* ── iTIC Live Incident Bar ── */}
+      {city === "bangkok" && trafficWatchItems.length > 0 && (
+        <div className="itic-live-bar">
+          <span className="itic-bar-label">{lang === "th" ? "สด" : "LIVE"}</span>
+          <div className="itic-bar-scroll">
+            {trafficWatchItems.slice(0, 15).map((feature, idx) => {
+              const eventClass = stringProperty(feature, "eventClass") || "traffic";
+              const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
+              const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
+              return (
+                <button key={feature.id} type="button" className="itic-bar-item" onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }}>
+                  <span className={`itic-bar-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
+                  <span className="itic-bar-title">{feature.title}</span>
+                  <span className="itic-bar-time">{formatUtcDateTime(stamp)}</span>
+                  {idx < trafficWatchItems.length - 1 && <span className="itic-bar-sep">·</span>}
+                </button>
+              );
+            })}
+          </div>
+          <span className="itic-bar-source">iTIC</span>
+        </div>
+      )}
+
+      {/* ── Bangkok Vibes Bar ── */}
+      {city === "bangkok" && (
+        <div className="vibes-bar">
+          <span className="vibes-bar-label">{lang === "th" ? "กระแส" : "VIBES"}</span>
+          <div className="vibes-bar-content">
+            <span className={`vibes-sentiment ${socialListening.sentimentScore >= 0 ? "positive" : "negative"}`}>
+              {socialListening.sentimentScore >= 0 ? "+" : ""}{socialListening.sentimentScore}
+            </span>
+            <span className="vibes-sep">|</span>
+            <span className="vibes-mentions">{socialListening.mentionCount} {lang === "th" ? "กล่าวถึง" : "mentions"}</span>
+            <span className="vibes-sep">|</span>
+            <span className="vibes-positive">{Math.round(socialListening.positiveShare * 100)}% {lang === "th" ? "เชิงบวก" : "positive"}</span>
+            <span className="vibes-sep">|</span>
+            {socialListening.topTerms.slice(0, 6).map((term) => (
+              <span key={term} className="vibes-term">{term}</span>
+            ))}
+            <span className="vibes-sep">|</span>
+            <span className="vibes-headline">{localize(lang, overview.briefing.headline)}</span>
+            {filteredNews.slice(0, 2).map((item) => (
+              <span key={item.id} className="vibes-news">
+                <a href={item.source.sourceUrl} target="_blank" rel="noreferrer">{localize(lang, item.title)}</a>
+              </span>
+            ))}
+          </div>
+          <span className="vibes-bar-source">{socialListening.dominantSource}</span>
+        </div>
+      )}
+
       <div className="dashboard-stage">
         <div className="map-zone">
         {/* AI Status Line - floating at top of map */}
