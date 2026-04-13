@@ -4128,31 +4128,22 @@ function DashboardPage() {
         </div>
       )}
 
-      {/* ── Bangkok Vibes Bar ── */}
+      {/* ── Accident & Incident News Bar ── */}
       {city === "bangkok" && (
         <div className="vibes-bar">
-          <span className="vibes-bar-label">{lang === "th" ? "กระแส" : "VIBES"}</span>
+          <span className="vibes-bar-label">{lang === "th" ? "ข่าว" : "NEWS"}</span>
           <div className="vibes-bar-content">
-            <span className={`vibes-sentiment ${socialListening.sentimentScore >= 0 ? "positive" : "negative"}`}>
-              {socialListening.sentimentScore >= 0 ? "+" : ""}{socialListening.sentimentScore}
-            </span>
-            <span className="vibes-sep">|</span>
-            <span className="vibes-mentions">{socialListening.mentionCount} {lang === "th" ? "กล่าวถึง" : "mentions"}</span>
-            <span className="vibes-sep">|</span>
-            <span className="vibes-positive">{Math.round(socialListening.positiveShare * 100)}% {lang === "th" ? "เชิงบวก" : "positive"}</span>
-            <span className="vibes-sep">|</span>
-            {socialListening.topTerms.slice(0, 6).map((term) => (
-              <span key={term} className="vibes-term">{term}</span>
-            ))}
-            <span className="vibes-sep">|</span>
-            <span className="vibes-headline">{localize(lang, overview.briefing.headline)}</span>
-            {filteredNews.slice(0, 2).map((item) => (
-              <span key={item.id} className="vibes-news">
-                <a href={item.source.sourceUrl} target="_blank" rel="noreferrer">{localize(lang, item.title)}</a>
+            {[...filteredNews, ...globalNews].slice(0, 8).map((item, idx) => (
+              <span key={item.id} className="vibes-news-item">
+                <a href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                  {localize(lang, item.title)}
+                </a>
+                <span className="vibes-news-src">{item.source.sourceName}</span>
+                {idx < 7 && <span className="vibes-sep">·</span>}
               </span>
             ))}
           </div>
-          <span className="vibes-bar-source">{socialListening.dominantSource}</span>
+          <span className="vibes-bar-source">GDELT · Google · NewsAPI</span>
         </div>
       )}
 

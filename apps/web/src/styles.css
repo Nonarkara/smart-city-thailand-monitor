@@ -7520,50 +7520,34 @@ a:focus-visible,
   white-space: nowrap;
 }
 .vibes-bar-content::-webkit-scrollbar { display: none; }
-.vibes-sentiment {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.vibes-sentiment.positive { color: #34d399; }
-.vibes-sentiment.negative { color: #f87171; }
 .vibes-sep {
   opacity: 0.15;
   font-size: 0.5rem;
 }
-.vibes-mentions {
-  opacity: 0.6;
+.vibes-news-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
-.vibes-positive {
-  color: #34d399;
-  opacity: 0.7;
-}
-.vibes-term {
-  padding: 1px 5px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.58rem;
+.vibes-news-item a {
   color: var(--ink);
-  opacity: 0.65;
-}
-.vibes-headline {
-  font-weight: 500;
-  opacity: 0.75;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.vibes-news {
-  opacity: 0.5;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.vibes-news a {
-  color: var(--blue);
   text-decoration: none;
+  opacity: 0.75;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
-.vibes-news a:hover {
-  text-decoration: underline;
+.vibes-news-item a:hover {
+  opacity: 1;
+  color: var(--blue);
+}
+.vibes-news-src {
+  font-size: 0.5rem;
+  opacity: 0.3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .vibes-bar-source {
   flex-shrink: 0;
