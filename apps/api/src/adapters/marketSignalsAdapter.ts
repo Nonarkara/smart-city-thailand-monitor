@@ -30,11 +30,58 @@ function formatSigned(value: number, suffix = "%") {
   return `${rounded >= 0 ? "+" : ""}${rounded}${suffix}`;
 }
 
+interface YahooChartResult {
+  chart?: {
+    result?: Array<{
+      meta?: {
+        regularMarketPrice?: number;
+        previousClose?: number;
+        symbol?: string;
+      };
+    }>;
+  };
+}
+
+const SET_TICKERS: Array<{ symbol: string; id: string; labelTh: string; labelEn: string }> = [
+  { symbol: "^SET.BK", id: "set-index", labelTh: "SET Index", labelEn: "SET Index" },
+  { symbol: "IMPACT.BK", id: "set-impact", labelTh: "IMPACT Growth REIT", labelEn: "IMPACT Growth REIT" },
+  { symbol: "BTS.BK", id: "set-bts", labelTh: "BTS Group", labelEn: "BTS Group Holdings" },
+  { symbol: "LH.BK", id: "set-lh", labelTh: "Land & Houses", labelEn: "Land and Houses" }
+];
+
+async function fetchSetStocks(): Promise<MarketSnapshot["items"]> {
+  const items: MarketSnapshot["items"] = [];
+  for (const ticker of SET_TICKERS) {
+    try {
+      const data = await fetchJsonOrNull<YahooChartResult>(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker.symbol)}?range=1d&interval=1d`
+      );
+      const meta = data?.chart?.result?.[0]?.meta;
+      if (meta?.regularMarketPrice && meta.previousClose) {
+        const price = meta.regularMarketPrice;
+        const change = ((price - meta.previousClose) / meta.previousClose) * 100;
+        const isIndex = ticker.id === "set-index";
+        items.push({
+          id: ticker.id,
+          label: { th: ticker.labelTh, en: ticker.labelEn },
+          value: isIndex ? price.toLocaleString("en-US", { maximumFractionDigits: 2 }) : `฿${price.toFixed(2)}`,
+          changeText: { th: `24 ชม. ${formatSigned(change)}`, en: `24h ${formatSigned(change)}` },
+          tone: change >= 0.5 ? "positive" : change <= -0.5 ? "warning" : "neutral"
+        });
+      }
+    } catch {
+      // Skip failed tickers silently
+    }
+  }
+  return items;
+}
+
 export async function syncMarketSignals() {
-  const [btcPayload, fxPayload, goldPayload] = await Promise.all([
+  const [btcPayload, fxPayload, goldPayload, setStocks] = await Promise.all([
     fetchJsonOrNull<CoinGeckoPayload>(config.marketBtcEndpoint),
     fetchJsonOrNull<FrankfurterPayload>(config.marketUsdThbEndpoint),
-    fetchJsonOrNull<GoldApiPayload>(config.marketGoldEndpoint)
+    fetchJsonOrNull<GoldApiPayload>(config.marketGoldEndpoint),
+    fetchSetStocks()
   ]);
 
   const items: MarketSnapshot["items"] = [];
@@ -75,6 +122,9 @@ export async function syncMarketSignals() {
       tone: delta <= 0 ? "neutral" : "warning"
     });
   }
+
+  // Add SET stock tickers
+  items.push(...setStocks);
 
   if (items.length === 0) {
     return buildResult({
