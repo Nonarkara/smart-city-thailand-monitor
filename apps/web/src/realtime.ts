@@ -209,28 +209,187 @@ export interface GdeltArticle {
 
 export function useGdeltThaiNews() {
   return useQuery<GdeltArticle[]>({
-    queryKey: ["gdelt-thai-domains"],
+    queryKey: ["gdelt-bangkok-broad"],
     queryFn: async () => {
-      // Filter to major Thai English-language news domains. The previous
-      // sourcecountry:thailand filter returned Thai-published articles about
-      // global topics; domain filter gets Thailand-relevant news directly.
-      const query =
-        "(domain:bangkokpost.com OR domain:nationthailand.com OR domain:thaipbsworld.com OR domain:khaosodenglish.com)";
-      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&format=JSON&maxrecords=15&sort=DateDesc`;
+      // Single GDELT call covering Bangkok Governor + air pollution + general
+      // Bangkok / Thailand stories. Simple query gets through GDELT's rate
+      // limiter more reliably than multi-clause domain filters.
+      // GDELT requires OR'd terms in parens. Phrase-quoted Bangkok-specific
+      // topics return more relevant results than bare keyword OR.
+      const query = `("Bangkok air pollution" OR "Bangkok air quality" OR "Bangkok Governor" OR Chadchart OR Sittipunt OR "Bangkok smog" OR "Bangkok PM2.5" OR "Bangkok Metropolitan Administration") sourcelang:eng`;
+      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&format=JSON&maxrecords=30&sort=DateDesc`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`gdelt ${res.status}`);
       const data = await res.json();
       const articles = (data.articles ?? []) as GdeltArticle[];
-      // Strip "Bangkok Post - " prefix that the GDELT scraper adds
+      return articles.map((a) => ({
+        ...a,
+        title: a.title.replace(/^Bangkok Post\s*-\s*/i, "").replace(/^Nation Thailand\s*-\s*/i, "").trim(),
+      }));
+    },
+    staleTime: 15 * 60_000,
+    refetchInterval: 30 * 60_000,
+    retry: 2,
+    retryDelay: (attempt) => attempt * 6000,
+  });
+}
+
+// ── Derived intelligence: tone + volume + Governor articles from a single fetch ──
+// Heuristic tone from headlines: GDELT TimelineTone is rate-limited / occasionally
+// CORS-blocked, so we score each title against a simple negative/positive lexicon.
+// Output is roughly comparable to GDELT's -10..+10 scale.
+const NEGATIVE_TERMS = [
+  "crisis", "alarm", "record", "pollution", "smog", "hazard", "fail", "delay",
+  "warning", "dangerous", "unhealthy", "deadly", "death", "killed", "loss",
+  "decline", "collapse", "panic", "concern", "worse", "spike", "surge",
+];
+const POSITIVE_TERMS = [
+  "plan", "improve", "better", "success", "approve", "launch", "open",
+  "boost", "gain", "rise", "win", "reform", "investment", "innovation",
+  "growth", "deal", "agreement",
+];
+
+// BMA = Bangkok Metropolitan Administration; running it is what the Governor does day-to-day.
+// Articles about BMA policy / operations are functionally Governor-watch material.
+const GOVERNOR_REGEX = /Governor|Chadchart|Sittipunt|ผู้ว่า|\bBMA\b|Bangkok Metropolitan Admin/i;
+const POLLUTION_REGEX = /pollution|smog|PM2\.?5|AQI|haze|air[- ]quality|airpocalypse|particulate|ozone|emission|breather|exhaust/i;
+
+export interface NewsIntelligence {
+  total: number;
+  tone: number;
+  governorArticles: GdeltArticle[];
+  pollutionArticles: GdeltArticle[];
+  pollutionTone: number;
+  pollutionVolume: number;
+}
+
+export function deriveIntelligence(articles: GdeltArticle[]): NewsIntelligence {
+  if (!articles || articles.length === 0) {
+    return { total: 0, tone: 0, governorArticles: [], pollutionArticles: [], pollutionTone: 0, pollutionVolume: 0 };
+  }
+  const score = (title: string): number => {
+    const t = title.toLowerCase();
+    let s = 0;
+    for (const term of NEGATIVE_TERMS) if (t.includes(term)) s -= 1.5;
+    for (const term of POSITIVE_TERMS) if (t.includes(term)) s += 1;
+    return s;
+  };
+  const sumTone = articles.reduce((acc, a) => acc + score(a.title), 0);
+  const tone = (sumTone / articles.length) * 2; // scale to ~-10..+10
+  const governorArticles = articles.filter((a) => GOVERNOR_REGEX.test(a.title));
+  const pollutionArticles = articles.filter((a) => POLLUTION_REGEX.test(a.title));
+  const pollutionTone = pollutionArticles.length > 0
+    ? (pollutionArticles.reduce((acc, a) => acc + score(a.title), 0) / pollutionArticles.length) * 2
+    : 0;
+  return {
+    total: articles.length,
+    tone,
+    governorArticles,
+    pollutionArticles,
+    pollutionTone,
+    pollutionVolume: pollutionArticles.length,
+  };
+}
+
+// ── GDELT Bangkok Governor news ──
+// Real-time articles mentioning the Bangkok Governor / Chadchart specifically.
+export function useGovernorNews() {
+  return useQuery<GdeltArticle[]>({
+    queryKey: ["gdelt-bkk-governor"],
+    queryFn: async () => {
+      const query = `("Bangkok Governor" OR Chadchart) sourcelang:eng`;
+      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&format=JSON&maxrecords=10&sort=DateDesc`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`gdelt-gov ${res.status}`);
+      const data = await res.json();
+      const articles = (data.articles ?? []) as GdeltArticle[];
       return articles.map((a) => ({
         ...a,
         title: a.title.replace(/^Bangkok Post\s*-\s*/i, "").replace(/^Nation Thailand\s*-\s*/i, "").trim(),
       }));
     },
     staleTime: 10 * 60_000,
-    refetchInterval: 15 * 60_000,
+    refetchInterval: 20 * 60_000,
     retry: 1,
   });
+}
+
+// ── GDELT sentiment timeline ──
+// Tone series (-10 to +10 per day) for any topic query. Powers the Reality Check.
+export interface GdeltTonePoint {
+  date: string;
+  value: number;
+}
+
+export function useSentimentTimeline(query: string, timespan: string = "7d") {
+  return useQuery<{ avgTone: number; points: GdeltTonePoint[]; volume: number }>({
+    queryKey: ["gdelt-tone", query, timespan],
+    queryFn: async () => {
+      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query + " sourcelang:eng")}&mode=TimelineTone&format=JSON&timespan=${timespan}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`gdelt-tone ${res.status}`);
+      const data = await res.json();
+      const series = data?.timeline?.[0]?.data ?? [];
+      const points: GdeltTonePoint[] = series.map((p: { date: string; value: number }) => ({
+        date: p.date,
+        value: typeof p.value === "number" ? p.value : 0,
+      }));
+      const avgTone = points.length > 0
+        ? points.reduce((s, p) => s + p.value, 0) / points.length
+        : 0;
+      return { avgTone, points, volume: points.length };
+    },
+    staleTime: 15 * 60_000,
+    refetchInterval: 30 * 60_000,
+    retry: 1,
+  });
+}
+
+// ── GDELT volume timeline ──
+// Article volume per day for a topic — useful for "is this story escalating?"
+export function useNewsVolume(query: string, timespan: string = "7d") {
+  return useQuery<{ total: number; points: GdeltTonePoint[] }>({
+    queryKey: ["gdelt-vol", query, timespan],
+    queryFn: async () => {
+      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query + " sourcelang:eng")}&mode=TimelineVolRaw&format=JSON&timespan=${timespan}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`gdelt-vol ${res.status}`);
+      const data = await res.json();
+      const series = data?.timeline?.[0]?.data ?? [];
+      const points: GdeltTonePoint[] = series.map((p: { date: string; value: number }) => ({
+        date: p.date,
+        value: typeof p.value === "number" ? p.value : 0,
+      }));
+      const total = points.reduce((s, p) => s + p.value, 0);
+      return { total, points };
+    },
+    staleTime: 15 * 60_000,
+    refetchInterval: 30 * 60_000,
+    retry: 1,
+  });
+}
+
+// ── Reality Check verdict logic ──
+export type RealityVerdict = "confirmed" | "understated" | "overstated" | "calm";
+
+export function realityCheckVerdict(
+  narrativeTone: number,
+  narrativeVolume: number,
+  measuredBad: boolean
+): { verdict: RealityVerdict; label: string; tone: "warning" | "neutral" | "info" | "positive" } {
+  const isNegative = narrativeTone < -2;
+  const hasVolume = narrativeVolume >= 5;
+
+  if (measuredBad && isNegative && hasVolume) {
+    return { verdict: "confirmed", label: "CONFIRMED — narrative matches reality", tone: "warning" };
+  }
+  if (measuredBad && (!isNegative || !hasVolume)) {
+    return { verdict: "understated", label: "UNDERSTATED — problem under-reported", tone: "warning" };
+  }
+  if (!measuredBad && isNegative && hasVolume) {
+    return { verdict: "overstated", label: "OVERSTATED — narrative outpaces data", tone: "info" };
+  }
+  return { verdict: "calm", label: "CALM — no narrative pressure", tone: "positive" };
 }
 
 // ── Helpers ──

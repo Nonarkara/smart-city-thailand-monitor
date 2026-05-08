@@ -5337,6 +5337,183 @@ a.data-item.compact:hover strong {
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* ── God-Mode panels: Counterpart Strip / Reality Check / Governor Watch ── */
+
+.overview-card.counterpart-strip,
+.overview-card.reality-check,
+.overview-card.governor-watch {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  min-height: max-content;
+}
+
+.overview-card.reality-check {
+  min-height: 7.5rem;
+}
+
+.overview-card.governor-watch {
+  min-height: 6rem;
+}
+
+.counterpart-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.1rem 0.1rem;
+}
+
+.counterpart-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.counterpart-block strong {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.counterpart-block.other strong,
+.counterpart-metrics {
+  font-size: 0.74rem;
+  color: var(--ink);
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.counterpart-delta {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-family: var(--mono-font, "SF Mono", monospace);
+}
+
+.counterpart-loading {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.counterpart-switch {
+  font-family: var(--body-font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--blue);
+  border: 0.5px solid rgba(56, 189, 248, 0.3);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.counterpart-switch:hover {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--ink);
+}
+
+.counterpart-switch:focus-visible {
+  outline: 1px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* Reality Check: narrative vs measurement, side-by-side */
+.reality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.reality-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.25rem 0.35rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid var(--line);
+}
+
+.reality-side strong {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.reality-side small {
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+
+.overview-card.reality-check.verdict-confirmed .reality-side:nth-child(2) {
+  border-left-color: var(--red);
+}
+
+.overview-card.reality-check.verdict-understated .reality-side:nth-child(2) {
+  border-left-color: var(--amber);
+}
+
+.overview-card.reality-check.verdict-overstated .reality-side:nth-child(1) {
+  border-left-color: var(--blue);
+}
+
+.overview-card.reality-check.verdict-calm .reality-side {
+  border-left-color: var(--green);
+}
+
+.reality-verdict-line {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.66rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.status-pill.verdict-pill.warning {
+  background: rgba(248, 113, 113, 0.18);
+  color: var(--red);
+  border: 0.5px solid rgba(248, 113, 113, 0.35);
+}
+
+.status-pill.verdict-pill.info {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--blue);
+  border: 0.5px solid rgba(56, 189, 248, 0.35);
+}
+
+.status-pill.verdict-pill.positive {
+  background: rgba(52, 211, 153, 0.18);
+  color: var(--green);
+  border: 0.5px solid rgba(52, 211, 153, 0.35);
+}
+
+.status-pill.verdict-pill.neutral {
+  background: var(--panel-soft);
+  color: var(--muted);
+}
+
+/* Scale toggle in topbar gets a subtle accent so it's discoverable */
+.compact-group.scale-toggle {
+  border: 0.5px solid var(--line-strong);
+  padding: 1px;
+}
+
+.compact-group.scale-toggle .chip.active {
+  background: var(--ink);
+  color: var(--bg);
+}
+
 /* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
 
 /* — Tabular numbers globally — */

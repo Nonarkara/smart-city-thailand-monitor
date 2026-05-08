@@ -86,6 +86,8 @@ import {
   useUsdThbRate,
   useCoinPrices,
   useGdeltThaiNews,
+  deriveIntelligence,
+  realityCheckVerdict,
   aqiBand,
   aqiTone,
   quakeFreshness,
@@ -2514,12 +2516,34 @@ function DashboardPage() {
   // Coordinates: MTT view uses Muang Thong Thani; otherwise Bangkok.
   const realtimeLat = isMuangThongCityView ? 13.9134 : 13.7563;
   const realtimeLon = isMuangThongCityView ? 100.5418 : 100.5018;
+  // Other-scale coords for the cross-scale Counterpart Strip
+  const otherLat = isMuangThongCityView ? 13.7563 : 13.9134;
+  const otherLon = isMuangThongCityView ? 100.5018 : 100.5418;
   const liveWeather = useOpenMeteoWeather(realtimeLat, realtimeLon);
   const liveAir = useOpenMeteoAirQuality(realtimeLat, realtimeLon);
+  const liveAirOther = useOpenMeteoAirQuality(otherLat, otherLon);
   const liveQuakes = useThailandEarthquakes();
   const liveFx = useUsdThbRate();
   const liveCoins = useCoinPrices();
   const liveNews = useGdeltThaiNews();
+  // God-Mode intelligence: derive Governor articles + sentiment + pollution volume
+  // from the SINGLE GDELT call above (rate-limit-friendly).
+  const intel = deriveIntelligence(liveNews.data ?? []);
+  // Reality Check verdict for Air Quality: narrative tone + volume vs measured AQI
+  const measuredAqBad = (liveAir.data?.current?.us_aqi ?? 0) > 100;
+  const aqVerdict = realityCheckVerdict(
+    intel.pollutionTone,
+    intel.pollutionVolume,
+    measuredAqBad
+  );
+  // Counterpart Strip label
+  const counterpartLabel = isMuangThongCityView
+    ? (lang === "th" ? "กรุงเทพฯ ภาพรวม" : "Bangkok-wide")
+    : (lang === "th" ? "เฉพาะเมืองทอง" : "MTT specifically");
+  const counterpartCitySlug = isMuangThongCityView ? "bangkok" : "muang-thong-thani";
+  const counterpartCityLabel = isMuangThongCityView
+    ? (lang === "th" ? "กรุงเทพ" : "Bangkok")
+    : "MTT";
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -4134,7 +4158,26 @@ function DashboardPage() {
             </button>
           </div>
           )}
-          <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
+          {view === "city" ? (
+            <div className="compact-group scale-toggle" title={lang === "th" ? "สลับขนาด: เมืองทอง ↔ กรุงเทพ" : "Switch scale: MTT ↔ Bangkok"}>
+              <button
+                className={`chip${isMuangThongCityView ? " active" : ""}`}
+                onClick={() => updateParam("city", "muang-thong-thani")}
+                aria-pressed={isMuangThongCityView}
+              >
+                MTT
+              </button>
+              <button
+                className={`chip${city === "bangkok" ? " active" : ""}`}
+                onClick={() => updateParam("city", "bangkok")}
+                aria-pressed={city === "bangkok"}
+              >
+                BKK
+              </button>
+            </div>
+          ) : (
+            <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
+          )}
           <div className="compact-group">
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
             <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
@@ -4914,6 +4957,101 @@ function DashboardPage() {
               <span className="summary-sub">{`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "mentions"}`}</span>
             </button>
           </section>
+
+          {/* — Counterpart Scale Strip (God-Mode: always show the OTHER scale) — */}
+          <section className="card overview-card counterpart-strip">
+            <div className="counterpart-row">
+              <div className="counterpart-block current">
+                <span className="eyebrow">{lang === "th" ? "กำลังดู" : "You are viewing"}</span>
+                <strong>{isMuangThongCityView ? "Muang Thong Thani" : "Bangkok"}</strong>
+              </div>
+              <div className="counterpart-block other">
+                <span className="eyebrow">{counterpartLabel}</span>
+                <div className="counterpart-metrics">
+                  {liveAirOther.data?.current ? (
+                    <>
+                      <span>AQI {Math.round(liveAirOther.data.current.us_aqi)}</span>
+                      <span className="counterpart-delta">
+                        {liveAir.data?.current && liveAirOther.data?.current
+                          ? `${liveAir.data.current.us_aqi > liveAirOther.data.current.us_aqi ? "+" : ""}${Math.round(liveAir.data.current.us_aqi - liveAirOther.data.current.us_aqi)} vs here`
+                          : ""}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="counterpart-loading">{lang === "th" ? "กำลังโหลด" : "loading"}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="counterpart-switch"
+                onClick={() => updateParam("city", counterpartCitySlug)}
+                title={lang === "th" ? "สลับขนาด" : "Switch scale"}
+              >
+                {counterpartCityLabel} →
+              </button>
+            </div>
+          </section>
+
+          {/* — Reality Check (God-Mode: narrative tone vs measured AQI) — */}
+          {(liveNews.data || liveAir.data) && (
+            <section className={`card overview-card reality-check verdict-${aqVerdict.verdict}`}>
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "ตรวจสอบความจริง · คุณภาพอากาศ" : "Reality Check · Air Quality"}</span>
+                <span className={`status-pill verdict-pill ${aqVerdict.tone}`}>{aqVerdict.verdict.toUpperCase()}</span>
+              </div>
+              <div className="reality-grid">
+                <div className="reality-side">
+                  <span className="eyebrow">{lang === "th" ? "ข่าว · เกี่ยวกับอากาศ" : "Narrative · pollution stories"}</span>
+                  <strong>
+                    {intel.pollutionVolume} {lang === "th" ? "เรื่อง" : "stories"} · {lang === "th" ? "อารมณ์" : "tone"} {intel.pollutionTone.toFixed(1)}
+                  </strong>
+                  <small>{lang === "th" ? "GDELT คำนวณจากหัวข้อข่าว" : "GDELT · keyword tone from headlines"}</small>
+                </div>
+                <div className="reality-side">
+                  <span className="eyebrow">{lang === "th" ? "วัดได้" : "Measured · now"}</span>
+                  <strong>
+                    {liveAir.data?.current
+                      ? `PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"}µg · AQI ${Math.round(liveAir.data.current.us_aqi)}`
+                      : "—"}
+                  </strong>
+                  <small>
+                    {liveAir.data?.current?.pm2_5
+                      ? `${(liveAir.data.current.pm2_5 / 25).toFixed(1)}× ${lang === "th" ? "เกณฑ์ WHO" : "WHO 25µg guideline"}`
+                      : "Open-Meteo"}
+                  </small>
+                </div>
+              </div>
+              <small className="reality-verdict-line">{aqVerdict.label}</small>
+            </section>
+          )}
+
+          {/* — Governor Watch (God-Mode: real Bangkok Governor news from articles) — */}
+          {intel.governorArticles.length > 0 && (
+            <section className="card overview-card governor-watch">
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "ผู้ว่าฯ กรุงเทพ" : "Governor Watch · Bangkok"}</span>
+                <span className="status-pill live">
+                  {intel.governorArticles.length} {lang === "th" ? "เรื่อง" : "stories"}
+                </span>
+              </div>
+              <div className="overview-inline-list">
+                {intel.governorArticles.slice(0, 5).map((article) => (
+                  <a
+                    key={article.url}
+                    className="data-item compact"
+                    href={article.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`${article.domain} · open in new tab`}
+                  >
+                    <strong>{article.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
+                    <small>{article.domain}</small>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* — MTT Traffic Corridors — */}
           {isMuangThongCityView && (
