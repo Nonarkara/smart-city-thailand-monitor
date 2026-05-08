@@ -5053,6 +5053,26 @@ function DashboardPage() {
             </section>
           )}
 
+          {/* — Top Themes (God-Mode: word frequency from all 30 GDELT articles) — */}
+          {intel.topThemes.length > 0 && (
+            <section className="card overview-card top-themes">
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "หัวข้อร้อนแรง" : "Trending Themes"}</span>
+                <span className="status-pill live">
+                  {intel.total} {lang === "th" ? "เรื่อง" : "headlines"}
+                </span>
+              </div>
+              <div className="theme-pills">
+                {intel.topThemes.map((t) => (
+                  <span key={t.word} className="theme-pill" title={`${t.count} mentions`}>
+                    {t.word}
+                    <small className="theme-count">{t.count}</small>
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* — MTT Traffic Corridors — */}
           {isMuangThongCityView && (
           <section className="card overview-card mtt-traffic-corridors">

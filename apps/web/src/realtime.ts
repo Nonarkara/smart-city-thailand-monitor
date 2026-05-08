@@ -261,11 +261,24 @@ export interface NewsIntelligence {
   pollutionArticles: GdeltArticle[];
   pollutionTone: number;
   pollutionVolume: number;
+  topThemes: { word: string; count: number }[];
 }
+
+const STOPWORDS = new Set([
+  "the","a","an","and","or","of","to","in","on","at","for","with","by","from",
+  "is","are","was","were","be","been","being","has","have","had","do","does","did",
+  "this","that","these","those","it","its","as","but","not","no","so","if","than",
+  "bangkok","thailand","thai","city","cities","new","said","says","also","more",
+  "after","before","over","under","up","down","into","out","through","about",
+  "could","would","should","may","might","will","can","when","where","what","why","how",
+  "you","we","they","he","she","i","me","us","them","his","her","their","our","my",
+  "post","news","report","story","article","says","told","told","get","gets","got",
+  "amp",
+]);
 
 export function deriveIntelligence(articles: GdeltArticle[]): NewsIntelligence {
   if (!articles || articles.length === 0) {
-    return { total: 0, tone: 0, governorArticles: [], pollutionArticles: [], pollutionTone: 0, pollutionVolume: 0 };
+    return { total: 0, tone: 0, governorArticles: [], pollutionArticles: [], pollutionTone: 0, pollutionVolume: 0, topThemes: [] };
   }
   const score = (title: string): number => {
     const t = title.toLowerCase();
@@ -275,12 +288,35 @@ export function deriveIntelligence(articles: GdeltArticle[]): NewsIntelligence {
     return s;
   };
   const sumTone = articles.reduce((acc, a) => acc + score(a.title), 0);
-  const tone = (sumTone / articles.length) * 2; // scale to ~-10..+10
+  const tone = (sumTone / articles.length) * 2;
   const governorArticles = articles.filter((a) => GOVERNOR_REGEX.test(a.title));
   const pollutionArticles = articles.filter((a) => POLLUTION_REGEX.test(a.title));
   const pollutionTone = pollutionArticles.length > 0
     ? (pollutionArticles.reduce((acc, a) => acc + score(a.title), 0) / pollutionArticles.length) * 2
     : 0;
+
+  // Top Themes: word frequency across all headlines, excluding stopwords + query terms.
+  // Surfaces what topics dominate the news cycle right now.
+  const wordCounts = new Map<string, number>();
+  for (const a of articles) {
+    const words = a.title
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+    const seen = new Set<string>();
+    for (const w of words) {
+      if (seen.has(w)) continue; // count once per article
+      seen.add(w);
+      wordCounts.set(w, (wordCounts.get(w) ?? 0) + 1);
+    }
+  }
+  const topThemes = Array.from(wordCounts.entries())
+    .filter(([, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7)
+    .map(([word, count]) => ({ word, count }));
+
   return {
     total: articles.length,
     tone,
@@ -288,6 +324,7 @@ export function deriveIntelligence(articles: GdeltArticle[]): NewsIntelligence {
     pollutionArticles,
     pollutionTone,
     pollutionVolume: pollutionArticles.length,
+    topThemes,
   };
 }
 

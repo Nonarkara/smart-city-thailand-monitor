@@ -5518,6 +5518,41 @@ a.data-item.compact:hover strong {
   color: var(--bg);
 }
 
+/* Top Themes pills (word frequency from headlines) */
+.overview-card.top-themes {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  min-height: 5rem;
+  overflow: visible;
+}
+
+.theme-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.theme-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  background: var(--panel-soft);
+  color: var(--ink);
+  border: 0.5px solid var(--line);
+  text-transform: lowercase;
+  letter-spacing: 0.01em;
+}
+
+.theme-pill .theme-count {
+  font-size: 0.6rem;
+  font-family: var(--mono-font, "SF Mono", monospace);
+  color: var(--muted);
+  font-weight: 400;
+}
+
 /* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
 
 /* — Tabular numbers globally — */
