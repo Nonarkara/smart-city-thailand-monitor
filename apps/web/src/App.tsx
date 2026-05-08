@@ -2494,7 +2494,10 @@ function DashboardPage() {
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
-  const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
+  const _isMttEnv = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok") === "muang-thong-thani";
+  // city=muang-thong-thani normalizes to city=nonthaburi via the slug-correction effect;
+  // match both so MTT sections survive the URL rewrite
+  const isMuangThongCityView = view === "city" && (city === "muang-thong-thani" || (_isMttEnv && city === "nonthaburi"));
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
