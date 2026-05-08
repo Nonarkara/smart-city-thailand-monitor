@@ -262,10 +262,10 @@ const satelliteLayerDefinitions: Record<
     attribution: 'Imagery courtesy of <a href="https://global-surface-water.appspot.com/">JRC Global Surface Water</a>'
   },
   "satellite-bathymetry": {
-    url: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/{z}/{x}/{y}.png",
-    opacity: 0.54,
-    maxZoom: 12,
-    attribution: 'Imagery courtesy of <a href="https://emodnet.ec.europa.eu/en/bathymetry">EMODnet Bathymetry</a>'
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+    opacity: 0.65,
+    maxZoom: 13,
+    attribution: 'Imagery courtesy of <a href="https://www.arcgis.com/home/item.html?id=1e126e7520f9466c9ca28b8f28b5e500">Esri Ocean Basemap</a>'
   },
   "satellite-vegetation": {
     url: gibsSatUrl("MODIS_Terra_NDVI_8Day", satNdviDate, "GoogleMapsCompatible_Level9"),

@@ -3286,7 +3286,7 @@ function DashboardPage() {
       title: { th: "ความลึกทะเล", en: "Bathymetry" },
       detail: { th: "ภูมิประเทศชายฝั่งและความลึกทะเล", en: "Coastal depth and seabed terrain context." },
       active: layers.includes("satellite-bathymetry"),
-      previewUrl: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/6/52/31.png",
+      previewUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/6/31/52",
       action: () => toggleSatelliteLayer("satellite-bathymetry")
     },
     {
@@ -3318,7 +3318,7 @@ function DashboardPage() {
       title: { th: "ฝน", en: "Rain" },
       detail: { th: "ภาพฝนและเรดาร์สำรองสำหรับฤดูมรสุม", en: "Rain and radar fallback for monsoon operations." },
       active: layers.includes("jaxa-rainfall"),
-      previewUrl: buildApiUrl("/api/satellite/preview/flood-radar"),
+      previewUrl: "https://wvs.earthdata.nasa.gov/api/v1/snapshot?REQUEST=GetSnapshot&LAYERS=BlueMarble_NextGeneration,Coastlines_15m,IMERG_Precipitation_Rate&CRS=EPSG:4326&BBOX=0,90,25,115&FORMAT=image/jpeg&HEIGHT=200&WIDTH=400",
       action: () => toggleSatelliteLayer("jaxa-rainfall")
     },
     {
