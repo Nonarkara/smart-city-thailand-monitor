@@ -5090,10 +5090,18 @@ textarea:focus {
 
 /* ── MTT-specific overview sections ── */
 
+/* Override the .overview-shell 4-row clamp so MTT cards get content-driven height.
+   The Bangkok layout already scrolls so this is safe. */
+body[data-default-city="muang-thong-thani"] .overview-shell,
+.overview-shell:has(> .overview-card.mtt-traffic-corridors) {
+  grid-template-rows: auto;
+}
+
 .overview-card.mtt-traffic-corridors,
 .overview-card.impact-events,
 .overview-card.cctv-intel {
   grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .mtt-corridor-list {
