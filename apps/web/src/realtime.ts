@@ -370,7 +370,13 @@ export function useNewsVolume(query: string, timespan: string = "7d") {
 }
 
 // ── Reality Check verdict logic ──
-export type RealityVerdict = "confirmed" | "understated" | "overstated" | "calm";
+// Five states, ordered by operator action urgency:
+//   confirmed  — measured bad + narrative loud + negative (public crisis)
+//   watch      — measured bad + narrative low (early signal, public quiet)
+//   understated — measured bad + narrative loud but neutral/positive (deflection)
+//   overstated — measured fine + narrative loud + negative (panic without basis)
+//   calm       — measured fine + narrative low (nothing to see)
+export type RealityVerdict = "confirmed" | "watch" | "understated" | "overstated" | "calm";
 
 export function realityCheckVerdict(
   narrativeTone: number,
@@ -378,13 +384,16 @@ export function realityCheckVerdict(
   measuredBad: boolean
 ): { verdict: RealityVerdict; label: string; tone: "warning" | "neutral" | "info" | "positive" } {
   const isNegative = narrativeTone < -2;
-  const hasVolume = narrativeVolume >= 5;
+  const hasVolume = narrativeVolume >= 3;
 
   if (measuredBad && isNegative && hasVolume) {
     return { verdict: "confirmed", label: "CONFIRMED — narrative matches reality", tone: "warning" };
   }
-  if (measuredBad && (!isNegative || !hasVolume)) {
-    return { verdict: "understated", label: "UNDERSTATED — problem under-reported", tone: "warning" };
+  if (measuredBad && hasVolume && !isNegative) {
+    return { verdict: "understated", label: "UNDERSTATED — narrative downplays the data", tone: "warning" };
+  }
+  if (measuredBad && !hasVolume) {
+    return { verdict: "watch", label: "WATCH — air elevated, public discourse quiet", tone: "warning" };
   }
   if (!measuredBad && isNegative && hasVolume) {
     return { verdict: "overstated", label: "OVERSTATED — narrative outpaces data", tone: "info" };

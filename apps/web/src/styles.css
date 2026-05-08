@@ -5458,6 +5458,10 @@ a.data-item.compact:hover strong {
   border-left-color: var(--red);
 }
 
+.overview-card.reality-check.verdict-watch .reality-side:nth-child(2) {
+  border-left-color: var(--amber);
+}
+
 .overview-card.reality-check.verdict-understated .reality-side:nth-child(2) {
   border-left-color: var(--amber);
 }
