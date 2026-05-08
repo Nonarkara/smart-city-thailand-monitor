@@ -3198,9 +3198,9 @@ function DashboardPage() {
     null;
   const airRiskPreset = focusPresets.find((preset) => preset.id === "air-risk");
   const monsoonPreset = focusPresets.find((preset) => preset.id === "monsoon-watch");
-  const candidatePreset = focusPresets.find((preset) => preset.id === "candidate-cities");
-  const mediaPreset = focusPresets.find((preset) => preset.id === "media-watch");
-  const economyPreset = focusPresets.find((preset) => preset.id === "economic-context");
+  // Footer quick actions: Air + Rain + basemap toggle + Recenter only.
+  // Removed Candidates/Media/Economy — national-view concepts that don't
+  // apply to a single-city operator view and just confuse the operator.
   const footerQuickActions = [
     {
       id: "air-risk",
@@ -3213,24 +3213,6 @@ function DashboardPage() {
       label: lang === "th" ? "ฝน" : "Rain",
       active: activeFocusPresetId === "monsoon-watch",
       onClick: monsoonPreset?.run
-    },
-    {
-      id: "candidate-cities",
-      label: lang === "th" ? "เมืองเด่น" : "Candidates",
-      active: activeFocusPresetId === "candidate-cities",
-      onClick: candidatePreset?.run
-    },
-    {
-      id: "media-watch",
-      label: lang === "th" ? "สื่อ" : "Media",
-      active: activeFocusPresetId === "media-watch",
-      onClick: mediaPreset?.run
-    },
-    {
-      id: "economic-context",
-      label: lang === "th" ? "เศรษฐกิจ" : "Economy",
-      active: activeFocusPresetId === "economic-context",
-      onClick: economyPreset?.run
     },
     {
       id: "basemap",
@@ -5379,62 +5361,8 @@ function DashboardPage() {
         </section>
       </div>
 
-      {/* Bottom Data Strip */}
+      {/* Bottom Data Strip — top summary strip is the single source of truth for metrics; footer is presets + attribution only */}
       <footer className="bottombar">
-        <div className="bottomstrip-row metrics">
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
-            <strong>{topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
-            <strong>{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กระแส" : "Public Buzz"}</span>
-            <strong>{socialListening.mentionCount}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "อัปเดต" : "Updated"}</span>
-            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
-            <strong>{decisionItems.length}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
-            <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "เมือง" : "Cities"}</span>
-            <strong>{coverageFeatureCount}</strong>
-          </div>
-          {city === "bangkok" && (
-          <>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "ร้องเรียน" : "Traffy"}</span>
-            <strong>{traffyFondue.totalOpen}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "แก้ไข" : "Resolved"}</span>
-            <strong>{Math.round(traffyFondue.resolutionRate * 100)}%</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "น้ำท่วม" : "Flood"}</span>
-            <strong className={floodStatus.level !== "normal" ? "tone-warning" : ""}>{floodStatus.level}</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "ฝน" : "Rain"}</span>
-            <strong>{floodStatus.rainfallLast24h}mm</strong>
-          </div>
-          <div className="bottomstrip-metric">
-            <span className="eyebrow">{lang === "th" ? "สูบน้ำ" : "Pumps"}</span>
-            <strong>{floodStatus.drainagePumpStatus.active}/{floodStatus.drainagePumpStatus.total}</strong>
-          </div>
-          </>
-          )}
-        </div>
         <div className="bottomstrip-row actions">
           <div className="bottomstrip-actions">
             {footerQuickActions.map((action) => (

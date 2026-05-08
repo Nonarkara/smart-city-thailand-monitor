@@ -1718,19 +1718,10 @@ export default function InteractiveMap({
       <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />
       {eoRainState !== "off" ? <div className={`map-layer-status ${eoRainState}`}>{eoRainStatusLabel}</div> : null}
 
-      {/* — Coordinate + Layer Count HUD — */}
+      {/* — Cursor coordinate HUD (layer counts removed: redundant with top-left layer chips, and unlabelled colored numbers don't make sense to a Governor) — */}
       <div className="map-hud">
         {cursorCoords && (
           <span className="hud-coords">{cursorCoords.lat.toFixed(4)}°N {cursorCoords.lon.toFixed(4)}°E</span>
-        )}
-        {layerCounts.length > 0 && (
-          <span className="hud-counts">
-            {layerCounts.map((lc) => {
-              const color = layerColors[lc.id as LayerId] ?? "#888";
-              return <span key={lc.id} className="hud-count" style={{ borderColor: color }}>{lc.count}</span>;
-            })}
-            {cctvLiveCount > 0 && <span className="hud-count" style={{ borderColor: layerColors["cctv-cameras"] }}>{cctvLiveCount} cam</span>}
-          </span>
         )}
       </div>
 
