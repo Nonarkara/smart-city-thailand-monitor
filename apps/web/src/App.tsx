@@ -79,6 +79,17 @@ import {
 } from "./content";
 import { getEoTileConfigs } from "./eoTiles";
 import InteractiveMap from "./InteractiveMap";
+import {
+  useOpenMeteoWeather,
+  useOpenMeteoAirQuality,
+  useThailandEarthquakes,
+  useUsdThbRate,
+  useCoinPrices,
+  useGdeltThaiNews,
+  aqiBand,
+  aqiTone,
+  quakeFreshness,
+} from "./realtime";
 
 function normalizeApiBase(baseUrl: string) {
   const trimmed = baseUrl.trim();
@@ -2498,6 +2509,17 @@ function DashboardPage() {
   // city=muang-thong-thani normalizes to city=nonthaburi via the slug-correction effect;
   // match both so MTT sections survive the URL rewrite
   const isMuangThongCityView = view === "city" && (city === "muang-thong-thani" || (_isMttEnv && city === "nonthaburi"));
+
+  // Real-time direct-from-frontend data (independent of suspended Render API).
+  // Coordinates: MTT view uses Muang Thong Thani; otherwise Bangkok.
+  const realtimeLat = isMuangThongCityView ? 13.9134 : 13.7563;
+  const realtimeLon = isMuangThongCityView ? 100.5418 : 100.5018;
+  const liveWeather = useOpenMeteoWeather(realtimeLat, realtimeLon);
+  const liveAir = useOpenMeteoAirQuality(realtimeLat, realtimeLon);
+  const liveQuakes = useThailandEarthquakes();
+  const liveFx = useUsdThbRate();
+  const liveCoins = useCoinPrices();
+  const liveNews = useGdeltThaiNews();
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -4937,17 +4959,31 @@ function DashboardPage() {
         <section className="overview-shell">
           {/* — At-a-Glance Summary Strip — */}
           <section className="summary-strip">
-            <button type="button" className="summary-card" title={lang === "th" ? "ดัชนีคุณภาพอากาศ — คลิกเพื่อดูแผนที่มลพิษ" : "Air Quality Index — click to view pollution map"} onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
+            <button type="button" className="summary-card" title={lang === "th" ? "ดัชนีคุณภาพอากาศจาก Open-Meteo (real-time)" : "Air Quality Index from Open-Meteo (real-time)"} onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
               <span className="summary-label">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
-              <strong className={`summary-value aqi-${topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown"}`}>
-                {topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
+              <strong className={`summary-value aqi-${liveAir.data?.current?.us_aqi !== undefined ? aqiTone(liveAir.data.current.us_aqi) : (topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown")}`}>
+                {liveAir.data?.current?.us_aqi !== undefined
+                  ? aqiBand(liveAir.data.current.us_aqi, lang)
+                  : topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
               </strong>
-              <span className="summary-sub">{topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}</span>
+              <span className="summary-sub">
+                {liveAir.data?.current
+                  ? `AQI ${Math.round(liveAir.data.current.us_aqi)} · PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"}µg`
+                  : topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}
+              </span>
             </button>
-            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบัน — คลิกเพื่อดูแผนที่สภาพอากาศ" : "Current temperature — click to view weather map"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบันจาก Open-Meteo (real-time)" : "Current temperature from Open-Meteo (real-time)"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
               <span className="summary-label">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
-              <strong className="summary-value">{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
-              <span className="summary-sub">{hottestWeatherFeature?.title ?? ""}</span>
+              <strong className="summary-value">
+                {liveWeather.data?.current?.temperature_2m !== undefined
+                  ? `${liveWeather.data.current.temperature_2m.toFixed(1)}°C`
+                  : hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}
+              </strong>
+              <span className="summary-sub">
+                {liveWeather.data?.current
+                  ? `${lang === "th" ? "รู้สึก" : "feels"} ${liveWeather.data.current.apparent_temperature.toFixed(0)}° · ${liveWeather.data.current.relative_humidity_2m}% RH`
+                  : hottestWeatherFeature?.title ?? ""}
+              </span>
             </button>
             <button type="button" className="summary-card" onClick={() => navigateToTab("data")}>
               <span className="summary-label">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
@@ -5023,6 +5059,25 @@ function DashboardPage() {
                   <span className="cctv-detection">{localize(lang, s.detection)}</span>
                   <span className={`status-tag ${s.severity === "alert" ? "delayed" : s.severity === "watch" ? "watch" : "live"}`}>{s.severity}</span>
                 </div>
+              ))}
+            </div>
+          </section>
+          )}
+
+          {/* — Seismic activity (USGS real-time, Thailand bbox) — */}
+          {isMuangThongCityView && liveQuakes.data && liveQuakes.data.length > 0 && (
+          <section className="card overview-card seismic-feed">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "แผ่นดินไหว" : "Seismic"}</span>
+              <span className="status-pill">USGS · {liveQuakes.data.length} {lang === "th" ? "เหตุการณ์" : "events 7d"}</span>
+            </div>
+            <div className="overview-inline-list">
+              {liveQuakes.data.slice(0, 4).map((q) => (
+                <a key={q.id} className="seismic-item" href={q.url} target="_blank" rel="noreferrer">
+                  <span className={`seismic-mag mag-${q.mag >= 5 ? "high" : q.mag >= 4 ? "med" : "low"}`}>M{q.mag.toFixed(1)}</span>
+                  <span className="seismic-place">{q.place}</span>
+                  <small>{quakeFreshness(q.time)} · {Math.round(q.depth)}km</small>
+                </a>
               ))}
             </div>
           </section>
@@ -5276,20 +5331,25 @@ function DashboardPage() {
             </div>
           </section>
 
-          {/* — News — */}
+          {/* — News (real-time GDELT from Thai sources, with seed fallback) — */}
           <section className="card overview-card news">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
-            <button type="button" className="status-pill status-button" onClick={() => navigateToTab("data")}>
-              {filteredNews.length}
-            </button>
+            <span className="status-pill">{liveNews.data && liveNews.data.length > 0 ? `GDELT · ${liveNews.data.length}` : filteredNews.length}</span>
           </div>
           <div className="overview-inline-list">
-            {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-              <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}>
-                <strong>{localize(lang, item.title)}</strong>
-              </a>
-            ))}
+            {liveNews.data && liveNews.data.length > 0
+              ? liveNews.data.slice(0, 6).map((article) => (
+                  <a key={article.url} className="data-item compact" href={article.url} target="_blank" rel="noreferrer" title={`${article.domain} · ${article.seendate}`}>
+                    <strong>{article.title}</strong>
+                    <small>{article.domain}</small>
+                  </a>
+                ))
+              : [...overviewOfficialNews, ...overviewExternalNews].map((item) => (
+                  <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}>
+                    <strong>{localize(lang, item.title)}</strong>
+                  </a>
+                ))}
           </div>
           </section>
 
@@ -5316,18 +5376,37 @@ function DashboardPage() {
             </div>
           </section>
 
-          {/* — Market Ticker — */}
+          {/* — Market Ticker (real-time: open.er-api.com + CoinGecko) — */}
           <section className="card overview-card market-ticker">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
-              <span className="status-pill">{markets.source.freshnessStatus}</span>
+              <span className="status-pill">{liveCoins.data || liveFx.data ? "live" : markets.source.freshnessStatus}</span>
             </div>
             <div className="market-pills">
-              {markets.items.map((item) => (
-                <span key={item.id} className={`market-pill tone-${item.tone}`}>
-                  {localize(lang, item.label)} <strong>{item.value}</strong>
+              {liveFx.data?.thb ? (
+                <span className="market-pill tone-neutral">
+                  USD/THB <strong>{liveFx.data.thb.toFixed(2)}</strong>
                 </span>
-              ))}
+              ) : null}
+              {liveCoins.data?.btc?.usd ? (
+                <span className={`market-pill tone-${liveCoins.data.btc.change24h >= 0 ? "positive" : "negative"}`}>
+                  BTC <strong>${(liveCoins.data.btc.usd / 1000).toFixed(1)}k</strong>
+                  <small> {liveCoins.data.btc.change24h >= 0 ? "+" : ""}{liveCoins.data.btc.change24h.toFixed(1)}%</small>
+                </span>
+              ) : null}
+              {liveCoins.data?.gold?.usd ? (
+                <span className={`market-pill tone-${liveCoins.data.gold.change24h >= 0 ? "positive" : "negative"}`}>
+                  Gold/oz <strong>${liveCoins.data.gold.usd.toFixed(0)}</strong>
+                  <small> {liveCoins.data.gold.change24h >= 0 ? "+" : ""}{liveCoins.data.gold.change24h.toFixed(1)}%</small>
+                </span>
+              ) : null}
+              {!liveCoins.data && !liveFx.data
+                ? markets.items.map((item) => (
+                    <span key={item.id} className={`market-pill tone-${item.tone}`}>
+                      {localize(lang, item.label)} <strong>{item.value}</strong>
+                    </span>
+                  ))
+                : null}
             </div>
           </section>
 

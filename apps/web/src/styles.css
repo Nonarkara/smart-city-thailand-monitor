@@ -5177,6 +5177,55 @@ body[data-default-city="muang-thong-thani"] .overview-shell,
   border: 0.5px solid rgba(248, 113, 113, 0.3);
 }
 
+.overview-card.seismic-feed {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+.seismic-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.72rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.seismic-item:hover {
+  color: var(--blue);
+}
+
+.seismic-mag {
+  font-family: var(--mono-font, "SF Mono", monospace);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  min-width: 2.4rem;
+}
+
+.seismic-mag.mag-low { color: var(--muted); }
+.seismic-mag.mag-med { color: var(--amber); }
+.seismic-mag.mag-high { color: var(--red); }
+
+.seismic-place {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-pill small {
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-left: 0.2rem;
+  font-family: var(--mono-font, "SF Mono", monospace);
+}
+
+.market-pill.tone-positive small { color: var(--green); }
+.market-pill.tone-negative small { color: var(--red); }
+
 /* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
 
 /* — Tabular numbers globally — */
