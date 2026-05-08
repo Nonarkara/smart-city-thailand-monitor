@@ -4195,11 +4195,12 @@ textarea:focus {
 .summary-value.has-actions { color: var(--red); }
 
 .summary-sub {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-feature-settings: "tnum" 1;
 }
 
 .overview-card {
@@ -5225,6 +5226,116 @@ body[data-default-city="muang-thong-thani"] .overview-shell,
 
 .market-pill.tone-positive small { color: var(--green); }
 .market-pill.tone-negative small { color: var(--red); }
+
+/* ── Norman Door fixes: signifiers for interactive elements ── */
+
+/* Click affordance for any overview-card with onClick */
+.overview-card[onclick],
+.overview-card.cctv-intel,
+.overview-card.briefing-compact,
+.overview-card.activity-feed,
+.overview-card.media-trends {
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.overview-card[onclick]:hover,
+.overview-card.cctv-intel:hover,
+.overview-card.briefing-compact:hover,
+.overview-card.activity-feed:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.overview-card[onclick]:focus-visible,
+.overview-card.cctv-intel:focus-visible {
+  outline: 1px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* Live-data signifier: pulsing dot before "live" pills */
+.status-pill.live::before,
+.live-dot {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 0.3rem;
+  vertical-align: middle;
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.live-dot {
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }
+  50% { opacity: 0.55; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0); }
+}
+
+/* External-link signifier: ↗ icon after text */
+.ext-icon {
+  font-size: 0.7em;
+  margin-left: 0.2rem;
+  color: var(--muted);
+  vertical-align: super;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+a.data-item.compact:hover .ext-icon,
+.seismic-item:hover .ext-icon {
+  color: var(--blue);
+}
+
+/* Subtle hover for news/article links */
+a.data-item.compact {
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+a.data-item.compact:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+a.data-item.compact:hover strong {
+  color: var(--blue);
+}
+
+/* Freshness timestamp utility */
+.age-stamp {
+  font-size: 0.62rem;
+  color: var(--muted);
+  font-family: var(--mono-font, "SF Mono", monospace);
+  letter-spacing: 0;
+  margin-left: 0.3rem;
+  font-weight: 400;
+}
+
+/* Summary card hover — already has cursor:pointer, add bg signifier */
+.summary-card {
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.summary-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.summary-card:focus-visible {
+  outline: 1px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* Make seismic-item hover feedback */
+.seismic-item {
+  transition: background 120ms ease;
+}
+
+.seismic-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
 
 /* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
 

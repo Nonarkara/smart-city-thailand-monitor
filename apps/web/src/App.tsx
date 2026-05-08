@@ -4968,20 +4968,20 @@ function DashboardPage() {
               </strong>
               <span className="summary-sub">
                 {liveAir.data?.current
-                  ? `AQI ${Math.round(liveAir.data.current.us_aqi)} · PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"}µg`
+                  ? `PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"} · AQI ${Math.round(liveAir.data.current.us_aqi)}`
                   : topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}
               </span>
             </button>
-            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบันจาก Open-Meteo (real-time)" : "Current temperature from Open-Meteo (real-time)"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบันจาก wttr.in (real-time)" : "Current temperature from wttr.in (real-time)"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
               <span className="summary-label">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
               <strong className="summary-value">
                 {liveWeather.data?.current?.temperature_2m !== undefined
-                  ? `${liveWeather.data.current.temperature_2m.toFixed(1)}°C`
+                  ? `${liveWeather.data.current.temperature_2m.toFixed(0)}°C`
                   : hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}
               </strong>
               <span className="summary-sub">
                 {liveWeather.data?.current
-                  ? `${lang === "th" ? "รู้สึก" : "feels"} ${liveWeather.data.current.apparent_temperature.toFixed(0)}° · ${liveWeather.data.current.relative_humidity_2m}% RH`
+                  ? `↺${liveWeather.data.current.apparent_temperature.toFixed(0)}° · ${liveWeather.data.current.relative_humidity_2m}%`
                   : hottestWeatherFeature?.title ?? ""}
               </span>
             </button>
@@ -5069,13 +5069,13 @@ function DashboardPage() {
           <section className="card overview-card seismic-feed">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "แผ่นดินไหว" : "Seismic"}</span>
-              <span className="status-pill">USGS · {liveQuakes.data.length} {lang === "th" ? "เหตุการณ์" : "events 7d"}</span>
+              <span className="status-pill live">USGS · {liveQuakes.data.length} {lang === "th" ? "เหตุการณ์" : "events 7d"}</span>
             </div>
             <div className="overview-inline-list">
               {liveQuakes.data.slice(0, 4).map((q) => (
-                <a key={q.id} className="seismic-item" href={q.url} target="_blank" rel="noreferrer">
+                <a key={q.id} className="seismic-item" href={q.url} target="_blank" rel="noreferrer" title={`Open USGS event page in new tab — depth ${Math.round(q.depth)}km`}>
                   <span className={`seismic-mag mag-${q.mag >= 5 ? "high" : q.mag >= 4 ? "med" : "low"}`}>M{q.mag.toFixed(1)}</span>
-                  <span className="seismic-place">{q.place}</span>
+                  <span className="seismic-place">{q.place}<span className="ext-icon" aria-hidden="true">↗</span></span>
                   <small>{quakeFreshness(q.time)} · {Math.round(q.depth)}km</small>
                 </a>
               ))}
@@ -5335,19 +5335,21 @@ function DashboardPage() {
           <section className="card overview-card news">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
-            <span className="status-pill">{liveNews.data && liveNews.data.length > 0 ? `GDELT · ${liveNews.data.length}` : filteredNews.length}</span>
+            <span className="status-pill live">
+              {liveNews.data && liveNews.data.length > 0 ? `GDELT · ${liveNews.data.length}` : filteredNews.length}
+            </span>
           </div>
           <div className="overview-inline-list">
             {liveNews.data && liveNews.data.length > 0
               ? liveNews.data.slice(0, 6).map((article) => (
-                  <a key={article.url} className="data-item compact" href={article.url} target="_blank" rel="noreferrer" title={`${article.domain} · ${article.seendate}`}>
-                    <strong>{article.title}</strong>
+                  <a key={article.url} className="data-item compact" href={article.url} target="_blank" rel="noreferrer" title={`Open ${article.domain} in new tab — ${article.seendate}`}>
+                    <strong>{article.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
                     <small>{article.domain}</small>
                   </a>
                 ))
               : [...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-                  <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}>
-                    <strong>{localize(lang, item.title)}</strong>
+                  <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`Open ${item.source.sourceName} in new tab — ${formatUtcDateTime(item.publishedAt)}`}>
+                    <strong>{localize(lang, item.title)}<span className="ext-icon" aria-hidden="true">↗</span></strong>
                   </a>
                 ))}
           </div>
@@ -5380,7 +5382,7 @@ function DashboardPage() {
           <section className="card overview-card market-ticker">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
-              <span className="status-pill">{liveCoins.data || liveFx.data ? "live" : markets.source.freshnessStatus}</span>
+              <span className={`status-pill ${liveCoins.data || liveFx.data ? "live" : ""}`}>{liveCoins.data || liveFx.data ? "live" : markets.source.freshnessStatus}</span>
             </div>
             <div className="market-pills">
               {liveFx.data?.thb ? (
