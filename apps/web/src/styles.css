@@ -5090,6 +5090,12 @@ textarea:focus {
 
 /* ── MTT-specific overview sections ── */
 
+.overview-card.mtt-traffic-corridors,
+.overview-card.impact-events,
+.overview-card.cctv-intel {
+  grid-column: 1 / -1;
+}
+
 .mtt-corridor-list {
   display: flex;
   flex-direction: column;
