@@ -4963,6 +4963,68 @@ function DashboardPage() {
             </button>
           </section>
 
+          {/* — MTT Traffic Corridors — */}
+          {isMuangThongCityView && (
+          <section className="card overview-card mtt-traffic-corridors">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "ถนนสายหลัก" : "Traffic Corridors"}</span>
+              <span className={`status-pill congestion-${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
+            </div>
+            <div className="mtt-corridor-list">
+              {mttTrafficSnapshotSeed.corridors.map((c) => (
+                <div key={c.id} className={`mtt-corridor-item corridor-${c.status}`}>
+                  <span className={`status-dot ${c.status === "congested" ? "error" : c.status === "moderate" ? "pending" : "live"}`} />
+                  <span className="corridor-name">{localize(lang, c.label)}</span>
+                  <span className="corridor-speed">{c.speedKmh} km/h</span>
+                  {c.delayMinutes > 0 && <span className="corridor-badge">+{c.delayMinutes}m</span>}
+                </div>
+              ))}
+            </div>
+          </section>
+          )}
+
+          {/* — IMPACT Arena Events — */}
+          {isMuangThongCityView && (
+          <section className="card overview-card impact-events">
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</span>
+              <span className="status-pill">{impactArenaEventsSeed.filter((e) => e.status === "confirmed").length}</span>
+            </div>
+            <div className="overview-inline-list">
+              {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 4).map((e) => (
+                <div key={e.id} className="impact-event-item">
+                  <span className="impact-event-title">{localize(lang, e.title)}</span>
+                  <span className="impact-event-meta">
+                    <span className="eyebrow">{(e.expectedCrowd / 1000).toFixed(1)}k</span>
+                    <span className={`status-tag parking-${e.parkingPressure}`}>{e.parkingPressure}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+          )}
+
+          {/* — CCTV Intel — */}
+          {isMuangThongCityView && (
+          <section className="card overview-card cctv-intel" onClick={() => navigateToTab("cctv")}>
+            <div className="card-header">
+              <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "CCTV Intel"}</span>
+              <span className={`status-pill ${escalatedCctvCount > 0 ? "status-alert" : ""}`}>
+                {escalatedCctvCount > 0 ? `${escalatedCctvCount} alerts` : `${cctvSamples.length} live`}
+              </span>
+            </div>
+            <div className="overview-inline-list">
+              {[...cctvSamples].sort((a, b) => (a.severity === "alert" ? -1 : b.severity === "alert" ? 1 : 0)).slice(0, 4).map((s) => (
+                <div key={s.id} className="cctv-intel-item">
+                  <span className="eyebrow">{s.cameraId}</span>
+                  <span className="cctv-detection">{localize(lang, s.detection)}</span>
+                  <span className={`status-tag ${s.severity === "alert" ? "delayed" : s.severity === "watch" ? "watch" : "live"}`}>{s.severity}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          )}
+
           {/* — Always-Visible Live Traffic Ticker — */}
           {city === "bangkok" && (
             <section className="card overview-card traffic-ticker">

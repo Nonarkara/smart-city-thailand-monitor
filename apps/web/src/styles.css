@@ -5088,6 +5088,81 @@ textarea:focus {
 .status-pill.traffic-heavy { background: #f97316; color: #fff; }
 .status-pill.traffic-gridlock { background: var(--red); color: #fff; }
 
+/* ── MTT-specific overview sections ── */
+
+.mtt-corridor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mtt-corridor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.72rem;
+}
+
+.corridor-speed {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-family: var(--mono-font, "SF Mono", monospace);
+  color: var(--muted);
+}
+
+.mtt-corridor-item.corridor-congested .corridor-name { color: var(--red); }
+.mtt-corridor-item.corridor-moderate .corridor-name { color: var(--amber); }
+.mtt-corridor-item.corridor-clear .corridor-name { color: var(--green); }
+
+.impact-event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.72rem;
+}
+
+.impact-event-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.impact-event-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.status-tag.parking-high { color: var(--amber); }
+.status-tag.parking-moderate { color: var(--muted); }
+.status-tag.parking-low { color: var(--green); }
+
+.cctv-intel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.72rem;
+}
+
+.cctv-detection {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pill.status-alert {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red);
+  border: 0.5px solid rgba(248, 113, 113, 0.3);
+}
+
 /* ═══ Red Dot Polish: Micro-interactions & Motion ═══ */
 
 /* — Tabular numbers globally — */
