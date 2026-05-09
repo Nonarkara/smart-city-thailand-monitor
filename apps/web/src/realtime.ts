@@ -328,6 +328,128 @@ export function deriveIntelligence(articles: GdeltArticle[]): NewsIntelligence {
   };
 }
 
+// ── Live flights overhead — for MTT dashboard (DMK is right next to MTT) ──
+// Using adsb.lol — community ADS-B feed with permissive CORS. OpenSky's free
+// anon endpoint blocks browser CORS (Access-Control-Allow-Origin: opensky-network.org).
+export interface DmkFlight {
+  icao24: string;
+  callsign: string;
+  type: string;          // aircraft type code (A320, B739, etc.)
+  registration: string;
+  lat: number;
+  lon: number;
+  altitudeFt: number | null;
+  groundSpeedKn: number | null;
+  heading: number | null;
+  onGround: boolean;
+}
+
+export function useOpenSkyDmk() {
+  return useQuery<DmkFlight[]>({
+    queryKey: ["adsb-dmk"],
+    queryFn: async () => {
+      // adsb.lol blocks browser CORS; we proxy via a same-origin Pages Function
+      // at /api/flights (see apps/web/functions/api/flights.ts).
+      // Centered on DMK (13.913°N, 100.607°E), 15nm radius covers approach +
+      // departure corridors and Muang Thong Thani.
+      const url = "/api/flights?lat=13.9&lon=100.6&dist=15";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`adsb ${res.status}`);
+      const data = await res.json();
+      const aircraft: any[] = data.ac ?? [];
+      const flights: DmkFlight[] = aircraft.map((a) => {
+        const altRaw = a.alt_baro;
+        const altitudeFt = typeof altRaw === "number" ? altRaw : null;
+        const onGround = altRaw === "ground";
+        return {
+          icao24: String(a.hex ?? ""),
+          callsign: String(a.flight ?? "").trim() || `[${a.r ?? a.hex ?? "—"}]`,
+          type: String(a.t ?? a.desc ?? "—"),
+          registration: String(a.r ?? "—"),
+          lat: Number(a.lat ?? 0),
+          lon: Number(a.lon ?? 0),
+          altitudeFt,
+          groundSpeedKn: typeof a.gs === "number" ? a.gs : null,
+          heading: typeof a.track === "number" ? a.track : null,
+          onGround,
+        };
+      });
+      // Sort by altitude (low first — approaches/departures are the action)
+      flights.sort((a, b) => (a.altitudeFt ?? 1e9) - (b.altitudeFt ?? 1e9));
+      return flights;
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: 1,
+  });
+}
+
+// ── BMA Open Data Portal — for Bangkok dashboard ──
+// Real datasets published by Bangkok Metropolitan Administration on
+// data.bangkok.go.th. Surfaces what data the city government is
+// actively releasing right now.
+export interface BmaDataset {
+  title: string;
+  name: string;
+  notes: string;
+  organization: string;
+  url: string;
+  resourceCount: number;
+  updated: string;
+}
+
+export function useBmaOpenData() {
+  return useQuery<BmaDataset[]>({
+    queryKey: ["bma-open-data"],
+    queryFn: async () => {
+      // Most recently updated BMA datasets
+      const url = "https://data.bangkok.go.th/api/3/action/package_search?rows=12&sort=metadata_modified+desc";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`bma ${res.status}`);
+      const data = await res.json();
+      const results: any[] = data?.result?.results ?? [];
+      return results.map((r) => ({
+        title: r.title ?? r.name ?? "—",
+        name: r.name ?? "",
+        notes: (r.notes ?? "").toString().substring(0, 200),
+        organization: r.organization?.title ?? r.organization?.name ?? "BMA",
+        url: `https://data.bangkok.go.th/dataset/${r.name}`,
+        resourceCount: r.num_resources ?? r.resources?.length ?? 0,
+        updated: r.metadata_modified ?? "",
+      }));
+    },
+    staleTime: 30 * 60_000,
+    refetchInterval: 60 * 60_000,
+    retry: 1,
+  });
+}
+
+// ── data.go.th national portal — Bangkok-tagged datasets ──
+export function useThaiOpenData() {
+  return useQuery<BmaDataset[]>({
+    queryKey: ["data-go-th-bangkok"],
+    queryFn: async () => {
+      const url = "https://data.go.th/api/3/action/package_search?q=Bangkok&rows=10&sort=metadata_modified+desc";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`datagoth ${res.status}`);
+      const data = await res.json();
+      const results: any[] = data?.result?.results ?? [];
+      return results.map((r) => ({
+        title: r.title ?? r.name ?? "—",
+        name: r.name ?? "",
+        notes: (r.notes ?? "").toString().substring(0, 200),
+        organization: r.organization?.title ?? r.organization?.name ?? "data.go.th",
+        url: `https://data.go.th/dataset/${r.name}`,
+        resourceCount: r.num_resources ?? r.resources?.length ?? 0,
+        updated: r.metadata_modified ?? "",
+      }));
+    },
+    staleTime: 60 * 60_000,
+    refetchInterval: 60 * 60_000,
+    retry: 1,
+  });
+}
+
 // ── GDELT Bangkok Governor news ──
 // Real-time articles mentioning the Bangkok Governor / Chadchart specifically.
 export function useGovernorNews() {

@@ -86,6 +86,9 @@ import {
   useUsdThbRate,
   useCoinPrices,
   useGdeltThaiNews,
+  useOpenSkyDmk,
+  useBmaOpenData,
+  useThaiOpenData,
   deriveIntelligence,
   realityCheckVerdict,
   aqiBand,
@@ -2526,6 +2529,11 @@ function DashboardPage() {
   const liveFx = useUsdThbRate();
   const liveCoins = useCoinPrices();
   const liveNews = useGdeltThaiNews();
+  // Sister-dashboard differentiation: MTT view fetches DMK flights overhead;
+  // Bangkok view fetches BMA + data.go.th open data feeds.
+  const liveFlights = useOpenSkyDmk();
+  const liveBmaData = useBmaOpenData();
+  const liveThaiData = useThaiOpenData();
   // God-Mode intelligence: derive Governor articles + sentiment + pollution volume
   // from the SINGLE GDELT call above (rate-limit-friendly).
   const intel = deriveIntelligence(liveNews.data ?? []);
@@ -4123,9 +4131,13 @@ function DashboardPage() {
   }
 
   const siteTheme = "ops" as const;
+  // Sister-dashboard variant: cyan / map-first for MTT, amber / data-dense for Bangkok.
+  // Driven by VITE_DEFAULT_CITY env baked at build time, not by URL toggle, so each
+  // deployed Pages project has its own consistent identity.
+  const dashboardVariant = _isMttEnv ? "mtt" : "bangkok";
 
   return (
-    <div className="shell" data-theme={siteTheme}>
+    <div className={`shell variant-${dashboardVariant}`} data-theme={siteTheme} data-variant={dashboardVariant}>
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
@@ -4973,7 +4985,14 @@ function DashboardPage() {
                       <span>AQI {Math.round(liveAirOther.data.current.us_aqi)}</span>
                       <span className="counterpart-delta">
                         {liveAir.data?.current && liveAirOther.data?.current
-                          ? `${liveAir.data.current.us_aqi > liveAirOther.data.current.us_aqi ? "+" : ""}${Math.round(liveAir.data.current.us_aqi - liveAirOther.data.current.us_aqi)} vs here`
+                          ? (() => {
+                              // Diff = otherScale - currentScale. Positive means OTHER is worse than HERE,
+                              // negative means OTHER is better than HERE.
+                              const diff = Math.round(liveAirOther.data.current.us_aqi - liveAir.data.current.us_aqi);
+                              if (diff === 0) return `same as here`;
+                              if (diff > 0) return `+${diff} (worse than here)`;
+                              return `${diff} (better than here)`;
+                            })()
                           : ""}
                       </span>
                     </>
@@ -5068,6 +5087,91 @@ function DashboardPage() {
                     {t.word}
                     <small className="theme-count">{t.count}</small>
                   </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* — MTT-only: Flights Overhead from OpenSky (DMK is right next door) — */}
+          {isMuangThongCityView && liveFlights.data && liveFlights.data.length > 0 && (
+            <section className="card overview-card flights-overhead">
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "เที่ยวบินเหนือพื้นที่ (DMK)" : "Flights Overhead · DMK"}</span>
+                <span className="status-pill live">
+                  {liveFlights.data.length} {lang === "th" ? "ลำ" : "aircraft"}
+                </span>
+              </div>
+              <div className="overview-inline-list">
+                {liveFlights.data.slice(0, 6).map((f) => (
+                  <a
+                    key={f.icao24}
+                    className="flight-row"
+                    href={`https://globe.adsbexchange.com/?icao=${f.icao24}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`${f.callsign} · ${f.type} · ${f.registration} · click for live tracker`}
+                  >
+                    <span className="flight-callsign">{f.callsign}</span>
+                    <span className="flight-origin">{f.type}</span>
+                    <span className="flight-meta">
+                      {f.onGround ? "ground" : f.altitudeFt != null ? `${f.altitudeFt.toLocaleString()}ft` : "—"}
+                      {f.groundSpeedKn != null && !f.onGround ? ` · ${Math.round(f.groundSpeedKn)}kn` : ""}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* — Bangkok-only: BMA Open Data feed from data.bangkok.go.th — */}
+          {!isMuangThongCityView && liveBmaData.data && liveBmaData.data.length > 0 && (
+            <section className="card overview-card open-data-feed">
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "เปิดข้อมูล กทม." : "BMA Open Data · data.bangkok.go.th"}</span>
+                <span className="status-pill live">
+                  {liveBmaData.data.length} {lang === "th" ? "ชุดข้อมูล" : "datasets"}
+                </span>
+              </div>
+              <div className="overview-inline-list">
+                {liveBmaData.data.slice(0, 6).map((d) => (
+                  <a
+                    key={d.name}
+                    className="data-item compact"
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`${d.organization} · ${d.resourceCount} resources · open BMA portal`}
+                  >
+                    <strong>{d.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
+                    <small>{d.organization} · {d.resourceCount} {lang === "th" ? "ไฟล์" : "files"}</small>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* — Bangkok-only: data.go.th national-portal Bangkok-tagged datasets — */}
+          {!isMuangThongCityView && liveThaiData.data && liveThaiData.data.length > 0 && (
+            <section className="card overview-card open-data-feed">
+              <div className="card-header">
+                <span className="eyebrow">{lang === "th" ? "เปิดข้อมูล แห่งชาติ" : "Thailand Open Data · data.go.th"}</span>
+                <span className="status-pill live">
+                  {liveThaiData.data.length} {lang === "th" ? "ชุดข้อมูล" : "datasets"}
+                </span>
+              </div>
+              <div className="overview-inline-list">
+                {liveThaiData.data.slice(0, 4).map((d) => (
+                  <a
+                    key={d.name}
+                    className="data-item compact"
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`${d.organization} · ${d.resourceCount} resources`}
+                  >
+                    <strong>{d.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
+                    <small>{d.organization}</small>
+                  </a>
                 ))}
               </div>
             </section>

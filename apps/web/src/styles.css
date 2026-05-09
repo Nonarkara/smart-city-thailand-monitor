@@ -5091,11 +5091,12 @@ textarea:focus {
 
 /* ── MTT-specific overview sections ── */
 
-/* Override the .overview-shell 4-row clamp so MTT cards get content-driven height.
-   The Bangkok layout already scrolls so this is safe. */
-body[data-default-city="muang-thong-thani"] .overview-shell,
-.overview-shell:has(> .overview-card.mtt-traffic-corridors) {
-  grid-template-rows: auto;
+/* Override the .overview-shell 4-row clamp so cards get content-driven height
+   on BOTH MTT and Bangkok views. The clamp was originally there to fit a
+   simpler sidebar; now that we have ~15 cards, content-driven rows + the
+   shell's overflow-y: auto give the right behaviour. */
+.overview-shell {
+  grid-template-rows: auto !important;
 }
 
 .overview-card.mtt-traffic-corridors,
@@ -5524,6 +5525,169 @@ a.data-item.compact:hover strong {
   grid-row: auto;
   min-height: 5rem;
   overflow: visible;
+}
+
+/* Flights Overhead (MTT) — DMK is right next to Muang Thong Thani */
+.overview-card.flights-overhead {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  min-height: 6rem;
+}
+
+.flight-row {
+  display: grid;
+  grid-template-columns: 5rem auto 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  font-size: 0.72rem;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background 120ms ease;
+}
+
+.flight-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--accent, var(--blue));
+}
+
+.flight-callsign {
+  font-family: var(--mono-font, "SF Mono", monospace);
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--accent, var(--blue));
+}
+
+.flight-origin {
+  font-size: 0.64rem;
+  color: var(--muted);
+  font-family: var(--mono-font, "SF Mono", monospace);
+}
+
+.flight-meta {
+  text-align: right;
+  font-size: 0.62rem;
+  color: var(--muted);
+  font-family: var(--mono-font, "SF Mono", monospace);
+}
+
+/* Open Data feed (Bangkok) — BMA / data.go.th */
+.overview-card.open-data-feed {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  min-height: 6rem;
+}
+
+/* ── Sister-dashboard visual variants ──────────────────────────────
+   MTT = cyan accent, map-first feel. Bangkok = amber accent, dense
+   ops-command feel. Driven by env at build time so each deployment
+   has its own identity. */
+
+/* MTT variant — cyan/teal accent, lighter feel */
+.shell.variant-mtt {
+  --accent: #2dd4bf; /* teal */
+}
+
+.shell.variant-mtt .flight-callsign,
+.shell.variant-mtt .summary-card:hover .summary-value,
+.shell.variant-mtt .counterpart-switch,
+.shell.variant-mtt .compact-group.scale-toggle .chip.active {
+  color: var(--accent);
+}
+
+.shell.variant-mtt .counterpart-switch {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: var(--accent);
+}
+
+.shell.variant-mtt .counterpart-switch:hover {
+  background: rgba(45, 212, 191, 0.22);
+  color: #fff;
+}
+
+.shell.variant-mtt .compact-group.scale-toggle .chip.active {
+  background: var(--accent);
+  color: #07241f;
+}
+
+.shell.variant-mtt .status-pill.live::before,
+.shell.variant-mtt .live-dot {
+  background: var(--accent);
+  animation-name: live-pulse-mtt;
+}
+
+@keyframes live-pulse-mtt {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5); }
+  50% { opacity: 0.55; box-shadow: 0 0 0 4px rgba(45, 212, 191, 0); }
+}
+
+/* Make the brand subline say "district detail" feel for MTT */
+.shell.variant-mtt .brand-cluster h1::after {
+  content: " · district focus";
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+/* Bangkok variant — amber accent, ops-command feel */
+.shell.variant-bangkok {
+  --accent: #fbbf24; /* amber */
+}
+
+.shell.variant-bangkok .summary-card:hover .summary-value,
+.shell.variant-bangkok .counterpart-switch,
+.shell.variant-bangkok .compact-group.scale-toggle .chip.active {
+  color: #1a1102;
+}
+
+.shell.variant-bangkok .counterpart-switch {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: var(--accent);
+}
+
+.shell.variant-bangkok .counterpart-switch:hover {
+  background: rgba(251, 191, 36, 0.25);
+  color: #fff;
+}
+
+.shell.variant-bangkok .compact-group.scale-toggle .chip.active {
+  background: var(--accent);
+  color: #1a1102;
+}
+
+.shell.variant-bangkok .summary-card .summary-label {
+  color: rgba(251, 191, 36, 0.55);
+}
+
+.shell.variant-bangkok .brand-cluster h1::after {
+  content: " · greater bangkok";
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+/* Bangkok variant: hairline amber accent on the top edge of the overview shell
+   so the operator feels the "command center" frame. */
+.shell.variant-bangkok .overview-shell {
+  border-top: 0.5px solid rgba(251, 191, 36, 0.3);
+}
+
+/* MTT variant: hairline teal accent */
+.shell.variant-mtt .overview-shell {
+  border-top: 0.5px solid rgba(45, 212, 191, 0.3);
 }
 
 .theme-pills {

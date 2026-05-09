@@ -102,6 +102,9 @@ type SatelliteLayerId =
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
 const greaterBangkokBounds = L.latLngBounds([13.5, 100.2], [14.15, 100.95]);
+// MTT (Muang Thong Thani in Pak Kret, Nonthaburi) — district-detail bbox.
+// IMPACT Arena is at ~13.917°N, 100.541°E.
+const mttBounds = L.latLngBounds([13.85, 100.48], [13.99, 100.62]);
 
 const cityCenters: Record<
   string,
@@ -1230,10 +1233,18 @@ export default function InteractiveMap({
       return;
     }
 
+    // Sister-dashboard zoom restrictions:
+    //   MTT view → district-level zoom only (12+), bounded to Pak Kret bbox
+    //   Bangkok city view → city-level zoom (9+), bounded to Greater Bangkok
+    //   national view → unchanged (5+, Thailand bounds)
+    const isMttView = view === "city" && (citySlug === "muang-thong-thani" || citySlug === "nonthaburi");
+    const isBangkokView = view === "city" && citySlug === "bangkok";
+    const initialMinZoom = isMttView ? 12 : isBangkokView ? 9 : 5;
+
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true,
-      minZoom: 5,
+      minZoom: initialMinZoom,
       maxBoundsViscosity: 0.85
     });
 
@@ -1250,7 +1261,13 @@ export default function InteractiveMap({
 
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;
-    map.setMaxBounds(thailandBounds.pad(0.22));
+    if (isMttView) {
+      map.setMaxBounds(mttBounds.pad(0.05));
+    } else if (isBangkokView) {
+      map.setMaxBounds(greaterBangkokBounds.pad(0.08));
+    } else {
+      map.setMaxBounds(thailandBounds.pad(0.22));
+    }
 
     overlayRef.current = L.layerGroup().addTo(map);
     measureLayerRef.current = L.layerGroup().addTo(map);
