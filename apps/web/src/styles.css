@@ -5579,6 +5579,21 @@ a.data-item.compact:hover strong {
   min-height: 6rem;
 }
 
+/* ── Demo-data sections: honest labeling ────────────────────────────
+   Any section running on seed/simulated data gets .demo-data.
+   The eyebrow gains "· DEMO" so it's unmissable but not alarming.
+   Opacity drop signals lower signal confidence without being ugly. */
+.card.demo-data {
+  opacity: 0.72;
+}
+.card.demo-data .card-header .eyebrow::after {
+  content: " · DEMO";
+  font-size: 0.78em;
+  opacity: 0.6;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+}
+
 /* ── Sister-dashboard visual variants ──────────────────────────────
    MTT = cyan accent, map-first feel. Bangkok = amber accent, dense
    ops-command feel. Driven by env at build time so each deployment

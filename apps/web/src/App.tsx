@@ -5179,7 +5179,7 @@ function DashboardPage() {
 
           {/* — MTT Traffic Corridors — */}
           {isMuangThongCityView && (
-          <section className="card overview-card mtt-traffic-corridors">
+          <section className="card overview-card mtt-traffic-corridors demo-data">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "ถนนสายหลัก" : "Traffic Corridors"}</span>
               <span className={`status-pill congestion-${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
@@ -5199,7 +5199,7 @@ function DashboardPage() {
 
           {/* — IMPACT Arena Events — */}
           {isMuangThongCityView && (
-          <section className="card overview-card impact-events">
+          <section className="card overview-card impact-events demo-data">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</span>
               <span className="status-pill">{impactArenaEventsSeed.filter((e) => e.status === "confirmed").length}</span>
@@ -5220,7 +5220,7 @@ function DashboardPage() {
 
           {/* — CCTV Intel — */}
           {isMuangThongCityView && (
-          <section className="card overview-card cctv-intel" onClick={() => navigateToTab("cctv")}>
+          <section className="card overview-card cctv-intel demo-data" onClick={() => navigateToTab("cctv")}>
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "CCTV Intel"}</span>
               <span className={`status-pill ${escalatedCctvCount > 0 ? "status-alert" : ""}`}>
@@ -5301,9 +5301,9 @@ function DashboardPage() {
               <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level === "normal" ? (lang === "th" ? "ปกติ" : "Normal") : floodStatus.level.toUpperCase()}</span>
             </div>
             <div className="governor-kpi-grid">
-              <div className={`kpi-item${resilience.aqi > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${resilience.aqi}`} title={lang === "th" ? `ดัชนีคุณภาพอากาศ: ${resilience.aqi} (0-50 ดี, 51-100 ปานกลาง, >100 ไม่ดี)` : `Air Quality Index: ${resilience.aqi} (0-50 Good, 51-100 Moderate, >100 Unhealthy)`}>
+              <div className={`kpi-item${(liveAir.data?.current?.us_aqi ?? resilience.aqi) > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${liveAir.data?.current?.us_aqi ?? resilience.aqi}`}>
                 <span className="eyebrow">AQI</span>
-                <strong className={resilience.aqi > 100 ? "tone-warning" : resilience.aqi > 50 ? "tone-neutral" : "tone-positive"}>{resilience.aqi}</strong>
+                <strong className={(liveAir.data?.current?.us_aqi ?? resilience.aqi) > 100 ? "tone-warning" : (liveAir.data?.current?.us_aqi ?? resilience.aqi) > 50 ? "tone-neutral" : "tone-positive"}>{Math.round(liveAir.data?.current?.us_aqi ?? resilience.aqi)}</strong>
                 {kpiHistory.aqi.length > 2 && <Sparkline values={kpiHistory.aqi} />}
               </div>
               <div className={`kpi-item${traffyFondue.totalOpen > 500 ? " kpi-alert" : ""}${kpiChanged.has("reports") ? " data-changed data-refreshed" : ""}`} aria-label={`${traffyFondue.totalOpen} open citizen reports`} title={lang === "th" ? `เรื่องร้องเรียนจาก Traffy Fondue ที่ยังไม่ได้แก้ไข: ${traffyFondue.totalOpen}` : `Open citizen reports via Traffy Fondue: ${traffyFondue.totalOpen}`}>
@@ -5316,9 +5316,9 @@ function DashboardPage() {
                 <strong className="tone-positive">{Math.round(traffyFondue.resolutionRate * 100)}%</strong>
                 {kpiHistory.resolved.length > 2 && <Sparkline values={kpiHistory.resolved} />}
               </div>
-              <div className={`kpi-item${kpiChanged.has("temp") ? " data-changed data-refreshed" : ""}`} aria-label={`Temperature ${resilience.weatherTemperatureC} degrees celsius`}>
+              <div className={`kpi-item${kpiChanged.has("temp") ? " data-changed data-refreshed" : ""}`} aria-label={`Temperature ${liveWeather.data?.current?.temperature_2m ?? resilience.weatherTemperatureC} degrees celsius`}>
                 <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temp"}</span>
-                <strong>{resilience.weatherTemperatureC}°C</strong>
+                <strong>{liveWeather.data?.current?.temperature_2m?.toFixed(0) ?? resilience.weatherTemperatureC}°C</strong>
                 {kpiHistory.temp.length > 2 && <Sparkline values={kpiHistory.temp} />}
               </div>
               <div className={`kpi-item${trafficCongestion.index > 55 ? " kpi-alert" : ""}`} aria-label={`Traffic congestion index ${trafficCongestion.index}`} title={lang === "th" ? `ดัชนีรถติด: ${trafficCongestion.index}/100 — อุบัติเหตุ ${trafficCongestion.accidents} ปิดถนน ${trafficCongestion.closures}` : `Traffic index: ${trafficCongestion.index}/100 — ${trafficCongestion.accidents} accidents, ${trafficCongestion.closures} closures`}>
@@ -5374,7 +5374,7 @@ function DashboardPage() {
           </section>
 
           {/* — Social Pulse — */}
-          <section className="card overview-card social-pulse">
+          <section className="card overview-card social-pulse demo-data">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "กระแสสังคม" : "Social Pulse"}</span>
               <span className="status-pill">{socialListening.mentionCount} {lang === "th" ? "คนพูดถึง" : "mentions"}</span>
@@ -5393,7 +5393,7 @@ function DashboardPage() {
 
           {/* — Traffy Fondue: citizen reports — */}
           {city === "bangkok" && (
-          <section className="card overview-card traffy-fondue">
+          <section className="card overview-card traffy-fondue demo-data">
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "ร้องเรียนประชาชน" : "Citizen Reports"}</span>
               <button type="button" className="status-pill status-button" onClick={() => navigateToTab("map")}>
@@ -5465,7 +5465,7 @@ function DashboardPage() {
           )}
 
           {/* — Decision Queue — */}
-          <section className="card overview-card queue">
+          <section className="card overview-card queue demo-data">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</span>
             <button type="button" className="status-pill status-button" onClick={() => navigateToTab("data")}>
@@ -5490,7 +5490,7 @@ function DashboardPage() {
           </section>
 
           {/* — Activity Feed — */}
-          <section className="card overview-card activity-feed" onClick={() => navigateToTab("data")}>
+          <section className="card overview-card activity-feed demo-data" onClick={() => navigateToTab("data")}>
             <div className="card-header">
               <span className="eyebrow">{lang === "th" ? "กิจกรรม" : "Activity"}</span>
               <span className="status-pill">{activityItems.length}</span>
