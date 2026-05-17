@@ -23,8 +23,11 @@ import {
   sources as sourceSeed,
   impactArenaEvents as impactArenaEventsSeed,
   mttTrafficSnapshot as mttTrafficSnapshotSeed,
-  traffyFondueSeed,
-  bangkokFloodStatusSeed
+  createMucSnapshot,
+  mttIncidents as incidentSeed,
+  mttFloodRisk as floodRiskSeed,
+  mttTransit as transitSeed,
+  utilitySnapshot as utilitySeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
@@ -54,12 +57,18 @@ import type {
   SourceRecord,
   TimeRange,
   TimeSnapshot,
-  TraffyFondueSnapshot,
-  BangkokFloodStatus,
-  TrafficCongestionSnapshot
+  ImpactArenaEvent,
+  MucSnapshot,
+  CctvGridLayout,
+  IncidentRecord,
+  FloodRiskSnapshot,
+  TransitSnapshot,
+  CommunityIntelSnapshot,
+  UtilitySnapshot
 } from "@smart-city/shared";
 import {
   startTransition,
+  useCallback,
   useEffect,
   useDeferredValue,
   useMemo,
@@ -79,22 +88,7 @@ import {
 } from "./content";
 import { getEoTileConfigs } from "./eoTiles";
 import InteractiveMap from "./InteractiveMap";
-import {
-  useOpenMeteoWeather,
-  useOpenMeteoAirQuality,
-  useThailandEarthquakes,
-  useUsdThbRate,
-  useCoinPrices,
-  useGdeltThaiNews,
-  useOpenSkyDmk,
-  useBmaOpenData,
-  useThaiOpenData,
-  deriveIntelligence,
-  realityCheckVerdict,
-  aqiBand,
-  aqiTone,
-  quakeFreshness,
-} from "./realtime";
+import BangkokStatsBar from "./BangkokStatsBar";
 
 function normalizeApiBase(baseUrl: string) {
   const trimmed = baseUrl.trim();
@@ -109,14 +103,13 @@ function getApiBaseCandidates() {
 const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 180000;
-const FAST_POLL_INTERVAL_MS = 60000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
-const APP_VERSION = "3.0.0";
+const APP_VERSION = "4.0.0";
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
-  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Smart City Thailand Command Center",
+  title: (import.meta.env.VITE_SITE_TITLE as string | undefined) || "Muang Thong Thani Super Dashboard",
   eyebrow: {
-    th: "ระบบปฏิบัติการเมืองแบบเรียลไทม์",
-    en: "Real-time Urban Operations"
+    th: "เมืองทองธานี ซูเปอร์แดชบอร์ด",
+    en: "Muang Thong Thani"
   }
 });
 const PUBLIC_DASHBOARD_ATTRIBUTION = Object.freeze({
@@ -254,7 +247,7 @@ interface ScreenshotScene {
   state: {
     view: DashboardView;
     city?: string;
-    basemap: "atlas" | "satellite";
+    basemap: "atlas" | "satellite" | "street" | "hybrid";
     timeRange: TimeRange;
     layers: string[];
   };
@@ -645,15 +638,10 @@ const reporterSampleTemplates: ReporterSampleTemplate[] = [
 const operationalLayerToggleIds = [
   "smart-city-thailand",
   "bangkok-passages",
-  "traffy-fondue",
   "cctv-cameras",
   "weather",
   "pollution",
-  "air4thai",
   "itic-traffic",
-  "bma-flood-gates",
-  "bma-health-centers",
-  "bma-districts",
   "projects",
   "news",
   "resilience",
@@ -661,11 +649,7 @@ const operationalLayerToggleIds = [
   "water",
   "land-use",
   "agriculture",
-  "disaster",
-  "bangkok-highways",
-  "bangkok-arterials",
-  "road-labels",
-  "bangkok-waterways"
+  "disaster"
 ] as const;
 
 const satelliteToggleOptions: ToggleOption[] = [
@@ -1665,18 +1649,7 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
   }
 
   if (citySlug === "muang-thong-thani") {
-    return ["mtt-grid", "projects", "itic-traffic", "cctv-cameras"];
-  }
-
-  if (citySlug === "bangkok") {
-    return [
-      "traffy-fondue",
-      "itic-traffic",
-      "cctv-cameras",
-      "projects",
-      "resilience",
-      "bangkok-passages"
-    ];
+    return ["mtt-boundary", "mtt-zones", "mtt-grid", "projects", "itic-traffic", "cctv-cameras", "incidents"];
   }
 
   return [
@@ -1684,7 +1657,8 @@ function getDefaultLayers(view: DashboardView, citySlug: string) {
     "pollution",
     "projects",
     "itic-traffic",
-    "resilience"
+    "resilience",
+    ...(citySlug === "bangkok" ? ["bangkok-passages"] : [])
   ];
 }
 
@@ -1884,10 +1858,9 @@ function matchesCoverageDomain(feature: GeoFeatureRecord, domainSlug?: string) {
 
 function useDashboardData(searchParams: URLSearchParams) {
   const lang = (searchParams.get("lang") === "th" ? "th" : "en") as Locale;
-  const defaultCity = (import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok";
+  const defaultCity = (import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "muang-thong-thani";
   const isMttSite = defaultCity === "muang-thong-thani";
-  const isBangkokSite = defaultCity === "bangkok";
-  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || (isMttSite || isBangkokSite ? "city" : "national")) as DashboardView;
+  const defaultView = ((import.meta.env.VITE_DEFAULT_VIEW as string | undefined) || (isMttSite ? "city" : "national")) as DashboardView;
   const view = (searchParams.get("view") as DashboardView) || defaultView;
   const timeRange = (searchParams.get("timeRange") as TimeRange) || "7d";
   const city = searchParams.get("city") ?? defaultCity;
@@ -2167,76 +2140,49 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchInterval: 1000
   });
 
-  const traffyFondueQuery = useQuery({
-    queryKey: ["traffy-fondue"],
-    queryFn: () =>
-      fetchFromApi<TraffyFondueSnapshot>(
-        "/api/traffy-fondue",
-        cloneSeed(traffyFondueSeed),
-        (value) => isObject(value) && typeof value.totalOpen === "number"
-      ),
-    refetchInterval: FAST_POLL_INTERVAL_MS,
+  const arenaEventsQuery = useQuery({
+    queryKey: ["arena-events"],
+    queryFn: () => fetchFromApi<ImpactArenaEvent[]>("/api/arena-events", cloneSeed(impactArenaEventsSeed), Array.isArray),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
   });
 
-  const floodStatusQuery = useQuery({
-    queryKey: ["flood-status"],
-    queryFn: () =>
-      fetchFromApi<BangkokFloodStatus>(
-        "/api/flood-status",
-        cloneSeed(bangkokFloodStatusSeed),
-        (value) => isObject(value) && typeof value.level === "string"
-      ),
-    refetchInterval: FAST_POLL_INTERVAL_MS,
+  const mucFallback = createMucSnapshot();
+  const mucQuery = useQuery({
+    queryKey: ["muc"],
+    queryFn: () => fetchFromApi<MucSnapshot>("/api/muc", mucFallback, (v) => isObject(v) && isObject((v as Record<string, unknown>).gateFlow)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true
   });
 
-  const trafficCongestionQuery = useQuery({
-    queryKey: ["traffic-congestion"],
-    queryFn: () =>
-      fetchFromApi<TrafficCongestionSnapshot>(
-        "/api/traffic-congestion",
-        { index: 0, level: "free", activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() },
-        (value) => isObject(value) && typeof value.index === "number"
-      ),
-    refetchInterval: FAST_POLL_INTERVAL_MS,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true
+  const incidentQuery = useQuery({
+    queryKey: ["incidents"],
+    queryFn: () => fetchFromApi<IncidentRecord[]>("/api/incidents", cloneSeed(incidentSeed), Array.isArray),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
   });
 
-  const ROAD_REFETCH_MS = 60 * 60 * 1000; // 1 hour — backend caches 24h
-  const isBangkok = city === "bangkok";
-
-  const highwaysQuery = useQuery({
-    queryKey: ["bangkok-highways"],
-    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-highways", { layerId: "bangkok-highways", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
-    refetchInterval: ROAD_REFETCH_MS,
-    enabled: isBangkok && layers.some((l) => l === "bangkok-highways")
+  const communityIntelFallback: CommunityIntelSnapshot = { updatedAt: new Date().toISOString(), uvIndex: 8.2, uvLabel: "very-high", sunriseLocal: "06:12", sunsetLocal: "18:28", flightsOverhead: 14, nearbyEarthquakes: [], thaiHolidays: [{ date: "2026-04-06", localName: "วันจักรี", name: "Chakri Memorial Day" }, { date: "2026-04-13", localName: "วันสงกรานต์", name: "Songkran" }], populationThailand: 71801279, lotteryLatest: { date: "2026-03-16", firstPrize: "835127" } };
+  const communityIntelQuery = useQuery({
+    queryKey: ["community-intel"],
+    queryFn: () => fetchFromApi<CommunityIntelSnapshot>("/api/community-intel", communityIntelFallback, (v) => isObject(v) && typeof (v as Record<string, unknown>).uvIndex === "number"),
+    refetchInterval: 600_000 // 10 min
   });
 
-  const arterialsQuery = useQuery({
-    queryKey: ["bangkok-arterials"],
-    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-arterials", { layerId: "bangkok-arterials", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
-    refetchInterval: ROAD_REFETCH_MS,
-    enabled: isBangkok && layers.some((l) => l === "bangkok-arterials")
+  const floodRiskQuery = useQuery({
+    queryKey: ["flood-risk"],
+    queryFn: () => fetchFromApi<FloodRiskSnapshot>("/api/flood-risk", cloneSeed(floodRiskSeed), (v) => isObject(v) && Array.isArray((v as Record<string, unknown>).stations)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
   });
 
-  const waterwaysQuery = useQuery({
-    queryKey: ["bangkok-waterways"],
-    queryFn: () => fetchFromApi<MapFeatureCollection>("/api/layers/bangkok-waterways", { layerId: "bangkok-waterways", updatedAt: "", features: [], source: { sourceName: "OpenStreetMap", fetchedAt: "", freshnessStatus: "stale" as const, confidence: 0, fallbackMode: "cached" as const, sourceUrl: "" } }, isObject),
-    refetchInterval: ROAD_REFETCH_MS,
-    enabled: isBangkok && layers.some((l) => l === "bangkok-waterways")
+  const transitQuery = useQuery({
+    queryKey: ["transit"],
+    queryFn: () => fetchFromApi<TransitSnapshot>("/api/transit", cloneSeed(transitSeed), (v) => isObject(v) && Array.isArray((v as Record<string, unknown>).connections)),
+    refetchInterval: LIVE_POLL_INTERVAL_MS
   });
 
   const overview = normalizeOverviewSnapshot(overviewQuery.data, overviewFallback);
-
-  const baseMapFeatures = safeArray(mapFeaturesQuery.data, mapFeaturesFallback);
-  const overpassLayers: MapFeatureCollection[] = [];
-  if (highwaysQuery.data?.features?.length) overpassLayers.push(highwaysQuery.data);
-  if (arterialsQuery.data?.features?.length) overpassLayers.push(arterialsQuery.data);
-  if (waterwaysQuery.data?.features?.length) overpassLayers.push(waterwaysQuery.data);
 
   return {
     lang,
@@ -2260,14 +2206,17 @@ function useDashboardData(searchParams: URLSearchParams) {
     markets: marketQuery.data ?? cloneSeed(marketSnapshotSeed),
     sources: safeArray(sourcesQuery.data, sourcesFallback),
     satelliteDigest: satelliteDigestQuery.data ?? createSatelliteDigestFallback(),
-    mapFeatures: [...baseMapFeatures, ...overpassLayers],
+    mapFeatures: safeArray(mapFeaturesQuery.data, mapFeaturesFallback),
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
     time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
-    traffyFondue: traffyFondueQuery.data ?? cloneSeed(traffyFondueSeed),
-    floodStatus: floodStatusQuery.data ?? cloneSeed(bangkokFloodStatusSeed),
-    trafficCongestion: trafficCongestionQuery.data ?? { index: 0, level: "free" as const, activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() }
+    arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed)),
+    muc: mucQuery.data ?? mucFallback,
+    incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed)),
+    floodRisk: floodRiskQuery.data ?? cloneSeed(floodRiskSeed),
+    transit: transitQuery.data ?? cloneSeed(transitSeed),
+    communityIntel: communityIntelQuery.data ?? communityIntelFallback
   };
 }
 
@@ -2280,10 +2229,10 @@ function DashboardPage() {
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  type TabId = "map" | "satellite" | "cctv" | "insights" | "data";
-  const [activeTab, setActiveTab] = useState<TabId>("map");
-  const [tabHistory, setTabHistory] = useState<TabId[]>(["map"]);
-  const [tabHistoryIndex, setTabHistoryIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<"map" | "satellite" | "cctv" | "traffic" | "air" | "insights" | "data">("map");
+  const [cctvGridLayout, setCctvGridLayout] = useState<CctvGridLayout>("3x3");
+  const [activeCctvGroup, setActiveCctvGroup] = useState<string | null>(null);
+  const [expandedCameraId, setExpandedCameraId] = useState<string | null>(null);
   const [layerPaletteOpen, setLayerPaletteOpen] = useState(false);
   const [opsDrawerState, setOpsDrawerState] = useState<OpsDrawerState | null>(null);
   const [timeCompareEnabled, setTimeCompareEnabled] = useState(false);
@@ -2308,73 +2257,15 @@ function DashboardPage() {
   const assistantStatus = assistantStatusQuery.data ?? null;
   const deferredSearchText = useDeferredValue(searchText);
   const modelCityParam = searchParams.get("modelCity") ?? "";
-  const defaultBasemap = ((import.meta.env.VITE_DEFAULT_BASEMAP as string | undefined) || "satellite") as "atlas" | "satellite";
-  const basemap = (searchParams.get("basemap") === "atlas" ? "atlas" : searchParams.get("basemap") === "satellite" ? "satellite" : defaultBasemap) as "atlas" | "satellite";
-
-  const [autoRotate, setAutoRotate] = useState(false);
-  const [kpiHistory, setKpiHistory] = useState<{ aqi: number[]; reports: number[]; resolved: number[]; temp: number[]; flood: number[]; rain: number[]; traffic: number[] }>({
-    aqi: [], reports: [], resolved: [], temp: [], flood: [], rain: [], traffic: []
-  });
-  const [kpiChanged, setKpiChanged] = useState<Set<string>>(new Set());
-  const prevKpiRef = useRef({ aqi: 0, reports: 0, resolved: 0, temp: 0, flood: 0, rain: 0 });
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const basemap = ((): "atlas" | "satellite" | "street" | "hybrid" => {
+    const param = searchParams.get("basemap");
+    if (param === "satellite" || param === "street" || param === "hybrid") return param;
+    return "atlas";
+  })();
 
   useEffect(() => {
     document.title = PUBLIC_DASHBOARD_BRAND.title;
   }, []);
-
-  /* — Immersion: trap browser back button so users stay on the dashboard — */
-  useEffect(() => {
-    window.history.pushState(null, "", window.location.href);
-    const handler = () => { window.history.pushState(null, "", window.location.href); };
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
-  }, []);
-
-  /* — Immersion: warn before closing/navigating away — */
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-
-  /* — Fullscreen / Kiosk mode — */
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, []);
-
-  function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      document.documentElement.requestFullscreen();
-    }
-  }
-
-  /* — In-app navigation stack for back/forward — */
-  function navigateToTab(tab: TabId) {
-    if (tab === activeTab) return;
-    setActiveTab(tab);
-    setTabHistory((prev) => [...prev.slice(0, tabHistoryIndex + 1), tab].slice(-20));
-    setTabHistoryIndex((prev) => Math.min(prev + 1, 19));
-  }
-  function navigateBack() {
-    if (tabHistoryIndex > 0) {
-      const i = tabHistoryIndex - 1;
-      setTabHistoryIndex(i);
-      setActiveTab(tabHistory[i]);
-    }
-  }
-  function navigateForward() {
-    if (tabHistoryIndex < tabHistory.length - 1) {
-      const i = tabHistoryIndex + 1;
-      setTabHistoryIndex(i);
-      setActiveTab(tabHistory[i]);
-    }
-  }
 
   const {
     lang,
@@ -2403,155 +2294,54 @@ function DashboardPage() {
     publicCctvCameras,
     commandCenter,
     time,
-    traffyFondue,
-    floodStatus,
-    trafficCongestion
+    arenaEvents,
+    muc,
+    incidents,
+    floodRisk,
+    transit,
+    communityIntel
   } = useDashboardData(searchParams);
-
-  /* — KPI history: append latest values for sparklines (max 24 samples) — */
-  useEffect(() => {
-    setKpiHistory((prev) => {
-      const cap = (arr: number[], val: number) => [...arr.slice(-23), val];
-      return {
-        aqi: cap(prev.aqi, resilience.aqi),
-        reports: cap(prev.reports, traffyFondue.totalOpen),
-        resolved: cap(prev.resolved, Math.round(traffyFondue.resolutionRate * 100)),
-        temp: cap(prev.temp, resilience.weatherTemperatureC),
-        flood: cap(prev.flood, floodStatus.activeFloodPoints),
-        rain: cap(prev.rain, floodStatus.rainfallLast24h),
-        traffic: cap(prev.traffic, trafficCongestion.index)
-      };
-    });
-  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h, trafficCongestion.index]);
-
-  /* — KPI change detection: flash cards when values update — */
-  useEffect(() => {
-    const prev = prevKpiRef.current;
-    const changed = new Set<string>();
-    if (prev.aqi !== resilience.aqi && prev.aqi !== 0) changed.add("aqi");
-    if (prev.reports !== traffyFondue.totalOpen && prev.reports !== 0) changed.add("reports");
-    if (prev.temp !== resilience.weatherTemperatureC && prev.temp !== 0) changed.add("temp");
-    if (prev.flood !== floodStatus.activeFloodPoints) changed.add("flood");
-    if (prev.rain !== floodStatus.rainfallLast24h) changed.add("rain");
-    const resolvedPct = Math.round(traffyFondue.resolutionRate * 100);
-    if (prev.resolved !== resolvedPct && prev.resolved !== 0) changed.add("resolved");
-
-    prevKpiRef.current = { aqi: resilience.aqi, reports: traffyFondue.totalOpen, resolved: resolvedPct, temp: resilience.weatherTemperatureC, flood: floodStatus.activeFloodPoints, rain: floodStatus.rainfallLast24h };
-    if (changed.size > 0) {
-      setKpiChanged(changed);
-      const timer = setTimeout(() => setKpiChanged(new Set()), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [resilience.aqi, traffyFondue.totalOpen, traffyFondue.resolutionRate, resilience.weatherTemperatureC, floodStatus.activeFloodPoints, floodStatus.rainfallLast24h]);
-
-  /* — Auto-rotate satellite presets every 60s for wall display — */
-  useEffect(() => {
-    if (!autoRotate) return;
-    let index = 0;
-    const presetIds = SATELLITE_PRESETS.map((p) => p.layers.join(","));
-    const timer = setInterval(() => {
-      index = (index + 1) % presetIds.length;
-      const next = buildStableParams();
-      next.set("layers", presetIds[index]);
-      setSearchParams(next, { replace: true });
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [autoRotate]);
-
-  /* — Sitrep export: generate markdown summary — */
-  function generateSitrep() {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-    const lines = [
-      `# Bangkok IOC Daily Brief — ${dateStr}`,
-      `Generated: ${timeStr} ICT`,
-      "",
-      "## At a Glance",
-      `| Metric | Value |`,
-      `|--------|-------|`,
-      `| AQI | ${resilience.aqi} |`,
-      `| Temperature | ${resilience.weatherTemperatureC}°C |`,
-      `| Open Reports (Traffy) | ${traffyFondue.totalOpen} |`,
-      `| Resolution Rate | ${Math.round(traffyFondue.resolutionRate * 100)}% |`,
-      `| Flood Level | ${floodStatus.level} |`,
-      `| Active Flood Points | ${floodStatus.activeFloodPoints} |`,
-      `| Rainfall 24h | ${floodStatus.rainfallLast24h}mm |`,
-      `| Drainage Pumps | ${floodStatus.drainagePumpStatus.active}/${floodStatus.drainagePumpStatus.total} |`,
-      `| Live Cameras | ${publicCctvCameras.filter((c) => c.status === "live").length} |`,
-      "",
-      "## Top Citizen Report Categories",
-      ...traffyFondue.categoryBreakdown.slice(0, 6).map((c) => `- ${c.category}: ${c.count}`),
-      "",
-      "## Top Districts by Reports",
-      ...traffyFondue.districtBreakdown.slice(0, 5).map((d) => `- ${d.district}: ${d.count}`),
-      "",
-      "## Pending Actions",
-      ...decisions.slice(0, 5).map((d) => `- [${d.severity}] ${localize(lang, d.title)}`),
-      "",
-      "## Latest News",
-      ...news.slice(0, 3).map((n) => `- ${localize(lang, n.title)} (${n.source.sourceName})`),
-      "",
-      `---`,
-      `${PUBLIC_DASHBOARD_BRAND.title} · ${publicCctvCameras.length} camera feeds · ${sources.filter((s) => s.freshnessStatus === "live").length} live data sources`
-    ];
-    return lines.join("\n");
-  }
-
-  async function copySitrep() {
-    const md = generateSitrep();
-    try {
-      await navigator.clipboard.writeText(md);
-    } catch {
-      /* clipboard may be blocked */
-    }
-  }
 
   const copy = copyDeck[lang];
   const cityBySlug = new Map(overview.cities.map((item) => [item.slug, item]));
   const selectedCity = cityBySlug.get(city) ?? overview.cities[0];
-  const _isMttEnv = ((import.meta.env.VITE_DEFAULT_CITY as string | undefined) || "bangkok") === "muang-thong-thani";
-  // city=muang-thong-thani normalizes to city=nonthaburi via the slug-correction effect;
-  // match both so MTT sections survive the URL rewrite
-  const isMuangThongCityView = view === "city" && (city === "muang-thong-thani" || (_isMttEnv && city === "nonthaburi"));
+  const isMuangThongCityView = view === "city" && city === "muang-thong-thani";
 
-  // Real-time direct-from-frontend data (independent of suspended Render API).
-  // Coordinates: MTT view uses Muang Thong Thani; otherwise Bangkok.
-  const realtimeLat = isMuangThongCityView ? 13.9134 : 13.7563;
-  const realtimeLon = isMuangThongCityView ? 100.5418 : 100.5018;
-  // Other-scale coords for the cross-scale Counterpart Strip
-  const otherLat = isMuangThongCityView ? 13.7563 : 13.9134;
-  const otherLon = isMuangThongCityView ? 100.5018 : 100.5418;
-  const liveWeather = useOpenMeteoWeather(realtimeLat, realtimeLon);
-  const liveAir = useOpenMeteoAirQuality(realtimeLat, realtimeLon);
-  const liveAirOther = useOpenMeteoAirQuality(otherLat, otherLon);
-  const liveQuakes = useThailandEarthquakes();
-  const liveFx = useUsdThbRate();
-  const liveCoins = useCoinPrices();
-  const liveNews = useGdeltThaiNews();
-  // Sister-dashboard differentiation: MTT view fetches DMK flights overhead;
-  // Bangkok view fetches BMA + data.go.th open data feeds.
-  const liveFlights = useOpenSkyDmk();
-  const liveBmaData = useBmaOpenData();
-  const liveThaiData = useThaiOpenData();
-  // God-Mode intelligence: derive Governor articles + sentiment + pollution volume
-  // from the SINGLE GDELT call above (rate-limit-friendly).
-  const intel = deriveIntelligence(liveNews.data ?? []);
-  // Reality Check verdict for Air Quality: narrative tone + volume vs measured AQI
-  const measuredAqBad = (liveAir.data?.current?.us_aqi ?? 0) > 100;
-  const aqVerdict = realityCheckVerdict(
-    intel.pollutionTone,
-    intel.pollutionVolume,
-    measuredAqBad
-  );
-  // Counterpart Strip label
-  const counterpartLabel = isMuangThongCityView
-    ? (lang === "th" ? "กรุงเทพฯ ภาพรวม" : "Bangkok-wide")
-    : (lang === "th" ? "เฉพาะเมืองทอง" : "MTT specifically");
-  const counterpartCitySlug = isMuangThongCityView ? "bangkok" : "muang-thong-thani";
-  const counterpartCityLabel = isMuangThongCityView
-    ? (lang === "th" ? "กรุงเทพ" : "Bangkok")
-    : "MTT";
+  /* ── MUC Operator Status ── */
+  const mucBottleneckCount = muc.trafficFlow.bottlenecks.filter((b) => b.severity === "bottleneck" || b.severity === "gridlock").length;
+  const mucAqiAlertCount = muc.airQuality.zones.filter((z) => z.isAboveThreshold).length;
+  const mucCctvAlertCount = muc.cctvConsole.detectionHistory.filter((d) => d.severity === "alert").length;
+  const mucOverCapGates = muc.gateFlow.gates.filter((g) => {
+    const nowH = new Date().getUTCHours();
+    const bucket = muc.gateFlow.buckets.find((b) => b.gateId === g.id && new Date(b.periodStart).getUTCHours() === nowH);
+    return bucket ? (bucket.countIn + bucket.countOut) > g.capacity : false;
+  }).length;
+  const mucIssueTotal = mucBottleneckCount + mucAqiAlertCount + mucCctvAlertCount + mucOverCapGates;
+  const mucStatus: "green" | "amber" | "red" = mucIssueTotal === 0 ? "green" : (mucBottleneckCount > 1 || mucAqiAlertCount > 1 || mucCctvAlertCount > 0) ? "red" : "amber";
+  const mucStatusParts: string[] = [];
+  if (mucBottleneckCount > 0) mucStatusParts.push(lang === "th" ? `${mucBottleneckCount} จุดคอขวด` : `${mucBottleneckCount} bottleneck${mucBottleneckCount > 1 ? "s" : ""}`);
+  if (mucAqiAlertCount > 0) mucStatusParts.push(lang === "th" ? `${mucAqiAlertCount} เขต AQI เกิน` : `${mucAqiAlertCount} AQI alert${mucAqiAlertCount > 1 ? "s" : ""}`);
+  if (mucCctvAlertCount > 0) mucStatusParts.push(lang === "th" ? `${mucCctvAlertCount} แจ้งเตือนกล้อง` : `${mucCctvAlertCount} camera alert${mucCctvAlertCount > 1 ? "s" : ""}`);
+  if (mucOverCapGates > 0) mucStatusParts.push(lang === "th" ? `${mucOverCapGates} ประตูเกินรองรับ` : `${mucOverCapGates} gate${mucOverCapGates > 1 ? "s" : ""} over capacity`);
+  const mucStatusLine = mucStatusParts.length > 0 ? mucStatusParts.join(" · ") : (lang === "th" ? "ปกติ — ไม่มีเหตุการณ์" : "All clear — no incidents");
+
+  const totalVehiclesToday = muc.gateFlow.buckets.reduce((s, b) => s + b.countIn + b.countOut, 0);
+  const peakHourData = muc.trafficFlow.hourlyPatterns.reduce((best, p) => (p.avgVolumeIn + p.avgVolumeOut) > (best.avgVolumeIn + best.avgVolumeOut) ? p : best, muc.trafficFlow.hourlyPatterns[0]);
+  const avgSpeedAll = muc.trafficFlow.hourlyPatterns.length > 0 ? Math.round(muc.trafficFlow.hourlyPatterns.reduce((s, p) => s + p.avgSpeedKmh, 0) / muc.trafficFlow.hourlyPatterns.length) : 0;
+  const peakGate = muc.gateFlow.gates.reduce((best, g) => {
+    const vol = muc.gateFlow.buckets.filter((b) => b.gateId === g.id).reduce((s, b) => s + b.countIn + b.countOut, 0);
+    const bestVol = muc.gateFlow.buckets.filter((b) => b.gateId === best.id).reduce((s, b) => s + b.countIn + b.countOut, 0);
+    return vol > bestVol ? g : best;
+  }, muc.gateFlow.gates[0]);
+  const liveCamCount = publicCctvCameras.filter((c) => c.status === "live").length;
+  const matchCount = muc.gateFlow.matches.length;
+  const nowHourBuckets = muc.gateFlow.buckets.filter((b) => new Date(b.periodStart).getUTCHours() === new Date().getUTCHours());
+  const vehiclesThisHour = nowHourBuckets.reduce((s, b) => s + b.countIn + b.countOut, 0);
+  const installedSensorCount = muc.airQuality.sensors.filter((s) => s.installed).length;
+  const activePhase = muc.airQuality.constructionPhases.find((p) => p.status === "active");
+
+  const todayEvents = arenaEvents.filter((e) => e.status === "confirmed").slice(0, 3);
+
   const cityDistricts = districts.filter((item) => item.citySlug === selectedCity.slug);
   const districtByKey = new Map(districts.map((item) => [`${item.citySlug}:${item.slug}`, item]));
   const selectedDistrict = cityDistricts.find((item) => item.slug === district) ?? null;
@@ -2833,15 +2623,14 @@ function DashboardPage() {
       return mapFeatures;
     }
 
-      const bangkokOnlyLayers = new Set(["bangkok-passages", "bangkok-highways", "bangkok-arterials", "bangkok-waterways"]);
       return mapFeatures
       .map((collection) => {
-        if (bangkokOnlyLayers.has(collection.layerId)) {
+        if (collection.layerId === "bangkok-passages") {
           if (city !== "bangkok") {
             return { ...collection, features: [] };
           }
 
-          const features = selectedDistrict && collection.layerId === "bangkok-passages"
+          const features = selectedDistrict
             ? collection.features.filter((feature) => featureMatchesDistrict(feature, selectedDistrict.slug))
             : collection.features;
           return { ...collection, features };
@@ -2872,7 +2661,7 @@ function DashboardPage() {
       return "";
     }
 
-    return new Date(lastCheckMs + LIVE_POLL_INTERVAL_MS).toISOString();
+    return new Date(lastCheckMs + 300000).toISOString();
   })();
   const latestSyncSource =
     [...sources].sort(
@@ -2882,25 +2671,47 @@ function DashboardPage() {
     ? new Date(new Date(latestSyncSource.lastCheckedAt).getTime() + LIVE_POLL_INTERVAL_MS).toISOString()
     : "";
   const executiveSignal = (() => {
+    // MUC: Gridlock alerts take top priority
+    const gridlockBn = muc.trafficFlow.bottlenecks.find((b) => b.severity === "gridlock");
+    if (gridlockBn) {
+      return lang === "th"
+        ? `GRIDLOCK: ${localize(lang, gridlockBn.label)} — ${localize(lang, gridlockBn.suggestion)}`
+        : `GRIDLOCK: ${localize(lang, gridlockBn.label)} — ${localize(lang, gridlockBn.suggestion)}`;
+    }
+
+    // MUC: AQI zone rising above threshold
+    const risingAqiZone = muc.airQuality.zones.find((z) => z.isAboveThreshold && z.trend === "up");
+    if (risingAqiZone) {
+      return lang === "th"
+        ? `AQI เตือน: ${localize(lang, risingAqiZone.label)} เกินเกณฑ์ ${risingAqiZone.threshold} (ปัจจุบัน ${risingAqiZone.currentAqi})`
+        : `AQI ALERT: ${localize(lang, risingAqiZone.label)} above ${risingAqiZone.threshold} (now ${risingAqiZone.currentAqi})`;
+    }
+
+    // MUC: Bottleneck alerts
+    const worstBn = muc.trafficFlow.bottlenecks.find((b) => b.severity === "bottleneck");
+    if (worstBn) {
+      return lang === "th"
+        ? `คอขวด: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`
+        : `Bottleneck: ${localize(lang, worstBn.label)} — ${localize(lang, worstBn.suggestion)}`;
+    }
+
+    // Flood risk warning
+    if (floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical") {
+      return lang === "th"
+        ? `เตือนน้ำท่วม: ระดับความเสี่ยง ${floodRisk.floodRiskLevel} — ฝนคาด ${floodRisk.precipitationForecast24h} มม./24ชม.`
+        : `FLOOD WARNING: Risk level ${floodRisk.floodRiskLevel} — ${floodRisk.precipitationForecast24h}mm rain forecast 24h`;
+    }
+
+    // Heavy rain warning
+    if (floodRisk.precipitationForecast24h > 30) {
+      return lang === "th"
+        ? `เตือนฝนหนัก: คาดฝน ${floodRisk.precipitationForecast24h} มม. ใน 24 ชม. — เฝ้าระวังน้ำท่วม`
+        : `RAIN WARNING: ${floodRisk.precipitationForecast24h}mm expected in 24h — flood watch`;
+    }
+
     const leadDecision = filteredDecisions[0];
     if (leadDecision) {
       return localize(lang, leadDecision.title);
-    }
-
-    if (city === "bangkok" && floodStatus.level !== "normal") {
-      return lang === "th"
-        ? `เฝ้าระวังน้ำท่วม ${floodStatus.activeFloodPoints} จุดในกรุงเทพฯ`
-        : `Flood watch active across ${floodStatus.activeFloodPoints} Bangkok points`;
-    }
-
-    if (topTrafficFeature) {
-      const trafficClass = stringProperty(topTrafficFeature, "eventClass").toLowerCase();
-      const trafficStatus = stringProperty(topTrafficFeature, "status").toLowerCase();
-      if (trafficClass.includes("accident") || trafficClass.includes("closure") || trafficStatus.includes("active")) {
-        return lang === "th"
-          ? `จราจร: ${formatSignalLabel(stringProperty(topTrafficFeature, "eventClass"))} ใน${topTrafficFeature.title}`
-          : `Traffic: ${formatSignalLabel(stringProperty(topTrafficFeature, "eventClass"))} near ${topTrafficFeature.title}`;
-      }
     }
 
     if (!isMuangThongCityView && topAqiFeature && numericProperty(topAqiFeature, "aqi") >= 70) {
@@ -3230,9 +3041,9 @@ function DashboardPage() {
     null;
   const airRiskPreset = focusPresets.find((preset) => preset.id === "air-risk");
   const monsoonPreset = focusPresets.find((preset) => preset.id === "monsoon-watch");
-  // Footer quick actions: Air + Rain + basemap toggle + Recenter only.
-  // Removed Candidates/Media/Economy — national-view concepts that don't
-  // apply to a single-city operator view and just confuse the operator.
+  const candidatePreset = focusPresets.find((preset) => preset.id === "candidate-cities");
+  const mediaPreset = focusPresets.find((preset) => preset.id === "media-watch");
+  const economyPreset = focusPresets.find((preset) => preset.id === "economic-context");
   const footerQuickActions = [
     {
       id: "air-risk",
@@ -3245,6 +3056,24 @@ function DashboardPage() {
       label: lang === "th" ? "ฝน" : "Rain",
       active: activeFocusPresetId === "monsoon-watch",
       onClick: monsoonPreset?.run
+    },
+    {
+      id: "candidate-cities",
+      label: lang === "th" ? "เมืองเด่น" : "Candidates",
+      active: activeFocusPresetId === "candidate-cities",
+      onClick: candidatePreset?.run
+    },
+    {
+      id: "media-watch",
+      label: lang === "th" ? "สื่อ" : "Media",
+      active: activeFocusPresetId === "media-watch",
+      onClick: mediaPreset?.run
+    },
+    {
+      id: "economic-context",
+      label: lang === "th" ? "เศรษฐกิจ" : "Economy",
+      active: activeFocusPresetId === "economic-context",
+      onClick: economyPreset?.run
     },
     {
       id: "basemap",
@@ -3322,7 +3151,7 @@ function DashboardPage() {
       title: { th: "ความลึกทะเล", en: "Bathymetry" },
       detail: { th: "ภูมิประเทศชายฝั่งและความลึกทะเล", en: "Coastal depth and seabed terrain context." },
       active: layers.includes("satellite-bathymetry"),
-      previewUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/6/31/52",
+      previewUrl: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/6/52/31.png",
       action: () => toggleSatelliteLayer("satellite-bathymetry")
     },
     {
@@ -3354,7 +3183,7 @@ function DashboardPage() {
       title: { th: "ฝน", en: "Rain" },
       detail: { th: "ภาพฝนและเรดาร์สำรองสำหรับฤดูมรสุม", en: "Rain and radar fallback for monsoon operations." },
       active: layers.includes("jaxa-rainfall"),
-      previewUrl: "https://wvs.earthdata.nasa.gov/api/v1/snapshot?REQUEST=GetSnapshot&LAYERS=BlueMarble_NextGeneration,Coastlines_15m,IMERG_Precipitation_Rate&CRS=EPSG:4326&BBOX=0,90,25,115&FORMAT=image/jpeg&HEIGHT=200&WIDTH=400",
+      previewUrl: buildApiUrl("/api/satellite/preview/flood-radar"),
       action: () => toggleSatelliteLayer("jaxa-rainfall")
     },
     {
@@ -3461,7 +3290,7 @@ function DashboardPage() {
     reason: string;
     layers: string[];
     citySlug: string;
-    basemap: "atlas" | "satellite";
+    basemap: "atlas" | "satellite" | "street" | "hybrid";
     confidence: number;
     freshness: string;
   }>;
@@ -3480,9 +3309,9 @@ function DashboardPage() {
   const scopePopulationValue = view === "national" ? formatPopulation(trackedPopulation) : formatPopulation(selectedCity.population);
   const scopeDomainScores = view === "national" ? nationalTopDomains : topCityScores;
   const overviewWarnings = resilience.warnings.slice(0, 3);
-  const overviewQueue = decisionItems.slice(0, 5);
-  const overviewOfficialNews = officialNews.slice(0, 3);
-  const overviewExternalNews = externalNews.slice(0, 3);
+  const overviewQueue = decisionItems.slice(0, 3);
+  const overviewOfficialNews = officialNews.slice(0, 2);
+  const overviewExternalNews = externalNews.slice(0, 2);
   const overviewProjects = compactProjects.slice(0, 3);
   const overviewSources = apiWatchSources.slice(0, 4);
   const compareRows = [
@@ -3533,7 +3362,8 @@ function DashboardPage() {
     }
   ];
   const workspaceTitle = PUBLIC_DASHBOARD_BRAND.title;
-  const brandContextLine = `${primaryScopeLabel} · ${primaryScopeDetail}`;
+  const workspaceNarrative =
+    localize(lang, commandCenter.screenMode);
   const reporterStatusMeta = {
     received: {
       label: lang === "th" ? "Received" : "Received",
@@ -3826,7 +3656,7 @@ function DashboardPage() {
     view?: DashboardView;
     city?: string;
     domain?: string;
-    basemap?: "atlas" | "satellite";
+    basemap?: "atlas" | "satellite" | "street" | "hybrid";
     timeRange?: TimeRange;
     layers?: string[];
   }) {
@@ -3919,7 +3749,7 @@ function DashboardPage() {
 
     startTransition(() => {
       setSearchParams(next);
-      navigateToTab("map");
+      setActiveTab("map");
       setRecenterSignal((value) => value + 1);
     });
   }
@@ -4130,26 +3960,102 @@ function DashboardPage() {
     }
   }
 
-  const siteTheme = "ops" as const;
-  // Sister-dashboard variant: cyan / map-first for MTT, amber / data-dense for Bangkok.
-  // Driven by VITE_DEFAULT_CITY env baked at build time, not by URL toggle, so each
-  // deployed Pages project has its own consistent identity.
-  const dashboardVariant = _isMttEnv ? "mtt" : "bangkok";
+  const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
+    try { return (localStorage.getItem("mtt-theme") as "light" | "dark") || "dark"; } catch { return "dark"; }
+  });
+  const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(() => {
+    try { return localStorage.getItem("mtt-audio-muted") === "true"; } catch { return false; }
+  });
+
+  const siteTheme = themeMode === "dark" ? "ops-dark" : "ops";
+
+  // Persist theme
+  useEffect(() => { try { localStorage.setItem("mtt-theme", themeMode); } catch {} }, [themeMode]);
+  useEffect(() => { try { localStorage.setItem("mtt-audio-muted", String(audioMuted)); } catch {} }, [audioMuted]);
+
+  // Escape key for fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape" && mapFullscreen) setMapFullscreen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mapFullscreen]);
+
+  // Audio alert system (Web Audio API)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const playAlertTone = useCallback((level: "info" | "warning" | "critical") => {
+    if (audioMuted) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      const freqs = level === "critical" ? [440, 520, 660] : level === "warning" ? [520, 520] : [440];
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq; osc.type = "sine";
+        gain.gain.value = 0.08;
+        const start = ctx.currentTime + i * 0.18;
+        osc.start(start); osc.stop(start + 0.12);
+      });
+    } catch {}
+  }, [audioMuted]);
 
   return (
-    <div className={`shell variant-${dashboardVariant}`} data-theme={siteTheme} data-variant={dashboardVariant}>
+    <div className={`shell ${mapFullscreen ? "dashboard-layout map-fullscreen" : ""}`} data-theme={siteTheme}>
+      {/* Fullscreen exit button */}
+      {mapFullscreen ? <button type="button" className="fullscreen-exit-btn" onClick={() => setMapFullscreen(false)}>{lang === "th" ? "ออกเต็มจอ" : "Exit Fullscreen"} (Esc)</button> : null}
+
+      {/* Shift Handover Modal */}
+      {shiftModalOpen ? (
+        <div className="shift-modal-overlay" onClick={() => setShiftModalOpen(false)}>
+          <div className="shift-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>{lang === "th" ? "รายงานกะ — สรุป 8 ชั่วโมง" : "Shift Report — 8 Hour Summary"}</h2>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "เหตุการณ์" : "Incidents"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "เปิดใหม่" : "Opened"}</span><strong>{incidents.filter((i) => i.status === "new").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "แก้ไขแล้ว" : "Resolved"}</span><strong>{incidents.filter((i) => i.status === "resolved").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ยังดำเนินการ" : "Still Active"}</span><strong>{incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "จราจร" : "Traffic"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "รถวันนี้" : "Vehicles Today"}</span><strong>{totalVehiclesToday.toLocaleString()}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "คอขวด" : "Bottlenecks"}</span><strong>{mucBottleneckCount}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ชั่วโมงพีค" : "Peak Hour"}</span><strong>{peakHourData ? `${String(peakHourData.hour).padStart(2, "0")}:00` : "--"}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</h3>
+              <div className="shift-metric"><span>AQI</span><strong>{muc.airQuality.overallAqi}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "เขตเกินเกณฑ์" : "Zones Above Threshold"}</span><strong>{mucAqiAlertCount}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "จำนวนงาน" : "Events"}</span><strong>{arenaEvents.filter((e) => e.status === "confirmed").length}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "คนคาด" : "Expected Crowd"}</span><strong>{arenaEvents.filter((e) => e.status === "confirmed").reduce((s, e) => s + e.expectedCrowd, 0).toLocaleString()}</strong></div>
+            </div>
+            <div className="shift-section">
+              <h3>{lang === "th" ? "น้ำท่วม" : "Flood Risk"}</h3>
+              <div className="shift-metric"><span>{lang === "th" ? "ระดับความเสี่ยง" : "Risk Level"}</span><strong>{floodRisk.floodRiskLevel}</strong></div>
+              <div className="shift-metric"><span>{lang === "th" ? "ฝนคาด 24 ชม." : "Rain 24h"}</span><strong>{floodRisk.precipitationForecast24h}mm</strong></div>
+            </div>
+            <div className="shift-actions">
+              <button type="button" className="primary" onClick={() => { navigator.clipboard?.writeText(`Shift Report — ${time.thaiDate || new Date().toLocaleDateString()}\nIncidents: ${incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length} active\nVehicles: ${totalVehiclesToday}\nAQI: ${muc.airQuality.overallAqi}\nFlood: ${floodRisk.floodRiskLevel}`); }}>{lang === "th" ? "คัดลอก" : "Copy"}</button>
+              <button type="button" onClick={() => window.print()}>{lang === "th" ? "พิมพ์" : "Print"}</button>
+              <button type="button" onClick={() => setShiftModalOpen(false)}>{lang === "th" ? "ปิด" : "Close"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <header className="topbar">
         <div className="brand-cluster">
           <img src="/smart-city-thailand-logo.svg" alt="Smart City Thailand" className="brand-logo" />
           <div className="brand-copy">
             <h1>{workspaceTitle}</h1>
-            <small className="brand-subline">{brandContextLine}</small>
+            <small className="brand-subline">{primaryScopeDetail}</small>
           </div>
           <span className="version-badge">v{APP_VERSION}</span>
-          <span className="ioc-clock" title="Bangkok time" role="status" aria-live="polite">
-            <span className="clock-label">BKK</span>
-            <strong className="clock-time">{time.bangkokIso ? new Date(time.bangkokIso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "--:--:--"}</strong>
-          </span>
         </div>
         <div className="top-controls">
           {isMuangThongCityView ? null : (
@@ -4170,84 +4076,29 @@ function DashboardPage() {
             </button>
           </div>
           )}
-          {view === "city" ? (
-            <div className="compact-group scale-toggle" title={lang === "th" ? "สลับขนาด: เมืองทอง ↔ กรุงเทพ" : "Switch scale: MTT ↔ Bangkok"}>
-              <button
-                className={`chip${isMuangThongCityView ? " active" : ""}`}
-                onClick={() => updateParam("city", "muang-thong-thani")}
-                aria-pressed={isMuangThongCityView}
-              >
-                MTT
-              </button>
-              <button
-                className={`chip${city === "bangkok" ? " active" : ""}`}
-                onClick={() => updateParam("city", "bangkok")}
-                aria-pressed={city === "bangkok"}
-              >
-                BKK
-              </button>
-            </div>
-          ) : (
-            <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
-          )}
+          <span className="chip active" style={{ cursor: "default" }}>{primaryScopeLabel}</span>
           <div className="compact-group">
             <button className={lang === "en" ? "chip active" : "chip"} onClick={() => updateParam("lang", "en")}>EN</button>
             <button className={lang === "th" ? "chip active" : "chip"} onClick={() => updateParam("lang", "th")}>TH</button>
           </div>
+          <button type="button" className="audio-toggle" onClick={() => setAudioMuted((m) => !m)} title={audioMuted ? "Unmute alerts" : "Mute alerts"}>{audioMuted ? "🔇" : "🔊"}</button>
+          <button type="button" className="chip" onClick={() => setThemeMode((t) => t === "dark" ? "light" : "dark")} title="Toggle dark/light">{themeMode === "dark" ? "☀️" : "🌙"}</button>
+          <button type="button" className="chip" onClick={() => setShiftModalOpen(true)} title="Shift Report">{lang === "th" ? "กะ" : "Shift"}</button>
           <button className="share-button" onClick={copyLink}>{copiedLink ? copy.copied : copy.share}</button>
         </div>
       </header>
+
+      {/* Bangkok Statistics Bar */}
+      {city === "bangkok" && view === "city" ? <BangkokStatsBar locale={lang} /> : null}
 
       {/* Sidebar and assistant drawer removed — content moved to floating panels and tabs */}
 
       {/* Manual and ops panels removed — content consolidated into tabs */}
 
-      {/* ── iTIC Live Incident Bar ── */}
-      {city === "bangkok" && trafficWatchItems.length > 0 && (
-        <div className="itic-live-bar">
-          <span className="itic-bar-label">{lang === "th" ? "สด" : "LIVE"}</span>
-          <div className="itic-bar-scroll">
-            {trafficWatchItems.slice(0, 15).map((feature, idx) => {
-              const eventClass = stringProperty(feature, "eventClass") || "traffic";
-              const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
-              const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
-              return (
-                <button key={feature.id} type="button" className="itic-bar-item" onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }}>
-                  <span className={`itic-bar-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
-                  <span className="itic-bar-title">{feature.title}</span>
-                  <span className="itic-bar-time">{formatUtcDateTime(stamp)}</span>
-                  {idx < trafficWatchItems.length - 1 && <span className="itic-bar-sep">·</span>}
-                </button>
-              );
-            })}
-          </div>
-          <span className="itic-bar-source">iTIC</span>
-        </div>
-      )}
-
-      {/* ── Accident & Incident News Bar ── */}
-      {city === "bangkok" && (
-        <div className="vibes-bar">
-          <span className="vibes-bar-label">{lang === "th" ? "ข่าว" : "NEWS"}</span>
-          <div className="vibes-bar-content">
-            {[...filteredNews, ...globalNews].slice(0, 8).map((item, idx) => (
-              <span key={item.id} className="vibes-news-item">
-                <a href={item.source.sourceUrl} target="_blank" rel="noreferrer">
-                  {localize(lang, item.title)}
-                </a>
-                <span className="vibes-news-src">{item.source.sourceName}</span>
-                {idx < 7 && <span className="vibes-sep">·</span>}
-              </span>
-            ))}
-          </div>
-          <span className="vibes-bar-source">GDELT · Google · NewsAPI</span>
-        </div>
-      )}
-
       <div className="dashboard-stage">
         <div className="map-zone">
         {/* AI Status Line - floating at top of map */}
-        <button type="button" className="ai-status-line" onClick={() => navigateToTab("insights")}>
+        <button type="button" className="ai-status-line" onClick={() => setActiveTab("insights")}>
           <span className="ai-dot" />
           <span>{executiveSignal}</span>
         </button>
@@ -4267,6 +4118,7 @@ function DashboardPage() {
           featureCollections={mapFeaturesForView}
           publicCctvCameras={publicCctvCameras}
           recenterSignal={recenterSignal}
+          themeMode={themeMode}
         />
 
         {/* Floating Layer Palette Toggle */}
@@ -4274,9 +4126,8 @@ function DashboardPage() {
           type="button"
           className="layer-palette-toggle"
           onClick={() => setLayerPaletteOpen((v) => !v)}
-          title={lang === "th" ? "เปิด/ปิดรายการชั้นข้อมูลดาวเทียมและปฏิบัติการ" : "Toggle satellite & operational data layer list"}
         >
-          {lang === "th" ? `ชั้นข้อมูล (${layers.length})` : `Layers (${layers.length})`}
+          {lang === "th" ? `ตัวกรองแผนที่ (${layers.length})` : `Map Filters (${layers.length})`}
         </button>
 
         {/* Floating Layer Palette */}
@@ -4330,31 +4181,18 @@ function DashboardPage() {
 
         {/* Floating Map Controls */}
         <div className="map-floating-controls">
-          <button type="button" className="map-float-btn" onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")} title={basemap === "satellite" ? (lang === "th" ? "สลับเป็นแผนที่เส้น" : "Switch to atlas map") : (lang === "th" ? "สลับเป็นภาพถ่ายดาวเทียม" : "Switch to satellite imagery")}>
-            {basemap === "satellite" ? (lang === "th" ? "แผนที่" : "Atlas") : (lang === "th" ? "ดาวเทียม" : "Satellite")}
-          </button>
-          <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)} title={lang === "th" ? "กลับไปจุดเริ่มต้น" : "Reset map to default view"}>
+          <button type="button" className="map-expand-btn" onClick={() => setMapFullscreen((f) => !f)} title={mapFullscreen ? "Exit fullscreen" : "Expand map"}>{mapFullscreen ? "✕" : "⛶"}</button>
+          <div className="basemap-switcher">
+            {(["atlas", "street", "satellite", "hybrid"] as const).map((bm) => (
+              <button key={bm} type="button" className={`basemap-btn ${basemap === bm ? "active" : ""}`} onClick={() => updateParam("basemap", bm)}>
+                {bm === "atlas" ? "Atlas" : bm === "street" ? "Street" : bm === "satellite" ? "Sat" : "Hybrid"}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="map-float-btn" onClick={() => setRecenterSignal((v) => v + 1)}>
             {copy.recenter}
           </button>
         </div>
-
-        {/* Active Layer Legend — always visible on map surface */}
-        {(() => {
-          const activeSatItems = satelliteToggleOptions.filter((item) => layers.includes(item.id));
-          const activeOpsItems = operationalLayerOptions.filter((item) => layers.includes(item.id));
-          const allActive = [...activeOpsItems.map((item) => ({ id: item.id, label: item.label, color: item.color, kind: "ops" as const })), ...activeSatItems.map((item) => ({ id: item.id, label: item.label, color: item.color, kind: "sat" as const }))];
-          return allActive.length > 0 ? (
-            <div className="active-layers-legend">
-              {allActive.map((item) => (
-                <button key={item.id} type="button" className="legend-chip" onClick={() => item.kind === "sat" ? toggleSatelliteLayer(item.id) : toggleLayer(item.id)} title={lang === "th" ? "คลิกเพื่อปิดชั้นข้อมูลนี้" : "Click to toggle this layer off"}>
-                  <span className="legend-dot" style={{ background: item.color }} />
-                  <span className="legend-label">{localize(lang, item.label)}</span>
-                  <span className="legend-x">×</span>
-                </button>
-              ))}
-            </div>
-          ) : null;
-        })()}
 
         {/* Floating Alert Chips */}
         {activeTab === "map" ? (
@@ -4366,18 +4204,18 @@ function DashboardPage() {
                     {`${localize(lang, c.label)} ${c.speedKmh} km/h`}
                   </button>
                 ))}
-                {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
-                  <button key={e.id} type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
+                {arenaEvents.filter((e) => e.status === "confirmed").slice(0, 1).map((e) => (
+                  <button key={e.id} type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
                     {`${localize(lang, e.title)} ~${(e.expectedCrowd / 1000).toFixed(0)}k`}
                   </button>
                 ))}
                 {cctvSamples.filter((s) => s.severity === "alert").slice(0, 1).map((s) => (
-                  <button key={s.id} type="button" className="map-alert-chip warning" onClick={() => navigateToTab("cctv")}>
+                  <button key={s.id} type="button" className="map-alert-chip warning" onClick={() => setActiveTab("cctv")}>
                     {`${localize(lang, s.detection)} · ${localize(lang, s.zone)}`}
                   </button>
                 ))}
                 {socialListening.mentionCount > 0 ? (
-                  <button type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
+                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
                     {`${socialListening.mentionCount} mentions`}
                   </button>
                 ) : null}
@@ -4398,7 +4236,7 @@ function DashboardPage() {
                   </button>
                 ) : null}
                 {socialListening.mentionCount > 0 ? (
-                  <button type="button" className="map-alert-chip" onClick={() => navigateToTab("data")}>
+                  <button type="button" className="map-alert-chip" onClick={() => setActiveTab("data")}>
                     {`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "people talking"}`}
                   </button>
                 ) : null}
@@ -4484,7 +4322,7 @@ function DashboardPage() {
                       setSearchParams(next);
                       setRecenterSignal((v) => v + 1);
                     });
-                    navigateToTab("map");
+                    setActiveTab("map");
                   }}
                 >
                   <span className="sat-tile-label">{item.title}</span>
@@ -4512,67 +4350,558 @@ function DashboardPage() {
               </>
             ) : null}
 
+            {/* — Satellite API Best Practices Guide — */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คู่มือ API ดาวเทียม" : "Satellite API Guide"}</strong>
+              <small>{lang === "th" ? "มาตรฐานปี 2026" : "2026 Best Practices"}</small>
+            </div>
+
+            <div className="sat-guide">
+              <div className="guide-card">
+                <strong>STAC + COG: The Foundation</strong>
+                <p>STAC (SpatioTemporal Asset Catalog) is the universal standard for discovering satellite data. COG (Cloud Optimized GeoTIFF) enables reading only the pixels you need — no full downloads. Together, they turn petabytes into actionable queries.</p>
+                <div className="guide-tags">
+                  <span className="guide-tag">Search with bbox + datetime + cloud_cover</span>
+                  <span className="guide-tag">Always paginate results</span>
+                  <span className="guide-tag">Use POST for complex filters</span>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>Provider Quick Reference</strong>
+                <div className="guide-providers">
+                  <a href="https://cmr.earthdata.nasa.gov/stac" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>NASA Earthdata</strong>
+                    <small>CMR-STAC — Earthdata Login token. Nearly all data is cloud-hosted. Python-focused recipes.</small>
+                  </a>
+                  <a href="https://dataspace.copernicus.eu" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Copernicus / Sentinel Hub</strong>
+                    <small>OAuth credentials — Processing API with evalscript for on-demand NDVI, band math. Catalog API first, then process.</small>
+                  </a>
+                  <a href="https://planetarycomputer.microsoft.com/api/stac/v1" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Microsoft Planetary Computer</strong>
+                    <small>Easiest STAC access — use pystac_client with auto-signed tokens. Free Sentinel, Landsat, MODIS.</small>
+                  </a>
+                  <a href="https://earthengine.googleapis.com" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Google Earth Engine</strong>
+                    <small>Planetary-scale analysis — JS/Python API on analysis-ready catalogs. No storage management.</small>
+                  </a>
+                  <a href="https://www.planet.com/developers/" target="_blank" rel="noreferrer" className="guide-provider">
+                    <strong>Planet</strong>
+                    <small>Commercial high-resolution daily imagery. STAC-like API + notebooks. Check rate limits/credits.</small>
+                  </a>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>On-Demand Processing &gt; Downloads</strong>
+                <p>Never download full archives. Use Sentinel Hub Processing API to specify AOI, time range, cloud cover, and evalscript for band math — returns PNG/JPEG/GeoTIFF in seconds. Use COG partial reads with rioxarray for everything else.</p>
+              </div>
+
+              <div className="guide-card">
+                <strong>Analysis Ready Data (ARD)</strong>
+                <p>Prioritize CEOS-ARD compliant data — standardized corrections, per-pixel quality masks, and interoperability. Filter early by cloud cover and QA bands. Parallelize with Dask for large time-series.</p>
+                <div className="guide-tags">
+                  <span className="guide-tag">pystac-client for search</span>
+                  <span className="guide-tag">rioxarray / stackstac for loading</span>
+                  <span className="guide-tag">xarray + Dask for scale</span>
+                </div>
+              </div>
+
+              <div className="guide-card">
+                <strong>Common Pitfalls</strong>
+                <div className="guide-tags">
+                  <span className="guide-tag warn">Downloading full archives</span>
+                  <span className="guide-tag warn">Ignoring cloud cover / QA</span>
+                  <span className="guide-tag warn">Hardcoding URLs (use STAC links)</span>
+                  <span className="guide-tag warn">Non-COG formats (slow/expensive)</span>
+                  <span className="guide-tag warn">Skipping catalog search before processing</span>
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
 
-        {/* CCTV TAB */}
-        {activeTab === "cctv" ? (
-          <div className="tab-overlay cctv-gallery">
-            <div className="sat-section-header">
-              <strong>{lang === "th" ? "กล้อง CCTV สาธารณะ" : "Public CCTV Cameras"}</strong>
-              <small>{`${publicCctvCameras.length} cameras · ${cctvSamples.filter((c) => c.severity === "alert").length} alerts`}</small>
+        {/* CCTV OPERATIONS CONSOLE TAB */}
+        {activeTab === "cctv" ? (() => {
+          const cctvConsole = muc.cctvConsole;
+          const gateFlow = muc.gateFlow;
+          const filteredCams = activeCctvGroup
+            ? publicCctvCameras.filter((c) => {
+                const group = cctvConsole.groups.find((g) => g.id === activeCctvGroup);
+                return group ? group.cameraIds.includes(c.id) : true;
+              })
+            : publicCctvCameras;
+          const gridCols = cctvGridLayout === "2x2" ? 2 : cctvGridLayout === "3x3" ? 3 : 4;
+          const gridCount = gridCols * gridCols;
+          const displayCams = filteredCams.slice(0, gridCount);
+          const filteredDetections = activeCctvGroup
+            ? cctvConsole.detectionHistory.filter((d) => {
+                const group = cctvConsole.groups.find((g) => g.id === activeCctvGroup);
+                return group ? group.cameraIds.includes(d.cameraId) : true;
+              })
+            : cctvConsole.detectionHistory;
+          const currentHourBuckets = gateFlow.buckets.filter((b) => {
+            const h = new Date(b.periodStart).getUTCHours();
+            const now = new Date().getUTCHours();
+            return h === now;
+          });
+
+          return (
+          <div className="tab-overlay cctv-ops-console">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+                {time.thaiTime ? <span className="thai-time-badge">{time.thaiTime} · {time.thaiDate}</span> : null}
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{liveCamCount}</span><span className="muc-qs-label">{lang === "th" ? "กล้องออนไลน์" : "Cameras Online"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucCctvAlertCount}</span><span className="muc-qs-label">{lang === "th" ? "แจ้งเตือน" : "Alerts"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{vehiclesThisHour.toLocaleString()}</span><span className="muc-qs-label">{lang === "th" ? "รถชม.นี้" : "Veh/Hour"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{matchCount}</span><span className="muc-qs-label">{lang === "th" ? "จับคู่เข้า-ออก" : "Matches"}</span></div>
+              </div>
             </div>
-            <div className="cctv-event-grid">
-              {cctvSamples.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`cctv-event-card severity-${item.severity}`}
-                  onClick={() => {
-                    applyDashboardScene({
-                      view: "city",
-                      city: selectedCity.slug,
-                      basemap: "atlas",
-                      layers: Array.from(new Set([...layers, ...item.targetLayers]))
-                    });
-                    navigateToTab("map");
-                  }}
-                >
-                  <div className="cctv-event-head">
-                    <span className="eyebrow">{item.cameraId}</span>
-                    <span className={`status-tag ${item.severity === "alert" ? "delayed" : item.severity === "watch" ? "watch" : "live"}`}>{item.severity}</span>
+            <div className="muc-shift-summary">
+              <div className="shift-stat"><span className="shift-stat-value">{totalVehiclesToday.toLocaleString()}</span><span className="shift-stat-label">{lang === "th" ? "รถวันนี้" : "Vehicles Today"}</span></div>
+              <div className="shift-stat"><span className="shift-stat-value">{peakHourData ? `${String(peakHourData.hour).padStart(2, "0")}:00` : "--"}</span><span className="shift-stat-label">{lang === "th" ? "ชั่วโมงพีค" : "Peak Hour"}</span></div>
+              <div className="shift-stat"><span className="shift-stat-value">{mucCctvAlertCount + mucBottleneckCount}</span><span className="shift-stat-label">{lang === "th" ? "เหตุการณ์" : "Incidents"}</span></div>
+              <div className="shift-stat"><span className={`shift-stat-value trend-${muc.airQuality.overallTrend}`}>{muc.airQuality.overallTrend === "up" ? "↑" : muc.airQuality.overallTrend === "down" ? "↓" : "→"} AQI {muc.airQuality.overallAqi}</span><span className="shift-stat-label">{lang === "th" ? "แนวโน้มอากาศ" : "AQI Trend"}</span></div>
+            </div>
+            {todayEvents.length > 0 ? (
+              <div className="impact-events-strip">
+                <span className="impact-strip-label">{lang === "th" ? "กิจกรรม IMPACT วันนี้" : "IMPACT Events Today"}</span>
+                <div className="impact-chips-scroll">
+                  {todayEvents.map((ev) => (
+                    <div key={ev.id} className={`impact-chip parking-${ev.parkingPressure}`}>
+                      <strong>{localize(lang, ev.title)}</strong>
+                      <small>{ev.timeStart}–{ev.timeEnd}</small>
+                      <div className="impact-chip-badges">
+                        <span className="crowd-badge">{ev.expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</span>
+                        <span className={`parking-badge ${ev.parkingPressure}`}>{ev.parkingPressure}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Header: Grid layout + group tabs */}
+            <div className="cctv-console-header">
+              <div className="cctv-grid-selector">
+                {(["2x2", "3x3", "4x4"] as CctvGridLayout[]).map((layout) => (
+                  <button key={layout} type="button" className={cctvGridLayout === layout ? "grid-btn active" : "grid-btn"} onClick={() => setCctvGridLayout(layout)}>{layout}</button>
+                ))}
+              </div>
+              <div className="cctv-group-tabs">
+                <button type="button" className={activeCctvGroup === null ? "group-tab active" : "group-tab"} onClick={() => setActiveCctvGroup(null)}>{lang === "th" ? "ทั้งหมด" : "All"}</button>
+                {cctvConsole.groups.map((g) => (
+                  <button key={g.id} type="button" className={activeCctvGroup === g.id ? "group-tab active" : "group-tab"} onClick={() => setActiveCctvGroup(g.id)}>
+                    {localize(lang, g.label)}
+                    <span className="group-cam-count">{g.cameraIds.length}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expanded camera modal */}
+            {expandedCameraId ? (() => {
+              const cam = publicCctvCameras.find((c) => c.id === expandedCameraId);
+              const camDetections = cctvConsole.detectionHistory.filter((d) => d.cameraId === expandedCameraId);
+              const camGate = gateFlow.gates.find((g) => g.cameraIds.includes(expandedCameraId));
+              return cam ? (
+                <div className="camera-cell-enlarged" onClick={() => setExpandedCameraId(null)}>
+                  <div className="enlarged-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="enlarged-header">
+                      <strong>{localize(lang, cam.label)}</strong>
+                      <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                      <button type="button" className="close-btn" onClick={() => setExpandedCameraId(null)}>✕</button>
+                    </div>
+                    <div className="enlarged-preview">
+                      {cam.previewUrl ? <img src={cam.previewUrl} alt={localize(lang, cam.label)} loading="lazy" /> : <div className="no-preview">{lang === "th" ? "ไม่มีภาพ" : "No Preview"}</div>}
+                    </div>
+                    {camGate ? (
+                      <div className="enlarged-gate-info">
+                        <span className="eyebrow">{lang === "th" ? "ประตู" : "Gate"}: {localize(lang, camGate.label)}</span>
+                        <span>{camGate.direction === "entry" ? "→ IN" : camGate.direction === "exit" ? "← OUT" : "↔ BI"}</span>
+                      </div>
+                    ) : null}
+                    <div className="enlarged-detections">
+                      <strong>{lang === "th" ? "ประวัติตรวจจับ" : "Detection History"}</strong>
+                      {camDetections.slice(0, 5).map((d) => (
+                        <div key={d.id} className={`detection-row severity-${d.severity}`}>
+                          <span className={`status-tag ${d.severity === "alert" ? "delayed" : d.severity === "watch" ? "watch" : "live"}`}>{d.severity}</span>
+                          <span>{localize(lang, d.detail)}</span>
+                          <small>{formatConfidence(d.confidence)}</small>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <strong>{localize(lang, item.detection)}</strong>
-                  <small>{localize(lang, item.zone)}</small>
-                  <div className="signal-meta">
-                    <span>{`${formatConfidence(item.confidence)}`}</span>
-                    <span>{item.model}</span>
+                </div>
+              ) : null;
+            })() : null}
+
+            {/* Camera Grid */}
+            <div className="cctv-camera-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+              {displayCams.map((cam) => (
+                <button key={cam.id} type="button" className={`camera-cell cam-status-${cam.status}`} onClick={() => setExpandedCameraId(cam.id)}>
+                  <div className="camera-preview">
+                    {cam.previewUrl ? <img src={cam.previewUrl} alt={localize(lang, cam.label)} loading="lazy" /> : <div className="no-preview-small">{cam.cameraId}</div>}
+                  </div>
+                  <div className="camera-cell-footer">
+                    <span className="camera-label">{localize(lang, cam.label)}</span>
+                    <span className={`status-dot ${cam.status}`} />
                   </div>
                 </button>
               ))}
             </div>
-            {publicCctvCameras.length > 0 ? (
-              <>
+
+            {/* Bottom panels: Detection + Gate Counts */}
+            <div className="cctv-bottom-panels">
+              <div className="detection-panel">
                 <div className="sat-section-header">
-                  <strong>{lang === "th" ? "กล้องสด" : "Live Cameras"}</strong>
-                  <small>{`${publicCctvCameras.filter((c) => c.status === "live").length} online`}</small>
+                  <strong>{lang === "th" ? "AI ตรวจจับล่าสุด" : "AI Detection Feed"}</strong>
+                  <small>{filteredDetections.length} {lang === "th" ? "รายการ" : "events"}</small>
                 </div>
-                <div className="cctv-event-grid">
-                  {publicCctvCameras.slice(0, 12).map((cam) => (
-                    <article key={cam.id} className={`cctv-event-card cam-status-${cam.status}`}>
-                      <div className="cctv-event-head">
-                        <span className="eyebrow">{cam.cameraId}</span>
-                        <span className={`status-tag ${cam.status === "live" ? "live" : "manual"}`}>{cam.status}</span>
+                <div className="detection-list">
+                  {filteredDetections.slice(0, 8).map((d) => (
+                    <button key={d.id} type="button" className={`detection-item severity-${d.severity}`} onClick={() => setExpandedCameraId(d.cameraId)}>
+                      <div className="detection-item-head">
+                        <span className="eyebrow">{d.cameraId}</span>
+                        <span className={`status-tag ${d.severity === "alert" ? "delayed" : d.severity === "watch" ? "watch" : "live"}`}>{d.severity}</span>
                       </div>
-                      <strong>{localize(lang, cam.label)}</strong>
-                      <small>{cam.source} · {cam.zone}</small>
-                    </article>
+                      <span className="detection-detail">{localize(lang, d.detail)}</span>
+                      <div className="signal-meta">
+                        <span>{formatConfidence(d.confidence)}</span>
+                        <span>{d.detectionType}</span>
+                      </div>
+                    </button>
                   ))}
                 </div>
-              </>
-            ) : null}
+              </div>
+              <div className="gate-count-panel">
+                <div className="sat-section-header">
+                  <strong>{lang === "th" ? "ปริมาณรถ ณ ประตู" : "Gate Vehicle Counts"}</strong>
+                  <small>{lang === "th" ? "ชั่วโมงนี้" : "this hour"}</small>
+                </div>
+                <div className="gate-count-list">
+                  {gateFlow.gates.map((gate) => {
+                    const bucket = currentHourBuckets.find((b) => b.gateId === gate.id);
+                    const countIn = bucket?.countIn ?? 0;
+                    const countOut = bucket?.countOut ?? 0;
+                    const utilization = gate.capacity > 0 ? Math.round(((countIn + countOut) / gate.capacity) * 100) : 0;
+                    return (
+                      <div key={gate.id} className={`gate-count-card ${utilization > 100 ? "over-capacity" : utilization > 80 ? "high-load" : ""}`}>
+                        <div className="gate-count-head">
+                          <strong>{localize(lang, gate.label)}</strong>
+                          <span className="eyebrow">{gate.direction === "entry" ? "→ IN" : gate.direction === "exit" ? "← OUT" : "↔"}</span>
+                        </div>
+                        <div className="gate-count-numbers">
+                          <span className="count-in">▼ {countIn}</span>
+                          <span className="count-out">▲ {countOut}</span>
+                          <span className={`utilization ${utilization > 100 ? "critical" : utilization > 80 ? "warning" : ""}`}>{utilization}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-        ) : null}
+          );
+        })() : null}
+
+        {/* TRAFFIC FLOW INTELLIGENCE TAB */}
+        {activeTab === "traffic" ? (() => {
+          const tf = muc.trafficFlow;
+          const gf = muc.gateFlow;
+          const maxVolume = Math.max(...tf.hourlyPatterns.map((p) => p.avgVolumeIn + p.avgVolumeOut), 1);
+          const bnCount = tf.bottlenecks.filter((b) => b.severity === "bottleneck" || b.severity === "gridlock").length;
+          return (
+          <div className="tab-overlay traffic-flow-tab">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{totalVehiclesToday.toLocaleString()}</span><span className="muc-qs-label">{lang === "th" ? "รถวันนี้" : "Today"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucBottleneckCount}</span><span className="muc-qs-label">{lang === "th" ? "คอขวด" : "Bottlenecks"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{avgSpeedAll} <small>km/h</small></span><span className="muc-qs-label">{lang === "th" ? "เฉลี่ย" : "Avg Speed"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{peakGate ? localize(lang, peakGate.label).split(" ")[0] : "--"}</span><span className="muc-qs-label">{lang === "th" ? "ประตูพีค" : "Peak Gate"}</span></div>
+              </div>
+            </div>
+            {todayEvents.length > 0 ? (
+              <div className="impact-events-strip">
+                <span className="impact-strip-label">{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</span>
+                <div className="impact-chips-scroll">
+                  {todayEvents.map((ev) => (
+                    <div key={ev.id} className={`impact-chip parking-${ev.parkingPressure}`}>
+                      <strong>{localize(lang, ev.title)}</strong>
+                      <small>{ev.timeStart}–{ev.timeEnd} · {ev.expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
+                      <span className={`parking-badge ${ev.parkingPressure}`}>{ev.parkingPressure}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ระบบวิเคราะห์การจราจร" : "TRAFFIC FLOW INTELLIGENCE"}</strong>
+              <small>
+                <span className={`status-tag ${bnCount > 0 ? "delayed" : "live"}`}>{bnCount} {lang === "th" ? "จุดคอขวด" : "bottlenecks"}</span>
+                {" · "}{tf.flowLines.length} {lang === "th" ? "เส้นทาง" : "flow lines"}
+              </small>
+            </div>
+
+            {/* Bottleneck Alert Cards */}
+            <div className="bottleneck-cards">
+              {tf.bottlenecks.map((bn) => (
+                <button key={bn.id} type="button" className={`bottleneck-card severity-${bn.severity}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "itic-traffic"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="bottleneck-head">
+                    <strong>{localize(lang, bn.label)}</strong>
+                    <span className={`status-tag ${bn.severity === "bottleneck" || bn.severity === "gridlock" ? "delayed" : "watch"}`}>{bn.severity}</span>
+                  </div>
+                  <div className="bottleneck-metrics">
+                    <div className="metric-bar">
+                      <div className="metric-bar-fill" style={{ width: `${Math.min(bn.volumeRatio * 100, 200) / 2}%`, backgroundColor: bn.volumeRatio > 1.2 ? "#dc2626" : bn.volumeRatio > 0.9 ? "#f59e0b" : "#16a34a" }} />
+                      <span className="metric-bar-label">{Math.round(bn.volumeRatio * 100)}%</span>
+                    </div>
+                    <small>{bn.estimatedDelayMinutes} {lang === "th" ? "นาที ล่าช้า" : "min delay"}</small>
+                  </div>
+                  <div className="bottleneck-suggestion">{localize(lang, bn.suggestion)}</div>
+                  <button type="button" className={`operator-action-btn ${bn.severity === "gridlock" ? "warning" : ""}`} onClick={(e) => { e.stopPropagation(); }}>
+                    {bn.corridorId?.includes("impact") ? (lang === "th" ? "สั่ง Shuttle Bus" : "Dispatch Shuttle") : (lang === "th" ? "เปิดเส้นทางเลี่ยง" : "Open Alt Route")}
+                  </button>
+                </button>
+              ))}
+            </div>
+
+            {/* Hourly Pattern Chart */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "รูปแบบรายชั่วโมง" : "Hourly Traffic Pattern"}</strong>
+              <small>{lang === "th" ? "ปริมาณรถรวมทุกประตู" : "total volume all gates"}</small>
+            </div>
+            <div className="hourly-chart">
+              <svg viewBox="0 0 480 120" preserveAspectRatio="none">
+                {tf.hourlyPatterns.map((p, i) => {
+                  const total = p.avgVolumeIn + p.avgVolumeOut;
+                  const h = (total / maxVolume) * 100;
+                  const speedColor = p.avgSpeedKmh < 15 ? "#dc2626" : p.avgSpeedKmh < 25 ? "#f59e0b" : "#16a34a";
+                  return (
+                    <g key={p.hour}>
+                      <rect x={i * 20} y={110 - h} width="16" height={h} rx="2" fill={speedColor} opacity="0.8">
+                        <title>{`${String(p.hour).padStart(2, "0")}:00 — ${total} veh · ${p.avgSpeedKmh} km/h`}</title>
+                      </rect>
+                      {i % 3 === 0 ? <text x={i * 20 + 8} y={118} textAnchor="middle" fontSize="7" fill="#94a3b8">{String(p.hour).padStart(2, "0")}</text> : null}
+                    </g>
+                  );
+                })}
+              </svg>
+              <div className="chart-legend">
+                <span><span className="legend-dot" style={{ backgroundColor: "#16a34a" }} />{lang === "th" ? "ปกติ >25km/h" : "Normal >25km/h"}</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#f59e0b" }} />{lang === "th" ? "ช้า 15-25km/h" : "Slow 15-25km/h"}</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#dc2626" }} />{lang === "th" ? "ติดขัด <15km/h" : "Congested <15km/h"}</span>
+              </div>
+            </div>
+
+            {/* Gate Volume Cards */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ปริมาณรถ ณ ประตู — วันนี้" : "Gate Volumes — Today"}</strong>
+            </div>
+            <div className="gate-volume-cards">
+              {gf.gates.map((gate) => {
+                const gateBuckets = gf.buckets.filter((b) => b.gateId === gate.id);
+                const totalIn = gateBuckets.reduce((s, b) => s + b.countIn, 0);
+                const totalOut = gateBuckets.reduce((s, b) => s + b.countOut, 0);
+                const last8 = gateBuckets.slice(-8);
+                const sparkMax = Math.max(...last8.map((b) => b.countIn + b.countOut), 1);
+                return (
+                  <div key={gate.id} className="gate-volume-card">
+                    <div className="gate-vol-head">
+                      <strong>{localize(lang, gate.label)}</strong>
+                      <span className="eyebrow">{gate.direction}</span>
+                    </div>
+                    <div className="gate-vol-numbers">
+                      <span className="count-in">▼ {totalIn.toLocaleString()}</span>
+                      <span className="count-out">▲ {totalOut.toLocaleString()}</span>
+                    </div>
+                    <svg className="gate-sparkline" viewBox="0 0 80 24" preserveAspectRatio="none">
+                      {last8.map((b, i) => {
+                        const h = ((b.countIn + b.countOut) / sparkMax) * 20;
+                        return <rect key={i} x={i * 10} y={22 - h} width="8" height={h} rx="1" fill="#3b82f6" opacity="0.7" />;
+                      })}
+                    </svg>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Suggestions */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คำแนะนำ" : "Recommendations"}</strong>
+            </div>
+            <div className="traffic-suggestions">
+              {tf.suggestions.map((s, i) => (
+                <div key={i} className="suggestion-card">
+                  <span className="suggestion-num">{i + 1}</span>
+                  <span>{localize(lang, s)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })() : null}
+
+        {/* AIR QUALITY & CONSTRUCTION MONITORING TAB */}
+        {activeTab === "air" ? (() => {
+          const aq = muc.airQuality;
+          const maxAqi = Math.max(...aq.history.map((p) => p.aqi), 100);
+          const alertZones = aq.zones.filter((z) => z.isAboveThreshold);
+          return (
+          <div className="tab-overlay air-quality-tab">
+            {/* MUC Operator Status Banner */}
+            <div className={`muc-status-banner status-${mucStatus}`}>
+              <div className="muc-status-left">
+                <span className={`muc-status-dot ${mucStatus}`} />
+                <span className="muc-status-text">{mucStatusLine}</span>
+              </div>
+              <div className="muc-quick-stats">
+                <div className="muc-qs-item"><span className="muc-qs-value">{aq.overallAqi}</span><span className="muc-qs-label">AQI</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{mucAqiAlertCount}</span><span className="muc-qs-label">{lang === "th" ? "เขตเกิน" : "Over Limit"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{installedSensorCount}</span><span className="muc-qs-label">{lang === "th" ? "เซนเซอร์" : "Sensors"}</span></div>
+                <div className="muc-qs-item"><span className="muc-qs-value">{activePhase ? localize(lang, activePhase.label) : "--"}</span><span className="muc-qs-label">{lang === "th" ? "ขั้นตอน" : "Phase"}</span></div>
+              </div>
+            </div>
+
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "คุณภาพอากาศ & การก่อสร้าง" : "AIR QUALITY & CONSTRUCTION"}</strong>
+              <small>
+                <span className={`status-tag ${aq.overallAqi >= 90 ? "delayed" : aq.overallAqi >= 60 ? "watch" : "live"}`}>AQI {aq.overallAqi}</span>
+                {" · "}{alertZones.length} {lang === "th" ? "เขตเกินเกณฑ์" : "zones above threshold"}
+              </small>
+            </div>
+
+            {/* Zone Cards */}
+            <div className="aqi-zone-cards">
+              {aq.zones.map((zone) => (
+                <button key={zone.id} type="button" className={`aqi-zone-card zone-${zone.zoneType} ${zone.isAboveThreshold ? "above-threshold" : ""}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "pollution", "weather"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="zone-card-head">
+                    <span className={`zone-type-badge ${zone.zoneType}`}>{zone.zoneType}</span>
+                    <span className={`trend-arrow ${zone.trend}`}>{zone.trend === "up" ? "↑" : zone.trend === "down" ? "↓" : "→"}</span>
+                  </div>
+                  <strong>{localize(lang, zone.label)}</strong>
+                  <div className="zone-aqi-display">
+                    <span className={`aqi-value ${zone.currentAqi >= 90 ? "critical" : zone.currentAqi >= 60 ? "moderate" : "good"}`}>{zone.currentAqi}</span>
+                    <small>AQI</small>
+                  </div>
+                  <div className="zone-pm-values">
+                    <span>PM2.5: {zone.pm25}</span>
+                    <span>PM10: {zone.pm10}</span>
+                  </div>
+                  <div className="zone-threshold">
+                    <div className="threshold-bar">
+                      <div className="threshold-fill" style={{ width: `${Math.min((zone.currentAqi / zone.threshold) * 100, 100)}%`, backgroundColor: zone.isAboveThreshold ? "#dc2626" : zone.currentAqi / zone.threshold > 0.8 ? "#f59e0b" : "#16a34a" }} />
+                      <span className="threshold-mark" style={{ left: "100%" }} />
+                    </div>
+                    <small>{lang === "th" ? "เกณฑ์" : "Threshold"}: {zone.threshold}</small>
+                  </div>
+                  {zone.constructionNote ? (
+                    <div className="construction-note">{localize(lang, zone.constructionNote)}</div>
+                  ) : null}
+                  <small className="zone-detail">{localize(lang, zone.detail)}</small>
+                  {zone.isAboveThreshold ? (
+                    <button type="button" className="operator-action-btn warning" onClick={(e) => { e.stopPropagation(); }}>
+                      {lang === "th" ? "แจ้งทีมบำรุงรักษา" : "Alert Maintenance"}
+                    </button>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+
+            {/* 30-Day AQI Trend */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "แนวโน้ม AQI 30 วัน" : "30-Day AQI Trend"}</strong>
+              <small>{lang === "th" ? "ผลกระทบจากก่อสร้าง" : "construction impact"}</small>
+            </div>
+            <div className="aqi-trend-chart">
+              <svg viewBox="0 0 300 100" preserveAspectRatio="none">
+                {/* Threshold lines */}
+                <line x1="0" y1={100 - (75 / maxAqi) * 90} x2="300" y2={100 - (75 / maxAqi) * 90} stroke="#f97316" strokeDasharray="4 2" strokeWidth="0.5" />
+                <text x="302" y={100 - (75 / maxAqi) * 90 + 3} fontSize="6" fill="#f97316">75</text>
+                <line x1="0" y1={100 - (100 / maxAqi) * 90} x2="300" y2={100 - (100 / maxAqi) * 90} stroke="#dc2626" strokeDasharray="4 2" strokeWidth="0.5" />
+                <text x="302" y={100 - (100 / maxAqi) * 90 + 3} fontSize="6" fill="#dc2626">100</text>
+                {/* AQI line */}
+                <polyline
+                  fill="none"
+                  stroke="#8b5cf6"
+                  strokeWidth="1.5"
+                  points={aq.history.map((p, i) => `${(i / (aq.history.length - 1)) * 296 + 2},${100 - (p.aqi / maxAqi) * 90}`).join(" ")}
+                />
+                {/* PM2.5 area */}
+                <polyline
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="0.8"
+                  strokeDasharray="3 2"
+                  points={aq.history.map((p, i) => `${(i / (aq.history.length - 1)) * 296 + 2},${100 - (p.pm25 / maxAqi) * 90}`).join(" ")}
+                />
+              </svg>
+              <div className="chart-legend">
+                <span><span className="legend-dot" style={{ backgroundColor: "#8b5cf6" }} />AQI</span>
+                <span><span className="legend-dot" style={{ backgroundColor: "#3b82f6" }} />PM2.5</span>
+                <span><span className="legend-line" style={{ borderColor: "#f97316" }} />{lang === "th" ? "เกณฑ์ก่อสร้าง 75" : "Construction 75"}</span>
+                <span><span className="legend-line" style={{ borderColor: "#dc2626" }} />{lang === "th" ? "เกณฑ์ปกติ 100" : "Normal 100"}</span>
+              </div>
+            </div>
+
+            {/* Construction Phase Timeline */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "ขั้นตอนก่อสร้าง" : "Construction Phases"}</strong>
+            </div>
+            <div className="construction-timeline">
+              {aq.constructionPhases.map((phase) => (
+                <div key={phase.id} className={`construction-phase phase-${phase.status}`}>
+                  <div className="phase-indicator" />
+                  <div className="phase-content">
+                    <strong>{localize(lang, phase.label)}</strong>
+                    <small>{phase.startDate}{phase.endDate ? ` → ${phase.endDate}` : " → ..."}</small>
+                    <div className="phase-delta">
+                      <span className={phase.avgAqiDelta > 10 ? "delta-high" : "delta-low"}>+{phase.avgAqiDelta} AQI</span>
+                      <span className={`status-tag ${phase.status === "active" ? "watch" : phase.status === "completed" ? "live" : "manual"}`}>{phase.status}</span>
+                    </div>
+                    <small className="phase-detail">{localize(lang, phase.detail)}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sensor Status */}
+            <div className="sat-section-header">
+              <strong>{lang === "th" ? "เซนเซอร์คุณภาพอากาศ" : "Air Quality Sensors"}</strong>
+              <small>{aq.sensors.filter((s) => s.installed).length} {lang === "th" ? "ติดตั้งแล้ว" : "installed"} · {aq.sensors.filter((s) => !s.installed).length} {lang === "th" ? "แนะนำเพิ่ม" : "recommended"}</small>
+            </div>
+            <div className="sensor-list">
+              {aq.sensors.map((sensor) => (
+                <div key={sensor.id} className={`sensor-item ${sensor.installed ? "installed" : "recommended"}`}>
+                  <span className={`sensor-dot ${sensor.installed ? "filled" : "hollow"}`} />
+                  <span className="sensor-label">{localize(lang, sensor.label)}</span>
+                  <span className={`zone-type-badge ${sensor.zoneType}`}>{sensor.zoneType}</span>
+                  <small>{sensor.provider}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+          );
+        })() : null}
 
         {/* AI INSIGHTS TAB */}
         {activeTab === "insights" ? (
@@ -4658,7 +4987,7 @@ function DashboardPage() {
                 <span className="status-pill">{decisionItems.length}</span>
               </div>
               {decisionItems.length > 0 ? decisionItems.map((item) => (
-                <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => { focusDecision(item); navigateToTab("map"); }}>
+                <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => { focusDecision(item); setActiveTab("map"); }}>
                   <div className="stack-title">
                     <strong>{localize(lang, item.title)}</strong>
                     <span className={`status-tag ${item.status}`}>{item.status}</span>
@@ -4668,6 +4997,31 @@ function DashboardPage() {
               )) : (
                 <div className="data-item"><strong>{lang === "th" ? "ไม่มีรายการค้าง" : "Queue clear"}</strong></div>
               )}
+            </div>
+
+            {/* Incidents / Maintenance */}
+            <div className="data-section">
+              <div className="data-section-head">
+                <strong>{lang === "th" ? "แจ้งเหตุ / ซ่อมบำรุง" : "Incidents / Maintenance"}</strong>
+                <span className="status-pill">{incidents.filter((i) => i.status !== "closed" && i.status !== "resolved").length}</span>
+              </div>
+              {incidents.filter((i) => i.status !== "closed").slice(0, 8).map((inc) => (
+                <button key={inc.id} type="button" className={`data-item severity-${inc.urgency === "critical" ? "urgent" : inc.urgency === "high" ? "watch" : "monitor"}`} onClick={() => {
+                  applyDashboardScene({ view: "city", city: "muang-thong-thani", basemap: "atlas", layers: [...layers, "incidents"] });
+                  setActiveTab("map");
+                }}>
+                  <div className="stack-title">
+                    <strong>{localize(lang, inc.title)}</strong>
+                    <span className={`status-tag ${inc.status === "new" ? "delayed" : inc.status === "resolved" ? "live" : "watch"}`}>{inc.status}</span>
+                  </div>
+                  <div className="incident-meta">
+                    <span className={`urgency-badge urgency-${inc.urgency}`}>{inc.urgency}</span>
+                    <span className="incident-category">{inc.category}</span>
+                    {inc.assignedTo ? <span className="incident-assigned">{inc.assignedTo}</span> : null}
+                  </div>
+                  <small>{localize(lang, inc.description)}</small>
+                </button>
+              ))}
             </div>
 
             <div className="data-section">
@@ -4688,7 +5042,7 @@ function DashboardPage() {
                     className="data-item"
                     onClick={() => {
                       focusCityWithLayer(mappedCitySlug, "itic-traffic");
-                      navigateToTab("map");
+                      setActiveTab("map");
                     }}
                   >
                     <div className="stack-title">
@@ -4730,7 +5084,7 @@ function DashboardPage() {
                 <span className="status-pill">{filteredProjects.length}</span>
               </div>
               {compactProjects.map((project) => (
-                <button key={project.id} type="button" className="data-item" onClick={() => { focusCityWithLayer(project.citySlug, "projects"); navigateToTab("map"); }}>
+                <button key={project.id} type="button" className="data-item" onClick={() => { focusCityWithLayer(project.citySlug, "projects"); setActiveTab("map"); }}>
                   <div className="stack-title">
                     <strong>{localize(lang, project.title)}</strong>
                     <span className={`status-tag ${project.status}`}>{project.status}</span>
@@ -4901,586 +5255,226 @@ function DashboardPage() {
 
         {/* Tab Bar */}
         <div className="map-tab-bar">
-          <button type="button" className="map-tab nav-back-btn" disabled={tabHistoryIndex <= 0} onClick={navigateBack} title={lang === "th" ? "ย้อนกลับ" : "Go back"}>
-            ◀
-          </button>
-          {(["map", "satellite", "cctv", "insights", "data"] as const).map((tab) => (
+          {(["map", "satellite", "cctv", "traffic", "air", "insights", "data"] as const).map((tab) => {
+            const label = tab === "map" ? (lang === "th" ? "แผนที่" : "Map")
+              : tab === "satellite" ? (lang === "th" ? "ดาวเทียม" : "Earth")
+              : tab === "cctv" ? (lang === "th" ? "กล้อง" : "CCTV")
+              : tab === "traffic" ? (lang === "th" ? "จราจร" : "Traffic")
+              : tab === "air" ? (lang === "th" ? "อากาศ" : "Air")
+              : tab === "insights" ? (lang === "th" ? "AI" : "AI")
+              : (lang === "th" ? "ข้อมูล" : "Data");
+            return (
             <button
               key={tab}
               type="button"
               className={activeTab === tab ? "map-tab active" : "map-tab"}
-              onClick={() => navigateToTab(tab)}
-              title={tab === "map" ? (lang === "th" ? "แผนที่ปฏิบัติการ — ดูข้อมูลทุกชั้น" : "Operational map — view all data layers") : tab === "satellite" ? (lang === "th" ? "ภาพดาวเทียมและข้อมูลโลก" : "Satellite imagery & Earth observation data") : tab === "cctv" ? (lang === "th" ? "กล้องวงจรปิดสาธารณะ" : "Public CCTV camera feeds") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย AI — ถามคำถาม" : "AI assistant — ask questions about the data") : (lang === "th" ? "แดชบอร์ด — จราจร ข่าว โครงการ" : "Dashboard — traffic, news, projects, APIs")}
+              onClick={() => setActiveTab(tab)}
             >
-              {tab === "map" ? (lang === "th" ? "แผนที่" : "Map") : tab === "satellite" ? (lang === "th" ? "ภาพโลก" : "Earth View") : tab === "cctv" ? (lang === "th" ? "กล้อง" : "Cameras") : tab === "insights" ? (lang === "th" ? "ผู้ช่วย" : "Assistant") : (lang === "th" ? "แดชบอร์ด" : "Dashboard")}
+              {label}
             </button>
-          ))}
-          <button type="button" className="map-tab nav-fwd-btn" disabled={tabHistoryIndex >= tabHistory.length - 1} onClick={navigateForward} title={lang === "th" ? "ถัดไป" : "Go forward"}>
-            ▶
-          </button>
-          <button type="button" className="map-tab kiosk-btn" onClick={toggleFullscreen} title={isFullscreen ? (lang === "th" ? "ออกจากโหมดเต็มจอ" : "Exit fullscreen") : (lang === "th" ? "โหมดเต็มจอ (Kiosk)" : "Fullscreen kiosk mode")}>
-            {isFullscreen ? "⊡" : "⊞"}
-          </button>
+            );
+          })}
         </div>
         </div>
 
         <section className="overview-shell">
           {/* — At-a-Glance Summary Strip — */}
+          {/* KPI Scoreboard — large airport-board numbers */}
+          <div className="kpi-scoreboard">
+            <div className="kpi-item"><span className="kpi-value">{totalVehiclesToday.toLocaleString()}</span><span className="kpi-label">{lang === "th" ? "รถวันนี้" : "Vehicles"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${muc.airQuality.overallAqi >= 90 ? "red" : muc.airQuality.overallAqi >= 60 ? "amber" : "green"}`}>{muc.airQuality.overallAqi}</span><span className="kpi-label">AQI</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${mucBottleneckCount > 0 ? "red" : "green"}`}>{mucBottleneckCount}</span><span className="kpi-label">{lang === "th" ? "คอขวด" : "Bottleneck"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length > 0 ? "amber" : "green"}`}>{incidents.filter((i) => i.status !== "resolved" && i.status !== "closed").length}</span><span className="kpi-label">{lang === "th" ? "เหตุการณ์" : "Incidents"}</span></div>
+            <div className="kpi-item"><span className="kpi-value green">{liveCamCount}</span><span className="kpi-label">{lang === "th" ? "กล้อง" : "Cameras"}</span></div>
+            <div className="kpi-item"><span className={`kpi-value ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "red" : floodRisk.floodRiskLevel === "moderate" ? "amber" : "green"}`}>{floodRisk.floodRiskLevel === "low" ? "OK" : floodRisk.floodRiskLevel.toUpperCase()}</span><span className="kpi-label">{lang === "th" ? "น้ำท่วม" : "Flood"}</span></div>
+          </div>
+
           <section className="summary-strip">
-            <button type="button" className="summary-card" title={lang === "th" ? "ดัชนีคุณภาพอากาศจาก Open-Meteo (real-time)" : "Air Quality Index from Open-Meteo (real-time)"} onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
+            <button type="button" className="summary-card" onClick={() => { if (airRiskPreset?.run) airRiskPreset.run(); else focusCityWithLayer(topAqiCitySlug || city, "pollution"); }}>
               <span className="summary-label">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
-              <strong className={`summary-value aqi-${liveAir.data?.current?.us_aqi !== undefined ? aqiTone(liveAir.data.current.us_aqi) : (topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown")}`}>
-                {liveAir.data?.current?.us_aqi !== undefined
-                  ? aqiBand(liveAir.data.current.us_aqi, lang)
-                  : topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
+              <strong className={`summary-value aqi-${topAqiFeature ? (numericProperty(topAqiFeature, "aqi") <= 50 ? "good" : numericProperty(topAqiFeature, "aqi") <= 100 ? "moderate" : "unhealthy") : "unknown"}`}>
+                {topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}
               </strong>
-              <span className="summary-sub">
-                {liveAir.data?.current
-                  ? `PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"} · AQI ${Math.round(liveAir.data.current.us_aqi)}`
-                  : topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}
-              </span>
+              <span className="summary-sub">{topAqiFeature ? `AQI ${numericProperty(topAqiFeature, "aqi")}` : ""}</span>
             </button>
-            <button type="button" className="summary-card" title={lang === "th" ? "อุณหภูมิปัจจุบันจาก wttr.in (real-time)" : "Current temperature from wttr.in (real-time)"} onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
+            <button type="button" className="summary-card" onClick={() => focusCityWithLayer(hottestCitySlug || city, "weather")}>
               <span className="summary-label">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
-              <strong className="summary-value">
-                {liveWeather.data?.current?.temperature_2m !== undefined
-                  ? `${liveWeather.data.current.temperature_2m.toFixed(0)}°C`
-                  : hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}
-              </strong>
-              <span className="summary-sub">
-                {liveWeather.data?.current
-                  ? `↺${liveWeather.data.current.apparent_temperature.toFixed(0)}° · ${liveWeather.data.current.relative_humidity_2m}%`
-                  : hottestWeatherFeature?.title ?? ""}
-              </span>
+              <strong className="summary-value">{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
+              <span className="summary-sub">{hottestWeatherFeature?.title ?? ""}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => navigateToTab("data")}>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
               <span className="summary-label">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
               <strong className={`summary-value ${decisionItems.length > 0 ? "has-actions" : ""}`}>{decisionItems.length}</strong>
               <span className="summary-sub">{lang === "th" ? "รายการ" : "pending"}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => navigateToTab("cctv")}>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("cctv")}>
               <span className="summary-label">{lang === "th" ? "กล้อง" : "Cameras"}</span>
               <strong className="summary-value">{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
               <span className="summary-sub">{lang === "th" ? "ออนไลน์" : "online"}</span>
             </button>
-            <button type="button" className="summary-card" onClick={() => navigateToTab("data")}>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("traffic")}>
+              <span className="summary-label">{lang === "th" ? "จราจร" : "Traffic"}</span>
+              <strong className={`summary-value ${mucBottleneckCount > 0 ? "has-actions" : ""}`}>
+                {mucBottleneckCount}
+              </strong>
+              <span className="summary-sub">{lang === "th" ? "คอขวด" : "bottlenecks"}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("air")}>
+              <span className="summary-label">{lang === "th" ? "ก่อสร้าง AQI" : "Construction AQI"}</span>
+              <strong className={`summary-value ${mucAqiAlertCount > 0 ? "aqi-unhealthy" : "aqi-good"}`}>
+                {muc.airQuality.overallAqi}
+              </strong>
+              <span className="summary-sub">{`${mucAqiAlertCount} ${lang === "th" ? "เขตเกินเกณฑ์" : "alerts"}`}</span>
+            </button>
+            <button type="button" className="summary-card" onClick={() => setActiveTab("data")}>
               <span className="summary-label">{lang === "th" ? "กระแส" : "Public Mood"}</span>
               <strong className="summary-value">{Math.round(socialListening.positiveShare * 100)}%</strong>
               <span className="summary-sub">{`${socialListening.mentionCount} ${lang === "th" ? "คนพูดถึง" : "mentions"}`}</span>
             </button>
           </section>
 
-          {/* — Counterpart Scale Strip (God-Mode: always show the OTHER scale) — */}
-          <section className="card overview-card counterpart-strip">
-            <div className="counterpart-row">
-              <div className="counterpart-block current">
-                <span className="eyebrow">{lang === "th" ? "กำลังดู" : "You are viewing"}</span>
-                <strong>{isMuangThongCityView ? "Muang Thong Thani" : "Bangkok"}</strong>
-              </div>
-              <div className="counterpart-block other">
-                <span className="eyebrow">{counterpartLabel}</span>
-                <div className="counterpart-metrics">
-                  {liveAirOther.data?.current ? (
-                    <>
-                      <span>AQI {Math.round(liveAirOther.data.current.us_aqi)}</span>
-                      <span className="counterpart-delta">
-                        {liveAir.data?.current && liveAirOther.data?.current
-                          ? (() => {
-                              // Diff = otherScale - currentScale. Positive means OTHER is worse than HERE,
-                              // negative means OTHER is better than HERE.
-                              const diff = Math.round(liveAirOther.data.current.us_aqi - liveAir.data.current.us_aqi);
-                              if (diff === 0) return `same as here`;
-                              if (diff > 0) return `+${diff} (worse than here)`;
-                              return `${diff} (better than here)`;
-                            })()
-                          : ""}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="counterpart-loading">{lang === "th" ? "กำลังโหลด" : "loading"}</span>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="counterpart-switch"
-                onClick={() => updateParam("city", counterpartCitySlug)}
-                title={lang === "th" ? "สลับขนาด" : "Switch scale"}
-              >
-                {counterpartCityLabel} →
-              </button>
+          {/* ── Row 1: Hero (span 2) + Arena Events ── */}
+          <section className="card overview-card hero">
+          <div className="hero-command-row">
+            <div className="hero-time">
+              <span className="hero-time-value">{time.thaiTime || "00:00:00 ICT"}</span>
+              <span className="hero-time-date">{time.thaiDate || ""}</span>
             </div>
+            <div className="hero-weather">
+              <span className="hero-temp">{resilience.weatherTemperatureC}°C</span>
+              <small>{localize(lang, resilience.weatherSummary)}</small>
+            </div>
+          </div>
+          <div className="hero-status-pills">
+            <span className={`hero-pill ${mttTrafficSnapshotSeed.overallStatus === "congested" || mttTrafficSnapshotSeed.overallStatus === "blocked" ? "critical" : mttTrafficSnapshotSeed.overallStatus === "moderate" ? "warn" : "ok"}`}>{lang === "th" ? "จราจร" : "Traffic"}: {mttTrafficSnapshotSeed.overallStatus}</span>
+            <span className={`hero-pill ${muc.airQuality.overallAqi >= 90 ? "critical" : muc.airQuality.overallAqi >= 60 ? "warn" : "ok"}`}>AQI: {muc.airQuality.overallAqi}</span>
+            <span className={`hero-pill ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "critical" : floodRisk.floodRiskLevel === "moderate" ? "warn" : "ok"}`}>{lang === "th" ? "น้ำท่วม" : "Flood"}: {floodRisk.floodRiskLevel}</span>
+            <span className="hero-pill ok">{lang === "th" ? "กิจกรรม" : "Events"}: {arenaEvents.filter((e) => e.status === "confirmed").length}</span>
+          </div>
+          <div className="terminal-callout compact">
+            <strong>{executiveSignal}</strong>
+          </div>
+          {todayEvents.length > 0 ? (
+            <div className="hero-next-event">
+              <span className="eyebrow">{lang === "th" ? "กิจกรรมถัดไป" : "Next Event"}</span>
+              <strong>{localize(lang, todayEvents[0].title)}</strong>
+              <small>{localize(lang, todayEvents[0].venue)} · {todayEvents[0].timeStart} · {todayEvents[0].expectedCrowd.toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
+            </div>
+          ) : null}
           </section>
 
-          {/* — Reality Check (God-Mode: narrative tone vs measured AQI) — */}
-          {(liveNews.data || liveAir.data) && (
-            <section className={`card overview-card reality-check verdict-${aqVerdict.verdict}`}>
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "ตรวจสอบความจริง · คุณภาพอากาศ" : "Reality Check · Air Quality"}</span>
-                <span className={`status-pill verdict-pill ${aqVerdict.tone}`}>{aqVerdict.verdict.toUpperCase()}</span>
-              </div>
-              <div className="reality-grid">
-                <div className="reality-side">
-                  <span className="eyebrow">{lang === "th" ? "ข่าว · เกี่ยวกับอากาศ" : "Narrative · pollution stories"}</span>
-                  <strong>
-                    {intel.pollutionVolume} {lang === "th" ? "เรื่อง" : "stories"} · {lang === "th" ? "อารมณ์" : "tone"} {intel.pollutionTone.toFixed(1)}
-                  </strong>
-                  <small>{lang === "th" ? "GDELT คำนวณจากหัวข้อข่าว" : "GDELT · keyword tone from headlines"}</small>
-                </div>
-                <div className="reality-side">
-                  <span className="eyebrow">{lang === "th" ? "วัดได้" : "Measured · now"}</span>
-                  <strong>
-                    {liveAir.data?.current
-                      ? `PM2.5 ${liveAir.data.current.pm2_5?.toFixed(0) ?? "--"}µg · AQI ${Math.round(liveAir.data.current.us_aqi)}`
-                      : "—"}
-                  </strong>
-                  <small>
-                    {liveAir.data?.current?.pm2_5
-                      ? `${(liveAir.data.current.pm2_5 / 25).toFixed(1)}× ${lang === "th" ? "เกณฑ์ WHO" : "WHO 25µg guideline"}`
-                      : "Open-Meteo"}
-                  </small>
-                </div>
-              </div>
-              <small className="reality-verdict-line">{aqVerdict.label}</small>
-            </section>
-          )}
-
-          {/* — Governor Watch (God-Mode: real Bangkok Governor news from articles) — */}
-          {intel.governorArticles.length > 0 && (
-            <section className="card overview-card governor-watch">
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "ผู้ว่าฯ กรุงเทพ" : "Governor Watch · Bangkok"}</span>
-                <span className="status-pill live">
-                  {intel.governorArticles.length} {lang === "th" ? "เรื่อง" : "stories"}
-                </span>
-              </div>
-              <div className="overview-inline-list">
-                {intel.governorArticles.slice(0, 5).map((article) => (
-                  <a
-                    key={article.url}
-                    className="data-item compact"
-                    href={article.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`${article.domain} · open in new tab`}
-                  >
-                    <strong>{article.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
-                    <small>{article.domain}</small>
-                  </a>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* — Top Themes (God-Mode: word frequency from all 30 GDELT articles) — */}
-          {intel.topThemes.length > 0 && (
-            <section className="card overview-card top-themes">
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "หัวข้อร้อนแรง" : "Trending Themes"}</span>
-                <span className="status-pill live">
-                  {intel.total} {lang === "th" ? "เรื่อง" : "headlines"}
-                </span>
-              </div>
-              <div className="theme-pills">
-                {intel.topThemes.map((t) => (
-                  <span key={t.word} className="theme-pill" title={`${t.count} mentions`}>
-                    {t.word}
-                    <small className="theme-count">{t.count}</small>
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* — MTT-only: Flights Overhead from OpenSky (DMK is right next door) — */}
-          {isMuangThongCityView && liveFlights.data && liveFlights.data.length > 0 && (
-            <section className="card overview-card flights-overhead">
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "เที่ยวบินเหนือพื้นที่ (DMK)" : "Flights Overhead · DMK"}</span>
-                <span className="status-pill live">
-                  {liveFlights.data.length} {lang === "th" ? "ลำ" : "aircraft"}
-                </span>
-              </div>
-              <div className="overview-inline-list">
-                {liveFlights.data.slice(0, 6).map((f) => (
-                  <a
-                    key={f.icao24}
-                    className="flight-row"
-                    href={`https://globe.adsbexchange.com/?icao=${f.icao24}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`${f.callsign} · ${f.type} · ${f.registration} · click for live tracker`}
-                  >
-                    <span className="flight-callsign">{f.callsign}</span>
-                    <span className="flight-origin">{f.type}</span>
-                    <span className="flight-meta">
-                      {f.onGround ? "ground" : f.altitudeFt != null ? `${f.altitudeFt.toLocaleString()}ft` : "—"}
-                      {f.groundSpeedKn != null && !f.onGround ? ` · ${Math.round(f.groundSpeedKn)}kn` : ""}
+          <section className="card overview-card arena-events category-community">
+            <div className="card-header">
+              <span className="eyebrow">IMPACT Arena</span>
+              <span className="status-pill">{arenaEvents.filter((e) => e.status !== "cancelled").length} events</span>
+            </div>
+            <div className="arena-event-list">
+              {arenaEvents.filter((e) => e.status !== "cancelled").slice(0, 5).map((evt) => (
+                <div key={evt.id} className="arena-event-row">
+                  <strong>{localize(lang, evt.title)}</strong>
+                  <div className="event-meta">
+                    <span>{evt.date.slice(5)}</span>
+                    <span>{evt.timeStart}</span>
+                    <span className="event-crowd">~{evt.expectedCrowd >= 1000 ? `${(evt.expectedCrowd / 1000).toFixed(1)}k` : evt.expectedCrowd}</span>
+                    <span className={`status-tag ${evt.parkingPressure === "high" ? "congested" : evt.parkingPressure === "moderate" ? "moderate" : "clear"}`}>
+                      {evt.parkingPressure === "high" ? (lang === "th" ? "รถติดหนัก" : "HEAVY") : evt.category}
                     </span>
-                  </a>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* — Bangkok-only: BMA Open Data feed from data.bangkok.go.th — */}
-          {!isMuangThongCityView && liveBmaData.data && liveBmaData.data.length > 0 && (
-            <section className="card overview-card open-data-feed">
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "เปิดข้อมูล กทม." : "BMA Open Data · data.bangkok.go.th"}</span>
-                <span className="status-pill live">
-                  {liveBmaData.data.length} {lang === "th" ? "ชุดข้อมูล" : "datasets"}
-                </span>
-              </div>
-              <div className="overview-inline-list">
-                {liveBmaData.data.slice(0, 6).map((d) => (
-                  <a
-                    key={d.name}
-                    className="data-item compact"
-                    href={d.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`${d.organization} · ${d.resourceCount} resources · open BMA portal`}
-                  >
-                    <strong>{d.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
-                    <small>{d.organization} · {d.resourceCount} {lang === "th" ? "ไฟล์" : "files"}</small>
-                  </a>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* — Bangkok-only: data.go.th national-portal Bangkok-tagged datasets — */}
-          {!isMuangThongCityView && liveThaiData.data && liveThaiData.data.length > 0 && (
-            <section className="card overview-card open-data-feed">
-              <div className="card-header">
-                <span className="eyebrow">{lang === "th" ? "เปิดข้อมูล แห่งชาติ" : "Thailand Open Data · data.go.th"}</span>
-                <span className="status-pill live">
-                  {liveThaiData.data.length} {lang === "th" ? "ชุดข้อมูล" : "datasets"}
-                </span>
-              </div>
-              <div className="overview-inline-list">
-                {liveThaiData.data.slice(0, 4).map((d) => (
-                  <a
-                    key={d.name}
-                    className="data-item compact"
-                    href={d.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`${d.organization} · ${d.resourceCount} resources`}
-                  >
-                    <strong>{d.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
-                    <small>{d.organization}</small>
-                  </a>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* — MTT Traffic Corridors — */}
-          {isMuangThongCityView && (
-          <section className="card overview-card mtt-traffic-corridors">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ถนนสายหลัก" : "Traffic Corridors"}</span>
-              <span className={`status-pill congestion-${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
-            </div>
-            <div className="mtt-corridor-list">
-              {mttTrafficSnapshotSeed.corridors.map((c) => (
-                <div key={c.id} className={`mtt-corridor-item corridor-${c.status}`}>
-                  <span className={`status-dot ${c.status === "congested" ? "error" : c.status === "moderate" ? "pending" : "live"}`} />
-                  <span className="corridor-name">{localize(lang, c.label)}</span>
-                  <span className="corridor-speed">{c.speedKmh} km/h</span>
-                  {c.delayMinutes > 0 && <span className="corridor-badge">+{c.delayMinutes}m</span>}
+                  </div>
                 </div>
               ))}
             </div>
           </section>
-          )}
 
-          {/* — IMPACT Arena Events — */}
-          {isMuangThongCityView && (
-          <section className="card overview-card impact-events">
+          {/* ── Row 2: CCTV + AI Vision ── */}
+          <section className="card overview-card cctv-overview category-safety">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "กล้องสด" : "Live Cameras"}</span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("cctv")}>
+              {publicCctvCameras.filter((cam) => cam.status === "live").length} live
+            </button>
+          </div>
+          <div className="overview-inline-list">
+            {publicCctvCameras.slice(0, 6).map((cam) => (
+              <button key={cam.id} type="button" className={`data-item`} onClick={() => setActiveTab("cctv")}>
+                <div className="stack-title">
+                  <strong>{localize(lang, cam.label)}</strong>
+                  <span className={`status-tag ${cam.status}`}>{cam.status}</span>
+                </div>
+                <small>{cam.source} · {cam.zone}</small>
+              </button>
+            ))}
+            {publicCctvCameras.length > 6 ? (
+              <button type="button" className="data-item" onClick={() => setActiveTab("cctv")}>
+                <strong>{`+${publicCctvCameras.length - 6} more cameras`}</strong>
+              </button>
+            ) : null}
+          </div>
+          </section>
+
+          {/* ── Row 3: Traffic, Trends, Briefing ── */}
+          <section className="card overview-card traffic category-infra">
             <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กิจกรรม IMPACT" : "IMPACT Events"}</span>
-              <span className="status-pill">{impactArenaEventsSeed.filter((e) => e.status === "confirmed").length}</span>
+              <span className="eyebrow">{lang === "th" ? "การจราจร" : "Traffic"}</span>
+              <span className={`status-tag ${mttTrafficSnapshotSeed.overallStatus}`}>{mttTrafficSnapshotSeed.overallStatus}</span>
             </div>
-            <div className="overview-inline-list">
-              {impactArenaEventsSeed.filter((e) => e.status === "confirmed").slice(0, 4).map((e) => (
-                <div key={e.id} className="impact-event-item">
-                  <span className="impact-event-title">{localize(lang, e.title)}</span>
-                  <span className="impact-event-meta">
-                    <span className="eyebrow">{(e.expectedCrowd / 1000).toFixed(1)}k</span>
-                    <span className={`status-tag parking-${e.parkingPressure}`}>{e.parkingPressure}</span>
-                  </span>
+            <div className="corridor-list">
+              {mttTrafficSnapshotSeed.corridors.map((corridor) => (
+                <div key={corridor.id} className="corridor-row">
+                  <div><strong>{localize(lang, corridor.label)}</strong></div>
+                  <span className={`status-tag ${corridor.status}`}>{corridor.speedKmh} km/h</span>
                 </div>
               ))}
             </div>
           </section>
-          )}
 
-          {/* — CCTV Intel — */}
-          {isMuangThongCityView && (
-          <section className="card overview-card cctv-intel" onClick={() => navigateToTab("cctv")}>
+          <section className="card overview-card social-trends">
             <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กล้องวงจรปิด" : "CCTV Intel"}</span>
-              <span className={`status-pill ${escalatedCctvCount > 0 ? "status-alert" : ""}`}>
-                {escalatedCctvCount > 0 ? `${escalatedCctvCount} alerts` : `${cctvSamples.length} live`}
-              </span>
+              <span className="eyebrow">{lang === "th" ? "เทรนด์" : "Trends"}</span>
+              <span className="status-pill">{socialListening.mentionCount} mentions</span>
             </div>
-            <div className="overview-inline-list">
-              {[...cctvSamples].sort((a, b) => (a.severity === "alert" ? -1 : b.severity === "alert" ? 1 : 0)).slice(0, 4).map((s) => (
-                <div key={s.id} className="cctv-intel-item">
-                  <span className="eyebrow">{s.cameraId}</span>
-                  <span className="cctv-detection">{localize(lang, s.detection)}</span>
-                  <span className={`status-tag ${s.severity === "alert" ? "delayed" : s.severity === "watch" ? "watch" : "live"}`}>{s.severity}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-          )}
-
-          {/* — Seismic activity (USGS real-time, Thailand bbox) — */}
-          {isMuangThongCityView && liveQuakes.data && liveQuakes.data.length > 0 && (
-          <section className="card overview-card seismic-feed">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "แผ่นดินไหว" : "Seismic"}</span>
-              <span className="status-pill live">USGS · {liveQuakes.data.length} {lang === "th" ? "เหตุการณ์" : "events 7d"}</span>
-            </div>
-            <div className="overview-inline-list">
-              {liveQuakes.data.slice(0, 4).map((q) => (
-                <a key={q.id} className="seismic-item" href={q.url} target="_blank" rel="noreferrer" title={`Open USGS event page in new tab — depth ${Math.round(q.depth)}km`}>
-                  <span className={`seismic-mag mag-${q.mag >= 5 ? "high" : q.mag >= 4 ? "med" : "low"}`}>M{q.mag.toFixed(1)}</span>
-                  <span className="seismic-place">{q.place}<span className="ext-icon" aria-hidden="true">↗</span></span>
-                  <small>{quakeFreshness(q.time)} · {Math.round(q.depth)}km</small>
-                </a>
-              ))}
-            </div>
-          </section>
-          )}
-
-          {/* — Always-Visible Live Traffic Ticker — */}
-          {city === "bangkok" && (
-            <section className="card overview-card traffic-ticker">
-              <div className="card-header">
-                <strong>{lang === "th" ? "เหตุจราจรสด" : "Live Traffic"}</strong>
-                <span className="ticker-meta">
-                  <span className={`status-pill congestion-${trafficCongestion.level}`}>{trafficCongestion.level === "free" ? (lang === "th" ? "ว่าง" : "Free") : trafficCongestion.level === "light" ? (lang === "th" ? "เบา" : "Light") : trafficCongestion.level === "moderate" ? (lang === "th" ? "ปานกลาง" : "Moderate") : trafficCongestion.level === "heavy" ? (lang === "th" ? "หนัก" : "Heavy") : (lang === "th" ? "ติดขัด" : "Gridlock")}</span>
-                  <span className="status-pill">{trafficCongestion.accidents > 0 ? `${trafficCongestion.accidents} ${lang === "th" ? "อุบัติเหตุ" : "accidents"}` : ""}{trafficCongestion.closures > 0 ? ` ${trafficCongestion.closures} ${lang === "th" ? "ปิดถนน" : "closures"}` : ""}</span>
-                  <span className="status-pill">{trafficWatchItems.length}</span>
+            <div className="trend-keyword-cloud">
+              {(socialListening.trendKeywords ?? []).map((kw) => (
+                <span key={localize("en", kw.term)} className={`trend-tag sentiment-${kw.sentiment}`}>
+                  {localize(lang, kw.term)}
+                  <span className="trend-count">{kw.count}</span>
+                  <span className="trend-arrow">{kw.trend === "up" ? "\u2191" : kw.trend === "down" ? "\u2193" : "\u2192"}</span>
                 </span>
-              </div>
-              <div className="ticker-scroll">
-                {trafficWatchItems.length > 0 ? trafficWatchItems.slice(0, 8).map((feature) => {
-                  const eventClass = stringProperty(feature, "eventClass") || "traffic";
-                  const severity = stringProperty(feature, "severity") || "low";
-                  const stamp = stringProperty(feature, "startedAt") || feature.source.publishedAt;
-                  const mappedCity = normalizeCitySlug(stringProperty(feature, "citySlug") || stringProperty(feature, "city"));
-                  return (
-                    <button key={feature.id} type="button" className={`ticker-item severity-${severity}`} onClick={() => { focusCityWithLayer(mappedCity, "itic-traffic"); navigateToTab("map"); }} title={feature.description || feature.title}>
-                      <span className={`ticker-type type-${eventClass}`}>{formatSignalLabel(eventClass)}</span>
-                      <span className="ticker-detail">
-                        <span className="ticker-title">{feature.title}</span>
-                      </span>
-                      <span className="ticker-end">
-                        <span className="ticker-time">{formatUtcClock(stamp)}</span>
-                      </span>
-                    </button>
-                  );
-                }) : (
-                  <div className="ticker-empty">{lang === "th" ? "ไม่มีเหตุจราจรสด" : "No live traffic incidents"}</div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* — Live KPI Strip — */}
-          {city === "bangkok" && (
-          <section className="card overview-card governor-kpi">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กรุงเทพฯ วันนี้" : "Bangkok Today"}</span>
-              <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level === "normal" ? (lang === "th" ? "ปกติ" : "Normal") : floodStatus.level.toUpperCase()}</span>
-            </div>
-            <div className="governor-kpi-grid">
-              <div className={`kpi-item${resilience.aqi > 150 ? " kpi-alert" : ""}${kpiChanged.has("aqi") ? " data-changed data-refreshed" : ""}`} aria-label={`Air Quality Index ${resilience.aqi}`} title={lang === "th" ? `ดัชนีคุณภาพอากาศ: ${resilience.aqi} (0-50 ดี, 51-100 ปานกลาง, >100 ไม่ดี)` : `Air Quality Index: ${resilience.aqi} (0-50 Good, 51-100 Moderate, >100 Unhealthy)`}>
-                <span className="eyebrow">AQI</span>
-                <strong className={resilience.aqi > 100 ? "tone-warning" : resilience.aqi > 50 ? "tone-neutral" : "tone-positive"}>{resilience.aqi}</strong>
-                {kpiHistory.aqi.length > 2 && <Sparkline values={kpiHistory.aqi} />}
-              </div>
-              <div className={`kpi-item${traffyFondue.totalOpen > 500 ? " kpi-alert" : ""}${kpiChanged.has("reports") ? " data-changed data-refreshed" : ""}`} aria-label={`${traffyFondue.totalOpen} open citizen reports`} title={lang === "th" ? `เรื่องร้องเรียนจาก Traffy Fondue ที่ยังไม่ได้แก้ไข: ${traffyFondue.totalOpen}` : `Open citizen reports via Traffy Fondue: ${traffyFondue.totalOpen}`}>
-                <span className="eyebrow">{lang === "th" ? "ร้องเรียน" : "Reports"}</span>
-                <strong className="tone-warning">{traffyFondue.totalOpen}</strong>
-                {kpiHistory.reports.length > 2 && <Sparkline values={kpiHistory.reports} />}
-              </div>
-              <div className={`kpi-item${kpiChanged.has("resolved") ? " data-changed data-refreshed" : ""}`} aria-label={`${Math.round(traffyFondue.resolutionRate * 100)}% resolution rate`}>
-                <span className="eyebrow">{lang === "th" ? "แก้ไขแล้ว" : "Resolved"}</span>
-                <strong className="tone-positive">{Math.round(traffyFondue.resolutionRate * 100)}%</strong>
-                {kpiHistory.resolved.length > 2 && <Sparkline values={kpiHistory.resolved} />}
-              </div>
-              <div className={`kpi-item${kpiChanged.has("temp") ? " data-changed data-refreshed" : ""}`} aria-label={`Temperature ${resilience.weatherTemperatureC} degrees celsius`}>
-                <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temp"}</span>
-                <strong>{resilience.weatherTemperatureC}°C</strong>
-                {kpiHistory.temp.length > 2 && <Sparkline values={kpiHistory.temp} />}
-              </div>
-              <div className={`kpi-item${trafficCongestion.index > 55 ? " kpi-alert" : ""}`} aria-label={`Traffic congestion index ${trafficCongestion.index}`} title={lang === "th" ? `ดัชนีรถติด: ${trafficCongestion.index}/100 — อุบัติเหตุ ${trafficCongestion.accidents} ปิดถนน ${trafficCongestion.closures}` : `Traffic index: ${trafficCongestion.index}/100 — ${trafficCongestion.accidents} accidents, ${trafficCongestion.closures} closures`}>
-                <span className="eyebrow">{lang === "th" ? "รถติด" : "Traffic"}</span>
-                <strong className={trafficCongestion.index > 55 ? "tone-warning" : trafficCongestion.index > 30 ? "tone-neutral" : "tone-positive"}>{trafficCongestion.index}</strong>
-                {kpiHistory.traffic.length > 2 && <Sparkline values={kpiHistory.traffic} />}
-              </div>
-              <div className={`kpi-item${floodStatus.rainfallLast24h > 50 ? " kpi-alert" : ""}${kpiChanged.has("rain") ? " data-changed data-refreshed" : ""}`} aria-label={`${floodStatus.rainfallLast24h} millimeters rainfall in 24 hours`}>
-                <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
-                <strong>{floodStatus.rainfallLast24h}mm</strong>
-                {kpiHistory.rain.length > 2 && <Sparkline values={kpiHistory.rain} />}
-              </div>
-            </div>
-            <div className="governor-presets">
-              {SATELLITE_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className="preset-btn"
-                  aria-pressed={preset.layers.every((layerId) => layers.includes(layerId))}
-                  onClick={() => updateParam("layers", preset.layers.join(","))}
-                >
-                  {localize(lang, preset.label)}
-                </button>
               ))}
-              <button
-                type="button"
-                className="preset-btn"
-                aria-pressed={basemap === "satellite"}
-                onClick={() => updateParam("basemap", basemap === "satellite" ? "atlas" : "satellite")}
-              >
-                {basemap === "satellite" ? (lang === "th" ? "แผนที่ฐาน" : "Atlas Base") : (lang === "th" ? "ภาพดาวเทียม" : "Satellite Base")}
-              </button>
-              <button
-                type="button"
-                className={`preset-btn${autoRotate ? " active" : ""}`}
-                aria-pressed={autoRotate}
-                onClick={() => setAutoRotate(!autoRotate)}
-              >
-                {autoRotate ? (lang === "th" ? "หยุดหมุน" : "Stop Rotate") : (lang === "th" ? "หมุนอัตโนมัติ" : "Auto-rotate")}
-              </button>
-              <button type="button" className="preset-btn" onClick={copySitrep}>
-                {lang === "th" ? "รายงานสถานการณ์" : "Copy Sitrep"}
-              </button>
             </div>
           </section>
-          )}
 
-          {/* — Briefing: single compact line — */}
-          <section className="card overview-card briefing-compact" onClick={() => navigateToTab("insights")}>
+          <section className="card overview-card briefing category-community">
+          <div className="card-header">
             <span className="eyebrow">{copy.briefing}</span>
-            <strong>{localize(lang, overview.briefing.headline)}</strong>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("insights")}>AI</button>
+          </div>
+          <strong>{localize(lang, overview.briefing.headline)}</strong>
+          <p>{localize(lang, overview.briefing.body)}</p>
           </section>
-
-          {/* — Social Pulse — */}
-          <section className="card overview-card social-pulse">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กระแสสังคม" : "Social Pulse"}</span>
-              <span className="status-pill">{socialListening.mentionCount} {lang === "th" ? "คนพูดถึง" : "mentions"}</span>
-            </div>
-            <div className="social-keywords">
-              {socialListening.topTerms.slice(0, 6).map((term) => (
-                <span key={term} className="keyword-pill">{term}</span>
-              ))}
-            </div>
-            <div className="social-meta">
-              <span>{lang === "th" ? "ความรู้สึก" : "Sentiment"}: {socialListening.sentimentScore >= 0 ? "+" : ""}{socialListening.sentimentScore}</span>
-              <span>{Math.round(socialListening.positiveShare * 100)}% {lang === "th" ? "เชิงบวก" : "positive"}</span>
-              <span>{socialListening.dominantSource}</span>
-            </div>
-          </section>
-
-          {/* — Traffy Fondue: citizen reports — */}
-          {city === "bangkok" && (
-          <section className="card overview-card traffy-fondue">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ร้องเรียนประชาชน" : "Citizen Reports"}</span>
-              <button type="button" className="status-pill status-button" onClick={() => navigateToTab("map")}>
-                {traffyFondue.totalOpen} {lang === "th" ? "รายการ" : "open"}
-              </button>
-            </div>
-            <div className="traffy-cats-compact">
-              {traffyFondue.categoryBreakdown.slice(0, 4).map((cat) => (
-                <div key={cat.category} className="traffy-cat-compact">
-                  <span>{cat.category}</span>
-                  <strong>{cat.count}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="traffy-district-pills">
-              {traffyFondue.districtBreakdown.slice(0, 3).map((d) => (
-                <span key={d.district} className="traffy-district-pill">{d.district} {d.count}</span>
-              ))}
-            </div>
-          </section>
-          )}
-
-          {/* — Flood Status — */}
-          {city === "bangkok" && floodStatus.level !== "normal" && (
-          <section className={`card overview-card flood-alert flood-${floodStatus.level}`}>
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "สถานะน้ำท่วม" : "Flood Status"}</span>
-              <span className={`status-pill flood-${floodStatus.level}`}>{floodStatus.level.toUpperCase()}</span>
-            </div>
-            <div className="overview-hero-metrics">
-              <div className="data-item">
-                <span className="eyebrow">{lang === "th" ? "จุดน้ำท่วม" : "Flood Points"}</span>
-                <strong>{floodStatus.activeFloodPoints}</strong>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">{lang === "th" ? "สูบน้ำ" : "Pumps"}</span>
-                <strong>{floodStatus.drainagePumpStatus.active}/{floodStatus.drainagePumpStatus.total}</strong>
-              </div>
-              <div className="data-item">
-                <span className="eyebrow">{lang === "th" ? "ฝน 24 ชม." : "Rain 24h"}</span>
-                <strong>{floodStatus.rainfallLast24h}mm</strong>
-              </div>
-            </div>
-            <div className="panel-source">{lang === "th" ? "แหล่งข้อมูล:" : "Source:"} BMA / Open-Meteo</div>
-          </section>
-          )}
-
-          {/* — Traffic Corridors — */}
-          {city === "bangkok" && trafficCongestion.corridors.length > 0 && (
-          <section className="card overview-card traffic-corridors">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ถนนสายหลัก" : "Traffic Corridors"}</span>
-              <span className={`status-pill traffic-${trafficCongestion.level}`}>{trafficCongestion.level}</span>
-            </div>
-            <div className="corridor-grid">
-              {trafficCongestion.corridors.map((c) => (
-                <div key={c.name} className={`corridor-item corridor-${c.level}`}>
-                  <span className="corridor-name">{c.name}</span>
-                  <span className="corridor-badge">{c.events > 0 ? c.events : ""}</span>
-                </div>
-              ))}
-            </div>
-            <div className="corridor-summary">
-              <span>{trafficCongestion.accidents > 0 ? `${trafficCongestion.accidents} ${lang === "th" ? "อุบัติเหตุ" : "accidents"}` : ""}</span>
-              <span>{trafficCongestion.closures > 0 ? `${trafficCongestion.closures} ${lang === "th" ? "ปิดถนน" : "closures"}` : ""}</span>
-              <span>{trafficCongestion.breakdowns > 0 ? `${trafficCongestion.breakdowns} ${lang === "th" ? "เสีย" : "breakdowns"}` : ""}</span>
-            </div>
-          </section>
-          )}
 
           {/* — Decision Queue — */}
-          <section className="card overview-card queue">
+          <section className="card overview-card queue category-safety">
           <div className="card-header">
             <span className="eyebrow">{lang === "th" ? "ต้องดำเนินการ" : "Actions Needed"}</span>
-            <button type="button" className="status-pill status-button" onClick={() => navigateToTab("data")}>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
               {decisionItems.length}
             </button>
           </div>
           <div className="overview-inline-list">
             {overviewQueue.length > 0 ? (
-              overviewQueue.map((item) => (
-                  <button key={item.id} type="button" className={`data-item compact severity-${item.severity}`} onClick={() => focusDecision(item)}>
-                    <span className={`status-dot ${item.severity === "urgent" ? "error" : item.severity === "watch" ? "pending" : "live"}`} />
-                    <strong>{localize(lang, item.title)}</strong>
-                    <span className={`status-tag ${item.status}`}>{item.status}</span>
+              overviewQueue.map((item) => {
+                const queueDistrict = item.districtSlug ? districtByKey.get(`${item.citySlug}:${item.districtSlug}`) : null;
+                const queueCity = cityBySlug.get(item.citySlug) ?? selectedCity;
+                return (
+                  <button key={item.id} type="button" className={`data-item severity-${item.severity}`} onClick={() => focusDecision(item)}>
+                    <div className="stack-title">
+                      <strong>{localize(lang, item.title)}</strong>
+                      <span className={`status-tag ${item.status}`}>{item.status}</span>
+                    </div>
+                    <small>{queueDistrict ? localize(lang, queueDistrict.name) : localize(lang, queueCity.name)}</small>
                   </button>
-              ))
+                );
+              })
             ) : (
               <div className="data-item">
                 <strong>{lang === "th" ? "ไม่มีรายการเร่งด่วน" : "No escalated actions"}</strong>
@@ -5489,142 +5483,267 @@ function DashboardPage() {
           </div>
           </section>
 
-          {/* — Activity Feed — */}
-          <section className="card overview-card activity-feed" onClick={() => navigateToTab("data")}>
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "กิจกรรม" : "Activity"}</span>
-              <span className="status-pill">{activityItems.length}</span>
-            </div>
-            <div className="overview-inline-list">
-              {activityItems.slice(0, 4).map((item) => (
-                <div key={item.id} className={`data-item compact ${item.status}`}>
-                  <span className={`status-dot ${item.status}`} />
-                  <strong>{item.label}</strong>
-                  <small>{formatUtcClock(item.timestamp)}</small>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* — News (real-time GDELT from Thai sources, with seed fallback) — */}
-          <section className="card overview-card news">
+          {/* — News — */}
+          <section className="card overview-card news category-community">
           <div className="card-header">
             <span className="eyebrow">{copy.news}</span>
-            <span className="status-pill live">
-              {liveNews.data && liveNews.data.length > 0 ? `GDELT · ${liveNews.data.length}` : filteredNews.length}
-            </span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("data")}>
+              {filteredNews.length}
+            </button>
           </div>
           <div className="overview-inline-list">
-            {liveNews.data && liveNews.data.length > 0
-              ? liveNews.data.slice(0, 6).map((article) => (
-                  <a key={article.url} className="data-item compact" href={article.url} target="_blank" rel="noreferrer" title={`Open ${article.domain} in new tab — ${article.seendate}`}>
-                    <strong>{article.title}<span className="ext-icon" aria-hidden="true">↗</span></strong>
-                    <small>{article.domain}</small>
-                  </a>
-                ))
-              : [...overviewOfficialNews, ...overviewExternalNews].map((item) => (
-                  <a key={item.id} className="data-item compact" href={item.source.sourceUrl} target="_blank" rel="noreferrer" title={`Open ${item.source.sourceName} in new tab — ${formatUtcDateTime(item.publishedAt)}`}>
-                    <strong>{localize(lang, item.title)}<span className="ext-icon" aria-hidden="true">↗</span></strong>
-                  </a>
-                ))}
+            {[...overviewOfficialNews, ...overviewExternalNews].map((item) => (
+              <a key={item.id} className="data-item" href={item.source.sourceUrl} target="_blank" rel="noreferrer">
+                <strong>{localize(lang, item.title)}</strong>
+                <small>{`${item.source.sourceName} · ${formatUtcDateTime(item.publishedAt)}`}</small>
+              </a>
+            ))}
           </div>
           </section>
 
-          {/* — Media & Trends — */}
-          <section className="card overview-card media-trends">
-            <div className="media-trends-grid">
-              <div>
-                <span className="eyebrow">{lang === "th" ? "สื่อ" : "Media"}</span>
-                {compactMedia.map((item) => (
-                  <a key={item.id} className="data-item compact" href={item.externalUrl || item.embedUrl || "#"} target="_blank" rel="noreferrer">
-                    <strong>{item.label}</strong>
-                  </a>
-                ))}
-              </div>
-              <div>
-                <span className="eyebrow">{lang === "th" ? "แนวโน้ม" : "Trends"}</span>
-                {visibleTrends.map((item) => (
-                  <div key={item.id} className="data-item compact">
-                    <strong>{localize(lang, item.term)}</strong>
-                    <small>{localize(lang, item.category)}</small>
-                  </div>
-                ))}
-              </div>
+          {/* — Resilience: weather + pollution — */}
+          <section className="card overview-card resilience category-env">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "สภาพอากาศ" : "Weather & Air"}</span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
+              {resilience.source.freshnessStatus}
+            </button>
+          </div>
+          <div className="overview-hero-metrics">
+            <div className="data-item">
+              <span className="eyebrow">Weather</span>
+              <strong>{localize(lang, resilience.weatherSummary)}</strong>
             </div>
+            <div className="data-item">
+              <span className="eyebrow">Air Quality</span>
+              <strong>{localize(lang, resilience.pollutionSummary)}</strong>
+            </div>
+          </div>
           </section>
 
-          {/* — Market Ticker (real-time: open.er-api.com + CoinGecko) — */}
-          <section className="card overview-card market-ticker">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
-              <span className={`status-pill ${liveCoins.data || liveFx.data ? "live" : ""}`}>{liveCoins.data || liveFx.data ? "live" : markets.source.freshnessStatus}</span>
-            </div>
-            <div className="market-pills">
-              {liveFx.data?.thb ? (
-                <span className="market-pill tone-neutral">
-                  USD/THB <strong>{liveFx.data.thb.toFixed(2)}</strong>
-                </span>
-              ) : null}
-              {liveCoins.data?.btc?.usd ? (
-                <span className={`market-pill tone-${liveCoins.data.btc.change24h >= 0 ? "positive" : "negative"}`}>
-                  BTC <strong>${(liveCoins.data.btc.usd / 1000).toFixed(1)}k</strong>
-                  <small> {liveCoins.data.btc.change24h >= 0 ? "+" : ""}{liveCoins.data.btc.change24h.toFixed(1)}%</small>
-                </span>
-              ) : null}
-              {liveCoins.data?.gold?.usd ? (
-                <span className={`market-pill tone-${liveCoins.data.gold.change24h >= 0 ? "positive" : "negative"}`}>
-                  Gold/oz <strong>${liveCoins.data.gold.usd.toFixed(0)}</strong>
-                  <small> {liveCoins.data.gold.change24h >= 0 ? "+" : ""}{liveCoins.data.gold.change24h.toFixed(1)}%</small>
-                </span>
-              ) : null}
-              {!liveCoins.data && !liveFx.data
-                ? markets.items.map((item) => (
-                    <span key={item.id} className={`market-pill tone-${item.tone}`}>
-                      {localize(lang, item.label)} <strong>{item.value}</strong>
-                    </span>
-                  ))
-                : null}
-            </div>
+          {/* — Flood & Water Risk — */}
+          <section className="card overview-card flood-risk category-infra">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "น้ำท่วม & ระดับน้ำ" : "Flood & Water"}</span>
+            <span className={`status-pill ${floodRisk.floodRiskLevel === "high" || floodRisk.floodRiskLevel === "critical" ? "delayed" : floodRisk.floodRiskLevel === "moderate" ? "watch" : "live"}`}>{floodRisk.floodRiskLevel}</span>
+          </div>
+          <div className="flood-gauges">
+            {floodRisk.stations.map((st) => (
+              <div key={st.id} className={`flood-gauge gauge-${st.status}`}>
+                <div className="gauge-bar-wrap">
+                  <div className="gauge-bar" style={{ height: `${Math.min((st.currentLevelM / st.criticalLevelM) * 100, 100)}%` }} />
+                  <div className="gauge-warning-line" style={{ bottom: `${(st.warningLevelM / st.criticalLevelM) * 100}%` }} />
+                </div>
+                <div className="gauge-info">
+                  <strong>{localize(lang, st.label)}</strong>
+                  <span>{st.currentLevelM.toFixed(2)}m</span>
+                  <span className={`gauge-status ${st.status}`}>{st.status}{st.trend === "up" ? " ↑" : st.trend === "down" ? " ↓" : ""}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flood-forecast">
+            <span>{lang === "th" ? "ฝนคาด 24 ชม." : "Rain 24h"}: <strong>{floodRisk.precipitationForecast24h}mm</strong></span>
+            <span>{lang === "th" ? "48 ชม." : "48h"}: <strong>{floodRisk.precipitationForecast48h}mm</strong></span>
+            <span>{lang === "th" ? "ระบบสูบ" : "Pumps"}: <strong>{floodRisk.drainagePumpStatus === "all-operational" ? (lang === "th" ? "ปกติ" : "OK") : floodRisk.drainagePumpStatus}</strong></span>
+          </div>
           </section>
 
-          {/* — System Status: compact grid of weather + sources + EO — */}
-          <section className="card overview-card system-status">
-            <div className="card-header">
-              <span className="eyebrow">{lang === "th" ? "ระบบ" : "System"}</span>
-              <span className="status-pill">{formatUtcClock(latestSyncSource?.lastCheckedAt)}</span>
+          {/* — Transit Connections — */}
+          <section className="card overview-card transit category-infra">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ขนส่งสาธารณะ" : "Transit"}</span>
+            <span className="status-pill">{transit.connections.length} {lang === "th" ? "เส้นทาง" : "routes"}</span>
+          </div>
+          <div className="transit-list">
+            {transit.connections.slice(0, 5).map((conn) => (
+              <div key={conn.id} className={`transit-item line-${conn.line}`}>
+                <span className={`transit-dot status-${conn.status}`} />
+                <div className="transit-info">
+                  <strong>{conn.routeNumber ? `${conn.routeNumber} ` : ""}{localize(lang, conn.station)}</strong>
+                  <small>{conn.distanceKm > 0 ? `${conn.distanceKm} km · ` : ""}{conn.travelMinutes} min{conn.frequency ? ` · ${conn.frequency}` : ""}</small>
+                </div>
+                <span className={`transit-status ${conn.status}`}>{conn.status}</span>
+              </div>
+            ))}
+          </div>
+          </section>
+
+          {/* — Markets — */}
+          <section className="card overview-card markets category-community">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ตลาด" : "Markets"}</span>
+            <span className="status-pill">{markets.source.freshnessStatus}</span>
+          </div>
+          <div className="market-grid">
+            {markets.items.map((item) => (
+              <div key={item.id} className={`market-item tone-${item.tone}`}>
+                <span className="market-label">{localize(lang, item.label)}</span>
+                <strong className="market-value">{item.value}</strong>
+                <small className="market-change">{localize(lang, item.changeText)}</small>
+              </div>
+            ))}
+          </div>
+          </section>
+
+          {/* — Utility / Infrastructure — */}
+          <section className="card overview-card utility category-infra">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "สาธารณูปโภค" : "Infrastructure"}</span>
+            <span className="status-pill">{utilitySeed.items.every((u) => u.status === "normal") ? "live" : "watch"}</span>
+          </div>
+          <div className="utility-grid">
+            {utilitySeed.items.map((item) => (
+              <div key={item.id} className={`utility-item status-${item.status}`}>
+                <span className="utility-icon">{item.type === "power" ? "⚡" : item.type === "water" ? "💧" : item.type === "waste" ? "🗑️" : "🌐"}</span>
+                <div className="utility-info">
+                  <strong>{localize(lang, item.label)}</strong>
+                  <small>{item.metric} · {localize(lang, item.detail)}</small>
+                </div>
+                <span className={`status-tag ${item.status === "normal" ? "live" : item.status === "degraded" ? "watch" : "delayed"}`}>{item.status}</span>
+              </div>
+            ))}
+          </div>
+          </section>
+
+          {/* — Community Intelligence — */}
+          <section className="card overview-card community-intel">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ข้อมูลชุมชน" : "Community Intel"}</span>
+            <span className="status-pill">live</span>
+          </div>
+          <div className="intel-grid">
+            <div className="intel-item">
+              <span className="intel-icon">☀️</span>
+              <div className="intel-data">
+                <strong className={`uv-${communityIntel.uvLabel}`}>UV {communityIntel.uvIndex}</strong>
+                <small>{communityIntel.uvLabel} · {communityIntel.sunriseLocal}–{communityIntel.sunsetLocal}</small>
+              </div>
             </div>
-            <div className="system-status-grid">
-              <button type="button" className="sys-item" onClick={() => navigateToTab("satellite")}>
-                <span className="sys-label">{lang === "th" ? "อากาศ" : "Weather"}</span>
-                <span className={`sys-value ${resilience.source.freshnessStatus}`}>{resilience.weatherTemperatureC}°C</span>
-              </button>
-              <button type="button" className="sys-item" onClick={() => focusCityWithLayer(city, "pollution")}>
-                <span className="sys-label">AQI</span>
-                <span className={`sys-value ${resilience.aqi > 100 ? "warning" : resilience.aqi > 50 ? "delayed" : "live"}`}>{resilience.aqi}</span>
-              </button>
-              <button type="button" className="sys-item" onClick={() => navigateToTab("cctv")}>
-                <span className="sys-label">{lang === "th" ? "กล้อง" : "CCTV"}</span>
-                <span className="sys-value live">{publicCctvCameras.filter((c) => c.status === "live").length}</span>
-              </button>
-              <button type="button" className="sys-item" onClick={() => navigateToTab("satellite")}>
-                <span className="sys-label">EO</span>
-                <span className="sys-value live">{activeSatelliteLayers.length}</span>
-              </button>
-              <button type="button" className="sys-item" onClick={() => navigateToTab("data")}>
-                <span className="sys-label">{lang === "th" ? "แหล่งข้อมูล" : "Sources"}</span>
-                <span className="sys-value live">{apiReadyCount}/{apiWatchSources.length}</span>
-              </button>
-              <button type="button" className="sys-item" onClick={() => navigateToTab("data")}>
-                <span className="sys-label">{lang === "th" ? "อัปเดต" : "Sync"}</span>
-                <span className="sys-value live">{resilience.source.freshnessStatus}</span>
-              </button>
+            <div className="intel-item">
+              <span className="intel-icon">✈️</span>
+              <div className="intel-data">
+                <strong>{communityIntel.flightsOverhead}</strong>
+                <small>{lang === "th" ? "เที่ยวบินเหนือ MTT" : "flights over MTT now"}</small>
+              </div>
             </div>
+            {communityIntel.nearbyEarthquakes.length > 0 ? (
+              <div className="intel-item">
+                <span className="intel-icon">🌍</span>
+                <div className="intel-data">
+                  <strong>M{communityIntel.nearbyEarthquakes[0].magnitude}</strong>
+                  <small>{communityIntel.nearbyEarthquakes[0].place} · {communityIntel.nearbyEarthquakes[0].distanceKm}km</small>
+                </div>
+              </div>
+            ) : (
+              <div className="intel-item">
+                <span className="intel-icon">🌍</span>
+                <div className="intel-data">
+                  <strong>{lang === "th" ? "ไม่มี" : "None"}</strong>
+                  <small>{lang === "th" ? "แผ่นดินไหวใกล้เคียง" : "nearby earthquakes"}</small>
+                </div>
+              </div>
+            )}
+            {communityIntel.thaiHolidays.length > 0 ? (
+              <div className="intel-item">
+                <span className="intel-icon">🇹🇭</span>
+                <div className="intel-data">
+                  <strong>{communityIntel.thaiHolidays[0].localName}</strong>
+                  <small>{communityIntel.thaiHolidays[0].date} · {communityIntel.thaiHolidays[0].name}</small>
+                </div>
+              </div>
+            ) : null}
+            {communityIntel.lotteryLatest?.firstPrize ? (
+              <div className="intel-item">
+                <span className="intel-icon">🎰</span>
+                <div className="intel-data">
+                  <strong>{communityIntel.lotteryLatest.firstPrize}</strong>
+                  <small>{lang === "th" ? "ลอตเตอรี่รางวัลที่ 1" : "lottery 1st prize"} · {communityIntel.lotteryLatest.date}</small>
+                </div>
+              </div>
+            ) : null}
+            <div className="intel-item">
+              <span className="intel-icon">👥</span>
+              <div className="intel-data">
+                <strong>{(communityIntel.populationThailand / 1_000_000).toFixed(1)}M</strong>
+                <small>{lang === "th" ? "ประชากรไทย" : "Thailand population"}</small>
+              </div>
+            </div>
+          </div>
+          </section>
+
+          {/* — Sources — */}
+          <section className="card overview-card sources">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "แหล่งข้อมูล" : "Data Sources"}</span>
+            <span className="status-pill">{`${apiReadyCount}/${apiWatchSources.length}`}</span>
+          </div>
+          <div className="overview-inline-list">
+            {overviewSources.map((source) => (
+              <a key={source.id} className={`data-item ${source.freshnessStatus}`} href={source.url} target="_blank" rel="noreferrer">
+                <div className="stack-title">
+                  <strong>{source.name}</strong>
+                  <span className={`status-tag ${source.freshnessStatus}`}>{source.freshnessStatus}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+          </section>
+
+          {/* — Satellite — */}
+          <section className="card overview-card ranking">
+          <div className="card-header">
+            <span className="eyebrow">{lang === "th" ? "ภาพจากดาวเทียม" : "Earth Observation"}</span>
+            <button type="button" className="status-pill status-button" onClick={() => setActiveTab("satellite")}>
+              {activeSatelliteLayers.length} layers
+            </button>
+          </div>
+          <div className="overview-hero-metrics">
+            <div className="data-item">
+              <span className="eyebrow">Mode</span>
+              <strong>{satelliteDigest.status.mode}</strong>
+            </div>
+            <div className="data-item">
+              <span className="eyebrow">Sync</span>
+              <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)} UTC</strong>
+            </div>
+          </div>
           </section>
         </section>
       </div>
 
-      {/* Bottom Data Strip — top summary strip is the single source of truth for metrics; footer is presets + attribution only */}
+      {/* Bottom Data Strip */}
       <footer className="bottombar">
+        <div className="bottomstrip-row metrics">
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</span>
+            <strong>{topAqiFeature ? aqiLabel(numericProperty(topAqiFeature, "aqi"), lang) : "--"}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "อุณหภูมิ" : "Temperature"}</span>
+            <strong>{hottestWeatherFeature ? `${numericProperty(hottestWeatherFeature, "temperatureC")}°C` : "--"}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "กระแส" : "Public Buzz"}</span>
+            <strong>{socialListening.mentionCount}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "อัปเดต" : "Updated"}</span>
+            <strong>{formatUtcClock(latestSyncSource?.lastCheckedAt)}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "รอดำเนินการ" : "Actions"}</span>
+            <strong>{decisionItems.length}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "กล้อง" : "Cameras"}</span>
+            <strong>{publicCctvCameras.filter((cam) => cam.status === "live").length}</strong>
+          </div>
+          <div className="bottomstrip-metric">
+            <span className="eyebrow">{lang === "th" ? "เมือง" : "Cities"}</span>
+            <strong>{coverageFeatureCount}</strong>
+          </div>
+        </div>
         <div className="bottomstrip-row actions">
           <div className="bottomstrip-actions">
             {footerQuickActions.map((action) => (
@@ -5634,7 +5753,7 @@ function DashboardPage() {
                 className={action.active ? "bottomstrip-action active" : "bottomstrip-action"}
                 onClick={() => {
                   action.onClick?.();
-                  navigateToTab("map");
+                  setActiveTab("map");
                 }}
               >
                 {action.label}
@@ -5862,10 +5981,97 @@ function AdminConsolePage() {
   );
 }
 
+/* ── Public Resident Page ── */
+function PublicPage() {
+  const [lang] = useState<"th" | "en">("th");
+  const overviewQ = useQuery({ queryKey: ["pub-overview"], queryFn: () => fetch("/api/overview?view=city&city=muang-thong-thani").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const arenaQ = useQuery({ queryKey: ["pub-arena"], queryFn: () => fetch("/api/arena-events").then((r) => r.ok ? r.json() : []), staleTime: 60000 });
+  const incidentQ = useQuery({ queryKey: ["pub-incidents"], queryFn: () => fetch("/api/incidents?limit=5").then((r) => r.ok ? r.json() : []), staleTime: 30000 });
+  const floodQ = useQuery({ queryKey: ["pub-flood"], queryFn: () => fetch("/api/flood-risk").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const transitQ = useQuery({ queryKey: ["pub-transit"], queryFn: () => fetch("/api/transit").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+
+  const events = (Array.isArray(arenaQ.data) ? arenaQ.data : []).filter((e: any) => e.status === "confirmed").slice(0, 4);
+  const activeIncidents = (Array.isArray(incidentQ.data) ? incidentQ.data : []).filter((i: any) => i.status !== "resolved" && i.status !== "closed").slice(0, 5);
+  const flood = floodQ.data as any;
+  const transitData = transitQ.data as any;
+
+  const mucQ = useQuery({ queryKey: ["pub-muc"], queryFn: () => fetch("/api/muc").then((r) => r.ok ? r.json() : null), staleTime: 60000 });
+  const aq = (mucQ.data as any)?.airQuality;
+  const aqiValue = aq?.overallAqi ?? 68;
+  const nowThai = new Date().toLocaleTimeString("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="public-page">
+      <div className="public-header">
+        <h1>เมืองทองธานี</h1>
+        <small>Muang Thong Thani — Resident Info</small>
+        <span className="public-time">{nowThai} ICT</span>
+      </div>
+
+      <div className="public-card">
+        <h3>{lang === "th" ? "คุณภาพอากาศ" : "Air Quality"}</h3>
+        <div className={`public-big-value ${aqiValue >= 90 ? "bad" : aqiValue >= 60 ? "moderate" : "good"}`}>AQI {aqiValue}</div>
+        <div className="public-sub">{aq ? `PM2.5: ${aq.zones?.[0]?.pm25 ?? "--"} · PM10: ${aq.zones?.[0]?.pm10 ?? "--"}` : "PM2.5: -- · PM10: --"}</div>
+      </div>
+
+      {flood ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "ความเสี่ยงน้ำท่วม" : "Flood Risk"}</h3>
+          <div className={`public-big-value ${flood.floodRiskLevel === "high" || flood.floodRiskLevel === "critical" ? "bad" : flood.floodRiskLevel === "moderate" ? "moderate" : "good"}`}>{flood.floodRiskLevel?.toUpperCase() || "OK"}</div>
+          <div className="public-sub">{lang === "th" ? "ฝนคาด" : "Rain forecast"}: {flood.precipitationForecast24h || 0}mm / 24h</div>
+        </div>
+      ) : null}
+
+      <div className="public-card">
+        <h3>{lang === "th" ? "กิจกรรม IMPACT วันนี้" : "IMPACT Events Today"}</h3>
+        {events.length > 0 ? events.map((e: any) => (
+          <div key={e.id} className="public-event">
+            <strong>{e.title?.th || e.title?.en || "Event"}</strong>
+            <small>{e.venue?.en} · {e.timeStart}–{e.timeEnd} · {(e.expectedCrowd || 0).toLocaleString()} {lang === "th" ? "คน" : "pax"}</small>
+          </div>
+        )) : <div className="public-sub">{lang === "th" ? "ไม่มีกิจกรรมวันนี้" : "No events today"}</div>}
+      </div>
+
+      {activeIncidents.length > 0 ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "แจ้งซ่อมบำรุง" : "Maintenance Notices"}</h3>
+          {activeIncidents.map((inc: any) => (
+            <div key={inc.id} className="public-incident">
+              <span className={`public-incident-dot ${inc.urgency}`} />
+              <div>
+                <strong style={{ fontSize: "0.8rem" }}>{inc.title?.th || inc.title?.en}</strong>
+                <small style={{ display: "block", color: "#71717a" }}>{inc.category} · {inc.status}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {transitData?.connections ? (
+        <div className="public-card">
+          <h3>{lang === "th" ? "ขนส่งสาธารณะ" : "Transit"}</h3>
+          {transitData.connections.slice(0, 4).map((c: any) => (
+            <div key={c.id} className="public-event">
+              <strong>{c.routeNumber ? `${c.routeNumber} ` : ""}{c.station?.th || c.station?.en}</strong>
+              <small>{c.distanceKm > 0 ? `${c.distanceKm}km · ` : ""}{c.travelMinutes} min · {c.frequency || ""}</small>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div style={{ textAlign: "center", padding: "1rem", color: "#a1a1aa", fontSize: "0.65rem" }}>
+        Muang Thong Thani Smart City Dashboard<br />
+        <a href="/" style={{ color: "#3b82f6" }}>{lang === "th" ? "เข้าสู่แดชบอร์ดปฏิบัติการ" : "Operations Dashboard"}</a>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
+      <Route path="/public" element={<PublicPage />} />
       <Route path="/admin" element={<AdminConsolePage />} />
     </Routes>
   );

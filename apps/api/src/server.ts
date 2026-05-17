@@ -266,6 +266,10 @@ export async function createServer() {
   app.get("/api/media/channels", async () => store.getMediaChannels());
   app.get("/api/assistant/status", async () => getAssistantStatus());
   app.get("/api/external/slic-thailand", async () => getSlicThailandSnapshot());
+  app.get("/api/bangkok-roads", async () => store.getMapFeatures({ layer: "bangkok-roads" }));
+  app.get("/api/bangkok-canals", async () => store.getMapFeatures({ layer: "bangkok-canals" }));
+  app.get("/api/bangkok-drainage", async () => store.getMapFeatures({ layer: "bangkok-drainage" }));
+  app.get("/api/bangkok-stats", async () => store.getNews({ city: "bangkok", kind: "official" }));
   app.post("/api/assistant/query", async (request, reply) => {
     const body = request.body as AssistantQueryRequest;
 
