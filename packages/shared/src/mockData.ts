@@ -36,32 +36,9 @@ import type {
   PublicCctvCamera,
   ImpactArenaEvent,
   MttTrafficSnapshot,
-  MttGate,
-  VehicleDetection,
-  GateFlowBucket,
-  EntryExitMatch,
-  GateFlowSnapshot,
-  TrafficFlowLine,
-  TrafficBottleneck,
-  TrafficHourlyPattern,
-  TrafficFlowSnapshot,
-  AqiSensorPlacement,
-  AqiZoneCard,
-  AqiHistoryPoint,
-  AqiConstructionPhase,
-  AqiConstructionSnapshot,
-  CctvCameraGroup,
-  CctvDetectionHistoryItem,
-  CctvConsoleSnapshot,
-  MucSnapshot,
-  IncidentRecord,
-  VisionPipelineConfig,
-  VisionDetectionResult,
-  WaterLevelStation,
-  FloodRiskSnapshot,
-  TransitConnection,
-  TransitSnapshot,
-  UtilitySnapshot
+  TraffyFondueSnapshot,
+  BangkokFloodStatus,
+  TraffyReport
 } from "./types.js";
 
 const seededAt = "2026-02-28T12:00:00.000Z";
@@ -1643,6 +1620,79 @@ export const sources: SourceRecord[] = [
     freshnessStatus: "manual",
     lastCheckedAt: seededAt,
     message: "Embed-safe and link-safe live media references for the monitor."
+  },
+  /* ── Bangkok Governor's IOC Sources ── */
+  {
+    id: "traffy-fondue",
+    name: "Traffy Fondue (BMA)",
+    category: "catalog",
+    url: "https://traffy.in.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Real-time citizen reports via LINE chatbot for Bangkok."
+  },
+  {
+    id: "air4thai",
+    name: "Air4Thai / WAQI (PCD)",
+    category: "environment",
+    url: "http://air4thai.pcd.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Official Thai government AQI stations for Bangkok metro area."
+  },
+  {
+    id: "tmd-weather",
+    name: "Thai Meteorological Dept",
+    category: "environment",
+    url: "https://www.tmd.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "TMD forecasts and weather warnings for Central Thailand."
+  },
+  {
+    id: "bma-gis",
+    name: "BMA GIS Portal",
+    category: "geospatial",
+    url: "https://bmagis.bangkok.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "ArcGIS FeatureServer layers for BMA infrastructure."
+  },
+  {
+    id: "bma-flood",
+    name: "BMA Flood Management",
+    category: "environment",
+    url: "https://flood.bangkok.go.th",
+    freshnessStatus: "manual",
+    lastCheckedAt: seededAt,
+    message: "Bangkok flood nowcasting and drainage status."
+  },
+  {
+    id: "bma-citydata",
+    name: "BMA City Data Portal",
+    category: "catalog",
+    url: "https://citydataportal.bangkok.go.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Official Bangkok open data CKAN portal with municipal datasets on infrastructure, budget, and services."
+  },
+  {
+    id: "tat-tourism",
+    name: "TAT Open Data",
+    category: "catalog",
+    url: "https://datacatalog.tat.or.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Tourism Authority of Thailand open data catalog with visitor statistics, hotel occupancy, and event data."
+  },
+  {
+    id: "tceb-mice",
+    name: "TCEB Open Data",
+    category: "catalog",
+    url: "https://opendata.tceb.or.th",
+    freshnessStatus: "live",
+    lastCheckedAt: seededAt,
+    message: "Thailand Convention & Exhibition Bureau open data for MICE events, convention traffic, and business travel."
   }
 ];
 
@@ -1855,6 +1905,106 @@ export const mapLayers: MapLayerConfig[] = [
     sourceId: "gistda-disaster",
     legendLabel: "Disaster",
     zIndex: 16
+  },
+  /* ── Bangkok Governor's IOC layers ── */
+  {
+    id: "traffy-fondue",
+    label: { th: "ร้องเรียน Traffy", en: "Citizen Reports" },
+    active: true,
+    color: "#f97316",
+    kind: "signal",
+    defaultViews: ["bangkok"],
+    sourceId: "traffy-fondue",
+    legendLabel: "Traffy Fondue",
+    zIndex: 50
+  },
+  {
+    id: "bma-flood-gates",
+    label: { th: "ประตูระบายน้ำ", en: "Flood Gates" },
+    active: false,
+    color: "#0ea5e9",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Flood Gates",
+    zIndex: 44
+  },
+  {
+    id: "bma-health-centers",
+    label: { th: "ศูนย์สุขภาพ", en: "Health Centers" },
+    active: false,
+    color: "#10b981",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Health",
+    zIndex: 38
+  },
+  {
+    id: "bma-districts",
+    label: { th: "เขต กทม.", en: "BKK Districts" },
+    active: false,
+    color: "#94a3b8",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "bma-gis",
+    legendLabel: "Districts",
+    zIndex: 5
+  },
+  {
+    id: "air4thai",
+    label: { th: "คุณภาพอากาศ PCD", en: "Official AQI" },
+    active: false,
+    color: "#a855f7",
+    kind: "signal",
+    defaultViews: ["bangkok"],
+    sourceId: "air4thai",
+    legendLabel: "Air4Thai",
+    zIndex: 46
+  },
+  {
+    id: "bangkok-highways",
+    label: { th: "ทางด่วน/มอเตอร์เวย์", en: "Highways" },
+    active: false,
+    color: "#ef4444",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Highways",
+    zIndex: 35
+  },
+  {
+    id: "bangkok-arterials",
+    label: { th: "ถนนสายหลัก", en: "Main Roads" },
+    active: false,
+    color: "#f59e0b",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Arterials",
+    zIndex: 34
+  },
+  {
+    id: "road-labels",
+    label: { th: "ป้ายถนน", en: "Road Labels" },
+    active: false,
+    color: "#64748b",
+    kind: "external",
+    defaultViews: ["bangkok"],
+    sourceId: "carto-osm",
+    legendLabel: "Road Labels",
+    zIndex: 33
+  },
+  {
+    id: "bangkok-waterways",
+    label: { th: "คลอง/แม่น้ำ", en: "Waterways" },
+    active: false,
+    color: "#0ea5e9",
+    kind: "dataset",
+    defaultViews: ["bangkok"],
+    sourceId: "overpass-osm",
+    legendLabel: "Waterways",
+    zIndex: 36
   }
 ];
 
@@ -3736,83 +3886,6 @@ export const mapFeatureCollections: MapFeatureCollection[] = [
         source: gistdaDisasterMeta
       }
     ]
-  },
-  /* ── MTT Boundary ── */
-  {
-    layerId: "mtt-boundary",
-    updatedAt: seededAt,
-    bounds: [13.895, 100.495, 13.935, 100.565],
-    source: seedMeta("MTT Land Office", "https://mtt.co.th", "manual"),
-    features: [
-      {
-        id: "mtt-boundary-main",
-        layerId: "mtt-boundary",
-        geometryType: "Polygon" as const,
-        coordinates: [[[100.4960, 13.8950], [100.5050, 13.8950], [100.5200, 13.8955], [100.5350, 13.8960], [100.5480, 13.8965], [100.5580, 13.8970], [100.5600, 13.9000], [100.5610, 13.9100], [100.5600, 13.9180], [100.5570, 13.9220], [100.5450, 13.9240], [100.5300, 13.9250], [100.5150, 13.9240], [100.5000, 13.9230], [100.4960, 13.9200], [100.4950, 13.9100], [100.4960, 13.8950]]],
-        title: "Muang Thong Thani",
-        description: "Private town boundary — Nonthaburi, Thailand",
-        properties: { name: "Muang Thong Thani", area_km2: 3.2, type: "private-town", population: 100000, developer: "Bangkok Land" },
-        source: seedMeta("MTT Land Office", "https://mtt.co.th", "manual")
-      }
-    ]
-  },
-  /* ── MTT Internal Zones ── */
-  {
-    layerId: "mtt-zones",
-    updatedAt: seededAt,
-    bounds: [13.895, 100.495, 13.935, 100.565],
-    source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual"),
-    features: [
-      {
-        id: "zone-impact", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5480, 13.9120], [100.5580, 13.9120], [100.5580, 13.9190], [100.5480, 13.9190], [100.5480, 13.9120]]],
-        title: "IMPACT Arena Complex",
-        properties: { name: "IMPACT Arena Complex", zoneType: "commercial", capacity: 80000, manager: "IMPACT Exhibition Management", status: "active" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-residential-1", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5200, 13.9040], [100.5450, 13.9040], [100.5450, 13.9140], [100.5200, 13.9140], [100.5200, 13.9040]]],
-        title: "Residential Zone 1-2",
-        properties: { name: "Residential Zone 1-2", zoneType: "residential", capacity: 35000, manager: "MTT Residential Services", status: "active" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-commercial", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5250, 13.8980], [100.5450, 13.8980], [100.5450, 13.9060], [100.5250, 13.9060], [100.5250, 13.8980]]],
-        title: "Commercial / Bond Street",
-        properties: { name: "Commercial / Bond Street", zoneType: "commercial", capacity: 15000, manager: "MTT Commercial", status: "active" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-lakefront", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5400, 13.9080], [100.5500, 13.9080], [100.5500, 13.9160], [100.5400, 13.9160], [100.5400, 13.9080]]],
-        title: "Lakefront Park",
-        properties: { name: "Lakefront Park", zoneType: "green-space", capacity: 5000, manager: "MTT Parks", status: "active" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-government", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.4980, 13.9050], [100.5150, 13.9050], [100.5150, 13.9120], [100.4980, 13.9120], [100.4980, 13.9050]]],
-        title: "Government Complex",
-        properties: { name: "Government Complex", zoneType: "government", capacity: 10000, manager: "Government Center Office", status: "active" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-construction-n", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5300, 13.9140], [100.5480, 13.9140], [100.5480, 13.9200], [100.5300, 13.9200], [100.5300, 13.9140]]],
-        title: "Construction Zone North",
-        properties: { name: "Construction Zone North", zoneType: "construction", status: "active", phase: "structure", contractor: "Thai Build Co." },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      },
-      {
-        id: "zone-construction-e", layerId: "mtt-zones", geometryType: "Polygon" as const,
-        coordinates: [[[100.5500, 13.9000], [100.5600, 13.9000], [100.5600, 13.9100], [100.5500, 13.9100], [100.5500, 13.9000]]],
-        title: "Construction Zone East",
-        properties: { name: "Construction Zone East", zoneType: "construction", status: "active", phase: "foundation", contractor: "Nonthaburi Dev" },
-        source: seedMeta("MTT Town Management", "https://mtt.co.th", "manual")
-      }
-    ]
   }
 ];
 
@@ -4757,15 +4830,6 @@ export function createTimeSnapshot(): TimeSnapshot {
     updatedAt: now.toISOString(),
     utcIso: now.toISOString(),
     bangkokIso: `${bangkokValue("year")}-${bangkokValue("month")}-${bangkokValue("day")}T${bangkokValue("hour")}:${bangkokValue("minute")}:${bangkokValue("second")}+07:00`,
-    thaiTime: `${bangkokValue("hour")}:${bangkokValue("minute")}:${bangkokValue("second")} ICT`,
-    thaiDate: (() => {
-      const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-      const d = Number(bangkokValue("day"));
-      const m = Number(bangkokValue("month")) - 1;
-      const y = Number(bangkokValue("year")) + 543;
-      return `${d} ${thaiMonths[m]} ${y}`;
-    })(),
-    buddhistYear: Number(bangkokValue("year")) + 543,
     zones: [
       { label: "Bangkok", timeZone: "Asia/Bangkok", localTime: format("Asia/Bangkok") },
       { label: "UTC", timeZone: "UTC", localTime: format("UTC") },
@@ -4893,141 +4957,78 @@ export const publicCctvCameras: PublicCctvCamera[] = [
 ];
 
 /* ── IMPACT Arena Event Calendar ── */
-/* Real events from impact.co.th — March–April 2026 */
 export const impactArenaEvents: ImpactArenaEvent[] = [
   {
-    id: "evt-motor-show",
-    title: { th: "งานมอเตอร์โชว์ ครั้งที่ 47", en: "47th Bangkok International Motor Show" },
-    venue: { th: "IMPACT Challenger", en: "IMPACT Challenger" },
-    date: "2026-03-25",
-    timeStart: "12:00",
-    timeEnd: "22:00",
-    expectedCrowd: 12000,
-    category: "expo",
-    parkingPressure: "high",
-    status: "confirmed",
-    hall: "Challenger 1-3", hallCapacity: 60000, organizer: "Grand Prix International"
-  },
-  {
-    id: "evt-smart-energy",
-    title: { th: "ASEAN Smart Energy & Storage Expo", en: "ASEAN Smart Energy & Storage Expo" },
-    venue: { th: "IMPACT Exhibition Center", en: "IMPACT Exhibition Center" },
-    date: "2026-03-25",
-    timeStart: "10:00",
-    timeEnd: "18:00",
-    expectedCrowd: 4000,
-    category: "convention",
-    parkingPressure: "moderate",
-    status: "confirmed"
-  },
-  {
-    id: "evt-arhc",
-    title: { th: "ARHC - ASEAN RHVAC & Cleanroom Expo", en: "ARHC - ASEAN RHVAC & Cleanroom Expo" },
-    venue: { th: "IMPACT Exhibition Center", en: "IMPACT Exhibition Center" },
-    date: "2026-03-25",
-    timeStart: "10:00",
-    timeEnd: "18:00",
-    expectedCrowd: 3500,
-    category: "convention",
-    parkingPressure: "moderate",
-    status: "confirmed"
-  },
-  {
-    id: "evt-garment",
-    title: { th: "Garment Screen & Embroidery Expo 2026", en: "Garment Screen & Embroidery Expo 2026" },
-    venue: { th: "IMPACT Exhibition Center", en: "IMPACT Exhibition Center" },
-    date: "2026-03-26",
-    timeStart: "10:00",
-    timeEnd: "18:00",
-    expectedCrowd: 3000,
-    category: "expo",
-    parkingPressure: "moderate",
-    status: "confirmed"
-  },
-  {
-    id: "evt-printtech",
-    title: { th: "Printtech Expo 2026", en: "Printtech Expo 2026" },
-    venue: { th: "IMPACT Exhibition Center", en: "IMPACT Exhibition Center" },
-    date: "2026-03-26",
-    timeStart: "10:00",
-    timeEnd: "18:00",
-    expectedCrowd: 2500,
-    category: "expo",
-    parkingPressure: "low",
-    status: "confirmed"
-  },
-  {
-    id: "evt-disney-on-ice",
-    title: { th: "Disney On Ice: Magic In The Stars", en: "Disney On Ice: Magic In The Stars" },
+    id: "evt-001",
+    title: { th: "BNK48 16th Single Senbatsu Concert", en: "BNK48 16th Single Senbatsu Concert" },
     venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
     date: "2026-03-27",
-    timeStart: "10:00",
-    timeEnd: "20:00",
-    expectedCrowd: 10000,
-    category: "concert",
-    parkingPressure: "high",
-    status: "confirmed",
-    hall: "Arena", hallCapacity: 12000, organizer: "Feld Entertainment"
-  },
-  {
-    id: "evt-cat-lovers",
-    title: { th: "Thailand Cat Lovers Fair 2026", en: "Thailand Cat Lovers Fair 2026" },
-    venue: { th: "IMPACT Exhibition Center", en: "IMPACT Exhibition Center" },
-    date: "2026-03-27",
-    timeStart: "10:00",
-    timeEnd: "20:00",
-    expectedCrowd: 5000,
-    category: "expo",
-    parkingPressure: "moderate",
-    status: "confirmed"
-  },
-  {
-    id: "evt-cellar-tales",
-    title: { th: "The Cellar Tales 2026", en: "The Cellar Tales 2026" },
-    venue: { th: "IMPACT Challenger", en: "IMPACT Challenger" },
-    date: "2026-03-25",
-    timeStart: "10:00",
-    timeEnd: "21:00",
-    expectedCrowd: 3000,
-    category: "expo",
-    parkingPressure: "low",
-    status: "confirmed"
-  },
-  {
-    id: "evt-taeyong",
-    title: { th: "2026 TAEYONG CONCERT", en: "2026 TAEYONG CONCERT" },
-    venue: { th: "Thunder Dome", en: "Thunder Dome" },
-    date: "2026-03-28",
     timeStart: "18:00",
     timeEnd: "22:00",
-    expectedCrowd: 8000,
+    expectedCrowd: 11500,
     category: "concert",
     parkingPressure: "high",
     status: "confirmed"
   },
   {
-    id: "evt-shell-shuan-shim",
-    title: { th: "SKIPPY® IMPACT x Shell Shuan Shim 5", en: "SKIPPY® IMPACT x Shell Shuan Shim 5" },
-    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
-    date: "2026-03-27",
-    timeStart: "10:00",
-    timeEnd: "22:00",
-    expectedCrowd: 6000,
-    category: "other",
-    parkingPressure: "moderate",
-    status: "confirmed"
-  },
-  {
-    id: "evt-architect",
-    title: { th: "ARCHITECT '26", en: "ARCHITECT '26" },
+    id: "evt-002",
+    title: { th: "Thailand International Motor Expo", en: "Thailand International Motor Expo" },
     venue: { th: "IMPACT Challenger", en: "IMPACT Challenger" },
-    date: "2026-04-28",
+    date: "2026-03-28",
     timeStart: "10:00",
-    timeEnd: "20:00",
+    timeEnd: "21:00",
     expectedCrowd: 8000,
     category: "expo",
     parkingPressure: "high",
     status: "confirmed"
+  },
+  {
+    id: "evt-003",
+    title: { th: "ONE Championship: Fight Night", en: "ONE Championship: Fight Night" },
+    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    date: "2026-03-29",
+    timeStart: "17:00",
+    timeEnd: "23:00",
+    expectedCrowd: 10000,
+    category: "sport",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-004",
+    title: { th: "Commart Thailand 2026", en: "Commart Thailand 2026" },
+    venue: { th: "IMPACT Challenger 1-3", en: "IMPACT Challenger 1-3" },
+    date: "2026-03-30",
+    timeStart: "10:00",
+    timeEnd: "20:00",
+    expectedCrowd: 6500,
+    category: "expo",
+    parkingPressure: "moderate",
+    status: "confirmed"
+  },
+  {
+    id: "evt-005",
+    title: { th: "พิธีรับปริญญา ม.รังสิต", en: "Rangsit University Graduation" },
+    venue: { th: "IMPACT Arena", en: "IMPACT Arena" },
+    date: "2026-04-01",
+    timeStart: "08:00",
+    timeEnd: "16:00",
+    expectedCrowd: 9000,
+    category: "graduation",
+    parkingPressure: "high",
+    status: "confirmed"
+  },
+  {
+    id: "evt-006",
+    title: { th: "Thailand Wedding Fair", en: "Thailand Wedding Fair" },
+    venue: { th: "IMPACT Hall 5-6", en: "IMPACT Hall 5-6" },
+    date: "2026-04-02",
+    timeStart: "10:00",
+    timeEnd: "19:00",
+    expectedCrowd: 3500,
+    category: "expo",
+    parkingPressure: "low",
+    status: "tentative"
   }
 ];
 
@@ -5072,466 +5073,128 @@ export const mttTrafficSnapshot: MttTrafficSnapshot = {
   source: seedMeta("ITIC / Longdo Traffic", "https://traffic.longdo.com", "live")
 };
 
-/* ══════════════════════════════════════════════════════════
-   MUC (Municipal Operations Center) — Seed Data
-   ══════════════════════════════════════════════════════════ */
+/* ── Bangkok Governor's IOC — Traffy Fondue Seed ── */
 
-export const mttGates: MttGate[] = [
+const traffySeedReports: TraffyReport[] = [
   {
-    id: "gate-chaengwattana",
-    label: { th: "ประตูแจ้งวัฒนะ (หลัก)", en: "Chaengwattana Main Gate" },
-    direction: "entry",
-    lat: 13.9055, lon: 100.5510,
-    corridorId: "chaengwattana-inbound",
-    cameraIds: ["pk-001", "pk-002", "pk-025"],
-    capacity: 280
+    ticketId: "TF-2026-001",
+    category: { th: "ถนนชำรุด", en: "Road damage" },
+    status: "received",
+    lat: 13.7563,
+    lon: 100.5018,
+    district: "พระนคร",
+    timestamp: seededAt,
+    description: "หลุมกลางถนน ถ.ราชดำเนิน"
   },
   {
-    id: "gate-tiwanon",
-    label: { th: "ประตูติวานนท์ / Popular", en: "Tiwanon / Popular Gate" },
-    direction: "entry",
-    lat: 13.9105, lon: 100.5100,
-    corridorId: "tiwanon-outbound",
-    cameraIds: ["pk-003", "pk-004"],
-    capacity: 220
+    ticketId: "TF-2026-002",
+    category: { th: "น้ำท่วม", en: "Flooding" },
+    status: "in-progress",
+    lat: 13.8211,
+    lon: 100.5142,
+    district: "บางซื่อ",
+    timestamp: seededAt,
+    description: "น้ำท่วมขัง ซ.ประชาราษฎร์"
   },
   {
-    id: "gate-ngamwongwan",
-    label: { th: "ประตูงามวงศ์วาน", en: "Ngamwongwan Side Gate" },
-    direction: "entry",
-    lat: 13.9000, lon: 100.5350,
-    corridorId: "ngamwongwan-inbound",
-    cameraIds: ["pk-005", "pk-006"],
-    capacity: 180
+    ticketId: "TF-2026-003",
+    category: { th: "ขยะ", en: "Waste" },
+    status: "received",
+    lat: 13.7280,
+    lon: 100.5231,
+    district: "สาทร",
+    timestamp: seededAt,
+    description: "ขยะตกค้างริมถนน"
   },
   {
-    id: "gate-impact",
-    label: { th: "ประตู IMPACT Arena", en: "IMPACT Arena Gate" },
-    direction: "bidirectional",
-    lat: 13.9134, lon: 100.5530,
-    corridorId: "impact-roundabout",
-    cameraIds: ["pk-007", "pk-008", "pk-009"],
-    capacity: 350
+    ticketId: "TF-2026-004",
+    category: { th: "ไฟฟ้า / แสงสว่าง", en: "Lighting" },
+    status: "resolved",
+    lat: 13.7466,
+    lon: 100.5392,
+    district: "บางรัก",
+    timestamp: seededAt,
+    description: "ไฟส่องสว่างดับ ซ.เจริญกรุง 30"
   },
   {
-    id: "gate-lakefront",
-    label: { th: "ประตู Lakefront / Cosmo", en: "Lakefront / Cosmo Gate" },
-    direction: "exit",
-    lat: 13.9120, lon: 100.5460,
-    cameraIds: ["pk-010", "pk-011"],
-    capacity: 200
+    ticketId: "TF-2026-005",
+    category: { th: "ทางเท้า", en: "Sidewalk" },
+    status: "in-progress",
+    lat: 13.7449,
+    lon: 100.4980,
+    district: "ปทุมวัน",
+    timestamp: seededAt,
+    description: "ทางเท้าชำรุด หน้าสยามพารากอน"
   },
   {
-    id: "gate-bond-street",
-    label: { th: "ประตู Bond Street", en: "Bond Street Gate" },
-    direction: "exit",
-    lat: 13.9072, lon: 100.5350,
-    cameraIds: ["pk-012", "pk-013"],
-    capacity: 160
+    ticketId: "TF-2026-006",
+    category: { th: "ถนนชำรุด", en: "Road damage" },
+    status: "received",
+    lat: 13.6898,
+    lon: 100.5310,
+    district: "บางคอแหลม",
+    timestamp: seededAt,
+    description: "พื้นถนนแตกร้าว ถ.เจริญราษฎร์"
+  },
+  {
+    ticketId: "TF-2026-007",
+    category: { th: "ระบบระบายน้ำ", en: "Drainage" },
+    status: "in-progress",
+    lat: 13.7738,
+    lon: 100.5703,
+    district: "ห้วยขวาง",
+    timestamp: seededAt,
+    description: "ท่อระบายน้ำอุดตัน ซ.ลาดพร้าว 48"
+  },
+  {
+    ticketId: "TF-2026-008",
+    category: { th: "ต้นไม้", en: "Trees" },
+    status: "received",
+    lat: 13.8057,
+    lon: 100.5471,
+    district: "จตุจักร",
+    timestamp: seededAt,
+    description: "กิ่งไม้ล้มขวางทาง สวนจตุจักร"
   }
 ];
 
-function generateGateFlowBuckets(): GateFlowBucket[] {
-  const buckets: GateFlowBucket[] = [];
-  const baseDate = "2026-03-30T";
-  const profiles: Record<string, { peakIn: number; peakOut: number; baseIn: number; baseOut: number }> = {
-    "gate-chaengwattana": { peakIn: 310, peakOut: 120, baseIn: 80, baseOut: 60 },
-    "gate-tiwanon": { peakIn: 240, peakOut: 90, baseIn: 60, baseOut: 45 },
-    "gate-ngamwongwan": { peakIn: 160, peakOut: 70, baseIn: 40, baseOut: 30 },
-    "gate-impact": { peakIn: 280, peakOut: 260, baseIn: 50, baseOut: 50 },
-    "gate-lakefront": { peakIn: 40, peakOut: 180, baseIn: 20, baseOut: 50 },
-    "gate-bond-street": { peakIn: 30, peakOut: 140, baseIn: 15, baseOut: 35 }
-  };
-  for (const gate of mttGates) {
-    const p = profiles[gate.id]!;
-    for (let h = 0; h < 24; h++) {
-      const isMorningPeak = h >= 7 && h <= 9;
-      const isEveningPeak = h >= 17 && h <= 19;
-      const isDay = h >= 6 && h <= 22;
-      const inMul = isMorningPeak ? 1.0 : isEveningPeak ? 0.5 : isDay ? 0.4 : 0.1;
-      const outMul = isEveningPeak ? 1.0 : isMorningPeak ? 0.4 : isDay ? 0.4 : 0.1;
-      const countIn = Math.round(p.baseIn + (p.peakIn - p.baseIn) * inMul);
-      const countOut = Math.round(p.baseOut + (p.peakOut - p.baseOut) * outMul);
-      buckets.push({
-        gateId: gate.id,
-        periodStart: `${baseDate}${String(h).padStart(2, "0")}:00:00Z`,
-        periodMinutes: 60,
-        countIn,
-        countOut,
-        byClass: {
-          car: { in: Math.round(countIn * 0.6), out: Math.round(countOut * 0.6) },
-          pickup: { in: Math.round(countIn * 0.2), out: Math.round(countOut * 0.2) },
-          motorcycle: { in: Math.round(countIn * 0.12), out: Math.round(countOut * 0.12) },
-          bus: { in: Math.round(countIn * 0.03), out: Math.round(countOut * 0.03) },
-          truck: { in: Math.round(countIn * 0.05), out: Math.round(countOut * 0.05) }
-        },
-        avgSpeedKmh: isMorningPeak || isEveningPeak ? 14 + Math.random() * 8 : 35 + Math.random() * 15
-      });
-    }
-  }
-  return buckets;
-}
-
-const mttGateFlowBuckets = generateGateFlowBuckets();
-
-export const mttVehicleDetections: VehicleDetection[] = [
-  { id: "det-001", cameraId: "pk-001", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:12:34Z", detectionType: "plate-read", plateText: "กท-1234", plateConfidence: 0.94, vehicleClass: "car", direction: "in", confidence: 0.94, model: "LPR-TH v2.1" },
-  { id: "det-002", cameraId: "pk-002", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:12:41Z", detectionType: "vehicle-count", vehicleClass: "pickup", direction: "in", confidence: 0.88, model: "YOLOv8-Vehicle" },
-  { id: "det-003", cameraId: "pk-003", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:13:02Z", detectionType: "plate-read", plateText: "นบ-5678", plateConfidence: 0.91, vehicleClass: "car", direction: "in", confidence: 0.91, model: "LPR-TH v2.1" },
-  { id: "det-004", cameraId: "pk-007", gateId: "gate-impact", timestamp: "2026-03-30T08:14:15Z", detectionType: "vehicle-count", vehicleClass: "bus", direction: "in", confidence: 0.96, model: "YOLOv8-Vehicle" },
-  { id: "det-005", cameraId: "pk-010", gateId: "gate-lakefront", timestamp: "2026-03-30T08:15:22Z", detectionType: "plate-read", plateText: "กท-9012", plateConfidence: 0.87, vehicleClass: "car", direction: "out", confidence: 0.87, model: "LPR-TH v2.1" },
-  { id: "det-006", cameraId: "pk-005", gateId: "gate-ngamwongwan", timestamp: "2026-03-30T08:16:45Z", detectionType: "vehicle-count", vehicleClass: "motorcycle", direction: "in", confidence: 0.82, model: "YOLOv8-Vehicle" },
-  { id: "det-007", cameraId: "pk-012", gateId: "gate-bond-street", timestamp: "2026-03-30T08:17:30Z", detectionType: "plate-read", plateText: "ปท-3456", plateConfidence: 0.93, vehicleClass: "pickup", direction: "out", confidence: 0.93, model: "LPR-TH v2.1" },
-  { id: "det-008", cameraId: "pk-008", gateId: "gate-impact", timestamp: "2026-03-30T08:18:12Z", detectionType: "vehicle-classify", vehicleClass: "truck", direction: "in", confidence: 0.79, model: "YOLOv8-Vehicle" },
-  { id: "det-009", cameraId: "pk-001", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:19:05Z", detectionType: "plate-read", plateText: "กท-7890", plateConfidence: 0.96, vehicleClass: "van", direction: "in", confidence: 0.96, model: "LPR-TH v2.1" },
-  { id: "det-010", cameraId: "pk-004", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:20:33Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "in", confidence: 0.90, model: "YOLOv8-Vehicle" },
-  { id: "det-011", cameraId: "pk-009", gateId: "gate-impact", timestamp: "2026-03-30T08:21:44Z", detectionType: "plate-read", plateText: "นบ-2345", plateConfidence: 0.89, vehicleClass: "car", direction: "out", confidence: 0.89, model: "LPR-TH v2.1" },
-  { id: "det-012", cameraId: "pk-011", gateId: "gate-lakefront", timestamp: "2026-03-30T08:22:18Z", detectionType: "vehicle-count", vehicleClass: "pickup", direction: "out", confidence: 0.85, model: "YOLOv8-Vehicle" },
-  { id: "det-013", cameraId: "pk-006", gateId: "gate-ngamwongwan", timestamp: "2026-03-30T08:23:55Z", detectionType: "vehicle-classify", vehicleClass: "bus", direction: "in", confidence: 0.92, model: "YOLOv8-Vehicle" },
-  { id: "det-014", cameraId: "pk-013", gateId: "gate-bond-street", timestamp: "2026-03-30T08:24:40Z", detectionType: "plate-read", plateText: "กท-4567", plateConfidence: 0.90, vehicleClass: "car", direction: "out", confidence: 0.90, model: "LPR-TH v2.1" },
-  { id: "det-015", cameraId: "pk-025", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:25:12Z", detectionType: "vehicle-count", vehicleClass: "motorcycle", direction: "in", confidence: 0.78, model: "YOLOv8-Vehicle" },
-  { id: "det-016", cameraId: "pk-002", gateId: "gate-chaengwattana", timestamp: "2026-03-30T08:26:00Z", detectionType: "plate-read", plateText: "ปท-8901", plateConfidence: 0.95, vehicleClass: "car", direction: "in", confidence: 0.95, model: "LPR-TH v2.1" },
-  { id: "det-017", cameraId: "pk-007", gateId: "gate-impact", timestamp: "2026-03-30T08:27:15Z", detectionType: "vehicle-count", vehicleClass: "van", direction: "in", confidence: 0.84, model: "YOLOv8-Vehicle" },
-  { id: "det-018", cameraId: "pk-010", gateId: "gate-lakefront", timestamp: "2026-03-30T08:28:33Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "out", confidence: 0.91, model: "YOLOv8-Vehicle" },
-  { id: "det-019", cameraId: "pk-003", gateId: "gate-tiwanon", timestamp: "2026-03-30T08:29:45Z", detectionType: "plate-read", plateText: "นบ-6789", plateConfidence: 0.88, vehicleClass: "pickup", direction: "in", confidence: 0.88, model: "LPR-TH v2.1" },
-  { id: "det-020", cameraId: "pk-012", gateId: "gate-bond-street", timestamp: "2026-03-30T08:30:20Z", detectionType: "vehicle-count", vehicleClass: "car", direction: "out", confidence: 0.86, model: "YOLOv8-Vehicle" }
-];
-
-export const mttEntryExitMatches: EntryExitMatch[] = [
-  { id: "match-001", entryGateId: "gate-chaengwattana", exitGateId: "gate-bond-street", entryTime: "2026-03-30T07:45:00Z", exitTime: "2026-03-30T07:57:00Z", transitMinutes: 12, vehicleClass: "car", plateHash: "a3f8c1", confidence: 0.91 },
-  { id: "match-002", entryGateId: "gate-tiwanon", exitGateId: "gate-lakefront", entryTime: "2026-03-30T07:50:00Z", exitTime: "2026-03-30T07:58:00Z", transitMinutes: 8, vehicleClass: "car", plateHash: "b7d2e4", confidence: 0.88 },
-  { id: "match-003", entryGateId: "gate-chaengwattana", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:02:00Z", exitTime: "2026-03-30T08:11:00Z", transitMinutes: 9, vehicleClass: "pickup", plateHash: "c5a9f0", confidence: 0.85 },
-  { id: "match-004", entryGateId: "gate-ngamwongwan", exitGateId: "gate-bond-street", entryTime: "2026-03-30T08:05:00Z", exitTime: "2026-03-30T08:12:00Z", transitMinutes: 7, vehicleClass: "car", plateHash: "d1b3c7", confidence: 0.93 },
-  { id: "match-005", entryGateId: "gate-impact", exitGateId: "gate-chaengwattana", entryTime: "2026-03-30T08:10:00Z", exitTime: "2026-03-30T08:25:00Z", transitMinutes: 15, vehicleClass: "bus", confidence: 0.76 },
-  { id: "match-006", entryGateId: "gate-chaengwattana", exitGateId: "gate-impact", entryTime: "2026-03-30T08:15:00Z", exitTime: "2026-03-30T08:28:00Z", transitMinutes: 13, vehicleClass: "van", plateHash: "e8f2a6", confidence: 0.82 },
-  { id: "match-007", entryGateId: "gate-tiwanon", exitGateId: "gate-bond-street", entryTime: "2026-03-30T08:20:00Z", exitTime: "2026-03-30T08:31:00Z", transitMinutes: 11, vehicleClass: "car", plateHash: "f4c1d9", confidence: 0.90 },
-  { id: "match-008", entryGateId: "gate-ngamwongwan", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:22:00Z", exitTime: "2026-03-30T08:28:00Z", transitMinutes: 6, vehicleClass: "motorcycle", confidence: 0.72 },
-  { id: "match-009", entryGateId: "gate-impact", exitGateId: "gate-tiwanon", entryTime: "2026-03-30T08:30:00Z", exitTime: "2026-03-30T08:42:00Z", transitMinutes: 12, vehicleClass: "pickup", plateHash: "a2d7b5", confidence: 0.87 },
-  { id: "match-010", entryGateId: "gate-chaengwattana", exitGateId: "gate-lakefront", entryTime: "2026-03-30T08:35:00Z", exitTime: "2026-03-30T08:46:00Z", transitMinutes: 11, vehicleClass: "car", plateHash: "b9e3c8", confidence: 0.92 }
-];
-
-export const mttTrafficFlowLines: TrafficFlowLine[] = [
-  { id: "flow-cw-bs", fromGateId: "gate-chaengwattana", toGateId: "gate-bond-street", volumePerHour: 185, avgTransitMinutes: 12, status: "bottleneck", coordinates: [[13.9055, 100.5510], [13.9060, 100.5450], [13.9065, 100.5400], [13.9072, 100.5350]] },
-  { id: "flow-tw-lf", fromGateId: "gate-tiwanon", toGateId: "gate-lakefront", volumePerHour: 142, avgTransitMinutes: 8, status: "building", coordinates: [[13.9105, 100.5100], [13.9110, 100.5200], [13.9115, 100.5350], [13.9120, 100.5460]] },
-  { id: "flow-cw-lf", fromGateId: "gate-chaengwattana", toGateId: "gate-lakefront", volumePerHour: 120, avgTransitMinutes: 9, status: "clear", coordinates: [[13.9055, 100.5510], [13.9070, 100.5490], [13.9100, 100.5470], [13.9120, 100.5460]] },
-  { id: "flow-ng-bs", fromGateId: "gate-ngamwongwan", toGateId: "gate-bond-street", volumePerHour: 95, avgTransitMinutes: 7, status: "clear", coordinates: [[13.9000, 100.5350], [13.9030, 100.5350], [13.9050, 100.5350], [13.9072, 100.5350]] },
-  { id: "flow-im-cw", fromGateId: "gate-impact", toGateId: "gate-chaengwattana", volumePerHour: 210, avgTransitMinutes: 15, status: "bottleneck", coordinates: [[13.9134, 100.5530], [13.9110, 100.5520], [13.9080, 100.5515], [13.9055, 100.5510]] },
-  { id: "flow-cw-im", fromGateId: "gate-chaengwattana", toGateId: "gate-impact", volumePerHour: 165, avgTransitMinutes: 13, status: "building", coordinates: [[13.9055, 100.5510], [13.9080, 100.5515], [13.9110, 100.5520], [13.9134, 100.5530]] },
-  { id: "flow-tw-bs", fromGateId: "gate-tiwanon", toGateId: "gate-bond-street", volumePerHour: 88, avgTransitMinutes: 11, status: "clear", coordinates: [[13.9105, 100.5100], [13.9090, 100.5200], [13.9080, 100.5280], [13.9072, 100.5350]] },
-  { id: "flow-ng-lf", fromGateId: "gate-ngamwongwan", toGateId: "gate-lakefront", volumePerHour: 72, avgTransitMinutes: 6, status: "clear", coordinates: [[13.9000, 100.5350], [13.9040, 100.5400], [13.9080, 100.5440], [13.9120, 100.5460]] }
-];
-
-export const mttTrafficBottlenecks: TrafficBottleneck[] = [
-  {
-    id: "bn-chaengwattana", corridorId: "chaengwattana-inbound",
-    label: { th: "แจ้งวัฒนะขาเข้า — เกินรองรับ", en: "Chaengwattana Inbound — Over Capacity" },
-    severity: "bottleneck", volumeRatio: 1.42, estimatedDelayMinutes: 12,
-    suggestion: { th: "เปลี่ยนเส้นทางผ่านงามวงศ์วาน ความจุว่าง 38%", en: "Redirect via Ngamwongwan — 38% capacity available" },
-    lat: 13.9055, lon: 100.5510
-  },
-  {
-    id: "bn-impact", corridorId: "impact-roundabout",
-    label: { th: "วงเวียน IMPACT — งาน Expo", en: "IMPACT Roundabout — Expo Event" },
-    severity: "building", volumeRatio: 1.18, estimatedDelayMinutes: 8,
-    suggestion: { th: "แนะนำ shuttle bus จาก MRT แจ้งวัฒนะ", en: "Recommend shuttle bus from MRT Chaengwattana" },
-    lat: 13.9134, lon: 100.5530
-  },
-  {
-    id: "bn-bond-street", corridorId: "bond-street-exit",
-    label: { th: "Bond Street — กำลังสะสม", en: "Bond Street — Building Up" },
-    severity: "building", volumeRatio: 0.95, estimatedDelayMinutes: 4,
-    suggestion: { th: "เปิดเลน Lakefront เสริมขาออก", en: "Open Lakefront lane as additional exit" },
-    lat: 13.9072, lon: 100.5350
-  }
-];
-
-export const mttTrafficHourlyPatterns: TrafficHourlyPattern[] = Array.from({ length: 24 }, (_, h) => {
-  const isMorningPeak = h >= 7 && h <= 9;
-  const isEveningPeak = h >= 17 && h <= 19;
-  const isDay = h >= 6 && h <= 22;
-  const base = isDay ? 400 : 50;
-  const peakAdd = isMorningPeak ? 800 : isEveningPeak ? 700 : 0;
-  return {
-    hour: h,
-    avgVolumeIn: base + peakAdd + Math.round(Math.random() * 50),
-    avgVolumeOut: base + (isEveningPeak ? 800 : isMorningPeak ? 300 : 0) + Math.round(Math.random() * 50),
-    avgSpeedKmh: isMorningPeak || isEveningPeak ? 12 + Math.round(Math.random() * 6) : 38 + Math.round(Math.random() * 12),
-    peakGateId: isMorningPeak ? "gate-chaengwattana" : isEveningPeak ? "gate-lakefront" : undefined
-  };
-});
-
-export const mttAqiSensors: AqiSensorPlacement[] = [
-  { id: "aq-s01", label: { th: "เซนเซอร์แจ้งวัฒนะ", en: "Chaengwattana Sensor" }, lat: 13.9055, lon: 100.5510, installed: true, provider: "Open-Meteo", zoneType: "commercial" },
-  { id: "aq-s02", label: { th: "เซนเซอร์ Lakefront", en: "Lakefront Sensor" }, lat: 13.9120, lon: 100.5460, installed: true, provider: "Open-Meteo", zoneType: "green-space" },
-  { id: "aq-s03", label: { th: "เซนเซอร์ IMPACT", en: "IMPACT Sensor" }, lat: 13.9134, lon: 100.5530, installed: true, provider: "OpenAQ", zoneType: "commercial" },
-  { id: "aq-s04", label: { th: "เซนเซอร์ Zone 1 ที่พักอาศัย", en: "Zone 1 Residential Sensor" }, lat: 13.9080, lon: 100.5400, installed: true, provider: "Open-Meteo", zoneType: "residential" },
-  { id: "aq-s05", label: { th: "เซนเซอร์ Zone 2 ที่พักอาศัย", en: "Zone 2 Residential Sensor" }, lat: 13.9040, lon: 100.5300, installed: true, provider: "Open-Meteo", zoneType: "residential" },
-  { id: "aq-s06", label: { th: "เซนเซอร์ก่อสร้างเหนือ", en: "Construction North Sensor" }, lat: 13.9150, lon: 100.5400, installed: true, provider: "MTT-IoT", zoneType: "construction" },
-  { id: "aq-s07", label: { th: "เซนเซอร์ก่อสร้างตะวันออก", en: "Construction East Sensor" }, lat: 13.9090, lon: 100.5560, installed: true, provider: "MTT-IoT", zoneType: "construction" },
-  { id: "aq-s08", label: { th: "เซนเซอร์ Bond Street", en: "Bond Street Sensor" }, lat: 13.9072, lon: 100.5350, installed: true, provider: "Open-Meteo", zoneType: "commercial" },
-  { id: "aq-s09", label: { th: "แนะนำ: สวนสาธารณะกลาง", en: "Recommended: Central Park" }, lat: 13.9100, lon: 100.5380, installed: false, provider: "planned-mtt", zoneType: "green-space" },
-  { id: "aq-s10", label: { th: "แนะนำ: โรงเรียนนานาชาติ", en: "Recommended: International School" }, lat: 13.9060, lon: 100.5420, installed: false, provider: "planned-mtt", zoneType: "residential" },
-  { id: "aq-s11", label: { th: "แนะนำ: ถนนงามวงศ์วาน", en: "Recommended: Ngamwongwan Road" }, lat: 13.9000, lon: 100.5350, installed: false, provider: "planned-mtt", zoneType: "mixed" },
-  { id: "aq-s12", label: { th: "แนะนำ: ก่อสร้างใต้", en: "Recommended: Construction South" }, lat: 13.9020, lon: 100.5480, installed: false, provider: "planned-mtt", zoneType: "construction" }
-];
-
-export const mttAqiZones: AqiZoneCard[] = [
-  {
-    id: "zone-residential-1", label: { th: "เขตที่อยู่อาศัย Zone 1-2", en: "Residential Zone 1-2" }, zoneType: "residential",
-    currentAqi: 62, pm25: 22, pm10: 38, threshold: 100, isAboveThreshold: false, trend: "steady",
-    detail: { th: "คุณภาพอากาศพอใช้ ฝุ่นจากก่อสร้างลดลง", en: "Moderate air quality, construction dust reduced" },
-    sensorIds: ["aq-s04", "aq-s05"]
-  },
-  {
-    id: "zone-construction-n", label: { th: "เขตก่อสร้างเหนือ", en: "Construction North Zone" }, zoneType: "construction",
-    currentAqi: 92, pm25: 38, pm10: 65, threshold: 75, isAboveThreshold: true, trend: "up",
-    detail: { th: "เกินเกณฑ์เขตก่อสร้าง — งานเสาเข็ม active", en: "Above construction threshold — active piling work" },
-    sensorIds: ["aq-s06"],
-    constructionNote: { th: "งานเสาเข็มอาคาร C — ฝุ่น PM10 สูง", en: "Building C piling work — high PM10 dust" }
-  },
-  {
-    id: "zone-construction-e", label: { th: "เขตก่อสร้างตะวันออก", en: "Construction East Zone" }, zoneType: "construction",
-    currentAqi: 84, pm25: 34, pm10: 58, threshold: 75, isAboveThreshold: true, trend: "steady",
-    detail: { th: "เกินเกณฑ์ — งานถนนและท่อระบาย", en: "Above threshold — road and drainage work" },
-    sensorIds: ["aq-s07"],
-    constructionNote: { th: "วางท่อระบาย + ปรับพื้นถนน", en: "Drainage pipes + road resurfacing" }
-  },
-  {
-    id: "zone-commercial", label: { th: "เขตพาณิชย์", en: "Commercial Zone" }, zoneType: "commercial",
-    currentAqi: 58, pm25: 19, pm10: 32, threshold: 100, isAboveThreshold: false, trend: "down",
-    detail: { th: "คุณภาพดี ลมช่วยระบาย", en: "Good quality, wind-assisted ventilation" },
-    sensorIds: ["aq-s01", "aq-s03", "aq-s08"]
-  },
-  {
-    id: "zone-lakefront", label: { th: "สวน Lakefront", en: "Lakefront Park" }, zoneType: "green-space",
-    currentAqi: 45, pm25: 14, pm10: 24, threshold: 80, isAboveThreshold: false, trend: "down",
-    detail: { th: "คุณภาพดีมาก ต้นไม้ช่วยกรอง", en: "Very good quality, trees filter particles" },
-    sensorIds: ["aq-s02"]
-  }
-];
-
-function generateAqiHistory(): AqiHistoryPoint[] {
-  const points: AqiHistoryPoint[] = [];
-  for (let d = 29; d >= 0; d--) {
-    const date = new Date(2026, 2, 30);
-    date.setDate(date.getDate() - d);
-    const constructionRamp = Math.max(0, (30 - d) / 30) * 25;
-    const baseAqi = 55 + constructionRamp + (Math.random() * 10 - 5);
-    const aqi = Math.round(Math.min(100, Math.max(40, baseAqi)));
-    points.push({
-      timestamp: date.toISOString().split("T")[0] + "T12:00:00Z",
-      aqi,
-      pm25: Math.round(aqi * 0.38 + Math.random() * 3),
-      pm10: Math.round(aqi * 0.65 + Math.random() * 5)
-    });
-  }
-  return points;
-}
-
-export const mttAqiHistory = generateAqiHistory();
-
-export const mttConstructionPhases: AqiConstructionPhase[] = [
-  {
-    id: "phase-foundation", label: { th: "ขั้นฐานราก", en: "Foundation Phase" },
-    startDate: "2025-06-01", endDate: "2025-12-15", status: "completed", avgAqiDelta: 8,
-    detail: { th: "เจาะเสาเข็ม + ขุดดิน — ฝุ่นปานกลาง", en: "Pile driving + excavation — moderate dust" }
-  },
-  {
-    id: "phase-structure", label: { th: "ขั้นโครงสร้าง", en: "Structure Phase" },
-    startDate: "2026-01-05", status: "active", avgAqiDelta: 18,
-    detail: { th: "งานคอนกรีต + เหล็ก — ฝุ่นสูงสุด", en: "Concrete + steel work — peak dust generation" }
-  },
-  {
-    id: "phase-finishing", label: { th: "ขั้นตกแต่ง", en: "Finishing Phase" },
-    startDate: "2026-08-01", status: "planned", avgAqiDelta: 5,
-    detail: { th: "ตกแต่งภายใน + ภูมิทัศน์ — ฝุ่นต่ำ", en: "Interior + landscaping — low dust expected" }
-  }
-];
-
-export const mttCctvGroups: CctvCameraGroup[] = mttGates.map((g) => ({
-  id: `group-${g.id}`,
-  label: g.label,
-  gateId: g.id,
-  zone: g.id.replace("gate-", ""),
-  cameraIds: g.cameraIds
-}));
-
-export const mttCctvDetectionHistory: CctvDetectionHistoryItem[] = [
-  { id: "dh-001", cameraId: "pk-001", timestamp: "2026-03-30T08:12:34Z", detectionType: "plate-read", detail: { th: "กท-1234 รถเก๋ง ขาเข้า", en: "กท-1234 sedan entering" }, severity: "stable", confidence: 0.94 },
-  { id: "dh-002", cameraId: "pk-007", timestamp: "2026-03-30T08:14:15Z", detectionType: "vehicle-count", detail: { th: "รถบัสใหญ่ ขาเข้า IMPACT", en: "Large bus entering IMPACT" }, severity: "watch", confidence: 0.96 },
-  { id: "dh-003", cameraId: "pk-002", timestamp: "2026-03-30T08:10:22Z", detectionType: "vehicle-classify", detail: { th: "รถบรรทุก 10 ล้อ — ตรวจน้ำหนัก", en: "10-wheel truck — weight check" }, severity: "alert", confidence: 0.89 },
-  { id: "dh-004", cameraId: "pk-010", timestamp: "2026-03-30T08:09:45Z", detectionType: "plate-read", detail: { th: "กท-9012 ออก Lakefront", en: "กท-9012 exiting Lakefront" }, severity: "stable", confidence: 0.87 },
-  { id: "dh-005", cameraId: "pk-003", timestamp: "2026-03-30T08:08:33Z", detectionType: "vehicle-count", detail: { th: "นับรถ 45 คัน/15 นาที ติวานนท์", en: "Count: 45 vehicles/15min Tiwanon" }, severity: "stable", confidence: 0.90 },
-  { id: "dh-006", cameraId: "pk-005", timestamp: "2026-03-30T08:07:12Z", detectionType: "vehicle-classify", detail: { th: "จักรยานยนต์ 3 คัน ซอยลัด", en: "3 motorcycles via shortcut alley" }, severity: "watch", confidence: 0.82 },
-  { id: "dh-007", cameraId: "pk-012", timestamp: "2026-03-30T08:06:00Z", detectionType: "plate-read", detail: { th: "ปท-3456 ออก Bond Street", en: "ปท-3456 exiting Bond Street" }, severity: "stable", confidence: 0.93 },
-  { id: "dh-008", cameraId: "pk-008", timestamp: "2026-03-30T08:05:15Z", detectionType: "vehicle-classify", detail: { th: "รถหกล้อก่อสร้าง — ใบอนุญาตตรวจแล้ว", en: "Construction 6-wheeler — permit verified" }, severity: "watch", confidence: 0.79 },
-  { id: "dh-009", cameraId: "pk-025", timestamp: "2026-03-30T08:04:30Z", detectionType: "vehicle-count", detail: { th: "คิวรถยาว 120 ม. แจ้งวัฒนะ", en: "Queue length 120m Chaengwattana" }, severity: "alert", confidence: 0.85 },
-  { id: "dh-010", cameraId: "pk-009", timestamp: "2026-03-30T08:03:20Z", detectionType: "plate-read", detail: { th: "นบ-2345 ออก IMPACT", en: "นบ-2345 exiting IMPACT" }, severity: "stable", confidence: 0.89 },
-  { id: "dh-011", cameraId: "pk-004", timestamp: "2026-03-30T08:02:10Z", detectionType: "vehicle-count", detail: { th: "นับรถ 38 คัน/15 นาที Popular", en: "Count: 38 vehicles/15min Popular" }, severity: "stable", confidence: 0.88 },
-  { id: "dh-012", cameraId: "pk-011", timestamp: "2026-03-30T08:01:00Z", detectionType: "vehicle-classify", detail: { th: "รถตู้ VIP 2 คัน — ผ่านเลน fast-track", en: "2 VIP vans — fast-track lane" }, severity: "stable", confidence: 0.91 },
-  { id: "dh-013", cameraId: "pk-006", timestamp: "2026-03-30T08:00:05Z", detectionType: "vehicle-count", detail: { th: "นับรถ 22 คัน/15 นาที งามวงศ์วาน", en: "Count: 22 vehicles/15min Ngamwongwan" }, severity: "stable", confidence: 0.84 },
-  { id: "dh-014", cameraId: "pk-013", timestamp: "2026-03-30T07:58:45Z", detectionType: "plate-read", detail: { th: "กท-4567 ออก Bond Street — ซ้ำ 3 ครั้ง/สัปดาห์", en: "กท-4567 exiting Bond Street — 3x/week repeat" }, severity: "watch", confidence: 0.90 },
-  { id: "dh-015", cameraId: "pk-001", timestamp: "2026-03-30T07:57:30Z", detectionType: "vehicle-classify", detail: { th: "รถพยาบาล — เปิดเลนฉุกเฉิน", en: "Ambulance detected — emergency lane opened" }, severity: "alert", confidence: 0.97 }
-];
-
-/* ══════════════════════════════════════════════════════════
-   Incident / Maintenance Tracker — Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-let incidentSeq = 1;
-function nextTicket() { return `MTT-${String(incidentSeq++).padStart(4, "0")}`; }
-
-export const mttIncidents: IncidentRecord[] = [
-  { id: "inc-001", ticketNumber: nextTicket(), title: { th: "ท่อน้ำแตก ซอย 12", en: "Broken water pipe Soi 12" }, description: { th: "น้ำรั่วตลอดวัน ถนนลื่น", en: "Water leaking all day, road slippery" }, category: "water", urgency: "high", status: "assigned", lat: 13.9080, lon: 100.5320, zoneId: "zone-residential-1", reportedAt: "2026-03-30T06:15:00Z", assignedTo: "Water Team A", photoUrls: [], updatedAt: "2026-03-30T07:00:00Z" },
-  { id: "inc-002", ticketNumber: nextTicket(), title: { th: "ไฟถนนดับ แจ้งวัฒนะฝั่งเข้า", en: "Streetlight out Chaengwattana entry" }, description: { th: "ไฟดับ 3 ต้น ตั้งแต่เมื่อวาน", en: "3 lights out since yesterday" }, category: "electrical", urgency: "medium", status: "in-progress", lat: 13.9055, lon: 100.5510, zoneId: "zone-commercial", reportedAt: "2026-03-29T18:30:00Z", assignedTo: "Electrical Team B", photoUrls: [], updatedAt: "2026-03-30T08:00:00Z" },
-  { id: "inc-003", ticketNumber: nextTicket(), title: { th: "ถนนพัง หน้า IMPACT", en: "Road damage near IMPACT" }, description: { th: "หลุมบ่อขนาดใหญ่จากรถบรรทุกก่อสร้าง", en: "Large pothole from construction trucks" }, category: "road", urgency: "high", status: "new", lat: 13.9130, lon: 100.5520, zoneId: "zone-impact", reportedAt: "2026-03-30T07:45:00Z", photoUrls: [], updatedAt: "2026-03-30T07:45:00Z" },
-  { id: "inc-004", ticketNumber: nextTicket(), title: { th: "เสียงดังจากไซต์ก่อสร้าง กลางคืน", en: "Night construction noise" }, description: { th: "เสียงตอกเสาเข็มหลัง 22:00", en: "Piling noise after 22:00" }, category: "noise", urgency: "medium", status: "resolved", lat: 13.9160, lon: 100.5400, zoneId: "zone-construction-n", reportedAt: "2026-03-28T22:30:00Z", assignedTo: "Compliance Officer", resolvedAt: "2026-03-29T10:00:00Z", photoUrls: [], updatedAt: "2026-03-29T10:00:00Z" },
-  { id: "inc-005", ticketNumber: nextTicket(), title: { th: "ขยะไม่เก็บ ซอย 8", en: "Missed garbage collection Soi 8" }, description: { th: "ไม่มีรถขยะมา 2 วัน", en: "No garbage truck for 2 days" }, category: "waste", urgency: "low", status: "assigned", lat: 13.9070, lon: 100.5280, zoneId: "zone-residential-1", reportedAt: "2026-03-30T05:00:00Z", assignedTo: "Sanitation Team", photoUrls: [], updatedAt: "2026-03-30T06:30:00Z" },
-  { id: "inc-006", ticketNumber: nextTicket(), title: { th: "รปภ. ไม่อยู่ประจำจุด Gate Lakefront", en: "Security guard absent Lakefront Gate" }, description: { th: "ไม่มีคนอยู่ตั้งแต่ 06:00", en: "No guard since 06:00" }, category: "security", urgency: "high", status: "in-progress", lat: 13.9120, lon: 100.5460, zoneId: "zone-lakefront", reportedAt: "2026-03-30T06:30:00Z", assignedTo: "Security Supervisor", matchedCameraId: "pk-010", photoUrls: [], updatedAt: "2026-03-30T07:15:00Z" },
-  { id: "inc-007", ticketNumber: nextTicket(), title: { th: "ฝุ่นก่อสร้างเข้าบ้าน Zone 2", en: "Construction dust entering Zone 2 homes" }, description: { th: "ฝุ่นหนักมากจากไซต์ตะวันออก ผ้าม่านเปลี่ยนสีภายใน 1 วัน", en: "Heavy dust from east site, curtains discolored in 1 day" }, category: "construction", urgency: "high", status: "new", lat: 13.9050, lon: 100.5480, zoneId: "zone-construction-e", reportedAt: "2026-03-30T08:00:00Z", photoUrls: [], updatedAt: "2026-03-30T08:00:00Z", aiSummary: { th: "PM10 เกินเกณฑ์ในเขตนี้ — สอดคล้องกับเซนเซอร์ aq-s07", en: "PM10 above threshold in this zone — correlates with sensor aq-s07" } },
-  { id: "inc-008", ticketNumber: nextTicket(), title: { th: "น้ำท่วมขัง Bond Street", en: "Flooding at Bond Street" }, description: { th: "ฝนตกหนักทำให้น้ำท่วมสูง 15 ซม.", en: "Heavy rain caused 15cm flooding" }, category: "water", urgency: "critical", status: "assigned", lat: 13.9072, lon: 100.5350, zoneId: "zone-commercial", reportedAt: "2026-03-30T04:30:00Z", assignedTo: "Drainage Team", photoUrls: [], updatedAt: "2026-03-30T05:00:00Z" },
-  { id: "inc-009", ticketNumber: nextTicket(), title: { th: "ต้นไม้ล้มขวางทาง Lakefront", en: "Fallen tree blocking Lakefront path" }, description: { th: "ต้นไม้ใหญ่ล้มจากลมแรงเมื่อคืน", en: "Large tree fell from strong winds last night" }, category: "road", urgency: "medium", status: "resolved", lat: 13.9100, lon: 100.5440, zoneId: "zone-lakefront", reportedAt: "2026-03-29T23:00:00Z", assignedTo: "Parks Team", resolvedAt: "2026-03-30T06:00:00Z", photoUrls: [], updatedAt: "2026-03-30T06:00:00Z" },
-  { id: "inc-010", ticketNumber: nextTicket(), title: { th: "ลิฟต์เสีย อาคาร T5", en: "Elevator broken Building T5" }, description: { th: "ลิฟต์ตัวที่ 2 ไม่ทำงาน 3 ชั่วโมงแล้ว", en: "Elevator #2 not working for 3 hours" }, category: "electrical", urgency: "medium", status: "new", lat: 13.9095, lon: 100.5350, zoneId: "zone-residential-1", reportedAt: "2026-03-30T09:00:00Z", photoUrls: [], updatedAt: "2026-03-30T09:00:00Z" }
-];
-
-/* ══════════════════════════════════════════════════════════
-   AI Vision Pipeline — Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-export const mttVisionPipelines: VisionPipelineConfig[] = mttGates.map((gate) => ({
-  id: `vp-${gate.id}`,
-  cameraId: gate.cameraIds[0],
-  modelId: "yolov8-vehicle" as const,
-  enabled: true,
-  interval: 2000,
-  confidenceThreshold: 0.7,
-  status: "waiting-camera" as const,
-  detectionCount: 0
-}));
-
-export const mttVisionResults: VisionDetectionResult[] = [
-  { id: "vr-001", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-001", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:12:34Z", detections: [{ label: "car", confidence: 0.94, bbox: [0.2, 0.3, 0.15, 0.1], metadata: { color: "white" } }, { label: "car", confidence: 0.91, bbox: [0.5, 0.35, 0.14, 0.09] }], processingMs: 42 },
-  { id: "vr-002", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-001", modelId: "lpr-th-v2", timestamp: "2026-03-30T08:12:35Z", detections: [{ label: "plate:กท-1234", confidence: 0.94, bbox: [0.22, 0.38, 0.08, 0.03] }], processingMs: 68 },
-  { id: "vr-003", pipelineId: "vp-gate-impact", cameraId: "pk-007", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:14:15Z", detections: [{ label: "bus", confidence: 0.96, bbox: [0.1, 0.2, 0.4, 0.3] }, { label: "car", confidence: 0.88, bbox: [0.6, 0.4, 0.12, 0.08] }], processingMs: 55 },
-  { id: "vr-004", pipelineId: "vp-gate-tiwanon", cameraId: "pk-003", modelId: "crowd-flow", timestamp: "2026-03-30T08:13:02Z", detections: [{ label: "person", confidence: 0.82, bbox: [0.3, 0.5, 0.05, 0.12] }, { label: "person", confidence: 0.79, bbox: [0.4, 0.48, 0.04, 0.11] }], processingMs: 38 },
-  { id: "vr-005", pipelineId: "vp-gate-ngamwongwan", cameraId: "pk-005", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:16:45Z", detections: [{ label: "motorcycle", confidence: 0.82, bbox: [0.7, 0.6, 0.06, 0.08] }], processingMs: 31 },
-  { id: "vr-006", pipelineId: "vp-gate-lakefront", cameraId: "pk-010", modelId: "lpr-th-v2", timestamp: "2026-03-30T08:15:22Z", detections: [{ label: "plate:กท-9012", confidence: 0.87, bbox: [0.45, 0.55, 0.07, 0.03] }], processingMs: 72 },
-  { id: "vr-007", pipelineId: "vp-gate-bond-street", cameraId: "pk-012", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:17:30Z", detections: [{ label: "pickup", confidence: 0.93, bbox: [0.3, 0.25, 0.18, 0.12] }, { label: "car", confidence: 0.89, bbox: [0.55, 0.3, 0.14, 0.09] }], processingMs: 44 },
-  { id: "vr-008", pipelineId: "vp-gate-impact", cameraId: "pk-007", modelId: "incident-sense", timestamp: "2026-03-30T08:18:00Z", detections: [{ label: "congestion", confidence: 0.76, bbox: [0.0, 0.0, 1.0, 1.0], metadata: { queue_length_m: 120, wait_time_s: 180 } }], processingMs: 95 },
-  { id: "vr-009", pipelineId: "vp-gate-chaengwattana", cameraId: "pk-002", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:26:00Z", detections: [{ label: "truck", confidence: 0.91, bbox: [0.15, 0.1, 0.35, 0.25] }], processingMs: 48 },
-  { id: "vr-010", pipelineId: "vp-gate-tiwanon", cameraId: "pk-004", modelId: "yolov8-vehicle", timestamp: "2026-03-30T08:20:33Z", detections: [{ label: "car", confidence: 0.90, bbox: [0.4, 0.35, 0.13, 0.09] }, { label: "van", confidence: 0.84, bbox: [0.6, 0.3, 0.16, 0.11] }], processingMs: 40 }
-];
-
-/* ══════════════════════════════════════════════════════════
-   Flood & Water Monitoring — Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-export const mttWaterStations: WaterLevelStation[] = [
-  { id: "ws-prapa", label: { th: "คลองประปา ฝั่งแจ้งวัฒนะ", en: "Khlong Prapa — Chaengwattana" }, lat: 13.9200, lon: 100.5500, provider: "thaiwater", currentLevelM: 1.35, warningLevelM: 1.80, criticalLevelM: 2.20, status: "normal", trend: "steady", lastUpdated: seededAt },
-  { id: "ws-bangtalat", label: { th: "คลองบางตลาด", en: "Khlong Bang Talat" }, lat: 13.9000, lon: 100.5200, provider: "rid", currentLevelM: 1.62, warningLevelM: 1.80, criticalLevelM: 2.10, status: "watch", trend: "up", lastUpdated: seededAt },
-  { id: "ws-drain-cw", label: { th: "สถานีสูบน้ำแจ้งวัฒนะ", en: "Chaengwattana Drainage Pump" }, lat: 13.9055, lon: 100.5510, provider: "bma-drainage", currentLevelM: 0.85, warningLevelM: 1.20, criticalLevelM: 1.50, status: "normal", trend: "steady", lastUpdated: seededAt },
-  { id: "ws-lakefront", label: { th: "บ่อหน่วงน้ำ Lakefront", en: "Lakefront Retention Pond" }, lat: 13.9110, lon: 100.5450, provider: "manual", currentLevelM: 1.95, warningLevelM: 2.30, criticalLevelM: 2.80, status: "normal", trend: "down", lastUpdated: seededAt }
-];
-
-export const mttFloodRisk: FloodRiskSnapshot = {
-  updatedAt: seededAt,
-  stations: mttWaterStations,
-  precipitationForecast24h: 12,
-  precipitationForecast48h: 28,
-  floodRiskLevel: "moderate",
-  drainagePumpStatus: "all-operational",
-  activeWarnings: [
-    { th: "เฝ้าระวังคลองบางตลาด — ระดับน้ำใกล้จุดเตือน", en: "Watch: Khlong Bang Talat — water level approaching warning" },
-    { th: "คาดว่าจะมีฝนปานกลาง 48 ชม. ข้างหน้า", en: "Moderate rainfall expected in next 48 hours" }
+export const traffyFondueSeed: TraffyFondueSnapshot = {
+  totalOpen: 347,
+  resolvedToday: 89,
+  resolutionRate: 0.72,
+  categoryBreakdown: [
+    { category: "Road damage", count: 98 },
+    { category: "Flooding", count: 67 },
+    { category: "Waste", count: 52 },
+    { category: "Lighting", count: 41 },
+    { category: "Sidewalk", count: 35 },
+    { category: "Drainage", count: 28 },
+    { category: "Trees", count: 16 },
+    { category: "Other", count: 10 }
   ],
-  source: seedMeta("ThaiWater + TMD", "https://www.thaiwater.net", "live")
+  districtBreakdown: [
+    { district: "บางซื่อ", count: 42 },
+    { district: "จตุจักร", count: 38 },
+    { district: "ห้วยขวาง", count: 35 },
+    { district: "พระนคร", count: 29 },
+    { district: "สาทร", count: 27 },
+    { district: "บางรัก", count: 24 },
+    { district: "ปทุมวัน", count: 22 },
+    { district: "บางคอแหลม", count: 19 },
+    { district: "ดินแดง", count: 18 },
+    { district: "ลาดพร้าว", count: 15 }
+  ],
+  recentReports: traffySeedReports,
+  updatedAt: seededAt
 };
 
-/* ══════════════════════════════════════════════════════════
-   Public Transit — Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-export const mttTransit: TransitSnapshot = {
-  updatedAt: seededAt,
-  connections: [
-    { id: "tr-mrt-khaerai", line: "mrt-purple", station: { th: "สถานี MRT แคราย", en: "MRT Khae Rai Station" }, direction: { th: "ไป เตาปูน", en: "To Tao Poon" }, distanceKm: 1.8, travelMinutes: 15, status: "normal", frequency: "every 6-8 min", provider: "mrt", note: { th: "เดินเท้า 15 นาทีจากประตูแจ้งวัฒนะ", en: "15 min walk from Chaengwattana Gate" } },
-    { id: "tr-mrt-health", line: "mrt-purple", station: { th: "สถานี MRT กระทรวงสาธารณสุข", en: "MRT Ministry of Public Health" }, direction: { th: "ไป คลองบางไผ่", en: "To Khlong Bang Phai" }, distanceKm: 2.2, travelMinutes: 20, status: "normal", frequency: "every 6-8 min", provider: "mrt" },
-    { id: "tr-bus-166", line: "bus", routeNumber: "166", station: { th: "ป้ายหน้าเมืองทองธานี", en: "MTT Bus Stop" }, direction: { th: "ปากเกร็ด → อนุสาวรีย์ชัย", en: "Pak Kret → Victory Monument" }, distanceKm: 0.3, travelMinutes: 3, status: "normal", frequency: "every 12-15 min", provider: "bmta" },
-    { id: "tr-bus-356", line: "bus", routeNumber: "356", station: { th: "ป้ายเมืองทองธานี", en: "MTT Main Stop" }, direction: { th: "เมืองทองธานี → หมอชิต", en: "MTT → Mor Chit BTS" }, distanceKm: 0.2, travelMinutes: 2, status: "normal", frequency: "every 15-20 min", provider: "bmta" },
-    { id: "tr-shuttle", line: "shuttle", station: { th: "รถรับส่ง MTT", en: "MTT Internal Shuttle" }, direction: { th: "Lakefront → IMPACT → ประตูหลัก", en: "Lakefront → IMPACT → Main Gate" }, distanceKm: 0, travelMinutes: 10, status: "normal", frequency: "every 10 min", provider: "mtt-shuttle" },
-    { id: "tr-bts-mochit", line: "bts-sukhumvit", station: { th: "BTS หมอชิต (เชื่อมต่อ)", en: "BTS Mo Chit (Transfer Hub)" }, distanceKm: 8, travelMinutes: 25, status: "normal", frequency: "every 4-6 min", provider: "bts", note: { th: "ต่อรถ 356 จาก MTT → หมอชิต", en: "Take Bus 356 from MTT → Mo Chit" } }
-  ],
-  source: seedMeta("BMTA + MRT + MTT Shuttle", "https://www.viabus.co", "manual")
+export const bangkokFloodStatusSeed: BangkokFloodStatus = {
+  level: "normal",
+  activeFloodPoints: 3,
+  drainagePumpStatus: { active: 187, total: 214 },
+  rainfallLast24h: 12.4,
+  updatedAt: seededAt
 };
-
-/* ══════════════════════════════════════════════════════════
-   SET Stock Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-export const setStockSeed: Array<{ id: string; label: { th: string; en: string }; value: string; changeText: { th: string; en: string }; tone: "positive" | "neutral" | "warning" }> = [
-  { id: "set-index", label: { th: "SET Index", en: "SET Index" }, value: "1,385.42", changeText: { th: "24 ชม. +0.8%", en: "24h +0.8%" }, tone: "positive" },
-  { id: "set-impact", label: { th: "IMPACT Growth REIT", en: "IMPACT Growth REIT" }, value: "฿12.50", changeText: { th: "24 ชม. +1.2%", en: "24h +1.2%" }, tone: "positive" },
-  { id: "set-bts", label: { th: "BTS Group", en: "BTS Group Holdings" }, value: "฿6.85", changeText: { th: "24 ชม. -0.7%", en: "24h -0.7%" }, tone: "warning" },
-  { id: "set-lh", label: { th: "Land & Houses", en: "Land and Houses" }, value: "฿8.20", changeText: { th: "24 ชม. +0.3%", en: "24h +0.3%" }, tone: "neutral" }
-];
-
-/* ══════════════════════════════════════════════════════════
-   Utility / Infrastructure — Seed Data
-   ══════════════════════════════════════════════════════════ */
-
-export const utilitySnapshot: UtilitySnapshot = {
-  updatedAt: seededAt,
-  items: [
-    { id: "util-power", type: "power", label: { th: "ไฟฟ้า (PEA นนทบุรี)", en: "Power (PEA Nonthaburi)" }, status: "normal", metric: "48.2 MW", detail: { th: "โหลดปกติ — สำรอง 32%", en: "Normal load — 32% reserve" }, lastUpdated: seededAt },
-    { id: "util-water", type: "water", label: { th: "ประปา (MWA)", en: "Water Supply (MWA)" }, status: "normal", metric: "2.8 bar", detail: { th: "แรงดันปกติ ทุกโซน", en: "Normal pressure all zones" }, lastUpdated: seededAt },
-    { id: "util-waste", type: "waste", label: { th: "ขยะ / ทำความสะอาด", en: "Waste Collection" }, status: "normal", metric: "06:30 / 18:00", detail: { th: "เก็บเช้า 06:30 เก็บเย็น 18:00", en: "Morning 06:30 · Evening 18:00" }, lastUpdated: seededAt },
-    { id: "util-internet", type: "internet", label: { th: "อินเทอร์เน็ต (TRUE/AIS)", en: "Internet (TRUE/AIS)" }, status: "normal", metric: "1 Gbps", detail: { th: "Backbone ปกติ — latency 4ms", en: "Backbone normal — 4ms latency" }, lastUpdated: seededAt }
-  ],
-  source: seedMeta("MTT Infrastructure", "https://mtt.co.th", "live")
-};
-
-export function createMucSnapshot(): MucSnapshot {
-  return {
-    updatedAt: seededAt,
-    gateFlow: {
-      updatedAt: seededAt,
-      gates: mttGates,
-      buckets: mttGateFlowBuckets,
-      recentDetections: mttVehicleDetections,
-      matches: mttEntryExitMatches,
-      source: seedMeta("MTT Gate AI", "https://mtt.ai/gate-flow", "live")
-    },
-    trafficFlow: {
-      updatedAt: seededAt,
-      flowLines: mttTrafficFlowLines,
-      bottlenecks: mttTrafficBottlenecks,
-      hourlyPatterns: mttTrafficHourlyPatterns,
-      suggestions: [
-        { th: "เปลี่ยนเส้นทางผ่านงามวงศ์วาน — ความจุว่าง 38%", en: "Redirect via Ngamwongwan — 38% capacity available" },
-        { th: "เปิดบริการ shuttle bus MRT แจ้งวัฒนะ ↔ IMPACT", en: "Activate shuttle MRT Chaengwattana ↔ IMPACT" },
-        { th: "เปิดเลน Lakefront เสริมขาออกช่วง 17:00-19:00", en: "Open Lakefront lane for exit 17:00-19:00" }
-      ],
-      source: seedMeta("MTT Traffic Intelligence", "https://mtt.ai/traffic", "live")
-    },
-    airQuality: {
-      updatedAt: seededAt,
-      overallAqi: 68,
-      overallTrend: "up" as const,
-      zones: mttAqiZones,
-      sensors: mttAqiSensors,
-      history: mttAqiHistory,
-      constructionPhases: mttConstructionPhases,
-      alertCount: mttAqiZones.filter((z) => z.isAboveThreshold).length,
-      source: seedMeta("Open-Meteo + MTT-IoT", "https://open-meteo.com", "live")
-    },
-    cctvConsole: {
-      updatedAt: seededAt,
-      groups: mttCctvGroups,
-      detectionHistory: mttCctvDetectionHistory,
-      source: seedMeta("MTT CCTV AI", "https://mtt.ai/cctv", "live")
-    }
-  };
-}
 
 export function localize(locale: Locale, value: { th: string; en: string }): string {
   return value[locale];

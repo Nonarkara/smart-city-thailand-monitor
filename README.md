@@ -1,4 +1,4 @@
-# Smart City Thailand Super Dashboard
+# Smart City Thailand Command Center
 
 Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a private editorial/sync back office.
 
@@ -6,10 +6,10 @@ Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a pr
 
 - `apps/web`: React + Vite public dashboard with bilingual `th/en` UI, strict grid layout, URL-driven filters, a public home view, and a minimal private admin console route.
 - `apps/api`: Fastify API with the required public endpoints, header-protected admin endpoints, in-memory state, source-health tracking, and adapter-based sync services.
-- The API now supports free Google-driven news refresh via Google News RSS (and optional Google Alerts RSS feeds) with a 5-minute sync loop when `ALLOW_LIVE_FETCH=true`.
+- The API now supports free Google-driven news refresh via Google News RSS (and optional Google Alerts RSS feeds) with a 3-minute full sync plus a 1-minute fast-ops sync loop when `ALLOW_LIVE_FETCH=true`.
 - `apps/worker`: lightweight sync trigger that calls the API admin sync endpoint and is available for future cron-based deployments, but it is not used in the recommended first Render launch.
 - `packages/shared`: canonical TypeScript contracts plus seeded mock data used by the API and the frontend fallback path.
-- `render.yaml`: minimal Render Blueprint for a split deployment (`static web` + `api web`) with API-side sync every 5 minutes.
+- `render.yaml`: Render Blueprint for a split deployment (`static web` + `api web`) with separate fast-ops and full-sync cadences.
 
 ## Recommended v1 API stack
 
@@ -99,7 +99,10 @@ Copy `.env.example` to `.env` and set:
 - `NEWS_API_QUERIES` to override the default curated NewsAPI search set (pipe-separated)
 - `NEWS_API_PAGE_SIZE` to control per-query article count
 - `ALLOW_LIVE_FETCH=true` when you want the adapters to hit live sources
-- `SYNC_INTERVAL_MS=300000` to keep the API-side live refresh on a 5-minute cadence
+- `AUTO_SYNC_ENABLED=true` when the API should schedule its own refresh loops
+- `SYNC_INTERVAL_MS=180000` for the full-source refresh cadence
+- `OPS_SYNC_INTERVAL_MS=60000` for high-value operational feeds such as traffic, weather, AQI, and flood status
+- `DATABASE_URL` to persist snapshots in Postgres instead of relying on filesystem-only fallback
 - `COPERNICUS_CLIENT_ID` and `COPERNICUS_CLIENT_SECRET` for live Sentinel Hub / Copernicus previews
 - source-specific endpoints only when you have confirmed stable machine-readable URLs
 
@@ -114,8 +117,8 @@ The included `render.yaml` is intentionally minimal for the first public launch:
 - `smart-city-monitor-web`: public static frontend
 - `smart-city-monitor-api`: public API service
 
-The app does not use Postgres yet, so the first deploy does not provision a database.
-The app already runs its own in-process sync loop in the API service, so the first deploy does not provision a cron job either.
+The app can now persist snapshots to Postgres through `DATABASE_URL`, but the Blueprint does not create a database automatically to avoid unexpected spend during sync.
+The API still runs safely without a database by falling back to local snapshot files.
 
 ### Render deploy flow
 
@@ -126,9 +129,12 @@ The app already runs its own in-process sync loop in the API service, so the fir
    - `ADMIN_TOKEN`
 5. Keep these runtime values enabled:
    - `ALLOW_LIVE_FETCH=true`
-   - `SYNC_INTERVAL_MS=300000`
+   - `AUTO_SYNC_ENABLED=true`
+   - `OPS_SYNC_INTERVAL_MS=60000`
+   - `SYNC_INTERVAL_MS=180000`
 6. Optionally set:
    - `NEWS_API_KEY`
+   - `DATABASE_URL`
    - `GOOGLE_NEWS_RSS_QUERIES`
    - `GOOGLE_ALERTS_FEEDS`
    - `CITYDATA_CATALOG_ENDPOINT`
@@ -140,14 +146,14 @@ The app already runs its own in-process sync loop in the API service, so the fir
    - API health at `/health`
    - live source status at `/api/sources`
    - live satellite digest at `/api/satellite/digest`
-   - the public dashboard renders and continues updating every 5 minutes
+   - the public dashboard renders and continues updating on the configured fast/full cadence
 
 ### Why the first launch is minimal
 
-- The API uses an in-memory store today.
-- `DATABASE_URL` is not used by the application code yet.
-- The API already performs live sync internally every 5 minutes when `ALLOW_LIVE_FETCH=true`.
-- Adding a separate cron worker on day one would duplicate sync traffic and complicate operations.
+- The API still serves from an in-memory working set for speed, but it can now persist durable snapshots to Postgres.
+- `DATABASE_URL` is optional and should point to a managed Postgres instance in the same region when durability matters.
+- The API performs a 1-minute fast-ops sync and a 3-minute full sync when `ALLOW_LIVE_FETCH=true` and `AUTO_SYNC_ENABLED=true`.
+- If you later move sync to a cron/worker model, disable `AUTO_SYNC_ENABLED` instead of duplicating refresh traffic.
 
 ### Secret handling
 

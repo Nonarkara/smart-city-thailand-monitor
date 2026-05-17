@@ -1,4 +1,5 @@
 import type {
+  BangkokFloodStatus,
   FreshnessStatus,
   MapFeatureCollection,
   MarketSnapshot,
@@ -9,7 +10,9 @@ import type {
   ResilienceSnapshot,
   SocialListeningSnapshot,
   SyncHealthRecord,
-  TimeSnapshot
+  TimeSnapshot,
+  TrafficCongestionSnapshot,
+  TraffyFondueSnapshot
 } from "@smart-city/shared";
 import { config } from "../config.js";
 
@@ -153,6 +156,9 @@ export interface AdapterSyncResult {
   marketSnapshotPatch?: Partial<MarketSnapshot>;
   socialSignal?: AdapterSocialSignal;
   timeSnapshot?: TimeSnapshot;
+  traffyFonduePatch?: TraffyFondueSnapshot;
+  floodStatusPatch?: BangkokFloodStatus;
+  trafficCongestionPatch?: TrafficCongestionSnapshot;
 }
 
 export async function fetchJsonOrNull<T>(url: string, init?: RequestInit): Promise<T | null> {
@@ -220,6 +226,9 @@ export function buildResult(input: {
   marketSnapshotPatch?: Partial<MarketSnapshot>;
   socialSignal?: AdapterSocialSignal;
   timeSnapshot?: TimeSnapshot;
+  traffyFonduePatch?: TraffyFondueSnapshot;
+  floodStatusPatch?: BangkokFloodStatus;
+  trafficCongestionPatch?: TrafficCongestionSnapshot;
 }): AdapterSyncResult {
   return {
     sourceId: input.sourceId,
@@ -236,6 +245,8 @@ export function buildResult(input: {
     officialImpactPatch: input.officialImpactPatch,
     marketSnapshotPatch: input.marketSnapshotPatch,
     socialSignal: input.socialSignal,
-    timeSnapshot: input.timeSnapshot
+    timeSnapshot: input.timeSnapshot,
+    traffyFonduePatch: input.traffyFonduePatch,
+    floodStatusPatch: input.floodStatusPatch
   };
 }

@@ -1,6 +1,8 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import type { AssistantQueryRequest, DashboardView, TimeRange } from "@smart-city/shared";
+import { config } from "./config.js";
+import { getDurableStorageMode } from "./data/durableStore.js";
 import { requireAdmin } from "./lib/adminAuth.js";
 import { store } from "./data/store.js";
 import { getAssistantStatus, queryAssistant } from "./services/knowledgeAssistant.js";
@@ -14,7 +16,7 @@ import {
 } from "./services/satellite.js";
 import { getPublicCctvCameras } from "./services/publicCctv.js";
 import { runSourceSync } from "./services/sync.js";
-import { getImpactArenaEvents } from "./adapters/impactArenaAdapter.js";
+import { fetchOverpassLayer } from "./adapters/overpassAdapter.js";
 
 function parseList(value: unknown) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -34,11 +36,31 @@ export async function createServer() {
     origin: true
   });
 
-  app.get("/health", async () => ({
-    ok: true,
-    service: "smart-city-monitor-api",
-    updatedAt: new Date().toISOString()
-  }));
+  app.get("/health", async () => {
+    const sources = store.getSources();
+    const syncHealth = store.getSyncHealth();
+    const liveSourceCount = sources.filter((source) => source.freshnessStatus === "live").length;
+    const staleSourceCount = sources.filter((source) => source.freshnessStatus === "stale").length;
+    const latestSyncAt =
+      syncHealth[0]?.fetchedAt ??
+      [...sources]
+        .sort((left, right) => right.lastCheckedAt.localeCompare(left.lastCheckedAt))[0]?.lastCheckedAt ??
+      new Date().toISOString();
+
+    return {
+      ok: true,
+      degraded: staleSourceCount > 0,
+      service: "smart-city-monitor-api",
+      updatedAt: new Date().toISOString(),
+      lastSyncAt: latestSyncAt,
+      liveSourceCount,
+      staleSourceCount,
+      durableStorage: getDurableStorageMode(),
+      autoSyncEnabled: config.autoSyncEnabled,
+      opsSyncIntervalMs: config.opsSyncIntervalMs,
+      fullSyncIntervalMs: config.syncIntervalMs
+    };
+  });
 
   app.get("/api/overview", async (request) => {
     const query = request.query as {
@@ -181,102 +203,10 @@ export async function createServer() {
   app.get("/api/sources", async () => store.getSources());
   app.get("/api/command-center", async () => store.getCommandCenter());
 
-  /* ── MUC (Municipal Operations Center) ── */
-  app.get("/api/muc", async () => store.getMucSnapshot());
-  app.get("/api/muc/gate-flow", async () => store.getGateFlow());
-  app.get("/api/muc/gate-flow/buckets", async (request) => {
-    const query = request.query as Record<string, string>;
-    return store.getGateFlowBuckets({
-      gate: query.gate || undefined,
-      hours: query.hours ? Number(query.hours) : undefined
-    });
-  });
-  app.get("/api/muc/gate-flow/detections", async (request) => {
-    const query = request.query as Record<string, string>;
-    return store.getVehicleDetections({
-      camera: query.camera || undefined,
-      gate: query.gate || undefined,
-      limit: query.limit ? Number(query.limit) : undefined
-    });
-  });
-  app.get("/api/muc/traffic-flow", async () => store.getTrafficFlow());
-  app.get("/api/muc/air-quality", async () => store.getAirQuality());
-  app.get("/api/muc/cctv-console", async () => store.getCctvConsole());
-
-  /* ── Incidents ── */
-  app.get("/api/incidents", async (request) => {
-    const query = request.query as Record<string, string>;
-    return store.getIncidents({
-      status: query.status || undefined,
-      category: query.category || undefined,
-      zone: query.zone || undefined,
-      limit: query.limit ? Number(query.limit) : undefined
-    });
-  });
-  app.get("/api/incidents/:id", async (request) => {
-    const { id } = request.params as { id: string };
-    const item = store.getIncidentById(id);
-    if (!item) return { error: "Not found" };
-    return item;
-  });
-  app.post("/api/incidents", async (request) => {
-    const body = request.body as Record<string, unknown>;
-    return store.createIncident(body as any);
-  });
-  app.patch("/api/incidents/:id", async (request) => {
-    const { id } = request.params as { id: string };
-    const body = request.body as Record<string, unknown>;
-    const updated = store.updateIncident(id, body as any);
-    if (!updated) return { error: "Not found" };
-    return updated;
-  });
-
-  /* ── Vision Pipeline ── */
-  app.get("/api/vision/pipelines", async () => store.getVisionPipelines());
-  app.get("/api/vision/pipelines/:cameraId", async (request) => {
-    const { cameraId } = request.params as { cameraId: string };
-    return store.getVisionPipelineByCamera(cameraId) ?? { error: "Not found" };
-  });
-  app.get("/api/vision/results", async (request) => {
-    const query = request.query as Record<string, string>;
-    return store.getVisionResults({
-      camera: query.camera || undefined,
-      limit: query.limit ? Number(query.limit) : undefined
-    });
-  });
-  app.post("/api/vision/frame/:cameraId", async (request) => {
-    const { cameraId } = request.params as { cameraId: string };
-    // Stub: returns mock detection — real inference will connect here
-    return {
-      status: "stub",
-      cameraId,
-      message: "Vision pipeline stub — connect onnxruntime-node + YOLOv8 for real inference",
-      recommendedStack: [
-        "onnxruntime-node — YOLOv8 vehicle detection",
-        "node-rtsp-stream or rtsp-ffmpeg — RTSP frame capture",
-        "OpenALPR Docker — Thai license plate recognition",
-        "fluent-ffmpeg — video processing"
-      ]
-    };
-  });
-
-  /* ── Community Intelligence ── */
-  app.get("/api/community-intel", async () => {
-    const { getCommunityIntel } = await import("./adapters/communityIntelAdapter.js");
-    return getCommunityIntel();
-  });
-
-  /* ── Flood & Water ── */
-  app.get("/api/flood-risk", async () => {
-    const { getFloodRiskSnapshot } = await import("./adapters/floodWaterAdapter.js");
-    return getFloodRiskSnapshot();
-  });
-
-  /* ── Transit ── */
-  app.get("/api/transit", async () => {
-    const { getTransitSnapshot } = await import("./adapters/transitAdapter.js");
-    return getTransitSnapshot();
-  });
+  /* ── Bangkok Governor's IOC endpoints ── */
+  app.get("/api/traffy-fondue", async () => store.getTraffyFondue());
+  app.get("/api/flood-status", async () => store.getFloodStatus());
+  app.get("/api/traffic-congestion", async () => store.getTrafficCongestion());
 
   app.get("/api/satellite/digest", async () => getSatelliteDigest());
   app.get("/api/satellite/stats", async () => getSatelliteStats());
@@ -310,10 +240,18 @@ export async function createServer() {
     return getStacTileInfo(query.layer);
   });
 
-  /* IMPACT Arena events — attempts live scrape, falls back to seed */
-  app.get("/api/arena-events", async (_request, reply) => {
+  /* ── Overpass road & waterway layers ── */
+  app.get("/api/layers/bangkok-highways", async (_request, reply) => {
     reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
-    return getImpactArenaEvents();
+    return fetchOverpassLayer("bangkok-highways");
+  });
+  app.get("/api/layers/bangkok-arterials", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return fetchOverpassLayer("bangkok-arterials");
+  });
+  app.get("/api/layers/bangkok-waterways", async (_request, reply) => {
+    reply.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=600");
+    return fetchOverpassLayer("bangkok-waterways");
   });
 
   app.get("/api/briefings/latest", async () => store.getBriefing());

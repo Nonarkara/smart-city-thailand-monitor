@@ -1,14 +1,29 @@
 [build]
+  base = "."
   command = "npm ci && npm run build -w packages/shared && npm run build -w apps/web"
   publish = "apps/web/dist"
 
 [build.environment]
   NODE_VERSION = "20"
-  VITE_DEFAULT_CITY = "muang-thong-thani"
+  VITE_SITE_TITLE = "Bangkok Governor's IOC"
+  VITE_DEFAULT_CITY = "bangkok"
   VITE_DEFAULT_VIEW = "city"
-  VITE_SITE_TITLE = "Muang Thong Thani Super Dashboard"
+  VITE_DEFAULT_BASEMAP = "satellite"
+  VITE_API_BASE_URL = "https://smart-city-monitor-api.onrender.com"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

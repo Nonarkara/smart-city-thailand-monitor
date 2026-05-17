@@ -1,17 +1,14 @@
 import {
   activityLog as activityLogSeed,
   auditTrail as auditTrailSeed,
+  bangkokFloodStatusSeed,
   briefing as briefingSeed,
   cities as citySeed,
   changePulse as changePulseSeed,
   cloneSeed,
   createCommandCenterSnapshot,
-  createMucSnapshot,
   createTimeSnapshot,
   decisionQueue as decisionQueueSeed,
-  mttIncidents as incidentSeed,
-  mttVisionPipelines as visionPipelineSeed,
-  mttVisionResults as visionResultSeed,
   domains as domainSeed,
   districts as districtSeed,
   mapFeatureCollections as mapFeatureSeed,
@@ -24,12 +21,15 @@ import {
   projects as projectSeed,
   resilience as resilienceSeed,
   socialListening as socialListeningSeed,
-  sources as sourceSeed
+  sources as sourceSeed,
+  traffyFondueSeed
 } from "@smart-city/shared";
 import type {
   ActivityLogItem,
   AuditEventRecord,
+  BangkokFloodStatus,
   BriefingNote,
+  TrafficCongestionSnapshot,
   CommandCenterSnapshot,
   ChangePulse,
   DashboardView,
@@ -50,14 +50,7 @@ import type {
   SyncHealthRecord,
   TimeRange,
   TimeSnapshot,
-  MucSnapshot,
-  GateFlowBucket,
-  VehicleDetection,
-  IncidentRecord,
-  VisionPipelineConfig,
-  VisionDetectionResult,
-  FloodRiskSnapshot,
-  TransitSnapshot
+  TraffyFondueSnapshot
 } from "@smart-city/shared";
 import type { AdapterSyncResult } from "../adapters/common.js";
 import { persistStoreSnapshot } from "./persistence.js";
@@ -83,10 +76,9 @@ interface StoreState {
   lastSyncAt: string;
   latestTime: TimeSnapshot;
   commandCenter: CommandCenterSnapshot;
-  mucSnapshot: MucSnapshot;
-  incidents: IncidentRecord[];
-  visionPipelines: VisionPipelineConfig[];
-  visionResults: VisionDetectionResult[];
+  traffyFondue: TraffyFondueSnapshot;
+  floodStatus: BangkokFloodStatus;
+  trafficCongestion: TrafficCongestionSnapshot;
 }
 
 export type StoreSnapshot = StoreState;
@@ -167,10 +159,9 @@ function createState(): StoreState {
     lastSyncAt: new Date().toISOString(),
     latestTime: createTimeSnapshot(),
     commandCenter: createCommandCenterSnapshot(),
-    mucSnapshot: createMucSnapshot(),
-    incidents: cloneSeed(incidentSeed),
-    visionPipelines: cloneSeed(visionPipelineSeed),
-    visionResults: cloneSeed(visionResultSeed)
+    traffyFondue: cloneSeed(traffyFondueSeed),
+    floodStatus: cloneSeed(bangkokFloodStatusSeed),
+    trafficCongestion: { index: 0, level: "free", activeIncidents: 0, accidents: 0, closures: 0, breakdowns: 0, corridors: [], updatedAt: new Date().toISOString() }
   };
 }
 
@@ -321,6 +312,14 @@ export const store = {
       ...cloneSeed(seeded.mapFeaturesByLayer),
       ...(snapshot.mapFeaturesByLayer ? cloneSeed(snapshot.mapFeaturesByLayer) : {})
     };
+
+    state.traffyFondue =
+      snapshot.traffyFondue && snapshot.traffyFondue.totalOpen > 0
+        ? cloneSeed(snapshot.traffyFondue)
+        : seeded.traffyFondue;
+    state.floodStatus = snapshot.floodStatus
+      ? cloneSeed(snapshot.floodStatus)
+      : seeded.floodStatus;
 
     return this.getSnapshot();
   },
@@ -515,6 +514,18 @@ export const store = {
     return cloneSeed(state.marketSnapshot);
   },
 
+  getTraffyFondue() {
+    return cloneSeed(state.traffyFondue);
+  },
+
+  getFloodStatus() {
+    return cloneSeed(state.floodStatus);
+  },
+
+  getTrafficCongestion() {
+    return cloneSeed(state.trafficCongestion);
+  },
+
   getSources() {
     return cloneSeed(state.sources);
   },
@@ -524,120 +535,6 @@ export const store = {
       ...state.commandCenter,
       updatedAt: new Date().toISOString()
     });
-  },
-
-  getMucSnapshot() {
-    return cloneSeed({
-      ...state.mucSnapshot,
-      updatedAt: new Date().toISOString()
-    });
-  },
-
-  getGateFlow() {
-    return cloneSeed(state.mucSnapshot.gateFlow);
-  },
-
-  getTrafficFlow() {
-    return cloneSeed(state.mucSnapshot.trafficFlow);
-  },
-
-  getAirQuality() {
-    return cloneSeed(state.mucSnapshot.airQuality);
-  },
-
-  getCctvConsole() {
-    return cloneSeed(state.mucSnapshot.cctvConsole);
-  },
-
-  getGateFlowBuckets(filters?: { gate?: string; hours?: number }): GateFlowBucket[] {
-    let buckets = state.mucSnapshot.gateFlow.buckets;
-    if (filters?.gate) {
-      buckets = buckets.filter((b) => b.gateId === filters.gate);
-    }
-    if (filters?.hours) {
-      const cutoff = new Date(Date.now() - filters.hours * 3600_000).toISOString();
-      buckets = buckets.filter((b) => b.periodStart >= cutoff);
-    }
-    return cloneSeed(buckets);
-  },
-
-  getVehicleDetections(filters?: { camera?: string; gate?: string; limit?: number }): VehicleDetection[] {
-    let detections = state.mucSnapshot.gateFlow.recentDetections;
-    if (filters?.camera) {
-      detections = detections.filter((d) => d.cameraId === filters.camera);
-    }
-    if (filters?.gate) {
-      detections = detections.filter((d) => d.gateId === filters.gate);
-    }
-    detections = [...detections].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    if (filters?.limit) {
-      detections = detections.slice(0, filters.limit);
-    }
-    return cloneSeed(detections);
-  },
-
-  /* ── Incidents ── */
-  getIncidents(filters?: { status?: string; category?: string; zone?: string; limit?: number }): IncidentRecord[] {
-    let items = state.incidents;
-    if (filters?.status) items = items.filter((i) => i.status === filters.status);
-    if (filters?.category) items = items.filter((i) => i.category === filters.category);
-    if (filters?.zone) items = items.filter((i) => i.zoneId === filters.zone);
-    items = [...items].sort((a, b) => {
-      const urgRank: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-      const ua = urgRank[a.urgency] ?? 9;
-      const ub = urgRank[b.urgency] ?? 9;
-      if (ua !== ub) return ua - ub;
-      return b.reportedAt.localeCompare(a.reportedAt);
-    });
-    if (filters?.limit) items = items.slice(0, filters.limit);
-    return cloneSeed(items);
-  },
-
-  getIncidentById(id: string): IncidentRecord | null {
-    const item = state.incidents.find((i) => i.id === id);
-    return item ? cloneSeed(item) : null;
-  },
-
-  createIncident(data: Omit<IncidentRecord, "id" | "ticketNumber" | "updatedAt">): IncidentRecord {
-    const seq = state.incidents.length + 1;
-    const record: IncidentRecord = {
-      ...data,
-      id: `inc-${Date.now()}-${seq}`,
-      ticketNumber: `MTT-${String(seq).padStart(4, "0")}`,
-      updatedAt: new Date().toISOString()
-    };
-    state.incidents.unshift(record);
-    persistCurrentState();
-    return cloneSeed(record);
-  },
-
-  updateIncident(id: string, patch: Partial<Pick<IncidentRecord, "status" | "assignedTo" | "resolvedAt" | "urgency" | "aiSummary">>): IncidentRecord | null {
-    const idx = state.incidents.findIndex((i) => i.id === id);
-    if (idx === -1) return null;
-    Object.assign(state.incidents[idx], patch, { updatedAt: new Date().toISOString() });
-    if (patch.status === "resolved" && !patch.resolvedAt) {
-      state.incidents[idx].resolvedAt = new Date().toISOString();
-    }
-    persistCurrentState();
-    return cloneSeed(state.incidents[idx]);
-  },
-
-  /* ── Vision Pipeline ── */
-  getVisionPipelines(): VisionPipelineConfig[] {
-    return cloneSeed(state.visionPipelines);
-  },
-
-  getVisionPipelineByCamera(cameraId: string): VisionPipelineConfig | null {
-    const item = state.visionPipelines.find((p) => p.cameraId === cameraId);
-    return item ? cloneSeed(item) : null;
-  },
-
-  getVisionResults(filters?: { camera?: string; limit?: number }): VisionDetectionResult[] {
-    let items = state.visionResults;
-    if (filters?.camera) items = items.filter((r) => r.cameraId === filters.camera);
-    items = [...items].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    if (filters?.limit) items = items.slice(0, filters.limit);
-    return cloneSeed(items);
   },
 
   getMapLayers(filters?: { layers?: string[] }) {
@@ -838,12 +735,22 @@ export const store = {
   applySyncResults(results: AdapterSyncResult[]) {
     const syncTimestamp = new Date().toISOString();
     state.lastSyncAt = syncTimestamp;
-    state.syncHealth = results.map((result) => ({
-      sourceId: result.sourceId,
-      status: result.status,
-      fetchedAt: result.fetchedAt,
-      message: result.message
-    }));
+    const syncHealthMap = new Map(
+      state.syncHealth.map((record) => [record.sourceId, cloneSeed(record)])
+    );
+
+    results.forEach((result) => {
+      syncHealthMap.set(result.sourceId, {
+        sourceId: result.sourceId,
+        status: result.status,
+        fetchedAt: result.fetchedAt,
+        message: result.message
+      });
+    });
+
+    state.syncHealth = [...syncHealthMap.values()].sort((left, right) =>
+      right.fetchedAt.localeCompare(left.fetchedAt)
+    );
 
     const sourceMap = new Map(state.sources.map((source) => [source.id, source]));
     results.forEach((result) => {
@@ -893,6 +800,27 @@ export const store = {
 
       if (result.timeSnapshot) {
         state.latestTime = result.timeSnapshot;
+      }
+
+      if (result.traffyFonduePatch) {
+        state.traffyFondue = {
+          ...state.traffyFondue,
+          ...result.traffyFonduePatch
+        };
+      }
+
+      if (result.floodStatusPatch) {
+        state.floodStatus = {
+          ...state.floodStatus,
+          ...result.floodStatusPatch
+        };
+      }
+
+      if (result.trafficCongestionPatch) {
+        state.trafficCongestion = {
+          ...state.trafficCongestion,
+          ...result.trafficCongestionPatch
+        };
       }
     });
 

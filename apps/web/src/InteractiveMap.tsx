@@ -74,9 +74,15 @@ type LayerId =
   | "disaster"
   | "itic-traffic"
   | "cctv-cameras"
-  | "mtt-boundary"
-  | "mtt-zones"
-  | "incidents"
+  | "traffy-fondue"
+  | "bma-flood-gates"
+  | "bma-health-centers"
+  | "bma-districts"
+  | "air4thai"
+  | "bangkok-highways"
+  | "bangkok-arterials"
+  | "bangkok-waterways"
+  | "road-labels"
 ;
 
 type EoRainState = "off" | "loading" | "live" | "fallback";
@@ -96,6 +102,9 @@ type SatelliteLayerId =
 const thailandBounds = L.latLngBounds([5.6, 97.2], [20.6, 105.9]);
 const bangkokBounds = L.latLngBounds([13.45, 100.35], [13.95, 100.85]);
 const greaterBangkokBounds = L.latLngBounds([13.5, 100.2], [14.15, 100.95]);
+// MTT (Muang Thong Thani in Pak Kret, Nonthaburi) — district-detail bbox.
+// IMPACT Arena is at ~13.917°N, 100.541°E.
+const mttBounds = L.latLngBounds([13.85, 100.48], [13.99, 100.62]);
 
 const cityCenters: Record<
   string,
@@ -154,15 +163,8 @@ const cityCenters: Record<
     label: { th: "นนทบุรี", en: "Nonthaburi" },
     lat: 13.8622,
     lon: 100.5144
-  },
-  "muang-thong-thani": {
-    label: { th: "เมืองทองธานี", en: "Muang Thong Thani" },
-    lat: 13.9120,
-    lon: 100.5350
   }
 };
-
-const mttBounds = L.latLngBounds([13.895, 100.495], [13.935, 100.565]);
 
 const layerColors: Record<LayerId, string> = {
   "smart-city-thailand": "#ff5b57",
@@ -199,9 +201,15 @@ const layerColors: Record<LayerId, string> = {
   disaster: "#cf5c00",
   "itic-traffic": "#ef4444",
   "cctv-cameras": "#34d399",
-  "mtt-boundary": "#10b981",
-  "mtt-zones": "#6366f1",
-  incidents: "#ef4444",
+  "traffy-fondue": "#f97316",
+  "bma-flood-gates": "#0ea5e9",
+  "bma-health-centers": "#10b981",
+  "bma-districts": "#94a3b8",
+  "air4thai": "#a855f7",
+  "bangkok-highways": "#ef4444",
+  "bangkok-arterials": "#f59e0b",
+  "bangkok-waterways": "#0ea5e9",
+  "road-labels": "#64748b",
 };
 
 const EO_LAYER_IDS: readonly EoLayerId[] = [
@@ -257,10 +265,10 @@ const satelliteLayerDefinitions: Record<
     attribution: 'Imagery courtesy of <a href="https://global-surface-water.appspot.com/">JRC Global Surface Water</a>'
   },
   "satellite-bathymetry": {
-    url: "https://tiles.emodnet-bathymetry.eu/v12/mean_atlas_land_latest/web_mercator/{z}/{x}/{y}.png",
-    opacity: 0.54,
-    maxZoom: 12,
-    attribution: 'Imagery courtesy of <a href="https://emodnet.ec.europa.eu/en/bathymetry">EMODnet Bathymetry</a>'
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+    opacity: 0.65,
+    maxZoom: 13,
+    attribution: 'Imagery courtesy of <a href="https://www.arcgis.com/home/item.html?id=1e126e7520f9466c9ca28b8f28b5e500">Esri Ocean Basemap</a>'
   },
   "satellite-vegetation": {
     url: gibsSatUrl("MODIS_Terra_NDVI_8Day", satNdviDate, "GoogleMapsCompatible_Level9"),
@@ -362,15 +370,9 @@ const siteTheme = "ops" as const;
 
 /* International base map tile sources */
 const basemapSources = {
-  /* CARTO Light tiles */
+  /* CARTO tiles — always use light for readability */
   darkMatter: {
     url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-    maxZoom: 20
-  },
-  /* CARTO Dark tiles — for dark theme */
-  cartoDark: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 20
   },
@@ -397,18 +399,6 @@ const basemapSources = {
     url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
     maxZoom: 17
-  },
-  /* Esri World Street Map — detailed street-level for operations */
-  esriStreets: {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-    attribution: "Tiles &copy; Esri",
-    maxZoom: 19
-  },
-  /* Google Hybrid — satellite + street labels, best for detail */
-  googleHybrid: {
-    url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-    attribution: "Imagery &copy; Google",
-    maxZoom: 21
   }
 } as const;
 
@@ -837,21 +827,21 @@ function renderPollutionSurface(
   const baseColor = getPollutionSeverityColor(aqi);
   const rings = [
     {
-      radius: 52000 + aqi * 900,
+      radius: 18000 + aqi * 220,
       fillColor: baseColor,
-      fillOpacity: 0.07 + severity * 0.07,
+      fillOpacity: 0.03 + severity * 0.03,
       className: "pollution-surface-ring pollution-surface-ring-outer"
     },
     {
-      radius: 30000 + pm25 * 900,
+      radius: 10000 + pm25 * 280,
       fillColor: getPm25AccentColor(pm25),
-      fillOpacity: 0.05 + pm25Weight * 0.08,
+      fillOpacity: 0.02 + pm25Weight * 0.04,
       className: "pollution-surface-ring pollution-surface-ring-mid"
     },
     {
-      radius: 17000 + pm10 * 520,
+      radius: 5500 + pm10 * 160,
       fillColor: getPm10AccentColor(pm10),
-      fillOpacity: 0.06 + pm10Weight * 0.09,
+      fillOpacity: 0.03 + pm10Weight * 0.04,
       className: "pollution-surface-ring pollution-surface-ring-inner"
     }
   ];
@@ -869,12 +859,12 @@ function renderPollutionSurface(
   });
 
   L.circle([lat, lon], {
-    radius: 5000 + aqi * 70,
+    radius: 3000 + aqi * 30,
     color: baseColor,
-    opacity: 0.42,
+    opacity: 0.22,
     weight: 1,
     fillColor: baseColor,
-    fillOpacity: 0.16,
+    fillOpacity: 0.08,
     interactive: false,
     className: "pollution-surface-core"
   }).addTo(target);
@@ -897,17 +887,17 @@ function renderRainSurface(
   const probabilityWeight = clampNumber(precipitationProbability / 100, 0.18, 1);
   const rainfallWeight = clampNumber(precipitationMm / 8, 0.12, 1);
   const baseColor = getRainSurfaceColor(precipitationMm, precipitationProbability);
-  const rings = [
+  const rings: { radius: number; fillColor: string; fillOpacity: number; className: string }[] = [
     {
-      radius: 16000 + precipitationProbability * 210,
+      radius: 10000 + precipitationProbability * 100,
       fillColor: baseColor,
-      fillOpacity: 0.05 + probabilityWeight * 0.08,
+      fillOpacity: 0.03 + probabilityWeight * 0.04,
       className: "rain-surface-ring rain-surface-ring-outer"
     },
     {
-      radius: 9000 + precipitationMm * 5200 + precipitationProbability * 70,
+      radius: 5500 + precipitationMm * 1600 + precipitationProbability * 30,
       fillColor: "#38bdf8",
-      fillOpacity: 0.06 + rainfallWeight * 0.1,
+      fillOpacity: 0.03 + rainfallWeight * 0.05,
       className: "rain-surface-ring rain-surface-ring-mid"
     }
   ];
@@ -925,12 +915,12 @@ function renderRainSurface(
   });
 
   L.circle([lat, lon], {
-    radius: 4200 + precipitationMm * 2200 + precipitationProbability * 22,
+    radius: 2800 + precipitationMm * 800 + precipitationProbability * 12,
     color: baseColor,
-    opacity: 0.36,
+    opacity: 0.2,
     weight: 1,
     fillColor: "#dbeafe",
-    fillOpacity: 0.14,
+    fillOpacity: 0.06,
     interactive: false,
     className: "rain-surface-core"
   }).addTo(target);
@@ -993,7 +983,8 @@ function renderFeatureCollections(
   locale: Locale,
   activeLayers: Set<LayerId>,
   featureCollections: MapFeatureCollection[],
-  domainSlug?: string
+  domainSlug: string | undefined,
+  setSelectedFeature: (info: SelectedFeatureInfo | null) => void
 ) {
   featureCollections.forEach((collection) => {
     if (!activeLayers.has(collection.layerId as LayerId)) {
@@ -1006,9 +997,11 @@ function renderFeatureCollections(
       }
 
       const isBangkokPlaces = collection.layerId === "bangkok-passages";
+      const isBangkokIoc = ["traffy-fondue", "bma-flood-gates", "bma-health-centers", "bma-districts"].includes(collection.layerId);
       const isNationalFootprint = collection.layerId === "smart-city-thailand";
       const isPollutionLayer = collection.layerId === "pollution";
       const isWeatherLayer = collection.layerId === "weather";
+      const isAir4Thai = collection.layerId === "air4thai";
       const pm25 = isPollutionLayer ? Number(feature.properties.pm25 ?? 0) : 0;
       const pm10 = isPollutionLayer ? Number(feature.properties.pm10 ?? 0) : 0;
       const precipitationMm = isWeatherLayer ? Number(feature.properties.precipitationMm ?? 0) : 0;
@@ -1037,44 +1030,53 @@ function renderFeatureCollections(
 
         const [lon, lat] = point;
 
-        if (isPollutionLayer && (intensity > 0 || pm25 > 0 || pm10 > 0)) {
-          renderPollutionSurface(
-            target,
-            lat,
-            lon,
-            intensity,
-            pm25,
-            pm10
-          );
+        /* Skip pollution/weather mesh dots — data feeds the panels, not the map */
+        if (isPollutionLayer || (collection.layerId === "weather" && feature.properties.sampleKind === "mesh")) {
+          return;
         }
 
-        if (hasRainSignal) {
-          renderRainSurface(target, lat, lon, precipitationMm, precipitationProbability);
+        /* Skip rain surface blobs */
+        if (hasRainSignal && feature.properties.sampleKind === "mesh") {
+          return;
         }
 
         const marker = L.circleMarker([lat, lon], {
           radius: isNationalFootprint
             ? 7
-            : isBangkokPlaces
+            : isBangkokPlaces || isBangkokIoc
               ? 6
               : collection.layerId === "itic-traffic"
                 ? 6
-              : isPollutionLayer
-                ? Math.max(5, Math.min(9, 4 + intensity / 22))
-                : hasRainSignal
-                  ? Math.max(6, Math.min(9, 5 + precipitationProbability / 40 + precipitationMm))
+              : isAir4Thai
+                ? Math.max(5, Math.min(8, 4 + intensity / 25))
                 : collection.layerId === "weather"
-                  ? 6
+                  ? 5
                   : collection.layerId === "agriculture" || collection.layerId === "water" || collection.layerId === "land-use"
                     ? 5
                   : 4,
           color: pointColor,
           fillColor: pointColor,
-          fillOpacity: isNationalFootprint ? 0.5 : isPollutionLayer ? 0.86 : hasRainSignal ? 0.58 : 0.35,
-          weight: 2
+          fillOpacity: isNationalFootprint ? 0.5 : isAir4Thai ? 0.7 : isBangkokIoc ? 0.65 : 0.4,
+          weight: 1.5
         });
 
         marker.bindPopup(popupContent);
+        marker.on("click", () => {
+          const coords = normalizeCoordinatePair(feature.coordinates);
+          if (coords) {
+            setSelectedFeature({
+              layerId: collection.layerId,
+              title: feature.title,
+              description: feature.description,
+              properties: feature.properties,
+              sourceName: feature.source.sourceName,
+              sourceUrl: feature.source.sourceUrl,
+              lat: coords[1],
+              lon: coords[0],
+              fetchedAt: feature.source.fetchedAt
+            });
+          }
+        });
         marker.addTo(target);
         return;
       }
@@ -1088,12 +1090,18 @@ function renderFeatureCollections(
         const line = L.polyline(latLngs, {
           color: pointColor,
           weight:
-            collection.layerId === "economy" || collection.layerId === "water"
-              ? 5
-              : collection.layerId === "agriculture"
-                ? 4.5
-                : 4,
-          opacity: 0.82,
+            collection.layerId === "bangkok-highways"
+              ? 4
+              : collection.layerId === "bangkok-arterials"
+                ? 3
+                : collection.layerId === "bangkok-waterways"
+                  ? 3
+                  : collection.layerId === "economy" || collection.layerId === "water"
+                    ? 5
+                    : collection.layerId === "agriculture"
+                      ? 4.5
+                      : 4,
+          opacity: collection.layerId === "bangkok-waterways" ? 0.7 : 0.82,
           dashArray: collection.layerId === "disaster" ? "10 6" : undefined
         });
 
@@ -1105,35 +1113,6 @@ function renderFeatureCollections(
       if (feature.geometryType === "Polygon") {
         const latLngs = toLeafletLatLngs(feature.coordinates);
         if (latLngs.length < 3) {
-          return;
-        }
-
-        // MTT boundary: dashed emerald outline
-        if (collection.layerId === "mtt-boundary") {
-          const boundary = L.polygon(latLngs, {
-            color: "#10b981", weight: 3, dashArray: "8 4",
-            fillColor: "#10b981", fillOpacity: 0.03
-          });
-          boundary.bindPopup(popupContent);
-          boundary.addTo(target);
-          return;
-        }
-
-        // MTT zones: colored by zone type
-        if (collection.layerId === "mtt-zones") {
-          const zt = String(feature.properties.zoneType ?? "");
-          const zoneColorMap: Record<string, string> = {
-            residential: "#3b82f6", commercial: "#8b5cf6", "green-space": "#22c55e",
-            construction: "#f97316", government: "#64748b", mixed: "#f59e0b"
-          };
-          const zc = zoneColorMap[zt] ?? "#6366f1";
-          const zone = L.polygon(latLngs, {
-            color: zc, weight: 1.5, fillColor: zc, fillOpacity: 0.12,
-            dashArray: zt === "construction" ? "4 3" : undefined
-          });
-          zone.bindPopup(`<strong>${feature.title}</strong><br/>${zt}<br/>${feature.description ?? ""}`);
-          zone.bindTooltip(feature.title, { permanent: false, direction: "center", className: "zone-label-tip" });
-          zone.addTo(target);
           return;
         }
 
@@ -1156,7 +1135,9 @@ function renderFeatureCollections(
                   ? 0.08
                   : collection.layerId === "disaster"
                     ? 0.11
-                    : 0.09
+                    : collection.layerId === "bma-districts"
+                      ? 0.06
+                      : 0.09
         });
 
         polygon.bindPopup(popupContent);
@@ -1166,13 +1147,25 @@ function renderFeatureCollections(
   });
 }
 
+interface SelectedFeatureInfo {
+  layerId: string;
+  title: string;
+  description?: string;
+  properties: Record<string, string | number | boolean | null>;
+  sourceName: string;
+  sourceUrl?: string;
+  lat: number;
+  lon: number;
+  fetchedAt: string;
+}
+
 interface InteractiveMapProps {
   locale: Locale;
   view: DashboardView;
   citySlug: string;
   district?: DistrictProfile;
   domainSlug?: string;
-  basemap: "atlas" | "satellite" | "street" | "hybrid";
+  basemap: "atlas" | "satellite";
   layers: string[];
   overlayStyles: Record<
     string,
@@ -1187,7 +1180,6 @@ interface InteractiveMapProps {
   featureCollections: MapFeatureCollection[];
   publicCctvCameras: PublicCctvCamera[];
   recenterSignal: number;
-  themeMode?: "light" | "dark";
 }
 
 export default function InteractiveMap({
@@ -1203,22 +1195,25 @@ export default function InteractiveMap({
   news,
   featureCollections,
   publicCctvCameras,
-  recenterSignal,
-  themeMode = "dark"
+  recenterSignal
 }: InteractiveMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
   const atlasBaseRef = useRef<L.TileLayer | null>(null);
   const satelliteBaseRef = useRef<L.TileLayer | null>(null);
-  const streetBaseRef = useRef<L.TileLayer | null>(null);
-  const hybridBaseRef = useRef<L.TileLayer | null>(null);
   const eoLayerRefs = useRef<Partial<Record<EoLayerId, L.TileLayer>>>({});
   const satelliteLayersRef = useRef<Partial<Record<SatelliteLayerId, L.TileLayer>>>({});
+  const roadLabelsRef = useRef<L.TileLayer | null>(null);
   const jaxaLayerRef = useRef<L.Layer | null>(null);
   const jaxaFallbackRef = useRef<L.LayerGroup | null>(null);
   const lastViewportKeyRef = useRef<string>("");
   const [eoRainState, setEoRainState] = useState<EoRainState>("off");
+  const [selectedFeature, setSelectedFeature] = useState<SelectedFeatureInfo | null>(null);
+  const [cursorCoords, setCursorCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+  const measureLayerRef = useRef<L.LayerGroup | null>(null);
 
   const layerKey = layers.join(",");
   const overlayStyleKey = Object.entries(overlayStyles)
@@ -1238,49 +1233,51 @@ export default function InteractiveMap({
       return;
     }
 
-    const isMtt = citySlug === "muang-thong-thani";
-    const nonthaburiBounds = L.latLngBounds([13.82, 100.45], [13.97, 100.62]);
+    // Sister-dashboard zoom restrictions:
+    //   MTT view → district-level zoom only (12+), bounded to Pak Kret bbox
+    //   Bangkok city view → city-level zoom (9+), bounded to Greater Bangkok
+    //   national view → unchanged (5+, Thailand bounds)
+    const isMttView = view === "city" && (citySlug === "muang-thong-thani" || citySlug === "nonthaburi");
+    const isBangkokView = view === "city" && citySlug === "bangkok";
+    const initialMinZoom = isMttView ? 12 : isBangkokView ? 9 : 5;
+
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true,
-      minZoom: isMtt ? 11 : 5,
+      minZoom: initialMinZoom,
       maxBoundsViscosity: 0.85
     });
-    if (isMtt) {
-      map.setMaxBounds(nonthaburiBounds.pad(0.1));
-    }
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    const atlasSource = themeMode === "dark" ? basemapSources.cartoDark : basemapSources.darkMatter;
-    const atlasLayer = L.tileLayer(atlasSource.url, {
-      maxZoom: atlasSource.maxZoom,
-      attribution: atlasSource.attribution
+    const atlasLayer = L.tileLayer(basemapSources.darkMatter.url, {
+      maxZoom: basemapSources.darkMatter.maxZoom,
+      attribution: basemapSources.darkMatter.attribution
     }).addTo(map);
     const satelliteLayer = L.tileLayer(basemapSources.esriSatellite.url, {
       maxZoom: basemapSources.esriSatellite.maxZoom,
       attribution: basemapSources.esriSatellite.attribution
     });
 
-    const streetLayer = L.tileLayer(basemapSources.esriStreets.url, {
-      maxZoom: basemapSources.esriStreets.maxZoom,
-      attribution: basemapSources.esriStreets.attribution
-    });
-    const hybridLayer = L.tileLayer(basemapSources.googleHybrid.url, {
-      maxZoom: basemapSources.googleHybrid.maxZoom,
-      attribution: basemapSources.googleHybrid.attribution
-    });
-
     atlasBaseRef.current = atlasLayer;
     satelliteBaseRef.current = satelliteLayer;
-    streetBaseRef.current = streetLayer;
-    hybridBaseRef.current = hybridLayer;
-    if (!isMtt) {
+    if (isMttView) {
+      map.setMaxBounds(mttBounds.pad(0.05));
+    } else if (isBangkokView) {
+      map.setMaxBounds(greaterBangkokBounds.pad(0.08));
+    } else {
       map.setMaxBounds(thailandBounds.pad(0.22));
     }
 
     overlayRef.current = L.layerGroup().addTo(map);
+    measureLayerRef.current = L.layerGroup().addTo(map);
     jaxaFallbackRef.current = L.layerGroup();
+
+    /* — Live coordinate display on mouse move — */
+    map.on("mousemove", (e: L.LeafletMouseEvent) => {
+      setCursorCoords({ lat: Number(e.latlng.lat.toFixed(5)), lon: Number(e.latlng.lng.toFixed(5)) });
+    });
+    map.on("mouseout", () => setCursorCoords(null));
 
     satelliteLayersRef.current = Object.fromEntries(
       Object.entries(satelliteLayerDefinitions).map(([id, definition]) => {
@@ -1303,6 +1300,11 @@ export default function InteractiveMap({
       })
     ) as Partial<Record<SatelliteLayerId, L.TileLayer>>;
 
+    roadLabelsRef.current = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png",
+      { attribution: "&copy; OpenStreetMap &copy; CARTO", opacity: 0.45, maxZoom: 19, crossOrigin: true }
+    );
+
     mapRef.current = map;
 
     requestAnimationFrame(() => {
@@ -1313,35 +1315,25 @@ export default function InteractiveMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    const allBases = [atlasBaseRef.current, satelliteBaseRef.current, streetBaseRef.current, hybridBaseRef.current].filter(Boolean) as L.TileLayer[];
-    if (!map || allBases.length === 0) {
+    const atlasLayer = atlasBaseRef.current;
+    const satelliteLayer = satelliteBaseRef.current;
+    if (!map || !atlasLayer || !satelliteLayer) {
       return;
     }
 
-    const baseMap: Record<string, L.TileLayer | null> = { atlas: atlasBaseRef.current, satellite: satelliteBaseRef.current, street: streetBaseRef.current, hybrid: hybridBaseRef.current };
-    const activeBase = baseMap[basemap] ?? atlasBaseRef.current;
-    if (!activeBase) return;
-
-    for (const layer of allBases) {
-      if (layer !== activeBase && map.hasLayer(layer)) {
-        map.removeLayer(layer);
-      }
-    }
+    const activeBase = basemap === "satellite" ? satelliteLayer : atlasLayer;
+    const inactiveBase = basemap === "satellite" ? atlasLayer : satelliteLayer;
 
     if (!map.hasLayer(activeBase)) {
       activeBase.addTo(map);
     }
 
+    if (map.hasLayer(inactiveBase)) {
+      map.removeLayer(inactiveBase);
+    }
+
     activeBase.bringToBack();
   }, [basemap]);
-
-  // Swap atlas tile URL when theme changes
-  useEffect(() => {
-    if (atlasBaseRef.current && basemap === "atlas") {
-      const src = themeMode === "dark" ? basemapSources.cartoDark : basemapSources.darkMatter;
-      atlasBaseRef.current.setUrl(src.url);
-    }
-  }, [themeMode, basemap]);
 
   useEffect(() => {
     if (recenterSignal > 0) {
@@ -1409,11 +1401,6 @@ export default function InteractiveMap({
       return;
     }
 
-    if (citySlug === "muang-thong-thani") {
-      map.fitBounds(mttBounds, { padding: [18, 18] });
-      return;
-    }
-
     if (citySlug === "bangkok" && bangkokFeatureBounds) {
       map.fitBounds(
         [
@@ -1448,7 +1435,7 @@ export default function InteractiveMap({
     overlay.clearLayers();
     const activeLayers = new Set(layers as LayerId[]);
 
-    renderFeatureCollections(overlay, locale, activeLayers, featureCollections, domainSlug);
+    renderFeatureCollections(overlay, locale, activeLayers, featureCollections, domainSlug, setSelectedFeature);
 
     if (activeLayers.has("cctv-cameras")) {
       renderCctvCameras(overlay, locale, publicCctvCameras);
@@ -1477,6 +1464,16 @@ export default function InteractiveMap({
           map.removeLayer(layer);
         }
       });
+
+      /* Road labels tile overlay toggle */
+      const rlLayer = roadLabelsRef.current;
+      if (rlLayer) {
+        if (activeLayers.has("road-labels")) {
+          if (!map.hasLayer(rlLayer)) rlLayer.addTo(map);
+        } else if (map.hasLayer(rlLayer)) {
+          map.removeLayer(rlLayer);
+        }
+      }
     }
   }, [citySlug, domainSlug, featureCollections, layerKey, locale, overlayStyleKey, overlayStyles, publicCctvCameras, view]);
 
@@ -1674,10 +1671,130 @@ export default function InteractiveMap({
             : "EO rain: awaiting raster"
           : "";
 
+  /* — Measure tool — */
+  useEffect(() => {
+    const map = mapRef.current;
+    const measureLayer = measureLayerRef.current;
+    if (!map || !measureLayer) return;
+    if (!measureMode) {
+      measureLayer.clearLayers();
+      setMeasurePoints([]);
+      return;
+    }
+
+    function onMapClick(e: L.LeafletMouseEvent) {
+      setMeasurePoints((prev) => {
+        const next = [...prev, [e.latlng.lat, e.latlng.lng] as [number, number]];
+        measureLayer!.clearLayers();
+        if (next.length >= 2) {
+          L.polyline(next.map(([lat, lon]) => [lat, lon] as L.LatLngExpression), {
+            color: "#38bdf8",
+            weight: 2,
+            dashArray: "6 4"
+          }).addTo(measureLayer!);
+        }
+        next.forEach(([lat, lon], i) => {
+          L.circleMarker([lat, lon], { radius: 4, color: "#38bdf8", fillColor: "#38bdf8", fillOpacity: 1, weight: 1 })
+            .bindTooltip(`P${i + 1}`, { permanent: true, direction: "top", offset: [0, -8], className: "measure-label" })
+            .addTo(measureLayer!);
+        });
+        return next;
+      });
+    }
+
+    map.on("click", onMapClick);
+    map.getContainer().style.cursor = "crosshair";
+    return () => {
+      map.off("click", onMapClick);
+      map.getContainer().style.cursor = "";
+    };
+  }, [measureMode]);
+
+  /* — Measure distance calculation — */
+  const measureDistanceKm = measurePoints.length >= 2
+    ? measurePoints.reduce((total, point, i) => {
+        if (i === 0) return 0;
+        const prev = measurePoints[i - 1];
+        const R = 6371;
+        const dLat = (point[0] - prev[0]) * Math.PI / 180;
+        const dLon = (point[1] - prev[1]) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(prev[0] * Math.PI / 180) * Math.cos(point[0] * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        return total + R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }, 0)
+    : 0;
+
+  /* — Layer feature counts for HUD — */
+  const layerCounts = featureCollections
+    .filter((c) => layers.includes(c.layerId))
+    .map((c) => ({ id: c.layerId, count: c.features.length }))
+    .filter((c) => c.count > 0);
+  const cctvLiveCount = layers.includes("cctv-cameras") ? publicCctvCameras.filter((c) => c.status === "live").length : 0;
+
   return (
     <div className="leaflet-map-shell">
       <div ref={containerRef} className="leaflet-map" aria-label="Interactive Thailand signal map" />
       {eoRainState !== "off" ? <div className={`map-layer-status ${eoRainState}`}>{eoRainStatusLabel}</div> : null}
+
+      {/* — Cursor coordinate HUD (layer counts removed: redundant with top-left layer chips, and unlabelled colored numbers don't make sense to a Governor) — */}
+      <div className="map-hud">
+        {cursorCoords && (
+          <span className="hud-coords">{cursorCoords.lat.toFixed(4)}°N {cursorCoords.lon.toFixed(4)}°E</span>
+        )}
+      </div>
+
+      {/* — Measure Tool Button — */}
+      <button
+        type="button"
+        className={`map-measure-btn${measureMode ? " active" : ""}`}
+        onClick={() => setMeasureMode(!measureMode)}
+        title={locale === "th" ? "วัดระยะทาง" : "Measure distance"}
+        aria-label={locale === "th" ? "วัดระยะทางบนแผนที่" : "Measure distance on map"}
+        aria-pressed={measureMode}
+      >
+        {measureMode ? "✕" : "📏"}
+      </button>
+      {measureMode && measureDistanceKm > 0 && (
+        <div className="map-measure-result">
+          {measureDistanceKm < 1
+            ? `${Math.round(measureDistanceKm * 1000)}m`
+            : `${measureDistanceKm.toFixed(2)}km`
+          }
+          <span className="measure-points">{measurePoints.length} pts</span>
+          <button type="button" className="measure-clear" onClick={() => { setMeasurePoints([]); measureLayerRef.current?.clearLayers(); }}>
+            {locale === "th" ? "ล้าง" : "Clear"}
+          </button>
+        </div>
+      )}
+
+      {/* — Feature Detail Card — */}
+      {selectedFeature && (
+        <div className="map-feature-card">
+          <div className="feature-card-header">
+            <span className="feature-card-layer" style={{ borderColor: layerColors[selectedFeature.layerId as LayerId] ?? "#888" }}>
+              {selectedFeature.layerId}
+            </span>
+            <button type="button" className="feature-card-close" onClick={() => setSelectedFeature(null)}>✕</button>
+          </div>
+          <strong className="feature-card-title">{selectedFeature.title}</strong>
+          {selectedFeature.description && <p className="feature-card-desc">{selectedFeature.description}</p>}
+          <div className="feature-card-props">
+            {Object.entries(selectedFeature.properties)
+              .filter(([k, v]) => v !== null && v !== "" && !["citySlug", "sampleKind", "sampleLabel", "sampleRank", "cityCenter"].includes(k))
+              .slice(0, 6)
+              .map(([k, v]) => (
+                <div key={k} className="feature-card-prop">
+                  <span className="prop-key">{humanizePropertyKey(k)}</span>
+                  <span className="prop-val">{String(v)}</span>
+                </div>
+              ))
+            }
+          </div>
+          <div className="feature-card-meta">
+            <span>{selectedFeature.lat.toFixed(4)}°N, {selectedFeature.lon.toFixed(4)}°E</span>
+            <span>{selectedFeature.sourceName}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
