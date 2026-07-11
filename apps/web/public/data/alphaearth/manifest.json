@@ -1,0 +1,20 @@
+[
+  {
+    "id": "change-bangkok-core-2022-2024",
+    "image": "change-bangkok-core-2022-2024.png",
+    "sidecar": "change-bangkok-core-2022-2024.json",
+    "years": {
+      "a": 2022,
+      "b": 2024
+    }
+  },
+  {
+    "id": "change-bangkok-core-2023-2024",
+    "image": "change-bangkok-core-2023-2024.png",
+    "sidecar": "change-bangkok-core-2023-2024.json",
+    "years": {
+      "a": 2023,
+      "b": 2024
+    }
+  }
+]

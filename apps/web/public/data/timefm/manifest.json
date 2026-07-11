@@ -1,0 +1,10 @@
+[
+  {
+    "id": "forecast-pm25-bangkok",
+    "file": "forecast-pm25-bangkok.json",
+    "label": "pm25",
+    "aoi": "bangkok",
+    "horizon": 48,
+    "model": "google/timesfm-2.5-200m-pytorch"
+  }
+]

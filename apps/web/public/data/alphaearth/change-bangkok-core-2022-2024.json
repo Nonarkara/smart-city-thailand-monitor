@@ -1,0 +1,23 @@
+{
+  "image": "change-bangkok-core-2022-2024.png",
+  "bounds": {
+    "west": 100.49992072615558,
+    "south": 13.699667408936351,
+    "east": 100.60053203797696,
+    "north": 13.78015645839346
+  },
+  "years": {
+    "a": 2022,
+    "b": 2024
+  },
+  "stats": {
+    "p_low": 0.1561475396156311,
+    "p_high": 0.3988795578479767,
+    "ramp_low_pctile": 50.0,
+    "ramp_high_pctile": 99.0,
+    "pixel_count": 15680,
+    "max_l2": 0.8378445506095886,
+    "median_l2": 0.14836102724075317
+  },
+  "dataset": "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
+}

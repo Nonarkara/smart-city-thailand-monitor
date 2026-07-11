@@ -1,0 +1,23 @@
+{
+  "image": "change-bangkok-core-2023-2024.png",
+  "bounds": {
+    "west": 100.4999207261556,
+    "south": 13.699757240464763,
+    "east": 100.60008288033492,
+    "north": 13.78015645839346
+  },
+  "years": {
+    "a": 2023,
+    "b": 2024
+  },
+  "stats": {
+    "p_low": NaN,
+    "p_high": NaN,
+    "ramp_low_pctile": 50.0,
+    "ramp_high_pctile": 99.0,
+    "pixel_count": 39917,
+    "max_l2": Infinity,
+    "median_l2": Infinity
+  },
+  "dataset": "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
+}

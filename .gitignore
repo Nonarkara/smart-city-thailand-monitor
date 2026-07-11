@@ -6,3 +6,6 @@ dist
 coverage
 .render
 
+
+apps/api/tmp/
+.claude/worktrees/
