@@ -2,6 +2,8 @@
 
 Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a private editorial/sync back office.
 
+This operational monitor (live traffic, flood, air quality, news, and related feeds) is a different project from [smart-city-thailand-index](https://github.com/Nonarkara/smart-city-thailand-index), which ranks Thai cities on SLIC methodology.
+
 ## What is implemented
 
 - `apps/web`: React + Vite public dashboard with bilingual `th/en` UI, strict grid layout, URL-driven filters, a public home view, and a minimal private admin console route.
@@ -160,3 +162,7 @@ The API still runs safely without a database by falling back to local snapshot f
 - Keep `ADMIN_TOKEN` and any paid API keys only in Render environment variables.
 - Do not commit secrets to GitHub.
 - Rotate the NewsAPI key that was previously shared in chat before using it in production.
+
+## License
+
+Released under the MIT License. See [LICENSE](LICENSE).
