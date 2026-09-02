@@ -1,168 +1,155 @@
-# Smart City Thailand Command Center
+# Smart City Thailand Monitor
 
-Greenfield monorepo scaffold for a public Smart City Thailand dashboard and a private editorial/sync back office.
+[![Hero illustration: a civic studio desk facing a wall of Thai city tiles and a dashboard HUD](docs/hero-banner.png)](docs/hero-banner.png)
 
-This operational monitor (live traffic, flood, air quality, news, and related feeds) is a different project from [smart-city-thailand-index](https://github.com/Nonarkara/smart-city-thailand-index), which ranks Thai cities on SLIC methodology.
+*Illustration, not telemetry.* The city tiles, gauges, and HUD in this banner are a civic-studio drawing — a picture of intent. They are **not** live readings from this repository. The running app is a bilingual operations dashboard with a live map, source adapters, and a dense sidebar. It does not render that 18-city tile wall.
 
-## What is implemented
+Public prototype: [Nonarkara/smart-city-thailand-monitor](https://github.com/Nonarkara/smart-city-thailand-monitor).  
+Live surfaces (when deployed): frontend on Cloudflare Pages (`bangkok-ioc.pages.dev`); API on Render (`smart-city-monitor-api.onrender.com`).
 
-- `apps/web`: React + Vite public dashboard with bilingual `th/en` UI, strict grid layout, URL-driven filters, a public home view, and a minimal private admin console route.
-- `apps/api`: Fastify API with the required public endpoints, header-protected admin endpoints, in-memory state, source-health tracking, and adapter-based sync services.
-- The API now supports free Google-driven news refresh via Google News RSS (and optional Google Alerts RSS feeds) with a 3-minute full sync plus a 1-minute fast-ops sync loop when `ALLOW_LIVE_FETCH=true`.
-- `apps/worker`: lightweight sync trigger that calls the API admin sync endpoint and is available for future cron-based deployments, but it is not used in the recommended first Render launch.
-- `packages/shared`: canonical TypeScript contracts plus seeded mock data used by the API and the frontend fallback path.
-- `render.yaml`: Render Blueprint for a split deployment (`static web` + `api web`) with separate fast-ops and full-sync cadences.
+This operational monitor is a different project from [smart-city-thailand-index](https://github.com/Nonarkara/smart-city-thailand-index), which ranks Thai cities on SLIC methodology.
 
-## Recommended v1 API stack
+---
 
-This repo is currently opinionated toward the following sources for the first live version:
+## What this is
 
-- `Open-Meteo Forecast API`: default weather feed
-- `Open-Meteo Air Quality API`: default AQI / PM2.5 / PM10 feed
-- `Google News RSS`: default free external news feed with no API key required
-- `Google Alerts RSS`: optional user-supplied feed URLs for targeted official Google feeds
-- `NewsAPI`: optional secondary paid/limited news feed
-- `CityData Thailand`: city dashboard and metadata discovery
-- `data.go.th / Open-D`: dataset-specific Thai public data adapters
-- `GISTDA Disaster Open API`: disaster and hazard overlays
-- `Smart City Thailand Office / depa`: official manual/editorial updates
-- `Server time sync`: UTC + multi-time-zone dashboard clocks
+An independent, open-source **civic operations monitor** for Thai cities — built as a 72-inch wall display and a public web dashboard. It pulls public feeds (traffic, flood, air, weather, citizen reports, news, satellite, markets) into one dark, information-dense screen.
 
-## Satellite stack for Thailand
+It is a **studio prototype and research instrument**, not a product brochure and not a municipal system of record.
 
-The nationwide dashboard now separates satellite providers into two groups:
+| Layer | Stack |
+| --- | --- |
+| Public dashboard | React 18, Vite 5, Leaflet, TanStack Query (`apps/web`) |
+| Sync API | Fastify 5, TypeScript (`apps/api`) |
+| Shared contracts | Types, seed data, map layers (`packages/shared`) |
+| Optional worker | Admin sync trigger for cron-style deploys (`apps/worker`) |
+| State | In-memory working set; snapshot to `tmp/api-state.json`; optional Postgres via `DATABASE_URL` |
 
-- `NASA GIBS WMTS`: public no-secret overlays already suitable for nationwide aerosol, precipitation, and vegetation context
-- `JAXA Earth API`: public EO context already used for rainfall overlays
-- `Sentinel Hub Process API`: credential-backed raster API for Thailand true-color, NDVI, NDWI, flood, haze, and cloud-aware composites
-- `Sentinel Hub Statistical API`: credential-backed summary/time-series API for Thai provinces, basins, and custom AOIs
-- `Copernicus Data Space STAC`: preferred scene-search API for Thailand coverage discovery
-- `Copernicus Data Space OData`: direct product-search and download API
-- `Copernicus Data Space openEO`: server-side EO processing for Thailand-scale cubes and batch jobs
+The UI is bilingual (`th` / `en`). Cities in the running seed include Bangkok, Nonthaburi, Chiang Mai, Khon Kaen, and Phuket. Bangkok has the deepest live layers (Traffy Fondue, BMA flood and GIS, iTIC traffic, Overpass roads and waterways).
 
-### Live nationwide satellite routes
+---
 
-When `COPERNICUS_CLIENT_ID` and `COPERNICUS_CLIENT_SECRET` are configured, the API now exposes:
+## Philosophy
 
-- `/api/satellite/digest`: nationwide preview cards, EO freshness metrics, and recent searchable scenes
-- `/api/satellite/preview/:presetId`: token-backed Sentinel Hub preview images for `true-color`, `vegetation`, and `flood-radar`
-- `/api/satellite/stats`: nationwide EO freshness metrics plus Sentinel-2 NDVI median
-- `/api/satellite/search`: token-backed Sentinel Hub catalog search for recent scenes over Thailand
+Civic studio, not SaaS. The desk in the banner is the point: paper, pencils, a notebook that says *our city, our future* — then screens that earn their keep.
 
-If credentials are missing, the JSON routes return a typed `not-configured` status and the image route returns a placeholder SVG so the dashboard still renders cleanly.
+**Listen first, decide better.** The monitor is for seeing, not ranking. Progress is local. There is no league table here.
 
-### Practical note
+**Real data, better decisions.** Every number on the live screen should come from a named adapter or an honest seed fallback. No decorative KPIs. No invented telemetry.
 
-- Prefer `STAC` and `OData` for Copernicus catalogue and download workflows.
-- Do not plan around `OpenSearch`; Copernicus Data Space documentation states it was decommissioned effective `2026-03-02`.
-- For Thailand specifically, the most useful collections to prioritize are:
-  - `Sentinel-1` for monsoon-season flood and cloud-resistant monitoring
-  - `Sentinel-2 L2A` for land, vegetation, water, and urban-surface context
-  - `Sentinel-5P` when atmospheric or pollution context is needed at broader scale
+**Transparent, trustworthy, verifiable.** Source health is first-class. Stale stays stale. Empty upstream responses are not cached as truth.
 
-## Quick start
+**Livable city for everyone.** The design language is an operations room: dark field `rgb(10, 14, 20)`, text `rgb(232, 237, 243)`, meaning-colored accents (red / amber / green / cyan). No rounded corners, no glassmorphism, no default marketing blue. Density over decoration.
 
-1. Install dependencies:
+This repo is the operational cousin of a broader civic practice. Comparison belongs in [smart-city-thailand-index](https://github.com/Nonarkara/smart-city-thailand-index). This monitor watches the street.
+
+---
+
+## Ethical use
+
+**This is not an official government monitor.** It is not operated by BMA, depa, the Smart City Thailand Office, or any ministry. It is not a 72-inch stand-in for an Integrated Operations Center unless a public body independently adopts and operates a fork.
+
+Use it as:
+
+- a public-interest prototype and teaching instrument
+- a wall display for civic studios, classrooms, and research labs
+- a starting point for a city or civil-society fork you operate yourself
+
+Do not use it as:
+
+- an official alert channel, legal notice, or emergency dispatch system
+- a substitute for Traffy Fondue, TMD, Air4Thai, or other authority feeds
+- a ranking of Thai cities (that is the [index repo](https://github.com/Nonarkara/smart-city-thailand-index))
+- a claim that illustrated tiles or HUD gauges are live national telemetry
+
+Upstream licenses and terms still apply. Cite sources. Do not scrape past published limits. Do not commit secrets. Rotate any token that has ever been pasted into chat or a ticket.
+
+---
+
+## How it works
+
+```
+Public feeds ──► adapters (apps/api/src/adapters/) ──► in-memory store
+                                                              │
+                    Fastify routes (/api/overview, /api/news, …)
+                                                              │
+apps/web ── TanStack Query (poll ~180s) ──► sidebar + Leaflet map
+        └── if API is down: seed data from packages/shared
+```
+
+**Adapters** normalize CKAN portals, RSS, REST, GeoJSON, and STAC-style catalogs into one `AdapterSyncResult` (news, projects, map features, media, and snapshot patches such as flood, traffic, Traffy Fondue).
+
+**Sync.** When `ALLOW_LIVE_FETCH` and `AUTO_SYNC_ENABLED` are on, the API schedules a faster ops loop (default 60s) and a fuller loop (default 180s) for news, catalogs, satellite digest, markets, and CKAN. `apps/worker` can POST the admin sync route if you move refresh off the API process.
+
+**Map.** Leaflet tiles (Mapbox / ESRI / CartoDB and similar), Overpass highways and waterways for Bangkok, BMA GIS layers, iTIC events, public CCTV points, projects, and resilience overlays. Layer IDs live in `packages/shared` and are toggled from `apps/web`.
+
+**Fallback.** The dashboard is built to keep showing a complete screen if the API or an upstream is silent. Seed data is labeled by source health, not dressed up as live.
+
+**Optional credentials** (names only; set them in your own environment, never in git):
+
+| Name | Role |
+| --- | --- |
+| `ADMIN_TOKEN` | Protects admin sync and editorial routes |
+| `NEWS_API_KEY` | Optional NewsAPI adapter |
+| `COPERNICUS_CLIENT_ID` / `COPERNICUS_CLIENT_SECRET` | Sentinel Hub / Copernicus previews |
+| `GEMINI_API_KEY` | Optional knowledge assistant |
+| `DATABASE_URL` | Optional durable snapshots |
+| `YOUTUBE_API_KEY` | Optional YouTube signals |
+| `OPENAQ_API_KEY` | Optional OpenAQ |
+| `VITE_API_BASE_URL` | Frontend API origin (empty locally; proxied to the API) |
+
+Copy [`.env.example`](.env.example). Leave unused keys blank. Do not invent or publish values.
+
+Without Copernicus credentials, satellite JSON routes report `not-configured` and image routes return a placeholder so the UI still paints.
+
+---
+
+## How to run / fork
+
+**Requires Node 20+.**
 
 ```bash
+git clone https://github.com/Nonarkara/smart-city-thailand-monitor.git
+cd smart-city-thailand-monitor
 npm install
+cp .env.example .env          # then set tokens locally; never commit .env
+npm run dev:api               # Fastify, default http://127.0.0.1:4000
+npm run dev:web               # Vite, default http://127.0.0.1:5173
 ```
 
-2. Start the API:
-
-```bash
-npm run dev:api
-```
-
-3. Start the frontend:
-
-```bash
-npm run dev:web
-```
-
-4. Optionally run the worker manually:
-
-```bash
-ADMIN_TOKEN=your-token npm run dev:worker
-```
-
-5. Or build everything once to verify the monorepo:
+Build the monorepo (shared package first, as CI does):
 
 ```bash
 npm run build
 ```
 
-## Environment
+Or workspace-by-workspace:
 
-Copy `.env.example` to `.env` and set:
+```bash
+npm run build -w packages/shared
+npm run build -w apps/api
+npm run build -w apps/web
+```
 
-- `ADMIN_TOKEN` for admin endpoints
-- `NEWS_API_KEY` only in backend/Render secrets
-- `NEWS_API_QUERIES` to override the default curated NewsAPI search set (pipe-separated)
-- `NEWS_API_PAGE_SIZE` to control per-query article count
-- `ALLOW_LIVE_FETCH=true` when you want the adapters to hit live sources
-- `AUTO_SYNC_ENABLED=true` when the API should schedule its own refresh loops
-- `SYNC_INTERVAL_MS=180000` for the full-source refresh cadence
-- `OPS_SYNC_INTERVAL_MS=60000` for high-value operational feeds such as traffic, weather, AQI, and flood status
-- `DATABASE_URL` to persist snapshots in Postgres instead of relying on filesystem-only fallback
-- `COPERNICUS_CLIENT_ID` and `COPERNICUS_CLIENT_SECRET` for live Sentinel Hub / Copernicus previews
-- source-specific endpoints only when you have confirmed stable machine-readable URLs
+Optional worker (only if you have set `ADMIN_TOKEN` in the environment):
 
-## Security note
+```bash
+npm run dev:worker
+```
 
-The NewsAPI key previously shared in chat should be rotated before any real deployment. This repo intentionally uses environment variables only and does not embed that key anywhere in source.
+**Fork checklist**
 
-## Render
+1. Clone or fork this repo. Keep the MIT notice.
+2. Point `VITE_API_BASE_URL` at *your* API. Do not reuse someone else's admin token.
+3. Deploy static `apps/web/dist` (Cloudflare Pages reads `netlify.toml`) and the API (Render Blueprint: `render.yaml`).
+4. Set secrets only in the host's environment panel. `ADMIN_TOKEN` is required for admin routes; everything else is optional.
+5. Confirm `/health`, `/api/sources`, and the public dashboard before calling a deploy "live."
+6. If you later run sync from cron, turn `AUTO_SYNC_ENABLED` off so you do not double-fetch.
 
-The included `render.yaml` is intentionally minimal for the first public launch:
+This is a wall-first civic tool. If you fork it for another city, keep the ethic: named sources, visible staleness, no fake gauges.
 
-- `smart-city-monitor-web`: public static frontend
-- `smart-city-monitor-api`: public API service
-
-The app can now persist snapshots to Postgres through `DATABASE_URL`, but the Blueprint does not create a database automatically to avoid unexpected spend during sync.
-The API still runs safely without a database by falling back to local snapshot files.
-
-### Render deploy flow
-
-1. Push the repo to GitHub.
-2. In Render, create a new Blueprint and connect this repo.
-3. Use the repository root `render.yaml`.
-4. Set the required API secrets:
-   - `ADMIN_TOKEN`
-5. Keep these runtime values enabled:
-   - `ALLOW_LIVE_FETCH=true`
-   - `AUTO_SYNC_ENABLED=true`
-   - `OPS_SYNC_INTERVAL_MS=60000`
-   - `SYNC_INTERVAL_MS=180000`
-6. Optionally set:
-   - `NEWS_API_KEY`
-   - `DATABASE_URL`
-   - `GOOGLE_NEWS_RSS_QUERIES`
-   - `GOOGLE_ALERTS_FEEDS`
-   - `CITYDATA_CATALOG_ENDPOINT`
-   - `DATAGOTH_ENDPOINT`
-   - `GISTDA_ENDPOINT`
-   - `COPERNICUS_CLIENT_ID`
-   - `COPERNICUS_CLIENT_SECRET`
-7. Deploy and verify:
-   - API health at `/health`
-   - live source status at `/api/sources`
-   - live satellite digest at `/api/satellite/digest`
-   - the public dashboard renders and continues updating on the configured fast/full cadence
-
-### Why the first launch is minimal
-
-- The API still serves from an in-memory working set for speed, but it can now persist durable snapshots to Postgres.
-- `DATABASE_URL` is optional and should point to a managed Postgres instance in the same region when durability matters.
-- The API performs a 1-minute fast-ops sync and a 3-minute full sync when `ALLOW_LIVE_FETCH=true` and `AUTO_SYNC_ENABLED=true`.
-- If you later move sync to a cron/worker model, disable `AUTO_SYNC_ENABLED` instead of duplicating refresh traffic.
-
-### Secret handling
-
-- Keep `ADMIN_TOKEN` and any paid API keys only in Render environment variables.
-- Do not commit secrets to GitHub.
-- Rotate the NewsAPI key that was previously shared in chat before using it in production.
+---
 
 ## License
 
-Released under the MIT License. See [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Non Arkaraprasertkul.
