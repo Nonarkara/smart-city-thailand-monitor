@@ -4772,8 +4772,7 @@ export function createOverviewSnapshot(options?: {
   };
 }
 
-export function createTimeSnapshot(): TimeSnapshot {
-  const now = new Date();
+export function createTimeSnapshot(now: Date = new Date()): TimeSnapshot {
   const format = (timeZone: string) =>
     new Intl.DateTimeFormat("en-GB", {
       hour: "2-digit",
