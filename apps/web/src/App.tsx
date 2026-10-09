@@ -103,6 +103,7 @@ function getApiBaseCandidates() {
 const API_BASE_CANDIDATES = getApiBaseCandidates();
 const API_BASE_URL = API_BASE_CANDIDATES[0] ?? "";
 const LIVE_POLL_INTERVAL_MS = 180000;
+const CLOCK_DRIFT_SYNC_MS = 10 * 60 * 1000;
 const SATELLITE_DOCS_URL = "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process.html";
 const APP_VERSION = "4.0.0";
 const PUBLIC_DASHBOARD_BRAND = Object.freeze({
@@ -1531,8 +1532,8 @@ function isDecisionQueuePayload(value: unknown) {
   );
 }
 
-function isTimeSnapshotPayload(value: unknown) {
-  return isObject(value) && Array.isArray(value.zones);
+function isTimeSnapshotPayload(value: unknown): value is TimeSnapshot {
+  return isObject(value) && Array.isArray(value.zones) && typeof value.utcIso === "string";
 }
 
 function isSatelliteDigestPayload(value: unknown) {
@@ -1692,12 +1693,156 @@ function normalizeOverviewSnapshot(value: OverviewSnapshot | undefined, fallback
   return value;
 }
 
-function normalizeTimeSnapshot(value: TimeSnapshot | undefined, fallback: TimeSnapshot): TimeSnapshot {
-  if (!value || !Array.isArray(value.zones) || typeof value.updatedAt !== "string") {
-    return fallback;
+async function fetchServerUtcMillis(signal: AbortSignal): Promise<number | null> {
+  for (const baseUrl of API_BASE_CANDIDATES) {
+    try {
+      const response = await fetch(`${baseUrl}/api/time`, { cache: "no-store", signal });
+      if (!response.ok) {
+        continue;
+      }
+
+      const payload = (await response.json().catch(() => null)) as unknown;
+      if (!isTimeSnapshotPayload(payload)) {
+        continue;
+      }
+
+      const serverMs = Date.parse(payload.utcIso);
+      if (Number.isNaN(serverMs)) {
+        continue;
+      }
+
+      return serverMs;
+    } catch (error) {
+      if (signal.aborted) {
+        throw error;
+      }
+    }
   }
 
-  return value;
+  return null;
+}
+
+function useBrowserTimeSnapshot(): TimeSnapshot {
+  const driftMsRef = useRef(0);
+  const lastSyncAtRef = useRef(0);
+  const attemptIdRef = useRef(0);
+  const [snapshot, setSnapshot] = useState(() => createTimeSnapshot());
+
+  useEffect(() => {
+    let tickTimer = 0;
+    let driftTimer = 0;
+    let syncing = false;
+    let stopped = false;
+    let activeController: AbortController | null = null;
+
+    const publish = () => {
+      setSnapshot(createTimeSnapshot(new Date(Date.now() + driftMsRef.current)));
+    };
+
+    const clearTimers = () => {
+      window.clearTimeout(tickTimer);
+      window.clearTimeout(driftTimer);
+      tickTimer = 0;
+      driftTimer = 0;
+    };
+
+    const scheduleTick = () => {
+      window.clearTimeout(tickTimer);
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      const delay = 1000 - (Date.now() % 1000);
+      tickTimer = window.setTimeout(() => {
+        publish();
+        scheduleTick();
+      }, delay);
+    };
+
+    const scheduleDrift = () => {
+      window.clearTimeout(driftTimer);
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      const wait =
+        lastSyncAtRef.current === 0
+          ? 0
+          : Math.max(CLOCK_DRIFT_SYNC_MS - (Date.now() - lastSyncAtRef.current), 0);
+      driftTimer = window.setTimeout(() => {
+        void syncDrift();
+      }, wait);
+    };
+
+    const syncDrift = async () => {
+      if (stopped || syncing || document.visibilityState !== "visible") {
+        return;
+      }
+
+      if (lastSyncAtRef.current !== 0 && Date.now() - lastSyncAtRef.current < CLOCK_DRIFT_SYNC_MS) {
+        scheduleDrift();
+        return;
+      }
+
+      syncing = true;
+      const controller = new AbortController();
+      activeController = controller;
+      const attemptId = ++attemptIdRef.current;
+      const startedAt = Date.now();
+      lastSyncAtRef.current = startedAt;
+
+      try {
+        const serverMs = await fetchServerUtcMillis(controller.signal);
+        if (stopped || attemptIdRef.current !== attemptId) {
+          return;
+        }
+
+        if (serverMs !== null && document.visibilityState === "visible") {
+          const endedAt = Date.now();
+          driftMsRef.current = serverMs - (startedAt + endedAt) / 2;
+          publish();
+        }
+      } catch {
+        // A hidden-tab abort or a failed read still counts toward the 10 minute gap.
+      } finally {
+        if (activeController === controller) {
+          activeController = null;
+        }
+        syncing = false;
+        if (stopped && attemptIdRef.current === attemptId) {
+          lastSyncAtRef.current = 0;
+          attemptIdRef.current = 0;
+        }
+        if (!stopped && attemptIdRef.current === attemptId) {
+          scheduleDrift();
+        }
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") {
+        clearTimers();
+        activeController?.abort();
+        return;
+      }
+
+      publish();
+      scheduleTick();
+      scheduleDrift();
+    };
+
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      stopped = true;
+      clearTimers();
+      activeController?.abort();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  return snapshot;
 }
 
 function Sparkline({ values }: { values: number[] }) {
@@ -1927,7 +2072,7 @@ function useDashboardData(searchParams: URLSearchParams) {
   );
   const mediaFeedsFallback = cloneSeed(mediaFeedSeed);
   const commandCenterFallback = createCommandCenterSnapshot();
-  const timeFallback = createTimeSnapshot();
+  const time = useBrowserTimeSnapshot();
 
   const overviewQuery = useQuery({
     queryKey: ["overview", queryString.toString()],
@@ -2134,12 +2279,6 @@ function useDashboardData(searchParams: URLSearchParams) {
     refetchOnWindowFocus: true
   });
 
-  const timeQuery = useQuery({
-    queryKey: ["time"],
-    queryFn: () => fetchFromApi<TimeSnapshot>("/api/time", timeFallback, isTimeSnapshotPayload),
-    refetchInterval: 1000
-  });
-
   const arenaEventsQuery = useQuery({
     queryKey: ["arena-events"],
     queryFn: () => fetchFromApi<ImpactArenaEvent[]>("/api/arena-events", cloneSeed(impactArenaEventsSeed), Array.isArray),
@@ -2210,7 +2349,7 @@ function useDashboardData(searchParams: URLSearchParams) {
     mediaFeeds: safeArray(mediaFeedsQuery.data, mediaFeedsFallback),
     publicCctvCameras: safeArray(publicCctvQuery.data, publicCctvFallback),
     commandCenter: commandCenterQuery.data ?? commandCenterFallback,
-    time: normalizeTimeSnapshot(timeQuery.data, timeFallback),
+    time,
     arenaEvents: safeArray(arenaEventsQuery.data, cloneSeed(impactArenaEventsSeed)),
     muc: mucQuery.data ?? mucFallback,
     incidents: safeArray(incidentQuery.data, cloneSeed(incidentSeed)),
