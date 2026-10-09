@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/Nonarkara/smart-city-thailand-monitor/security/advisories/new
+    about: Private report for tokens, auth bypass, or other vulnerabilities. Do not open a public issue.
+  - name: Code of Conduct
+    url: https://github.com/Nonarkara/smart-city-thailand-monitor/blob/main/CODE_OF_CONDUCT.md
+    about: Report conduct problems to the repository owner. Do not use a public issue for private personal data.
