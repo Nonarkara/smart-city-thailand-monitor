@@ -62,7 +62,7 @@ TypeScript and markdown in this repo use ASCII quotes.
 
 The default theme in `apps/web/src/styles.css` is dark (`#0a0e14` / `#e8edf3`) with `--radius: 0px`. Some controls still set `border-radius: 2px`. The editorial theme sets `--radius: 4px`. Prefer the default tokens. Do not add `backdrop-filter`. The web stylesheet does not use it.
 
-The hero image is `assets/hero.svg`. It is an illustration. If you replace it, keep light and dark themes working, and update [CREDITS.md](CREDITS.md). Do not copy manga panels or characters into it.
+The hero image is `assets/hero.png`: a screenshot of the running dashboard, with the repo name and the one-line pitch, on a flat Palette field. If the screen changes, replace it with a new capture of this app. Do not substitute an illustration.
 
 ## Pull requests
 

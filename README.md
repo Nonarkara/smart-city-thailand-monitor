@@ -1,6 +1,6 @@
 # Smart City Thailand Monitor
 
-![Ink field: brush marks on paper, a carmine square, and a flat blue rail. Illustration, not a live reading.](assets/hero.svg)
+![Smart City Thailand Monitor. Desktop and phone screens of the public dashboard on a flat blue field.](assets/hero.png)
 
 A bilingual operations screen for Thai public feeds — map, weather, air, traffic, news, and satellite context — in one dark dashboard.
 
@@ -8,9 +8,9 @@ A bilingual operations screen for Thai public feeds — map, weather, air, traff
 [![Node](https://img.shields.io/badge/node-%3E%3D20-101010)](package.json)
 [![License](https://img.shields.io/github/license/Nonarkara/smart-city-thailand-monitor)](LICENSE)
 
-The picture above is an original ink drawing. It is not a map and not a sensor reading. Colour tokens and the *Vagabond* mood note are in [CREDITS.md](CREDITS.md).
+The screens above are the public dashboard at [bangkok-ioc.pages.dev](https://bangkok-ioc.pages.dev/), captured on 10 October 2026 at desktop width and phone width. The field behind them is a flat Palette blue, `#12354e`. See [CREDITS.md](CREDITS.md). The API host named below was still suspended, so the picture is that frontend as served.
 
-**Live pages:** [bangkok-ioc.pages.dev](https://bangkok-ioc.pages.dev/) and [GitHub Pages](https://nonarkara.github.io/smart-city-thailand-monitor/) both returned HTTP 200 on 9 October 2026. The checked-in `apps/web/index.html` title is "Muang Thong Thani Super Dashboard". The API host named in `netlify.toml` and `render.yaml`, `https://smart-city-monitor-api.onrender.com`, answered the same day with a suspension page, so those frontends cannot be treated as a live data feed until that service is restored.
+**Live pages:** [bangkok-ioc.pages.dev](https://bangkok-ioc.pages.dev/) and [GitHub Pages](https://nonarkara.github.io/smart-city-thailand-monitor/) both returned HTTP 200 on 9 October 2026. The hero uses a capture of the Bangkok Pages URL from 10 October 2026. The checked-in `apps/web/index.html` title is "Muang Thong Thani Super Dashboard". The API host named in `netlify.toml` and `render.yaml`, `https://smart-city-monitor-api.onrender.com`, was still returning a suspension page on 10 October 2026, so those frontends cannot be treated as a live data feed until that service is restored.
 
 This monitor is not [smart-city-thailand-index](https://github.com/Nonarkara/smart-city-thailand-index). The index ranks cities. This repo watches feeds.
 
