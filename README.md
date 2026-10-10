@@ -426,6 +426,10 @@ Other gaps, same checkout:
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md). Issue and pull request templates live under `.github/`.
 
+![Closing panel drawn for this project](assets/manga.jpg)
+
+*Before you close the book, look for the Easter eggs: the cat with the red umbrella, 1784, the rubber duck, and the tuk-tuk.*
+
 ## License
 
 The [MIT License](LICENSE) in this tree covers the software as granted there. Copyright (c) 2026 Non Arkaraprasertkul. Data providers, fonts, and the Palette colour data keep their own terms. See [CREDITS.md](CREDITS.md).

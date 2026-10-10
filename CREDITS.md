@@ -12,6 +12,8 @@ Palette's application code and writing are MIT licensed. Its colour data comes f
 
 `docs/hero-banner.png` is an earlier civic-studio drawing. The README does not use it.
 
+`assets/manga.jpg` is original AI-assisted art made for this project. It is the closing panel at the end of the README.
+
 ## Interface fonts
 
 `apps/web/index.html` loads Inter, Manrope, and Noto Sans Thai from Google Fonts. Those families stay under their own licenses. The hero loads Inter for the two lines of type and does not embed the font file.
