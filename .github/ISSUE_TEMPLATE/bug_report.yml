@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in this monitor is wrong, misleading, or broken.
+title: ""
+labels: []
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and this is not the known API typecheck failure (missing runOpsSync, bangkokFloodStatusSeed, traffyFondueSeed).
+          required: true
+        - label: I did not paste tokens, .env contents, or private feed payloads.
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw. Say whether the API was running or the screen was on seed fallback.
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Route or module
+      placeholder: /  or  apps/api/src/adapters/iticAdapter.ts
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - apps/web
+        - apps/api
+        - apps/worker
+        - packages/shared
+        - deploy or docs
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: git rev-parse --short HEAD
