@@ -15,3 +15,5 @@ Verification covers widths 390/799/801/1024/1440, a normal-text chrome ceiling o
 The four-layer economics proposal is ../MAP-FIRST.md. None of its market estimates or business-demand ratings are presented as implemented.
 
 The optional source audit command `npx --no-install axiom-audit apps/web/src/places --strict` could not run: the package registry returned 404. It is not recorded as a passing check. Rendered geometry, production build, behavior tests and independent review are the evidence used here.
+
+Production closeout: source 06949aa deployed as 5fb3dd4d. The five-width browser suite passes against https://bangkok-ioc.pages.dev/places, including Compare keyboard settings, settings bounds, report and enlarged text. The live entry references index-b7ZcWLcS.js. Original IOC root HTML and both immutable bundles remain byte-identical. Current captures reflect production.
