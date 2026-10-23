@@ -202,3 +202,8 @@ test("legacy data stays with its immutable deployment instead of SPA fallback",a
  globalThis.fetch=async req=>{seen=req.url;return new Response('{"legacy":true}',{headers:{'content-type':'application/json'}});};
  try{const res=await pagesWorker.fetch(new Request('https://example.test/data/alphaearth/change-bangkok-core-2023-2024.json'),{ASSETS:{fetch(){throw new Error('must not substitute new SPA HTML');}}});assert.equal((await res.json()).legacy,true);assert.ok(seen.startsWith('https://fa6ccef0.bangkok-ioc.pages.dev/data/'));}finally{globalThis.fetch=original;}
 });
+
+test('attributed market snapshot has its own static asset route and preserves publisher date',async()=>{
+ const d=JSON.parse(readFileSync(new URL('../public/data/places/market.json',import.meta.url),'utf8'));assert.equal(d.publisher,'PropertySights');assert.match(d.publisherDate,/^\d{4}-\d{2}-\d{2}$/);assert.ok(d.rentByBed['1'].n>=5);let requested;
+ const res=await pagesWorker.fetch(new Request('https://example.test/data/places/market.json'),{ASSETS:{fetch(req){requested=req.url;return new Response(JSON.stringify(d),{headers:{'content-type':'application/json'}})}}});assert.equal((await res.json()).publisher,'PropertySights');assert.equal(requested,'https://example.test/data/places/market.json');
+});

@@ -1,0 +1,41 @@
+{
+  "publisher": "PropertySights",
+  "methodology": "https://propertysights.com/data-methodology",
+  "licence": "Our own figures may be quoted with credit to PropertySights. Official series remain the property of their publishers; see each source.",
+  "publisherDate": "2026-10-14",
+  "retrievedAt": "2026-10-23",
+  "source": "https://propertysights.com/api/statistics",
+  "coverage": "Publisher inventory across Bangkok; mostly condos, central and foreign-facing stock overrepresented. Not station-area or commercial comparables.",
+  "rentByBed": {
+    "1": {
+      "median": 35000,
+      "p25": 28000,
+      "p75": 45000,
+      "n": 2030
+    },
+    "2": {
+      "median": 55000,
+      "p25": 45000,
+      "p75": 75000,
+      "n": 2552
+    },
+    "3": {
+      "median": 90000,
+      "p25": 70000,
+      "p75": 120000,
+      "n": 824
+    },
+    "4": {
+      "median": 150000,
+      "p25": 100000,
+      "p75": 200000,
+      "n": 170
+    },
+    "5": {
+      "median": 135000,
+      "p25": 120000,
+      "p75": 170000,
+      "n": 21
+    }
+  }
+}

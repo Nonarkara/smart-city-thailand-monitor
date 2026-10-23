@@ -51,3 +51,13 @@ field access and a paid report remain to be tested with people.
 ## Map-first correction, 23 October
 
 The earlier review missed combined chrome cost: phone map started at y305 after 304px of toolbar bands. User explicitly requested one thin bar. Identity, area selection, view switch and one preferences disclosure now share a line; existing settings and source links remain inside that disclosure. Map is dominant, selected-place fit/action second, supporting evidence third. Desktop map uses the remaining viewport; its real evidence sidebar may scroll. Phone map grows using reclaimed space. The toolbar audit now has a 64px normal-text ceiling; enlarged text may reflow rather than clip. See docs/revival-2026-10-23/MAP-FIRST.md for staged economic evidence design; no market-rent or demand score is inferred from current sources.
+
+## Purpose/economics increment, 23–24 October
+
+User approved continuation after the four-layer proposal. Purpose now selects Live, Business, Industry or Buy to let without adding a toolbar band. Household behavior remains intact. Scenario arithmetic is local and separate per purpose, guide anchor and rounded pin; changing activity invalidates premises checks. Pins outside an anchor are labeled Pinned space, never misrepresented as a verified neighborhood address. Explicit losses and user surplus/yield targets affect verdicts. No positive investment/demand recommendation is produced by arithmetic alone.
+
+Operating costs include owner pay and fit-out recovery; financing/tax are separately entered for investment cash flow. Matched user-sourced comparable rents require five eligible, dated observations, same user-confirmed conditions, ±20% size, ≤90 days and one canonical listing identity. Semantic URL IDs are retained; tracking IDs are ignored. Observation dates use Bangkok midnight.
+
+PropertySights public JSON snapshot is quoted with attribution and published/retrieved dates, only as citywide residential context. Hide its ranges after 30 days. It has no commercial/station-level comparables or historical rent series. Repeatable refresh is scripts/refresh-place-market.mjs; no automatic refresh is claimed. Vite publicDir is the repository /public directory, not apps/web/public; only the Pages Worker is copied separately. CI verifies the market snapshot is in built output.
+
+Nearby Atlas evidence is retained across purposes. Registered companies, civic POIs and complaint counts never become inferred customer demand. Reports/share links honor active purpose; private numbers stay local, reports include them only when explicitly saved. Current anchors remain six residential station guides; Industry is a real-space scenario tool, not a location suitability rating.

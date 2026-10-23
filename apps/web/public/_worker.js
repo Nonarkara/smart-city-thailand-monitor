@@ -54,7 +54,7 @@ export default {
       "/assets/index-4ytu9jeW.js",
       "/assets/index-DmF0VODd.css",
     ]);
-    if (legacyPaths.has(url.pathname) || (!url.pathname.startsWith("/assets/") && url.pathname !== "/data/places/pilot.json")) {
+    if (legacyPaths.has(url.pathname) || (!url.pathname.startsWith("/assets/") && !["/data/places/pilot.json", "/data/places/market.json"].includes(url.pathname))) {
       const legacy = new URL(
         url.pathname + url.search,
         "https://fa6ccef0.bangkok-ioc.pages.dev",

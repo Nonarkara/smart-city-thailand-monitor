@@ -11,6 +11,8 @@ import {
   type Quote,
 } from "./placeFit";
 import "./places.css";
+import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
+import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
 type CivicPlace = {
   id: string;
   name: string;
@@ -75,11 +77,13 @@ function PlaceMap({
   onSelect,
   home,
   onPin,
+  purpose,
 }: {
   places: Place[];
   selected: string;
   onSelect: (id: string) => void;
   home: Quote;
+  purpose: Purpose;
   onPin: (lat: number, lng: number) => void;
 }) {
   const el = useRef<HTMLDivElement>(null),
@@ -178,7 +182,7 @@ function PlaceMap({
             );
         }}
       >
-        Pin home at +
+        {purpose==="live"?"Pin home at +":"Pin space at +"}
       </button>
       </div>
       {failed && (
@@ -187,7 +191,7 @@ function PlaceMap({
         </p>
       )}
       <span className="pf-map-note">
-        Pan to a home, then pin +. Numbers mark station areas.
+        Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.
       </span>
     </div>
   );
@@ -197,6 +201,9 @@ export default function PlaceFitPage() {
   const [places, setPlaces] = useState<Place[]>([]),
     [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState("ari");
+  const [purpose,setPurpose]=useState<Purpose>(readPurpose(new URLSearchParams(location.search).get("purpose")??saved.purpose));
+  const [scenarios,setScenarios]=useState<Record<string,Scenario>>(saved.scenarios??{});
+  const [comparables,setComparables]=useState<Record<string,Comparable[]>>(saved.comparables??{});
   const [shortlist, setShortlist] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Record<string, Quote>>(
     saved.quotes ?? {},
@@ -248,15 +255,18 @@ export default function PlaceFitPage() {
     try {
       localStorage.setItem(
         "bkk-place-fit-v1",
-        JSON.stringify({ prefs, quotes, shortlist }),
+        JSON.stringify({ prefs, quotes, shortlist, purpose, scenarios, comparables }),
       );
     } catch {
       /* Private mode: this session still works. */
     }
-  }, [prefs, quotes, shortlist]);
+  }, [prefs, quotes, shortlist, purpose, scenarios, comparables]);
   const place = places.find((p) => p.id === selected);
   const quote = quotes[selected] ?? {};
   const fit = assess(prefs, quote);
+  const spaceKey=(id:string)=>{const q=quotes[id]??{};return `${purpose}:${id}:${q.lat??"station"}:${q.lng??"station"}`};
+  const scenarioKey=spaceKey(selected);
+  const scenario=scenarios[scenarioKey]??{};
   const journeyCurrent =
     quote.commuteFor === prefs.destination.trim() &&
     quote.commuteTravel === prefs.travel &&
@@ -341,7 +351,7 @@ export default function PlaceFitPage() {
       },
     }));
     setMessage(
-      "Home pin placed. Nearby evidence now checks this location. Recheck access and journey.",
+      purpose==="live"?"Home pin placed. Nearby evidence now checks this location. Recheck access and journey.":"Space pin placed. This location has a separate scenario; check the actual premises.",
     );
   }
   async function share() {
@@ -349,10 +359,11 @@ export default function PlaceFitPage() {
     u.search = "";
     u.hash = "";
     u.searchParams.set("compare", shortlist.join(","));
+    u.searchParams.set("purpose",purpose);
     try {
       await navigator.clipboard.writeText(u.href);
       setMessage(
-        "Comparison link copied. Personal budget and home notes stay on this device.",
+        "Comparison link copied. Area and purpose are shared; personal values stay on this device.",
       );
     } catch {
       setMessage(`Copy this link: ${u.href}`);
@@ -363,9 +374,11 @@ export default function PlaceFitPage() {
       const p = places.find((x) => x.id === id)!;
       const q = quotes[id] ?? {},
         f = assess(prefs, q);
+      if(purpose!=="live")return `${p.name} / ${p.thai}\nPin: ${q.lat??p.lat},${q.lng??p.lng}\n${economicsReport(purpose,scenarios[spaceKey(id)]??{})}\nComparable evidence: ${JSON.stringify(comparables[spaceKey(id)]??[])}\nMap: ${maps({...p,lat:q.lat??p.lat,lng:q.lng??p.lng})}\n`;
       return `${p.name} / ${p.thai}\n${p.character}\nTradeoff: ${p.tradeoff}\nMonthly costs entered: ${f.total === null ? "unknown" : money(f.total)}${q.extras === undefined ? " (extras not entered)" : ""}\nStation access: ${q.access ?? "not checked"}\nChecked journey: ${q.commute === undefined ? "not entered" : q.commute + " minutes"}; for ${q.commuteFor || "destination not recorded"} at ${q.commuteAt || "time not recorded"}; travel ${q.commuteTravel || "not recorded"}\nJourney limit: ${prefs.maxCommute} minutes\nHome pin: ${q.lat !== undefined ? q.lat + ", " + q.lng : "not set (station-area context)"}\n${f.status}\n${[...f.reasons, ...f.missing].join("\n")}\nVisit: ${p.visit}\nYour note: ${q.note ?? ""}\nListings: ${p.rentUrl}\nMap: ${maps({ ...p, lat: q.lat ?? p.lat, lng: q.lng ?? p.lng })}\n`;
     });
-    const text = `BANGKOK, FOR YOU — personal comparison\nSaved ${date(new Date().toISOString())}\nMonthly ceiling: ${money(prefs.budget)}. Travel: ${prefs.travel}. Destination: ${prefs.destination || "not entered"}.\nUser-entered quotes are not verified offers. Neighborhood context is desk research checked 23 Oct 2026. No property has been surveyed.\n\n${rows.join("\n")}\nVisit each home at your travel time. Confirm lease length, utilities, pet rules, actual access and availability.\n`;
+    const reportContext=purpose==="live"?`Monthly ceiling: ${money(prefs.budget)}. Travel: ${prefs.travel}. Destination: ${prefs.destination||"not entered"}.`:`Purpose: ${purposes[purpose]}. All scenario values are personal assumptions; local demand and agreed market rents are not verified.`;
+    const text = `BANGKOK, FOR YOU — personal comparison\nSaved ${date(new Date().toISOString())}\n${reportContext}\nUser-entered quotes are not verified offers. Neighborhood context is desk research checked 23 Oct 2026. No property has been surveyed.\n\n${rows.join("\n")}\n${purpose==="live"?"Visit each home at your travel time. Confirm lease length, utilities, pet rules, actual access and availability.":"Check permitted use, lease terms, usable area, operating hours, access, utilities, actual demand and availability at each space."}\n`;
     const a = document.createElement("a");
     a.href = URL.createObjectURL(
       new Blob([text], { type: "text/plain;charset=utf-8" }),
@@ -388,11 +401,12 @@ export default function PlaceFitPage() {
   return (
     <main id="place-fit">
       <header className="pf-header">
+        <label className="pf-purpose"><span className="pf-sr-only">Purpose</span><select aria-label="Purpose" value={purpose} onChange={e=>setPurpose(e.target.value as Purpose)}>{Object.entries(purposes).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
         <a className="pf-brand" aria-label="Bangkok, for you" href={`${BASE}places`}>Bangkok<span>, for you</span></a>
         <nav className="pf-areas" aria-label="Choose an area">
             <label className="pf-mobile-area">
               <span className="pf-sr-only">Area</span>
-              <select
+              <select aria-label="Area"
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
               >
@@ -413,9 +427,10 @@ export default function PlaceFitPage() {
         </button>
         <button
           className={view === "compare" ? "pf-active" : ""}
+          aria-label={`Compare (${shortlist.length}/3)`}
           onClick={() => setView("compare")}
         >
-          Compare ({shortlist.length}/3)
+          <span className="pf-compare-long">Compare ({shortlist.length}/3)</span><span className="pf-compare-short">Compare ({shortlist.length})</span>
         </button>
         </div>
         <details className="pf-more">
@@ -530,6 +545,7 @@ export default function PlaceFitPage() {
               onSelect={setSelected}
               home={quote}
               onPin={pin}
+              purpose={purpose}
             />
             {place && (
               <article className="pf-place" aria-labelledby="pf-place-name">
@@ -537,9 +553,16 @@ export default function PlaceFitPage() {
                   {place.line} · {place.station}
                 </p>
                 <h1 id="pf-place-name">
-                  {place.name}
-                  <span lang="th">{place.thai}</span>
+                  {purpose!=="live"&&quote.lat!==undefined?"Pinned space":place.name}
+                  {(purpose==="live"||quote.lat===undefined)&&<span lang="th">{place.thai}</span>}
                 </h1>
+                {purpose!=="live" ? <>
+                  {quote.lat!==undefined&&<p className="pf-source">Your pin: {quote.lat}, {quote.lng}. {place.name} is the guide anchor, not a verified address.</p>}
+                  <EconomicsSummary purpose={purpose} scenario={scenario}/>
+                  {quote.lat!==undefined&&<button onClick={()=>setQuotes(old=>({...old,[selected]:{...old[selected],lat:undefined,lng:undefined,access:"unknown",commute:undefined}}))}>Use station area instead</button>}
+                  <div className="pf-place-actions"><button className="pf-primary" aria-pressed={shortlist.includes(selected)} onClick={()=>toggle(selected)}>{shortlist.includes(selected)?"Remove from shortlist":"Shortlist this area"}</button></div>
+                  <p className="pf-source">{purpose==="industrial"?"Station areas are navigation anchors, not an industrial suitability assessment. Check zoning, utilities and freight access at the actual premises.":"No demand or return is inferred from the station-area description."}</p>
+                </> : <>
                 <div className="pf-readiness">
                   <h3>Your limits</h3>
                   <p>
@@ -600,13 +623,16 @@ export default function PlaceFitPage() {
                     Browse asking rents ↗
                   </a>
                 </p>
+                </>}
               </article>
             )}
           </div>
+          {place && purpose!=="live" && <EconomicsEditor key={scenarioKey} purpose={purpose} area={quote.lat!==undefined?"your pinned space":place.name} scenario={scenario} onChange={value=>setScenarios(old=>({...old,[scenarioKey]:value}))} comparables={comparables[scenarioKey]??[]} onComparables={value=>setComparables(old=>({...old,[scenarioKey]:value}))}/>}
           {place && (
-            <section id="home-check" className="pf-evidence">
-              <div className="pf-home">
+            <section id="home-check" className={`pf-evidence ${purpose!=="live"?"pf-site-evidence":""}`}>
+              {purpose==="live"&&<div className="pf-home">
                 <h2>Would a home here work for you?</h2>
+                <MarketContext/>
                 <p>Use a real quote. These amounts stay on this device.</p>
                 {quote.lat !== undefined ? (
                   <p>
@@ -714,18 +740,18 @@ export default function PlaceFitPage() {
                 <a href={maps(place)} target="_blank" rel="noreferrer">
                   Open area in Google Maps ↗
                 </a>
-              </div>
+              </div>}
               <div className="pf-nearby">
-                <h2>{quote.lat !== undefined ? "Evidence around your home pin" : "Evidence around this station area"}</h2>
+                <h2>{quote.lat !== undefined ? `Evidence around your ${purpose==="live"?"home":"space"} pin` : "Evidence around this station area"}</h2>
                 <p>
                   800 m straight-line radius around{" "}
                   {quote.lat !== undefined
-                    ? "your home pin"
+                    ? `your ${purpose==="live"?"home":"space"} pin`
                     : "the station-area anchor"}
                   .{" "}
                   {quote.lat !== undefined
                     ? "The chosen point is sent to Atlas; your notes stay on this device."
-                    : "Pin a home to check its own surroundings."}
+                    : "Pin a space to check its own surroundings."}
                 </p>
                 {busy && (
                   <p role="status">
@@ -848,8 +874,8 @@ export default function PlaceFitPage() {
               Choose up to three areas from Explore, then add real home quotes
               to compare costs and access.
             </p>
-          ) : (
-            <div data-count={shortlist.length} className="pf-comparison">
+          ) : purpose!=="live" ? <EconomicComparison purpose={purpose} places={places.filter(p=>shortlist.includes(p.id))} scenarios={scenarios} spaceKey={spaceKey} onEdit={id=>{setSelected(id);setView("explore");setTimeout(()=>document.getElementById("space-check")?.scrollIntoView(),50)}}/> : (
+            <div data-count={shortlist.length} className="pf-comparison-data">
               <p id="pf-comparison-context">Home costs and access are your entries. Editorial context is not a property survey.</p>
             <div
               className="pf-table-wrap"
@@ -969,7 +995,7 @@ export default function PlaceFitPage() {
             </div>
           )}
           <p className="pf-private">
-            Shared links contain area names only. Your budget, quotes and notes
+            Shared links contain area names and purpose only. Your budget, quotes and notes
             stay in this browser. The saved report includes your entries.
           </p>
         </section>
@@ -991,6 +1017,7 @@ export default function PlaceFitPage() {
                 localStorage.removeItem("bkk-place-fit-v1");
               } catch {}
               setQuotes({});
+              setScenarios({});setComparables({});setPurpose("live");
               setShortlist([]);
               setPrefs({
                 budget: 20000,
