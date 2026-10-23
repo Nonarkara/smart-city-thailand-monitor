@@ -801,14 +801,14 @@ body:has(#place-fit) {
  #place-fit .pf-compare-long { display:none; }
  #place-fit .pf-compare-short { display:inline; }
  #place-fit .pf-purpose select { width:max(86px,6em); }
- #place-fit .pf-header { gap:6px; padding:6px 8px; }
+ #place-fit .pf-header { gap:4px; padding:6px 8px; }
  #place-fit .pf-settings-word { display:none; }
  #place-fit .pf-settings-icon { display:inline; }
  #place-fit .pf-more summary { list-style:none; text-decoration:none; padding:4px 8px; }
  #place-fit .pf-more summary::-webkit-details-marker { display:none; }
 }
 @media(max-width:800px){
- #place-fit .pf-mobile-area select { width:max(140px,9em); }
+ #place-fit .pf-mobile-area select { width:max(136px,9em); }
  #place-fit .pf-space-check { display:block; padding:20px 16px; }
  #place-fit .pf-space-results { margin-top:24px; }
  #place-fit .pf-place .pf-econ-summary { order:5; }

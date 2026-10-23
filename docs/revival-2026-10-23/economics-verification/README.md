@@ -21,3 +21,5 @@ Capture values are synthetic browser fixtures, not recommended rents or forecast
 
 ## Data work still needed
 Six station guides remain navigation anchors. Industrial use is a premises scenario, not an industrial suitability map. Current customer demand, comparable commercial rents, rent-history baselines, permitted-use records and timed network access need additional verified data/field work. The official DRT source probe in ../demand-source-probe.json covers ARL through March 2026, not current BTS-area storefront demand; it is deliberately not mapped as such.
+
+The first production check caught a phone wrap to85px after text-resizing support was added. Compact toolbar gaps were reduced from6px to4px and the area selector by4px; rebuilt production-output captures now confirm47px at all three widths with the filled scenario action visible. This replaces the earlier local-only layout claim.
