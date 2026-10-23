@@ -196,3 +196,9 @@ test("changing departure time invalidates the checked journey", () => {
     "Needs checking",
   );
 });
+
+test("legacy data stays with its immutable deployment instead of SPA fallback",async()=>{
+ const original=globalThis.fetch;let seen;
+ globalThis.fetch=async req=>{seen=req.url;return new Response('{"legacy":true}',{headers:{'content-type':'application/json'}});};
+ try{const res=await pagesWorker.fetch(new Request('https://example.test/data/alphaearth/change-bangkok-core-2023-2024.json'),{ASSETS:{fetch(){throw new Error('must not substitute new SPA HTML');}}});assert.equal((await res.json()).legacy,true);assert.ok(seen.startsWith('https://fa6ccef0.bangkok-ioc.pages.dev/data/'));}finally{globalThis.fetch=original;}
+});
