@@ -1,0 +1,34 @@
+name: Place-fit pilot
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'public/data/places/**'
+      - 'scripts/test-place-fit.mjs'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/verify-place-fit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'public/data/places/**'
+      - 'scripts/test-place-fit.mjs'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/verify-place-fit.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/test-place-fit.mjs
+      - run: npm run build -w packages/shared
+      - run: npm run build -w apps/web

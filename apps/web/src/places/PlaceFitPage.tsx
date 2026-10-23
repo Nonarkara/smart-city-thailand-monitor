@@ -162,15 +162,11 @@ function PlaceMap({
   }, [home.lat, home.lng, selected]);
   return (
     <div className="pf-map-wrap">
+      <div className="pf-map-canvas">
       <div ref={el} className="pf-map" aria-label="Six Bangkok station areas" />
       <span className="pf-map-target" aria-hidden="true">
         +
       </span>
-      {failed && (
-        <p className="pf-map-error">
-          Map tiles unavailable. All six places remain selectable above.
-        </p>
-      )}
       <button
         className="pf-pin-home"
         onClick={() => {
@@ -184,6 +180,12 @@ function PlaceMap({
       >
         Pin home at +
       </button>
+      </div>
+      {failed && (
+        <p className="pf-map-error">
+          Map tiles unavailable. All six places remain selectable above.
+        </p>
+      )}
       <span className="pf-map-note">
         Pan to a home, then pin +. Numbers mark station areas.
       </span>
@@ -859,6 +861,8 @@ export default function PlaceFitPage() {
               to compare costs and access.
             </p>
           ) : (
+            <div data-count={shortlist.length} className="pf-comparison">
+              <p id="pf-comparison-context">Home costs and access are your entries. Editorial context is not a property survey.</p>
             <div
               className="pf-table-wrap"
               tabIndex={0}
@@ -869,11 +873,7 @@ export default function PlaceFitPage() {
                 Swipe across to compare all selected areas. Row labels stay in
                 place.
               </p>
-              <table>
-                <caption>
-                  Home costs and access are your entries. Editorial context is
-                  not a property survey.
-                </caption>
+              <table aria-describedby="pf-comparison-context">
                 <thead>
                   <tr>
                     <th scope="col">Decision</th>
@@ -977,6 +977,7 @@ export default function PlaceFitPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           )}
           <p className="pf-private">

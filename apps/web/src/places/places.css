@@ -725,3 +725,13 @@ body:has(#place-fit) {
 }
 @media(min-width:701px){#place-fit .pf-map-wrap{min-height:max(580px,calc(100dvh - 192px));}#place-fit .pf-map-note{left:60px;max-width:calc(100% - 300px);}}
 @media(max-width:700px){#place-fit .pf-pin-home{top:54px;}#place-fit .pf-map-note{padding:4px 8px;}}
+
+/* Instructions occupy their own row, including when text is enlarged. */
+#place-fit .pf-map-wrap { display:grid; grid-template-rows:minmax(220px,1fr) auto; height:auto; }
+#place-fit .pf-map-canvas { position:relative; min-height:220px; min-width:0; }
+#place-fit .pf-map-note { position:static; max-width:none; padding:8px 12px; background:#fff; }
+#place-fit .pf-map-error { position:static; margin:0; }
+#place-fit .pf-pin-home { top:12px; }
+#place-fit .pf-comparison > p { color:var(--pf-muted); }
+#place-fit .pf-comparison[data-count="1"] table { min-width:0; }
+#place-fit .pf-comparison[data-count="1"] .pf-swipe { display:none; }
