@@ -6,7 +6,7 @@ User-entered quotes are not verified offers. Neighborhood context is desk resear
 Ari / อารีย์
 Pin: 13.7796,100.5448
 Business · Bakery test scenario
-Assumptions calculated
+Premises checks incomplete
 Confirm permitted use and lease terms
 Check required access and utilities
 Record where and when you checked the premises
