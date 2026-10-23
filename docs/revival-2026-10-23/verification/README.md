@@ -7,3 +7,7 @@ Independent rendered review inspected phone/tablet/desktop, comparison and enlar
 Reproduce with `node --test scripts/test-place-fit.mjs`, shared/web builds, then `PILOT_URL=<published /places URL> node scripts/verify-place-fit-browser.mjs`. PLAYWRIGHT_MODULE_PATH and CHROME_PATH select an installed Playwright/Chrome runtime. Test report contains synthetic entries only.
 
 Atlas location evidence is deployed separately at atlas.nonarkara.org/api/location/evidence. Legacy IOC routes and data are retained through the immutable original deployment. The consumer pilot is additive at /places.
+
+## Production closeout
+
+Published source 813388a as Pages production deployment 71caf682. All five browser widths and the complete phone workflow pass against https://bangkok-ioc.pages.dev/places. Root HTML and both original IOC bundles are byte-identical to deployment fa6ccef0. Atlas app.js is byte-identical to its pre-change snapshot; the separate location-evidence endpoint returns valid JSON. Independent review found no release blocker in the final captures. Production captures replace the local captures where dynamic tiles differed.
