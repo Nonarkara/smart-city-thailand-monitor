@@ -388,16 +388,39 @@ export default function PlaceFitPage() {
   return (
     <main id="place-fit">
       <header className="pf-header">
-        <a className="pf-brand" href={`${BASE}places`}>
-          Bangkok, for you<span>Find a place that fits your life.</span>
-        </a>
-        <div className="pf-header-links">
-          <span>Pilot · six areas</span>
-          <a href="https://atlas.nonarkara.org">Atlas ↗</a>
-          <a href={BASE}>Legacy IOC ↗</a>
+        <a className="pf-brand" aria-label="Bangkok, for you" href={`${BASE}places`}>Bangkok<span>, for you</span></a>
+        <nav className="pf-areas" aria-label="Choose an area">
+            <label className="pf-mobile-area">
+              <span className="pf-sr-only">Area</span>
+              <select
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+              >
+                {places.map((p, i) => (
+                  <option key={p.id} value={p.id}>
+                    {i + 1}. {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+        </nav>
+        <div className="pf-view-controls">
+        <button
+          className={view === "explore" ? "pf-active" : ""}
+          onClick={() => setView("explore")}
+        >
+          Explore
+        </button>
+        <button
+          className={view === "compare" ? "pf-active" : ""}
+          onClick={() => setView("compare")}
+        >
+          Compare ({shortlist.length}/3)
+        </button>
         </div>
-      </header>
-      <section className="pf-preferences" aria-label="Your preferences">
+        <details className="pf-more">
+          <summary aria-label="Budget & journey"><span className="pf-settings-word">Budget & journey</span><span className="pf-settings-icon" aria-hidden="true">⋯</span></summary>
+          <div className="pf-more-content">
         <label>
           Monthly ceiling{" "}
           <span className="pf-input-unit">
@@ -416,7 +439,7 @@ export default function PlaceFitPage() {
         </label>
         <label>
           Getting around
-          <select
+          <select aria-label="Getting around"
             value={prefs.travel}
             onChange={(e) =>
               setPrefs({
@@ -430,21 +453,7 @@ export default function PlaceFitPage() {
             <option value="either">Either works</option>
           </select>
         </label>
-        <button
-          className={view === "explore" ? "pf-active" : ""}
-          onClick={() => setView("explore")}
-        >
-          Explore
-        </button>
-        <button
-          className={view === "compare" ? "pf-active" : ""}
-          onClick={() => setView("compare")}
-        >
-          Compare ({shortlist.length}/3)
-        </button>
-        <details className="pf-more">
-          <summary>Interests & journey</summary>
-          <div className="pf-more-content">
+
             <label>
               Work, school or regular destination
               <input
@@ -499,9 +508,14 @@ export default function PlaceFitPage() {
                 </label>
               ))}
             </fieldset>
+            <div className="pf-header-links">
+              <span>Pilot · six areas</span>
+              <a href="https://atlas.nonarkara.org">Atlas ↗</a>
+              <a href={BASE}>Legacy IOC ↗</a>
+            </div>
           </div>
         </details>
-      </section>
+      </header>
       {message && (
         <p role="status" className="pf-message">
           {message}
@@ -509,34 +523,6 @@ export default function PlaceFitPage() {
       )}
       {view === "explore" ? (
         <>
-          <nav className="pf-areas" aria-label="Choose an area">
-            {places.map((p, i) => (
-              <button
-                key={p.id}
-                aria-pressed={selected === p.id}
-                onClick={() => setSelected(p.id)}
-              >
-                <span>{i + 1}</span>
-                {p.name}
-                {shortlist.includes(p.id) && (
-                  <span aria-label="shortlisted"> ✓</span>
-                )}
-              </button>
-            ))}
-            <label className="pf-mobile-area">
-              Area
-              <select
-                value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-              >
-                {places.map((p, i) => (
-                  <option key={p.id} value={p.id}>
-                    {i + 1}. {p.name} · {p.thai}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </nav>
           <div className="pf-workspace">
             <PlaceMap
               places={places}
@@ -554,6 +540,17 @@ export default function PlaceFitPage() {
                   {place.name}
                   <span lang="th">{place.thai}</span>
                 </h1>
+                <div className="pf-readiness">
+                  <h3>Your limits</h3>
+                  <p>
+                    {fit.status}.{" "}
+                    {fit.total !== null
+                      ? `${money(fit.total)} / month entered.`
+                      : "Monthly total not yet known."}
+                  </p>
+                  {[...fit.reasons, ...fit.missing].map((item) => <p className="pf-missing" key={item}>{item}</p>)}
+                </div>
+
                 <p>{place.character}</p>
                 {interestMatches(place, prefs.interests).length > 0 && (
                   <p className="pf-match">
@@ -592,15 +589,6 @@ export default function PlaceFitPage() {
                     {d.name} ↗
                   </a>
                 ))}
-                <div className="pf-readiness">
-                  <h3>Your home check</h3>
-                  <p>
-                    {fit.status}.{" "}
-                    {fit.total !== null
-                      ? `${money(fit.total)} / month entered.`
-                      : "Add a real rent quote and check the walking route before deciding."}
-                  </p>
-                </div>
                 <p className="pf-source">
                   Desk research · {date(place.checkedAt)}
                   <br />

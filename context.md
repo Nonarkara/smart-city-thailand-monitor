@@ -47,3 +47,7 @@ flows; 390x844, 1024x900 and 1440x900 screenshots, adjacent breakpoints, open
 preferences, long labels and enlarged text; independent review; then live proof.
 Browser or source scans alone do not establish a visual pass. Customer demand,
 field access and a paid report remain to be tested with people.
+
+## Map-first correction, 23 October
+
+The earlier review missed combined chrome cost: phone map started at y305 after 304px of toolbar bands. User explicitly requested one thin bar. Identity, area selection, view switch and one preferences disclosure now share a line; existing settings and source links remain inside that disclosure. Map is dominant, selected-place fit/action second, supporting evidence third. Desktop map uses the remaining viewport; its real evidence sidebar may scroll. Phone map grows using reclaimed space. The toolbar audit now has a 64px normal-text ceiling; enlarged text may reflow rather than clip. See docs/revival-2026-10-23/MAP-FIRST.md for staged economic evidence design; no market-rent or demand score is inferred from current sources.
