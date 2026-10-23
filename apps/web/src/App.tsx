@@ -89,6 +89,7 @@ import {
 import { getEoTileConfigs } from "./eoTiles";
 import InteractiveMap from "./InteractiveMap";
 import BangkokStatsBar from "./BangkokStatsBar";
+import PlaceFitPage from "./places/PlaceFitPage";
 
 function normalizeApiBase(baseUrl: string) {
   const trimmed = baseUrl.trim();
@@ -6210,6 +6211,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
+      <Route path="/places" element={<PlaceFitPage />} />
       <Route path="/public" element={<PublicPage />} />
       <Route path="/admin" element={<AdminConsolePage />} />
     </Routes>

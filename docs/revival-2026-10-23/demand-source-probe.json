@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-24",
+  "publisher": "Department of Rail Transport",
+  "catalog": "https://data.go.th/dataset/drt2566_02",
+  "resource": "https://drt.gdcatalog.go.th/dataset/8eba378c-79c6-4b5e-a904-b6ad1ab4458d/resource/266f7db8-6f66-4fce-8f31-103eaf336a0b/download/drt2566_02.csv",
+  "sha256": "99c5f8b4aea837ff08cdcbfa13471809f005b8a7c9cb2ada8e332ae91fe71c55",
+  "rows": 12408,
+  "lines": [
+    "แอร์พอร์ต เรล ลิงก์"
+  ],
+  "stations": [
+    "บ้านทับช้าง",
+    "พญาไท",
+    "มักกะสัน",
+    "ราชปรารภ",
+    "รามคำแหง",
+    "ลาดกระบัง",
+    "สุวรรณภูมิ",
+    "หัวหมาก"
+  ],
+  "periodStart": "2022-01-01",
+  "periodEnd": "2026-03-31",
+  "integration": "not integrated",
+  "reason": "ARL only; no BTS pilot-anchor coverage. Period ends March 2026. Ridership is not local storefront footfall, target customers or spending."
+}

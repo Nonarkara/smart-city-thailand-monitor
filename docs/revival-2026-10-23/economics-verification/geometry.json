@@ -1,0 +1,23 @@
+[
+  {
+    "chrome": 47,
+    "primaryBottom": 590.71875,
+    "width": 390,
+    "body": 390,
+    "pass": true
+  },
+  {
+    "chrome": 47,
+    "primaryBottom": 438.796875,
+    "width": 1024,
+    "body": 1024,
+    "pass": true
+  },
+  {
+    "chrome": 47,
+    "primaryBottom": 438.796875,
+    "width": 1440,
+    "body": 1440,
+    "pass": true
+  }
+]
