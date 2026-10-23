@@ -1,10 +1,16 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import App from "./App";
+const isPlacePilot =
+  location.pathname.endsWith("/places") ||
+  location.pathname.endsWith("/places/");
+const App = lazy(async () => {
+  if (isPlacePilot) return import("./places/PlaceFitPage");
+  await import("./styles.css");
+  return import("./App");
+});
 import AppErrorBoundary from "./AppErrorBoundary";
-import "./styles.css";
 
 const queryClient = new QueryClient();
 
@@ -13,9 +19,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <AppErrorBoundary>
-          <App />
+          <Suspense fallback={<p>Opening Bangkok…</p>}>
+            <App />
+          </Suspense>
         </AppErrorBoundary>
       </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
