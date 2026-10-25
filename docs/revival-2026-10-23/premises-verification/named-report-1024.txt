@@ -1,5 +1,5 @@
 BANGKOK, FOR YOU — private premises comparison
-Exported 2026-10-25T16:00:20.970Z
+Exported 2026-10-25T16:16:00.679Z
 Names, pins, quotes and checks are your entries, not verified offers. Station-area context is not a premises survey. No proven demand or property-level risk conclusion.
 
 A. Bakery unit A
@@ -7,7 +7,7 @@ Purpose: business; station-guide context: ari
 User pin: 13.7716,100.5448
 Quote observed: 2026-10-25
 Quote source: https://example.org/unit-a
-Last saved: 2026-10-25T16:00:19.937Z (save time, not observation time)
+Last saved: 2026-10-25T16:15:59.373Z (save time, not observation time)
 Business · Bakery test
 Below your surplus target
 Base-case surplus is below your entered monthly target.
@@ -23,7 +23,7 @@ Purpose: business; station-guide context: ari
 User pin: 13.7716,100.5448
 Quote observed: not provided
 Quote source: not provided / offline evidence
-Last saved: 2026-10-25T16:00:20.405Z (save time, not observation time)
+Last saved: 2026-10-25T16:15:59.833Z (save time, not observation time)
 Business · Bakery test
 Premises checks incomplete
 Confirm permitted use and lease terms

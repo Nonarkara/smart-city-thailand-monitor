@@ -24,3 +24,5 @@ No rent fairness/history, actual demand, investment return or property-level ris
 Independent source/rendered review passed after all targeted fixes. Reviewer inspected final390/1024/1440 comparison/map states, source-clear semantics, coincident-marker readability and the120-character phone-name case; no remaining blocker. Source is frozen for deployment.
 
 Before publication, the additional two-tab audit required v2/lock-protected persistence. Current total is69 tests; storage-verification records migration, concurrency and recovery. All named and prior workflows pass with that storage layer. The named feature's initial11a0071 commit was deliberately held from production until this data-loss risk was closed.
+
+Released with conflict-safe workspace source6707b2d, deployment25a68623. The full named workflow passed against the public /places URL at390/1024/1440, including metadata clearing, same-pin units, privacy, private reports, legacy area draft preservation, long-name wrapping and enlarged-text behavior. See storage-verification for concurrent-tab live proof.
