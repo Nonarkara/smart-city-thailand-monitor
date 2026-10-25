@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -11,6 +11,7 @@ import {
   type Quote,
 } from "./placeFit";
 import "./places.css";
+import {catalogPoints,type CatalogPoint} from "./catalog";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
 type CivicPlace = {
@@ -78,12 +79,14 @@ function PlaceMap({
   home,
   onPin,
   purpose,
+  catalog,
 }: {
   places: Place[];
   selected: string;
   onSelect: (id: string) => void;
   home: Quote;
   purpose: Purpose;
+  catalog: CatalogPoint[];
   onPin: (lat: number, lng: number) => void;
 }) {
   const el = useRef<HTMLDivElement>(null),
@@ -164,6 +167,21 @@ function PlaceMap({
       m.panTo([home.lat, home.lng], { animate: false });
     }
   }, [home.lat, home.lng, selected]);
+  useEffect(()=>{
+    const m=map.current;if(!m)return;
+    const pane=m.getPane("catalog")??m.createPane("catalog");pane.style.zIndex="625";
+    const layer=L.layerGroup().addTo(m);
+    catalog.forEach(p=>{
+      const content=document.createElement("div");
+      const title=document.createElement("strong");title.textContent=p.name;content.append(title);
+      const info=document.createElement("p");info.textContent=`${p.category} · ${p.distanceM} m straight-line. Catalog: ${p.source_dataset}. Ingested ${date(p.ingested_at)}. Observation date, opening and public access are unverified.`;content.append(info);
+      if(p.source_url){const link=document.createElement("a");link.href=p.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Catalog source ↗";content.append(link);}
+      const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(layer).bindPopup(content,{maxWidth:260});
+      L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:5,color:"#575951",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false,className:"pf-catalog-dot"}).addTo(layer);
+      const element=hit.getElement();if(element){element.setAttribute("tabindex","0");element.setAttribute("role","button");element.setAttribute("aria-label",`Catalog place: ${p.name}`);element.addEventListener("keydown",e=>{const event=e as KeyboardEvent;if(event.key==="Enter"||event.key===" "){event.preventDefault();hit.openPopup();}});}
+    });
+    return ()=>{layer.remove()};
+  },[catalog]);
   return (
     <div className="pf-map-wrap">
       <div className="pf-map-canvas">
@@ -191,13 +209,15 @@ function PlaceMap({
         </p>
       )}
       <span className="pf-map-note">
-        Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.
+        Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.{catalog.length>0&&" Dots: catalog places; select for source."}
       </span>
     </div>
   );
 }
 export default function PlaceFitPage() {
   const [saved] = useState(loadSaved);
+  const root=useRef<HTMLElement>(null),toolbar=useRef<HTMLElement>(null);
+  const [showCatalog,setShowCatalog]=useState(saved.showCatalog!==false);
   const [places, setPlaces] = useState<Place[]>([]),
     [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState("ari");
@@ -255,15 +275,18 @@ export default function PlaceFitPage() {
     try {
       localStorage.setItem(
         "bkk-place-fit-v1",
-        JSON.stringify({ prefs, quotes, shortlist, purpose, scenarios, comparables }),
+        JSON.stringify({ prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog }),
       );
     } catch {
       /* Private mode: this session still works. */
     }
-  }, [prefs, quotes, shortlist, purpose, scenarios, comparables]);
+  }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog]);
+  useEffect(()=>{const bar=toolbar.current;if(!bar)return;const measure=()=>root.current?.style.setProperty("--pf-toolbar-height",`${bar.getBoundingClientRect().height}px`);measure();const observer=new ResizeObserver(measure);observer.observe(bar);return()=>observer.disconnect()},[places.length]);
   const place = places.find((p) => p.id === selected);
   const quote = quotes[selected] ?? {};
   const fit = assess(prefs, quote);
+  const mappedPlaces=useMemo(()=>place?catalogPoints(evidence?.civic?.places,{lat:quote.lat??place.lat,lng:quote.lng??place.lng}):[],[evidence,quote.lat,quote.lng,place?.id]);
+  const visiblePlaces=useMemo(()=>showCatalog?mappedPlaces:[],[showCatalog,mappedPlaces]);
   const spaceKey=(id:string)=>{const q=quotes[id]??{};return `${purpose}:${id}:${q.lat??"station"}:${q.lng??"station"}`};
   const scenarioKey=spaceKey(selected);
   const scenario=scenarios[scenarioKey]??{};
@@ -399,8 +422,8 @@ export default function PlaceFitPage() {
       </main>
     );
   return (
-    <main id="place-fit">
-      <header className="pf-header">
+    <main id="place-fit" ref={root}>
+      <header className="pf-header" ref={toolbar}>
         <label className="pf-purpose"><span className="pf-sr-only">Purpose</span><select aria-label="Purpose" value={purpose} onChange={e=>setPurpose(e.target.value as Purpose)}>{Object.entries(purposes).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
         <a className="pf-brand" aria-label="Bangkok, for you" href={`${BASE}places`}>Bangkok<span>, for you</span></a>
         <nav className="pf-areas" aria-label="Choose an area">
@@ -434,8 +457,9 @@ export default function PlaceFitPage() {
         </button>
         </div>
         <details className="pf-more">
-          <summary aria-label="Budget & journey"><span className="pf-settings-word">Budget & journey</span><span className="pf-settings-icon" aria-hidden="true">⋯</span></summary>
+          <summary aria-label={purpose==="live"?"Budget & journey":"Map & sources"}><span className="pf-settings-word">{purpose==="live"?"Budget & journey":"Map & sources"}</span><span className="pf-settings-icon" aria-hidden="true">⋯</span></summary>
           <div className="pf-more-content">
+            {purpose==="live"&&<>
         <label>
           Monthly ceiling{" "}
           <span className="pf-input-unit">
@@ -523,6 +547,8 @@ export default function PlaceFitPage() {
                 </label>
               ))}
             </fieldset>
+            </>}
+            <label className="pf-check-inline"><input aria-label="Catalog places on map" type="checkbox" checked={showCatalog} onChange={e=>setShowCatalog(e.target.checked)}/>Catalog places on map ({busy?"loading":evidence?.civic.status==="unavailable"||!evidence?"unavailable":`${mappedPlaces.length} ${showCatalog?"shown":"available"}`})</label>
             <div className="pf-header-links">
               <span>Pilot · six areas</span>
               <a href="https://atlas.nonarkara.org">Atlas ↗</a>
@@ -546,6 +572,7 @@ export default function PlaceFitPage() {
               home={quote}
               onPin={pin}
               purpose={purpose}
+              catalog={visiblePlaces}
             />
             {place && (
               <article className="pf-place" aria-labelledby="pf-place-name">
@@ -1017,7 +1044,7 @@ export default function PlaceFitPage() {
                 localStorage.removeItem("bkk-place-fit-v1");
               } catch {}
               setQuotes({});
-              setScenarios({});setComparables({});setPurpose("live");
+              setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
               setShortlist([]);
               setPrefs({
                 budget: 20000,

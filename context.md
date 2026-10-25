@@ -61,3 +61,7 @@ Operating costs include owner pay and fit-out recovery; financing/tax are separa
 PropertySights public JSON snapshot is quoted with attribution and published/retrieved dates, only as citywide residential context. Hide its ranges after 30 days. It has no commercial/station-level comparables or historical rent series. Repeatable refresh is scripts/refresh-place-market.mjs; no automatic refresh is claimed. Vite publicDir is the repository /public directory, not apps/web/public; only the Pages Worker is copied separately. CI verifies the market snapshot is in built output.
 
 Nearby Atlas evidence is retained across purposes. Registered companies, civic POIs and complaint counts never become inferred customer demand. Reports/share links honor active purpose; private numbers stay local, reports include them only when explicitly saved. Current anchors remain six residential station guides; Industry is a real-space scenario tool, not a location suitability rating.
+
+## Catalog map continuation, 25 October
+
+Existing Atlas catalog points are optional source dots with pointer/keyboard popups, direct source/date and unknown access status. Coordinates/distance/source URLs pass catalog.ts boundary checks. No demand or opening inference. Dedicated pane prevents station markers intercepting point targets; popup temporarily takes precedence over pin controls. Settings are purpose-relevant and header stays sticky with measured height for scroll offsets. Tests/scripts and visual evidence are in map-evidence-verification; independent review required before release.
