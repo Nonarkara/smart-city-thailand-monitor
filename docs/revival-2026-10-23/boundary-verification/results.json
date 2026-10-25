@@ -1,6 +1,6 @@
 {
-  "base": "http://127.0.0.1:4174/places",
-  "checkedAt": "2026-10-25T05:27:18.837Z",
+  "base": "https://bangkok-ioc.pages.dev/places",
+  "checkedAt": "2026-10-25T07:24:44.488Z",
   "results": [
     {
       "case": "null saved state + malformed evidence + usable report",
