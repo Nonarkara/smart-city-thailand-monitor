@@ -65,3 +65,8 @@ Nearby Atlas evidence is retained across purposes. Registered companies, civic P
 ## Catalog map continuation, 25 October
 
 Existing Atlas catalog points are optional source dots with pointer/keyboard popups, direct source/date and unknown access status. Coordinates/distance/source URLs pass catalog.ts boundary checks. No demand or opening inference. Dedicated pane prevents station markers intercepting point targets; popup temporarily takes precedence over pin controls. Settings are purpose-relevant and header stays sticky with measured height for scroll offsets. Tests/scripts and visual evidence are in map-evidence-verification; independent review required before release.
+
+
+## Boundary reliability, 25 October
+
+Saved browser data, guide JSON, Atlas evidence and publisher snapshots now pass bounded allowlist readers in boundaries.ts. Unknown or damaged decision values cannot approve a household; valid notes/scenarios survive recovery. Explicit storage failure and failed-clear messages replace silent persistence failures. Fetch deadlines/cancellation and a2MB response cap prevent indefinite evidence waits. Deferred persistence protects saved shortlists until validated guides load; Compare/Area are disabled while loading. Note field accessible names remain stable when restored. Tests and release evidence: boundary-verification/README.md. Full professional-shipability goal remains active; no citywide demand/market recommendation claim.

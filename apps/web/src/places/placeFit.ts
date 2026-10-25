@@ -42,17 +42,24 @@ export function amount(value: string): number | undefined {
 }
 export function assess(p: Preferences, q: Quote = {}) {
   const validRent =
-    typeof q.rent === "number" && Number.isFinite(q.rent) && q.rent > 0;
-  const total = validRent ? q.rent! + (q.extras ?? 0) : null;
+    typeof q.rent === "number" && Number.isFinite(q.rent) && q.rent > 0 && q.rent <= 1e12;
+  const validExtras = q.extras === undefined || (typeof q.extras === "number" && Number.isFinite(q.extras) && q.extras >= 0 && q.extras <= 1e12);
+  const validCommute = typeof q.commute === "number" && Number.isFinite(q.commute) && q.commute >= 0 && q.commute <= 1440;
+  const validBudget = Number.isFinite(p.budget) && p.budget > 0 && p.budget <= 1e12;
+  const validLimit = Number.isFinite(p.maxCommute) && p.maxCommute > 0 && p.maxCommute <= 1440;
+  const total = validRent && validExtras ? q.rent! + (q.extras ?? 0) : null;
   const journeyCurrent =
     q.commuteFor === p.destination.trim() &&
     q.commuteTravel === p.travel &&
     q.commuteAt === p.departure;
   const reasons: string[] = [];
   const missing: string[] = [];
+  if (!validBudget) missing.push("Enter a valid positive monthly ceiling.");
+  if (p.destination && !validLimit) missing.push("Enter a valid positive journey limit.");
+  if (!validExtras) missing.push("Re-enter valid transport, utilities and monthly extras.");
   if (total === null)
     missing.push("Add an actual rent quote to check your budget.");
-  else if (total > p.budget)
+  else if (validBudget && total > p.budget)
     reasons.push(
       `฿${Math.round(total - p.budget).toLocaleString()} over your monthly ceiling.`,
     );
@@ -68,13 +75,13 @@ export function assess(p: Preferences, q: Quote = {}) {
     missing.push(
       "Check the actual entrance-to-station walk, crossings and access gates.",
     );
-  if (p.destination && (!journeyCurrent || q.commute === undefined))
+  if (p.destination && (!journeyCurrent || !validCommute))
     missing.push("Test the door-to-door journey at your usual travel time.");
   if (
     p.destination &&
     journeyCurrent &&
-    q.commute !== undefined &&
-    q.commute > p.maxCommute
+    validCommute && validLimit &&
+    q.commute! > p.maxCommute
   )
     reasons.push(`Journey exceeds your ${p.maxCommute}-minute limit.`);
   return {

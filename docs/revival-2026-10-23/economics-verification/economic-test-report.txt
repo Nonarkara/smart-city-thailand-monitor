@@ -11,11 +11,11 @@ Confirm permitted use and lease terms
 Check required access and utilities
 Record where and when you checked the premises
 Local demand is not established by these calculations.
-User-entered assumptions (not verified): {"activity":"Bakery test scenario","permitted":"unknown","access":"unknown","checkedNote":"","rent":20000,"size":40,"fixed":30000,"ownerPay":15000,"margin":50,"receipt":200,"days":25,"fitout":120000,"recoveryMonths":24,"workingCapital":50000,"targetSurplus":10000,"salesLow":100000,"salesBase":160000,"salesHigh":200000}
+User-entered assumptions (not verified): {"rent":20000,"size":40,"fixed":30000,"ownerPay":15000,"margin":50,"receipt":200,"days":25,"salesLow":100000,"salesBase":160000,"salesHigh":200000,"fitout":120000,"recoveryMonths":24,"workingCapital":50000,"targetSurplus":10000,"activity":"Bakery test scenario","checkedNote":"","permitted":"unknown","access":"unknown"}
 Break-even monthly sales: 140000; transactions per open day: 28; cases: [{"key":"salesLow","sales":100000,"surplus":-20000,"affordableRent":-10000},{"key":"salesBase","sales":160000,"surplus":10000,"affordableRent":20000},{"key":"salesHigh","sales":200000,"surplus":30000,"affordableRent":40000}]
 No appreciation or proven customer-demand assumption.
 
-Comparable evidence: [{"kind":"asking","url":"https://example.org/listing?id=0","observed":"2026-10-25","rent":10000,"size":40,"matched":true},{"kind":"asking","url":"https://example.org/listing?id=1","observed":"2026-10-25","rent":11000,"size":40,"matched":true},{"kind":"asking","url":"https://example.org/listing?id=2","observed":"2026-10-25","rent":12000,"size":40,"matched":true},{"kind":"asking","url":"https://example.org/listing?id=3","observed":"2026-10-25","rent":13000,"size":40,"matched":true},{"kind":"asking","url":"https://example.org/listing?id=4","observed":"2026-10-25","rent":14000,"size":40,"matched":true}]
+Comparable evidence: [{"url":"https://example.org/listing?id=0","observed":"2026-10-25","rent":10000,"size":40,"matched":true,"kind":"asking"},{"url":"https://example.org/listing?id=1","observed":"2026-10-25","rent":11000,"size":40,"matched":true,"kind":"asking"},{"url":"https://example.org/listing?id=2","observed":"2026-10-25","rent":12000,"size":40,"matched":true,"kind":"asking"},{"url":"https://example.org/listing?id=3","observed":"2026-10-25","rent":13000,"size":40,"matched":true,"kind":"asking"},{"url":"https://example.org/listing?id=4","observed":"2026-10-25","rent":14000,"size":40,"matched":true,"kind":"asking"}]
 Map: https://www.google.com/maps/search/?api=1&query=13.7796,100.5448
 
 Check permitted use, lease terms, usable area, operating hours, access, utilities, actual demand and availability at each space.

@@ -1,0 +1,97 @@
+locator.inputValue: Timeout 120000ms exceeded.
+Call log:
+[2m  - waiting for getByLabel('Home / listing and visit notes', { exact: true })[22m
+
+    at /Users/nonarkara/Projects/bangkok-ioc/recovered-source/scripts/verify-boundaries-browser.mjs:13:367
+Purpose
+Live
+Business
+Industry
+Buy to let
+Area
+1. Ari
+2. Saphan Khwai
+3. On Nut
+4. Wongwian Yai
+5. Bang Na
+6. Udom Suk
+Compare (0)
+⋯
+
+Some saved entries could not be read. Valid entries were kept; recheck your limits and costs.
+
+1
+2
+3
+4
+5
+6
++
+−
+ Leaflet | © OpenStreetMap
++
+Pin home at +
+Pan to a home, then pin +. Numbers mark station areas.
+
+BTS Sukhumvit · Ari · N5
+
+Ariอารีย์
+Your limits
+
+Needs checking. ฿15,000 / month entered.
+
+Enter a valid positive monthly ceiling.
+
+Transport, utilities and other monthly extras are not included.
+
+Small streets off Phahonyothin make a useful starting point for cafes and everyday food.
+
+The tradeoff
+
+The station-side streets and deeper Ari sois offer very different last-mile journeys.
+
+Shortlist this area
+Check a home here ↓
+Start exploring
+Explore Ari on the map ↗
+
+Desk research · 23 Oct 2026
+BTS route reference ↗ · Browse asking rents ↗
+
+Would a home here work for you?
+Bangkok residential asking-rent context
+
+Use a real quote. These amounts stay on this device.
+
+Move the map to your home and use “Pin home at +” for evidence at that location.
+
+Quoted rent / month
+Monthly extras
+Home-to-station access
+Not checked
+I checked the walking route
+Needs a car / feeder ride
+Journey minutes you checked
+Home / listing and visit notes
+Needs checking
+
+฿15,000 / month entered · ฿0 ceiling
+
+Enter a valid positive monthly ceiling.
+
+Transport, utilities and other monthly extras are not included.
+
+Try this on your visit
+
+Walk from the actual building entrance to the correct station exit, then repeat after dark.
+
+Open area in Google Maps ↗
+Evidence around this station area
+
+800 m straight-line radius around the station-area anchor. Pin a space to check its own surroundings.
+
+Evidence format or location unavailable.
+
+Free pilot · no checkout. Paid reports are planned; nothing here is a verified property recommendation.
+
+Built from Bangkok IOC’s legacy and Atlas evidence. Source & method ↗ · Clear saved notes

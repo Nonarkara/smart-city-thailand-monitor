@@ -14,36 +14,7 @@ import "./places.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
-type CivicPlace = {
-  id: string;
-  name: string;
-  category: string;
-  lat: number;
-  lng: number;
-  distanceM: number;
-  source_url: string | null;
-  source_dataset: string;
-  ingested_at: string;
-};
-type Evidence = {
-  fetchedAt: string;
-  complaints: {
-    status: string;
-    fetchedAt: string | null;
-    value: null | {
-      recent: number;
-      openAllTime: number;
-      categories: { name: string; count: number }[];
-      attribution: { text: string; url: string };
-    };
-  };
-  civic: {
-    status: string;
-    count: number | null;
-    places: CivicPlace[];
-    limits: string;
-  };
-};
+import {readSaved,readGuide,readEvidence,fetchJson,type Evidence} from "./boundaries";
 const BASE = import.meta.env.BASE_URL;
 const interests = [
   "Food",
@@ -66,11 +37,8 @@ const date = (s: string | null) =>
 const maps = (p: Place) =>
   `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;
 function loadSaved() {
-  try {
-    return JSON.parse(localStorage.getItem("bkk-place-fit-v1") ?? "{}");
-  } catch {
-    return {};
-  }
+  try { return { ...readSaved(localStorage.getItem("bkk-place-fit-v1")), storageUnavailable: false }; }
+  catch { return { ...readSaved(null), storageUnavailable: true }; }
 }
 function PlaceMap({
   places,
@@ -215,7 +183,9 @@ function PlaceMap({
   );
 }
 export default function PlaceFitPage() {
-  const [saved] = useState(loadSaved);
+  const [restored] = useState(loadSaved);
+  const saved=restored.state;
+  const [storageUnavailable,setStorageUnavailable]=useState(restored.storageUnavailable);
   const root=useRef<HTMLElement>(null),toolbar=useRef<HTMLElement>(null);
   const [showCatalog,setShowCatalog]=useState(saved.showCatalog!==false);
   const [places, setPlaces] = useState<Place[]>([]),
@@ -243,16 +213,17 @@ export default function PlaceFitPage() {
     [evidenceError, setEvidenceError] = useState(""),
     [busy, setBusy] = useState(false),
     [view, setView] = useState<"explore" | "compare">("explore"),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(restored.recovered?"Some saved entries could not be read. Valid entries were kept; recheck your limits and costs.":"");
   useEffect(() => {
     document.title = "Bangkok, for you · Place fit pilot";
-    fetch(`${BASE}data/places/pilot.json`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Place guide unavailable.");
-        return r.json();
-      })
-      .then((d) => {
-        setPlaces(d.places);
+    const controller=new AbortController();
+    fetchJson(`${BASE}data/places/pilot.json`,controller.signal)
+      .then(readGuide)
+      .then((guides) => {
+        if(controller.signal.aborted)return;
+        setPlaces(guides);
+        if(!guides.some(p=>p.id==="ari"))setSelected(guides[0].id);
+        const d={places:guides};
         const shared = readShared(
           location.search,
           d.places.map((p: Place) => p.id),
@@ -269,18 +240,19 @@ export default function PlaceFitPage() {
           setView("compare");
         }
       })
-      .catch((e) => setLoadError(e.message));
+      .catch((e) => {if(!controller.signal.aborted)setLoadError(e instanceof SyntaxError?"Place guide format unavailable.":e.message);});
+    return ()=>controller.abort();
   }, []);
   useEffect(() => {
+    if(!places.length)return;
     try {
       localStorage.setItem(
         "bkk-place-fit-v1",
         JSON.stringify({ prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog }),
       );
-    } catch {
-      /* Private mode: this session still works. */
-    }
-  }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog]);
+      setStorageUnavailable(false);
+    } catch { setStorageUnavailable(true); }
+  }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,places]);
   useEffect(()=>{const bar=toolbar.current;if(!bar)return;const measure=()=>root.current?.style.setProperty("--pf-toolbar-height",`${bar.getBoundingClientRect().height}px`);measure();const observer=new ResizeObserver(measure);observer.observe(bar);return()=>observer.disconnect()},[places.length]);
   const place = places.find((p) => p.id === selected);
   const quote = quotes[selected] ?? {};
@@ -300,29 +272,16 @@ export default function PlaceFitPage() {
     setEvidence(null);
     setEvidenceError("");
     setBusy(true);
-    fetch(
-      `https://atlas.nonarkara.org/api/location/evidence?lat=${quote.lat ?? place.lat}&lng=${quote.lng ?? place.lng}`,
-      { signal: controller.signal },
-    )
-      .then(async (r) => {
-        if (!r.ok)
-          throw new Error(
-            r.status === 429
-              ? "The evidence service is busy. Try again shortly."
-              : "Live evidence unavailable. Your guide and comparison still work.",
-          );
-        const d = await r.json();
-        if (d.version !== 1 || !d.civic || !d.complaints)
-          throw new Error("Evidence format unavailable.");
-        return d;
-      })
-      .then(setEvidence)
+    const center={lat:quote.lat??place.lat,lng:quote.lng??place.lng};
+    fetchJson(`https://atlas.nonarkara.org/api/location/evidence?lat=${center.lat}&lng=${center.lng}`,controller.signal)
+      .then(d=>readEvidence(d,center))
+      .then(d=>{if(!controller.signal.aborted)setEvidence(d);})
       .catch((e) => {
-        if (e.name !== "AbortError")
+        if (!controller.signal.aborted)
           setEvidenceError(
             e.message === "Failed to fetch"
               ? "Live evidence could not be reached. Your guide and comparison still work."
-              : e.message,
+              : e instanceof SyntaxError?"Evidence format unavailable. Your entered comparison still works.":e.message,
           );
       })
       .finally(() => {
@@ -418,6 +377,7 @@ export default function PlaceFitPage() {
       <main id="place-fit">
         <h1>Place guide unavailable</h1>
         <p>{loadError}</p>
+        <button onClick={()=>location.reload()}>Retry place guide</button>
         <a href={BASE}>Open the legacy dashboard</a>
       </main>
     );
@@ -429,7 +389,7 @@ export default function PlaceFitPage() {
         <nav className="pf-areas" aria-label="Choose an area">
             <label className="pf-mobile-area">
               <span className="pf-sr-only">Area</span>
-              <select aria-label="Area"
+              <select aria-label="Area" disabled={!places.length}
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
               >
@@ -451,6 +411,7 @@ export default function PlaceFitPage() {
         <button
           className={view === "compare" ? "pf-active" : ""}
           aria-label={`Compare (${shortlist.length}/3)`}
+          disabled={!places.length}
           onClick={() => setView("compare")}
         >
           <span className="pf-compare-long">Compare ({shortlist.length}/3)</span><span className="pf-compare-short">Compare ({shortlist.length})</span>
@@ -549,6 +510,7 @@ export default function PlaceFitPage() {
             </fieldset>
             </>}
             <label className="pf-check-inline"><input aria-label="Catalog places on map" type="checkbox" checked={showCatalog} onChange={e=>setShowCatalog(e.target.checked)}/>Catalog places on map ({busy?"loading":evidence?.civic.status==="unavailable"||!evidence?"unavailable":`${mappedPlaces.length} ${showCatalog?"shown":"available"}`})</label>
+            {storageUnavailable&&<p role="status">Saving unavailable. Entries last for this session; save a personal report before leaving.</p>}
             <div className="pf-header-links">
               <span>Pilot · six areas</span>
               <a href="https://atlas.nonarkara.org">Atlas ↗</a>
@@ -557,6 +519,8 @@ export default function PlaceFitPage() {
           </div>
         </details>
       </header>
+      {!places.length&&<p role="status" className="pf-message">Loading place guide…</p>}
+      {storageUnavailable&&<p role="status" className="pf-message pf-storage-message">Saving unavailable. This session still works. Save a personal report to keep your entries before leaving.</p>}
       {message && (
         <p role="status" className="pf-message">
           {message}
@@ -733,7 +697,9 @@ export default function PlaceFitPage() {
                 <label>
                   Home / listing and visit notes
                   <textarea
+                    aria-label="Home / listing and visit notes"
                     rows={2}
+                    maxLength={10000}
                     value={quote.note ?? ""}
                     onChange={(e) => patch("note", e.target.value)}
                     placeholder="Building, listing link, gate hours, questions…"
@@ -1040,9 +1006,9 @@ export default function PlaceFitPage() {
           ·{" "}
           <button
             onClick={() => {
-              try {
-                localStorage.removeItem("bkk-place-fit-v1");
-              } catch {}
+              let cleared=true;
+              try { localStorage.removeItem("bkk-place-fit-v1"); }
+              catch { cleared=false; setStorageUnavailable(true); }
               setQuotes({});
               setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
               setShortlist([]);
@@ -1055,7 +1021,7 @@ export default function PlaceFitPage() {
                 interests: [],
               });
               setMessage(
-                "Saved preferences and home notes cleared from this browser.",
+                cleared?"Saved preferences and home notes cleared from this browser.":"This session was cleared, but saved browser data could not be removed. Check this site's storage settings before leaving a shared device.",
               );
             }}
           >

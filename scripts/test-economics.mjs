@@ -23,3 +23,5 @@ test('extreme inputs cannot spill infinity into an apparently complete scenario'
 const {readPurpose}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));test('shared purpose is bounded; prototype names and arbitrary inputs fall back to live',()=>{for(const x of ['__proto__','constructor',undefined,{},'bogus'])assert.equal(readPurpose(x),'live');assert.equal(readPurpose('industrial'),'industrial');});
 
 test('the user surplus and yield targets affect the verdict, not just a footnote',()=>{assert.equal(summary('business',{...s,salesBase:150000}).status,'Below your surplus target');assert.equal(summary('invest',{...inv,targetYield:7}).status,'Below your yield target');assert.equal(summary('business',{...s,salesBase:undefined}).status,'Break-even calculated');});
+
+test('credential-bearing comparable URLs cannot enter rent statistics',()=>{const r=compareRents([{url:'https://user:secret@example.org/unit',observed:'2026-10-24',rent:10000,size:40,matched:true,kind:'asking'}],{size:40},'asking',Date.parse('2026-10-25T12:00:00+07:00'));assert.equal(r.count,0);assert.equal(r.rejected,1)});
