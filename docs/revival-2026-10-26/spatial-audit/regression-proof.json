@@ -1,0 +1,6 @@
+{
+  "baseline": "https://cd5c4f43.bangkok-ioc.pages.dev/places",
+  "expectedRejection": "three-field save reading cost",
+  "exitCode": 1,
+  "oversizedBaselineRejected": true
+}

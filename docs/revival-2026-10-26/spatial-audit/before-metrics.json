@@ -1,0 +1,971 @@
+[
+  {
+    "width": 390,
+    "purpose": "live",
+    "pageHeight": 3832,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 1026.859375,
+      "width": 390,
+      "top": 47
+    },
+    "editor": null,
+    "evidence": {
+      "height": 2600.171875,
+      "width": 390,
+      "top": 1073.859375
+    },
+    "save": {
+      "height": 595.390625,
+      "width": 358,
+      "top": 1702.75
+    },
+    "fields": []
+  },
+  {
+    "width": 390,
+    "purpose": "business",
+    "pageHeight": 4900,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 833.359375,
+      "width": 390,
+      "top": 47
+    },
+    "editor": {
+      "height": 2017.53125,
+      "width": 390,
+      "top": 880.359375
+    },
+    "evidence": {
+      "height": 1248.890625,
+      "width": 390,
+      "top": 3493.28125
+    },
+    "save": {
+      "height": 595.390625,
+      "width": 390,
+      "top": 2897.890625
+    },
+    "fields": [
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 47.75
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "purpose": "industrial",
+    "pageHeight": 4900,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 855.109375,
+      "width": 390,
+      "top": 47
+    },
+    "editor": {
+      "height": 1995.78125,
+      "width": 390,
+      "top": 902.109375
+    },
+    "evidence": {
+      "height": 1248.890625,
+      "width": 390,
+      "top": 3493.28125
+    },
+    "save": {
+      "height": 595.390625,
+      "width": 390,
+      "top": 2897.890625
+    },
+    "fields": [
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 47.75
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "purpose": "invest",
+    "pageHeight": 4335,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 855.109375,
+      "width": 390,
+      "top": 47
+    },
+    "editor": {
+      "height": 1430.53125,
+      "width": 390,
+      "top": 902.109375
+    },
+    "evidence": {
+      "height": 1248.890625,
+      "width": 390,
+      "top": 2928.03125
+    },
+    "save": {
+      "height": 595.390625,
+      "width": 390,
+      "top": 2332.640625
+    },
+    "fields": [
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 46.875
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 47.75
+      },
+      {
+        "width": 171,
+        "height": 36
+      },
+      {
+        "width": 171,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "live",
+    "pageHeight": 2216,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1024,
+      "top": 47
+    },
+    "editor": null,
+    "evidence": {
+      "height": 1156.140625,
+      "width": 1024,
+      "top": 898
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 464,
+      "top": 1495.390625
+    },
+    "fields": []
+  },
+  {
+    "width": 1024,
+    "purpose": "business",
+    "pageHeight": 3593,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1024,
+      "top": 47
+    },
+    "editor": {
+      "height": 1035.640625,
+      "width": 1024,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1024,
+      "top": 2340.03125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1933.640625
+    },
+    "fields": [
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36.875
+      },
+      {
+        "width": 228,
+        "height": 37.75
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "industrial",
+    "pageHeight": 3593,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1024,
+      "top": 47
+    },
+    "editor": {
+      "height": 1035.640625,
+      "width": 1024,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1024,
+      "top": 2340.03125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1933.640625
+    },
+    "fields": [
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36.875
+      },
+      {
+        "width": 228,
+        "height": 37.75
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "invest",
+    "pageHeight": 3424,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1024,
+      "top": 47
+    },
+    "editor": {
+      "height": 866.390625,
+      "width": 1024,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1024,
+      "top": 2170.78125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1764.390625
+    },
+    "fields": [
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36.875
+      },
+      {
+        "width": 228,
+        "height": 37.75
+      },
+      {
+        "width": 228,
+        "height": 36
+      },
+      {
+        "width": 228,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "live",
+    "pageHeight": 2172,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1440,
+      "top": 47
+    },
+    "editor": null,
+    "evidence": {
+      "height": 1111.28125,
+      "width": 1440,
+      "top": 898
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 672,
+      "top": 1473.640625
+    },
+    "fields": []
+  },
+  {
+    "width": 1440,
+    "purpose": "business",
+    "pageHeight": 3571,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1440,
+      "top": 47
+    },
+    "editor": {
+      "height": 1013.890625,
+      "width": 1440,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1440,
+      "top": 2318.28125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1911.890625
+    },
+    "fields": [
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36.875
+      },
+      {
+        "width": 332,
+        "height": 37.75
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "industrial",
+    "pageHeight": 3571,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1440,
+      "top": 47
+    },
+    "editor": {
+      "height": 1013.890625,
+      "width": 1440,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1440,
+      "top": 2318.28125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1911.890625
+    },
+    "fields": [
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36.875
+      },
+      {
+        "width": 332,
+        "height": 37.75
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "invest",
+    "pageHeight": 3424,
+    "overflow": false,
+    "toolbar": {
+      "height": 47,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 851,
+      "width": 1440,
+      "top": 47
+    },
+    "editor": {
+      "height": 866.390625,
+      "width": 1440,
+      "top": 898
+    },
+    "evidence": {
+      "height": 1090.890625,
+      "width": 1440,
+      "top": 2170.78125
+    },
+    "save": {
+      "height": 406.390625,
+      "width": 684,
+      "top": 1764.390625
+    },
+    "fields": [
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36.875
+      },
+      {
+        "width": 332,
+        "height": 37.75
+      },
+      {
+        "width": 332,
+        "height": 36
+      },
+      {
+        "width": 332,
+        "height": 36
+      }
+    ]
+  }
+]

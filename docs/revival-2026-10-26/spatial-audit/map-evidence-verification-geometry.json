@@ -1,0 +1,23 @@
+[
+  {
+    "width": 390,
+    "count": 3,
+    "top": 0,
+    "height": 45,
+    "overflow": false
+  },
+  {
+    "width": 1024,
+    "count": 3,
+    "top": 0,
+    "height": 45,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "count": 3,
+    "top": 0,
+    "height": 45,
+    "overflow": false
+  }
+]

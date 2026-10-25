@@ -1,0 +1,109 @@
+/* Palette / MoMA correction: one container, aligned task column, three currencies.
+   These scoped rules supersede the historical wall/stack layouts in places.css. */
+#place-fit { --pf-unit:16px; --pf-baseline:1.35em; --pf-cap:.5em; line-height:1.35; }
+#place-fit p { margin-block:0 var(--pf-cap); }
+#place-fit h1 { font-size:30px; line-height:1.15; margin:0 0 var(--pf-cap); }
+#place-fit h2 { font-size:22.5px; margin:0 0 var(--pf-cap); }
+#place-fit h3 { font-size:15px; margin:var(--pf-baseline) 0 .25em; }
+#place-fit button { min-height:32px; padding:.35em .6em; }
+#place-fit input:not([type="checkbox"]),#place-fit select { min-height:32px; height:auto; padding:.25em .4em; align-self:center; min-width:0; line-height:1.35; }
+#place-fit textarea { min-height:54px; padding:var(--pf-cap); }
+#place-fit input[type="checkbox"] { width:18px; height:18px; min-height:18px; padding:0; margin:0; flex:none; }
+#place-fit .pf-primary,#place-fit .pf-pin-home { min-height:44px; }
+#place-fit .pf-workspace { grid-template-columns:minmax(0,2fr) minmax(360px,1fr); height:auto; min-height:0; align-items:start; }
+#place-fit .pf-map-wrap { position:sticky; top:var(--pf-toolbar-height,47px); height:calc(100dvh - var(--pf-toolbar-height,47px)); min-height:0; grid-template-rows:minmax(240px,1fr) auto; border-right:2px solid var(--pf-ink); }
+#place-fit .pf-decision-rail { min-width:0; }
+#place-fit .pf-place { display:block; overflow:visible; padding:var(--pf-unit); border:0; }
+#place-fit .pf-place > * { order:initial; }
+#place-fit .pf-place h1 span { display:inline; font-size:22.5px; margin:0 0 0 .4em; }
+#place-fit .pf-place-actions { flex-direction:row; align-items:center; flex-wrap:wrap; gap:.5em .75em; margin:.5em 0; }
+#place-fit .pf-tradeoff { margin:.5em 0; padding-left:.5em; }
+#place-fit .pf-tradeoff h2 { margin-bottom:.25em; }
+#place-fit .pf-discover { display:inline-block; margin:0 .5em .25em 0; }
+#place-fit .pf-readiness h3 { margin-top:0; }
+#place-fit .pf-readiness { margin-block:.5em; }
+#place-fit .pf-readiness p { margin-bottom:.25em; }
+#place-fit .pf-econ-summary { margin:.5em 0; }
+#place-fit .pf-econ-summary h2 { font-size:22.5px; margin-bottom:.25em; }
+#place-fit .pf-econ-summary p { margin-bottom:.25em; }
+#place-fit .pf-source { margin-block:.5em; }
+#place-fit .pf-space-check,#place-fit .pf-evidence { display:block; padding:var(--pf-unit); border-top:2px solid var(--pf-ink); }
+#place-fit .pf-space-results { margin-top:var(--pf-unit); }
+#place-fit .pf-nearby { margin-top:var(--pf-unit); }
+#place-fit .pf-site-evidence .pf-nearby { margin:0; }
+#place-fit .pf-quote-fields,#place-fit .pf-econ-fields,#place-fit .pf-premises-fields { display:grid; grid-template-columns:minmax(0,1fr); gap:.4em; margin:.5em 0; }
+#place-fit .pf-quote-fields,#place-fit .pf-econ-fields,#place-fit .pf-premises-fields,#place-fit .pf-more-content { container-type:inline-size; container-name:pf-fields; }
+#place-fit .pf-quote-fields label,#place-fit .pf-econ-fields label,#place-fit .pf-premises-fields label { display:grid; grid-template-columns:minmax(0,1fr) calc(13ch + 2em); align-items:center; gap:.5em; min-width:0; }
+#place-fit .pf-econ-fields input[type="number"],#place-fit .pf-quote-fields input { text-align:right; }
+#place-fit .pf-comparable-editor .pf-econ-fields label:has(input[type="url"]),#place-fit .pf-premises-fields label:has(input[type="url"]) { grid-template-columns:1fr; }
+#place-fit .pf-quote-fields label:has(select) { grid-template-columns:1fr; }
+#place-fit .pf-premises-fields label:last-child { grid-column:auto; }
+#place-fit .pf-premises-fields label:has(input[aria-label="Space name"]) { grid-template-columns:minmax(0,1fr) minmax(0,2fr); }
+#place-fit .pf-premises-save { max-width:none; padding:var(--pf-unit) 0; }
+#place-fit .pf-decision-rail > .pf-premises-save { padding:var(--pf-unit); border-top:1px solid var(--pf-ink); }
+#place-fit .pf-premises-actions,#place-fit .pf-comparison-modes { gap:.4em; margin:.5em 0; }
+#place-fit .pf-premises-actions button,#place-fit .pf-premises-list button,#place-fit .pf-comparison-modes button,#place-fit .pf-comparison-heading button { min-height:32px; }
+#place-fit .pf-comparable-editor,#place-fit .pf-market { margin:.5em 0; }
+#place-fit summary { padding:.4em 0; }
+#place-fit .pf-fit-result { margin-top:.5em; }
+#place-fit .pf-everyday-controls { gap:.4em .75em; }
+#place-fit .pf-everyday-controls label { flex-wrap:wrap; }
+#place-fit .pf-pois { margin:.5em 0; }
+#place-fit .pf-pois li { display:flex; flex-wrap:wrap; gap:0 .5em; padding:.25em 0; }
+#place-fit .pf-pois span { display:inline; }
+#place-fit .pf-comparison { max-width:1216px; margin-inline:auto; padding:var(--pf-unit); }
+#place-fit .pf-comparison-heading { align-items:start; gap:var(--pf-unit); margin-bottom:var(--pf-unit); }
+#place-fit .pf-comparison-heading { justify-content:start; flex-wrap:wrap; }
+#place-fit th,#place-fit td { padding:.5em .75em .5em 0; overflow-wrap:anywhere; }
+#place-fit thead th { font-size:22.5px; }
+#place-fit .pf-comparison thead th:first-child { font-size:inherit; }
+#place-fit .pf-premises-list { max-width:none; margin:.5em 0; }
+#place-fit .pf-premises-list li { padding:.4em 0; }
+#place-fit .pf-premises-provenance { margin:.5em 0; padding-left:1.2em; }
+#place-fit .pf-premises-provenance li { margin-bottom:.5em; }
+#place-fit .pf-footer { display:flex; flex-wrap:wrap; align-items:baseline; gap:.25em 1em; padding:var(--pf-unit); }
+#place-fit .pf-footer p { display:block; max-width:65ch; margin:0; }
+#place-fit .pf-more-content { padding:.75em; gap:.6em; }
+#place-fit .pf-more-content > label { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; gap:.5em; }
+#place-fit .pf-more-content > label:has(input[placeholder="e.g. Silom"]) { grid-template-columns:1fr; }
+#place-fit .pf-place > h2 { display:inline; font-size:15px; font-weight:600; margin-right:.5em; }
+#place-fit .pf-place > .pf-source { margin-top:.25em; }
+#place-fit .pf-more-content .pf-input-unit input { width:100%; }
+#place-fit .pf-more-content fieldset { gap:4px .6em; }
+#place-fit .pf-more-content fieldset label,#place-fit .pf-everyday-controls label:has(input),#place-fit .pf-check-inline { min-height:32px; }
+#place-fit .pf-more-content legend { margin-bottom:.25em; }
+#place-fit .pf-check-inline { margin-bottom:.5em; }
+#place-fit .pf-header select {
+ appearance:none;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%2320201d' stroke-width='1.5'/%3E%3C/svg%3E");
+ background-repeat:no-repeat; background-position:right .4em center; background-size:.67em .4em;
+ padding-right:1.4em;
+}
+#place-fit .pf-purpose select { min-width:94px; }
+/* A value column must never squeeze its label into character stacks at text zoom. */
+@container pf-fields (max-width:19em) {
+ #place-fit .pf-quote-fields label,#place-fit .pf-econ-fields label,
+ #place-fit .pf-premises-fields label,#place-fit .pf-premises-fields label:has(input[aria-label="Space name"]),
+ #place-fit .pf-more-content > label { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:800px){
+ #place-fit .pf-header { gap:4px; padding-inline:.5em; }
+ #place-fit .pf-purpose select { width:max(94px,6.267em); }
+ #place-fit .pf-mobile-area select { width:max(144px,9.6em); padding-left:4px; }
+ #place-fit .pf-workspace { display:block; }
+ #place-fit .pf-map-wrap { position:relative; top:auto; height:auto; grid-template-rows:clamp(240px,35dvh,320px) auto; border-right:0; border-bottom:1px solid var(--pf-ink); }
+ #place-fit .pf-place { padding:12px 16px; }
+ #place-fit .pf-place .pf-place-actions { margin:.5em 0; gap:.5em .75em; }
+ #place-fit .pf-space-check,#place-fit .pf-evidence { padding:12px 16px; }
+ #place-fit .pf-space-results { margin-top:var(--pf-unit); }
+ #place-fit .pf-comparison-heading { display:flex; flex-wrap:wrap; }
+ #place-fit .pf-comparison-heading > div:last-child { margin-top:0; }
+ #place-fit .pf-premises-list li { flex-wrap:wrap; }
+ #place-fit .pf-premises-list label { flex:1 1 14em; }
+ #place-fit .pf-premises-list label span { min-width:0; }
+ #place-fit .pf-comparison .pf-table-wrap th:first-child { width:max(120px,6.5em); }
+}
+@media print {
+ #place-fit .pf-workspace { display:block; }
+ #place-fit .pf-map-wrap { position:relative; top:auto; height:300px; }
+}

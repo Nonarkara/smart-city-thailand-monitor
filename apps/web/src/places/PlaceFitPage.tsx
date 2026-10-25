@@ -11,6 +11,7 @@ import {
   type Quote,
 } from "./placeFit";
 import "./places.css";
+import "./spatial.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
 import {EverydayPlaces,useEveryday} from "./EverydayPlaces";
 import {type EverydayCategory} from "./everyday";
@@ -485,7 +486,7 @@ export default function PlaceFitPage() {
           disabled={!places.length}
           onClick={() => setView("compare")}
         >
-          <span className="pf-compare-long">Compare ({compareCount}/3)</span><span className="pf-compare-short">Compare ({compareCount})</span>
+          <span className="pf-compare-long">Compare ({compareCount}/3)</span><span className="pf-compare-short">Compare {compareCount}</span>
         </button>
         </div>
         <details className="pf-more">
@@ -613,6 +614,7 @@ export default function PlaceFitPage() {
               savedLocations={savedLocations}
               onOpenSaved={openNamed}
             />
+            <div className="pf-decision-rail">
             {place && (
               <article className="pf-place" aria-labelledby="pf-place-name">
                 <p className="pf-kicker">
@@ -624,7 +626,7 @@ export default function PlaceFitPage() {
                 </h1>
                 {purpose!=="live" ? <>
                   {quote.lat!==undefined&&<p className="pf-source">Your pin: {quote.lat}, {quote.lng}. {place.name} is the guide anchor, not a verified address.</p>}
-                  <EconomicsSummary purpose={purpose} scenario={scenario}/>
+                  <EconomicsSummary purpose={purpose} scenario={scenario} compact/>
                   {quote.lat!==undefined&&!activePremises&&<button onClick={()=>setQuotes(old=>({...old,[selected]:{...old[selected],lat:undefined,lng:undefined,access:"unknown",commute:undefined}}))}>Use station area instead</button>}
                   <div className="pf-place-actions"><button className="pf-primary" aria-pressed={shortlist.includes(selected)} onClick={()=>toggle(selected)}>{shortlist.includes(selected)?"Remove from shortlist":"Shortlist this area"}</button></div>
                   <p className="pf-source">{purpose==="industrial"?"Station areas are navigation anchors, not an industrial suitability assessment. Check zoning, utilities and freight access at the actual premises.":"No demand or return is inferred from the station-area description."}</p>
@@ -692,7 +694,6 @@ export default function PlaceFitPage() {
                 </>}
               </article>
             )}
-          </div>
           {place && purpose!=="live" && <><EconomicsEditor key={`editor:${activePremises?.id??scenarioKey}`} purpose={purpose} area={quote.lat!==undefined?"your pinned space":place.name} scenario={scenario} onChange={value=>activePremises?changeNamed({scenario:value}):setScenarios(old=>({...old,[scenarioKey]:value}))} comparables={currentComparables} onComparables={value=>activePremises?changeNamed({comparables:value}):setComparables(old=>({...old,[scenarioKey]:value}))}/>{saveWidget}</>}
           {place && (
             <section id="home-check" className={`pf-evidence ${purpose!=="live"?"pf-site-evidence":""}`}>
@@ -738,11 +739,12 @@ export default function PlaceFitPage() {
                     />
                   </label>
                   <label>
-                    Monthly extras
+                    Monthly extras · utilities + transport
                     <input
+                      aria-label="Monthly extras"
                       type="number"
                       min="0"
-                      placeholder="Utilities + transport…"
+                      placeholder="Not entered"
                       value={quote.extras ?? ""}
                       onChange={(e) => patch("extras", amount(e.target.value))}
                     />
@@ -754,8 +756,8 @@ export default function PlaceFitPage() {
                       onChange={(e) => patch("access", e.target.value)}
                     >
                       <option value="unknown">Not checked</option>
-                      <option value="walk">I checked the walking route</option>
-                      <option value="car">Needs a car / feeder ride</option>
+                      <option value="walk">Walking route checked</option>
+                      <option value="car">Car / feeder needed</option>
                     </select>
                   </label>
                   <label>
@@ -922,6 +924,8 @@ export default function PlaceFitPage() {
               </div>
             </section>
           )}
+          </div>
+          </div>
         </>
       ) : (
         <section className="pf-comparison">
@@ -1075,11 +1079,10 @@ export default function PlaceFitPage() {
       )}
       <footer className="pf-footer">
         <p>
-          Free pilot · no checkout. Paid reports are planned; nothing here is a
-          verified property recommendation.
+          Free pilot · no verified property recommendations.
         </p>
         <p>
-          Built from Bangkok IOC’s legacy and Atlas evidence.{" "}
+          Bangkok IOC · Atlas evidence.{" "}
           <a href="https://github.com/Nonarkara/smart-city-thailand-monitor">
             Source & method ↗
           </a>{" "}

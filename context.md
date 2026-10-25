@@ -10,6 +10,17 @@ journey check. Rent and monthly extras remain user entries, never market average
 
 ## Design read
 
+26 October spatial correction: adopt Palette's MoMA spacing/planar alignment
+within the existing Civic register. Explore becomes one 2/3 map +1/3 continuous
+decision column on wide screens, with a sticky map and ordinary document scroll;
+phone composes map, place/action and compact label-value forms in that order.
+The Civic map is a deliberate full-viewport canvas; the narrow live-control column
+uses a 16px page-unit. MoMA supplies alignment, proportion and relative spacing;
+the Editorial reading-shell margins do not apply to this map workspace.
+No nested rail scrolling, hidden qualifications or removed features. Three spacing
+roles: page-unit16px, baseline1.35em, optical cap0.5em. Comparison tables dominate
+Compare. Native form targets remain readable and dense controls at least32px.
+
 A street atlas beside a candid place note: locate the choice, understand the
 tradeoff, then test a real home. The map dominates Explore; the evidence table
 dominates Compare. The reference is the geographic orientation of Vignelli's
@@ -41,6 +52,16 @@ fa6ccef0. Only the new pilot entry, its bundles and pilot JSON use new assets.
 The source repository is smart-city-thailand-monitor, not a separate IOC repo.
 
 ## Checks
+
+Full reading-path release gate: run `scripts/verify-spatial-browser.mjs` across
+all four purposes, Compare and open settings at390/1024/1440. Inspect whole-page
+and scrolled working-map captures, not just first-screen chrome. Check populated
+economics and named-space flows, including120-character names and30px text. A
+no-horizontal-overflow assertion does not establish readable label measure; saved
+rows must wrap actions before squeezing names. Dense text-control groups use the
+current owner rule: at least32px high, gaps at least4px. Isolated primary actions
+and map controls retain44px. The old immutable release must fail the new section
+budgets; preserve that negative proof. Independent whole-path review precedes ship.
 
 `node --test scripts/test-place-fit.mjs`; shared + web builds; real visitor
 flows; 390x844, 1024x900 and 1440x900 screenshots, adjacent breakpoints, open
