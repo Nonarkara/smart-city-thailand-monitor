@@ -1,4 +1,4 @@
-export type CatalogPoint={id:string;name:string;category:string;lat:number;lng:number;distanceM:number;source_url:string|null;source_dataset:string;ingested_at:string};
+export type CatalogPoint={snapshot_at?:string;edited_at?:string;id:string;name:string;category:string;lat:number;lng:number;distanceM:number;source_url:string|null;source_dataset:string;ingested_at:string};
 export function catalogPoints(rows:unknown,center:{lat:number;lng:number},now=Date.now()):CatalogPoint[]{
  if(!Array.isArray(rows)||![center.lat,center.lng].every(Number.isFinite))return [];
  const seen=new Set<string>(),rad=Math.PI/180;

@@ -78,3 +78,18 @@ Each saved home/space has a stable ID independent of guide, purpose and coordina
 ## Safe concurrent persistence, 25 October
 
 A two-tab probe proved whole-profile overwrites could erase financial inputs. storage.ts now reads/copies valid v1 into separate v2 storage, protecting new fields from cached v1 writers. Web Locks serialize v2 compare-and-write against a per-tab expected revision; the ref updates inside the lock for queued local writes. Stale tabs warn and offer session report/reload instead of overwriting newer records. Unsupported lock/storage access remains explicitly session-only. Clear both versions under the lock. Do not replace this with unguarded localStorage writes or a check outside the lock.69unit tests and real3-width two-tab cases pass; storage-verification/README.md holds evidence. Full professional-shipability goal remains active.
+
+## Everyday-place reference layer, 26 October
+
+An offline, checksum-pinned Geofabrik/OSM snapshot supplies 11,248 actual node
+points across six everyday-service categories. Public manifest and 155 bounded,
+content-addressed cells live in repository public/data/places/everyday; the Pages
+Worker explicitly serves them as current assets. No per-visitor Overpass calls.
+The directory recomputes an 800 m straight-line search for the active pin, aborts
+old requests, validates all cells, and suppresses snapshots older than 30 days.
+Missing/stale/partial coverage never proves absence. Optional category map shows
+nearest 30 and zooms to the actual search point. Node edit dates are not observation
+dates; opening/access, walking routes, quality and customer demand remain unknown.
+Four-decimal coordinates and ODbL attribution/downloadable modified database are
+explicit. Public data never enters the private workspace. See EVERYDAY-PLACES.md
+and everyday-verification for source contract, tests and independent visual proof.

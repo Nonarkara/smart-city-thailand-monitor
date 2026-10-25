@@ -54,7 +54,7 @@ export default {
       "/assets/index-4ytu9jeW.js",
       "/assets/index-DmF0VODd.css",
     ]);
-    if (legacyPaths.has(url.pathname) || (!url.pathname.startsWith("/assets/") && !["/data/places/pilot.json", "/data/places/market.json"].includes(url.pathname))) {
+    if (legacyPaths.has(url.pathname) || (!url.pathname.startsWith("/assets/") && !["/data/places/pilot.json", "/data/places/market.json"].includes(url.pathname) && !/^\/data\/places\/everyday\/(manifest|\d{3}-\d{4}-[a-f0-9]{12})\.json$/.test(url.pathname))) {
       const legacy = new URL(
         url.pathname + url.search,
         "https://fa6ccef0.bangkok-ioc.pages.dev",

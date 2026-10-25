@@ -12,6 +12,8 @@ import {
 } from "./placeFit";
 import "./places.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
+import {EverydayPlaces,useEveryday} from "./EverydayPlaces";
+import {type EverydayCategory} from "./everyday";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
 import {readSaved,readGuide,readEvidence,fetchJson,parsePremises,type Evidence} from "./boundaries";
@@ -51,6 +53,7 @@ function PlaceMap({
   onPin,
   purpose,
   catalog,
+  focusNearby,
   savedPin,
   savedLocations,
   onOpenSaved,
@@ -61,6 +64,7 @@ function PlaceMap({
   home: Quote;
   purpose: Purpose;
   catalog: CatalogPoint[];
+  focusNearby?:{lat:number;lng:number};
   savedPin:boolean;
   savedLocations:{id:string;label:string;lat:number;lng:number}[];
   onOpenSaved:(id:string)=>void;
@@ -76,6 +80,7 @@ function PlaceMap({
   const [failed, setFailed] = useState(false);
   const [targetCovered,setTargetCovered]=useState(false);
   const homeLayers = useRef<L.Layer[]>([]);
+  const catalogLayers=useRef(new Map<string,{signature:string;layers:L.Layer[]}>());
   useEffect(() => {
     if (!el.current) return;
     const m = L.map(el.current, {
@@ -99,6 +104,7 @@ function PlaceMap({
     return () => {
       observer.disconnect();
       m.remove();
+      catalogLayers.current.clear();
       map.current = null;
     };
   }, []);
@@ -147,20 +153,23 @@ function PlaceMap({
       m.panTo([home.lat, home.lng], { animate: false });
     }
   }, [home.lat, home.lng, selected]);
+  useEffect(()=>{if(focusNearby)map.current?.setView([focusNearby.lat,focusNearby.lng],15,{animate:false})},[focusNearby?.lat,focusNearby?.lng]);
   useEffect(()=>{
     const m=map.current;if(!m)return;
     const pane=m.getPane("catalog")??m.createPane("catalog");pane.style.zIndex="625";
-    const layer=L.layerGroup().addTo(m);
+    const wanted=new Map(catalog.map(p=>[p.id,JSON.stringify(p)]));
+    for(const [id,entry] of catalogLayers.current){if(wanted.get(id)!==entry.signature){entry.layers.forEach(layer=>layer.remove());catalogLayers.current.delete(id)}}
     catalog.forEach(p=>{
+      if(catalogLayers.current.has(p.id))return;
       const content=document.createElement("div");
       const title=document.createElement("strong");title.textContent=p.name;content.append(title);
-      const info=document.createElement("p");info.textContent=`${p.category} · ${p.distanceM} m straight-line. Catalog: ${p.source_dataset}. Ingested ${date(p.ingested_at)}. Observation date, opening and public access are unverified.`;content.append(info);
+      const info=document.createElement("p");info.textContent=`${p.category} · ${p.snapshot_at?"≈":""}${p.distanceM} m straight-line. Catalog: ${p.source_dataset}. ${p.snapshot_at?`Snapshot ${date(p.snapshot_at)}; node last edited ${date(p.edited_at??null)} (not a visit date)`: `Ingested ${date(p.ingested_at)}`}. Observation date, opening and public access are unverified.`;content.append(info);
       if(p.source_url){const link=document.createElement("a");link.href=p.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Catalog source ↗";content.append(link);}
-      const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(layer).bindPopup(content,{maxWidth:260});
-      L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:5,color:"#575951",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false,className:"pf-catalog-dot"}).addTo(layer);
+      const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(m).bindPopup(content,{maxWidth:260});
+      const dot=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:5,color:"#575951",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false,className:"pf-catalog-dot"}).addTo(m);
+      catalogLayers.current.set(p.id,{signature:wanted.get(p.id)!,layers:[hit,dot]});
       const element=hit.getElement();if(element){element.setAttribute("tabindex","0");element.setAttribute("role","button");element.setAttribute("aria-label",`Catalog place: ${p.name}`);element.addEventListener("keydown",e=>{const event=e as KeyboardEvent;if(event.key==="Enter"||event.key===" "){event.preventDefault();hit.openPopup();}});}
     });
-    return ()=>{layer.remove()};
   },[catalog]);
   useEffect(()=>{
     const m=map.current;if(!m)return;
@@ -304,7 +313,9 @@ export default function PlaceFitPage() {
   const savedLocations=useMemo(()=>comparedPremises.map(r=>({id:r.id,label:r.label,lat:r.quote.lat!,lng:r.quote.lng!})),[savedGeometry]);
   const fit = assess(prefs, quote);
   const mappedPlaces=useMemo(()=>place?catalogPoints(evidence?.civic?.places,{lat:quote.lat??place.lat,lng:quote.lng??place.lng}):[],[evidence,quote.lat,quote.lng,place?.id]);
-  const visiblePlaces=useMemo(()=>showCatalog?mappedPlaces:[],[showCatalog,mappedPlaces]);
+  const everyday=useEveryday({lat:quote.lat??place?.lat??13.7796,lng:quote.lng??place?.lng??100.5448});
+  const [everydayCategory,setEverydayCategory]=useState<EverydayCategory>("groceries"),[mapEveryday,setMapEveryday]=useState(false);
+  const visiblePlaces=useMemo(()=>[...(showCatalog?mappedPlaces:[]),...(mapEveryday&&everyday.status==="ready"?everyday.points.filter(p=>p.category===everydayCategory).slice(0,30).map(p=>({id:`osm:${p.id}`,name:p.name||`Unnamed ${p.kind.replaceAll("_"," ")}`,category:p.kind.replaceAll("_"," "),lat:p.lat,lng:p.lng,distanceM:p.distanceM,source_url:`https://www.openstreetmap.org/node/${p.id}`,source_dataset:"OpenStreetMap",ingested_at:"",snapshot_at:everyday.sourceAsOf,edited_at:p.editedAt})):[])],[showCatalog,mappedPlaces,mapEveryday,everyday,everydayCategory]);
   const spaceKey=(id:string)=>{const q=quotes[id]??{};return `${purpose}:${id}:${q.lat??"station"}:${q.lng??"station"}`};
   const scenarioKey=spaceKey(selected);
   const scenario=activePremises?.scenario??scenarios[scenarioKey]??{};
@@ -597,6 +608,7 @@ export default function PlaceFitPage() {
               onPin={pin}
               purpose={purpose}
               catalog={visiblePlaces}
+              focusNearby={place&&mapEveryday&&everyday.status==="ready"?{lat:quote.lat??place.lat,lng:quote.lng??place.lng}:undefined}
               savedPin={!!activePremises}
               savedLocations={savedLocations}
               onOpenSaved={openNamed}
@@ -810,6 +822,7 @@ export default function PlaceFitPage() {
                     ? "The chosen point is sent to Atlas; your notes stay on this device."
                     : "Pin a space to check its own surroundings."}
                 </p>
+                <EverydayPlaces result={everyday} category={everydayCategory} onCategory={setEverydayCategory} mapped={mapEveryday} onMapped={setMapEveryday}/>
                 {busy && (
                   <p role="status">
                     Reading the Atlas catalog and reported problems…
