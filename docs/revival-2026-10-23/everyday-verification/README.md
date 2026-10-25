@@ -51,3 +51,13 @@ Unavailable check: `npx --yes axiom-audit . --strict` returned npm404 because th
 package is unavailable from the configured registry. It is not counted as a pass.
 Rendered seven-rule audit, geometry assertions and independent review are recorded
 above. Source, derived data and built-output secret scans report no leaks.
+
+## Live release
+
+Source 30392fd9aa942a112ac7da7f5fd1269deb941d67 deployed as Pages cd5c4f43:
+https://bangkok-ioc.pages.dev/places (immutable cd5c4f43.bangkok-ioc.pages.dev).
+The full everyday browser runner passes on the public production URL at all three
+widths, including stale/unavailable and delayed independent-source cases.
+`results.json` and captures are live; `local-results.json` preserves the local run.
+`live-bytes.json` proves exact deployed pilot JS, manifest and largest cell bytes,
+and byte-identical legacy IOC root/Atlas app.js before and after deployment.
