@@ -105,3 +105,17 @@ audit and independent review above are the actual spatial evidence.
 This repairs the UI; it does not manufacture demand, historical rent fairness,
 verified walking routes or production maturity. The broader shipability goal
 remains open.
+
+## Live proof
+
+Source `3b1375929f99a159c4d4c44a206d853072a87e6c` deployed as Pages `7b670194`.
+Public URL: https://bangkok-ioc.pages.dev/places
+Immutable deployment: https://7b670194.bangkok-ioc.pages.dev/places
+
+The complete spatial runner passes on the public URL: all four purposes at 390,
+1024 and 1440, comparisons, open settings, full dropdown labels, section budgets
+and scrolled working-map checks. `after-*` captures/metrics are live; the local
+metrics are retained as `local-after-metrics.json`. `live-bytes.json` proves exact
+JS/CSS equality to the tested build and byte-identical legacy IOC root/Atlas map
+assets before and after this deployment. The current metadata-only proof commit
+does not require another frontend deployment.

@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "3b1375929f99a159c4d4c44a206d853072a87e6c",
+  "deployment": "7b670194",
+  "url": "https://bangkok-ioc.pages.dev/places",
+  "checkedAt": "2026-10-25T18:48:54.317574+00:00",
+  "checks": {
+    "javascript": {
+      "path": "assets/PlaceFitPage-BusC6O1o.js",
+      "identical": true,
+      "sha256": "3512faefbbc5b156c98974319d2fb090d9d33f7b6f42feef34e9e98f982d4db1"
+    },
+    "stylesheet": {
+      "path": "assets/PlaceFitPage-CpfiBRs7.css",
+      "identical": true,
+      "sha256": "2c7691a2cc983232da4d00a4042a58b620085aac022ea5eecd043e744fea729f"
+    },
+    "legacyRoot": {
+      "identical": true,
+      "sha256": "4b0732c3489165b2f1431aa143b08f57e7204743a8663940f3ff99a92e9b2ff2"
+    },
+    "atlasMap": {
+      "identical": true,
+      "sha256": "010fcb8b63a03b10dbc3250a4fea75288b187b59aef2c60b5808eb01ec33c4bd"
+    }
+  }
+}
