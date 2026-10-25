@@ -207,3 +207,5 @@ test('attributed market snapshot has its own static asset route and preserves pu
  const d=JSON.parse(readFileSync(new URL('../public/data/places/market.json',import.meta.url),'utf8'));assert.equal(d.publisher,'PropertySights');assert.match(d.publisherDate,/^\d{4}-\d{2}-\d{2}$/);assert.ok(d.rentByBed['1'].n>=5);let requested;
  const res=await pagesWorker.fetch(new Request('https://example.test/data/places/market.json'),{ASSETS:{fetch(req){requested=req.url;return new Response(JSON.stringify(d),{headers:{'content-type':'application/json'}})}}});assert.equal((await res.json()).publisher,'PropertySights');assert.equal(requested,'https://example.test/data/places/market.json');
 });
+
+test('an unbounded user amount is not persisted as a plausible financial value',()=>{assert.equal(amount('1000000000001'),undefined);assert.equal(amount('1000000000000'),1000000000000)});

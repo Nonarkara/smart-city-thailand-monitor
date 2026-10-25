@@ -14,7 +14,9 @@ import "./places.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
-import {readSaved,readGuide,readEvidence,fetchJson,type Evidence} from "./boundaries";
+import {readSaved,readGuide,readEvidence,fetchJson,parsePremises,serializeSaved,type Evidence} from "./boundaries";
+import {snapshotPremises,savePremises,editPremises,relocatePremises,duplicatePremises,selectedPremises,togglePremises,premisesReport,type Premises} from "./premises";
+import {PremisesSave,PremisesWorkspace,type PremisesDetails} from "./PremisesWorkspace";
 const BASE = import.meta.env.BASE_URL;
 const interests = [
   "Food",
@@ -48,6 +50,9 @@ function PlaceMap({
   onPin,
   purpose,
   catalog,
+  savedPin,
+  savedLocations,
+  onOpenSaved,
 }: {
   places: Place[];
   selected: string;
@@ -55,14 +60,20 @@ function PlaceMap({
   home: Quote;
   purpose: Purpose;
   catalog: CatalogPoint[];
+  savedPin:boolean;
+  savedLocations:{id:string;label:string;lat:number;lng:number}[];
+  onOpenSaved:(id:string)=>void;
   onPin: (lat: number, lng: number) => void;
 }) {
   const el = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
     markers = useRef<L.Marker[]>([]);
+  const openSaved=useRef(onOpenSaved);openSaved.current=onOpenSaved;
+  const savedBoundsKey=useRef("");
   const select = useRef(onSelect);
   select.current = onSelect;
   const [failed, setFailed] = useState(false);
+  const [targetCovered,setTargetCovered]=useState(false);
   const homeLayers = useRef<L.Layer[]>([]);
   useEffect(() => {
     if (!el.current) return;
@@ -150,11 +161,32 @@ function PlaceMap({
     });
     return ()=>{layer.remove()};
   },[catalog]);
+  useEffect(()=>{
+    const m=map.current;if(!m)return;
+    const pane=m.getPane("saved-premises")??m.createPane("saved-premises");pane.style.zIndex="640";
+    const markerElements:L.Marker[]=[],layer=L.layerGroup().addTo(m),groups=new Map<string,{lat:number;lng:number;items:{id:string;label:string;letter:string}[]}>();
+    savedLocations.forEach((r,i)=>{const key=`${r.lat},${r.lng}`,group=groups.get(key)??{lat:r.lat,lng:r.lng,items:[]};group.items.push({id:r.id,label:r.label,letter:String.fromCharCode(65+i)});groups.set(key,group)});
+    for(const group of groups.values()){
+      const letters=group.items.map(r=>r.letter).join(" · "),width=Math.max(32,letters.length*9+14);
+      const marker=L.marker([group.lat,group.lng],{pane:"saved-premises",title:`Saved spaces ${letters}`,alt:`Saved spaces ${letters}`,icon:L.divIcon({className:"pf-saved-marker",html:`<span>${letters}</span>`,iconSize:[width,32],iconAnchor:[width/2,16]})}).addTo(layer);
+      markerElements.push(marker);
+      if(group.items.length===1)marker.on("click",()=>openSaved.current(group.items[0].id));
+      else {const content=document.createElement("div");const note=document.createElement("p");note.textContent="Separate saved units at the same user pin. No coordinate offsets have been invented.";content.append(note);for(const item of group.items){const button=document.createElement("button");button.type="button";button.textContent=`${item.letter}. ${item.label}`;button.addEventListener("click",()=>{m.closePopup();openSaved.current(item.id)});content.append(button)}marker.bindPopup(content,{maxWidth:260});}
+    }
+    let frame=0,active=true;
+    const measureTarget=()=>{if(!active)return;const target=el.current?.parentElement?.querySelector(".pf-map-target")?.getBoundingClientRect();if(!target)return;setTargetCovered(markerElements.some(marker=>{const box=marker.getElement()?.getBoundingClientRect();return !!box&&box.left<target.right&&box.right>target.left&&box.top<target.bottom&&box.bottom>target.top}));};
+    const scheduleTarget=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(measureTarget)};
+    m.on("move zoomend resize",scheduleTarget);
+    const key=savedLocations.map(r=>`${r.id}:${r.lat},${r.lng}`).join("|");
+    if(key&&key!==savedBoundsKey.current){const points=savedLocations.map(r=>[r.lat,r.lng] as [number,number]);if(points.length===1)m.setView(points[0],15,{animate:false});else m.fitBounds(L.latLngBounds(points),{padding:[40,50],maxZoom:15,animate:false});}
+    savedBoundsKey.current=key;scheduleTarget();
+    return()=>{active=false;cancelAnimationFrame(frame);m.off("move zoomend resize",scheduleTarget);layer.remove()};
+  },[savedLocations]);
   return (
     <div className="pf-map-wrap">
       <div className="pf-map-canvas">
       <div ref={el} className="pf-map" aria-label="Six Bangkok station areas" />
-      <span className="pf-map-target" aria-hidden="true">
+      <span className="pf-map-target" aria-hidden="true" style={{visibility:targetCovered?"hidden":undefined}}>
         +
       </span>
       <button
@@ -168,7 +200,7 @@ function PlaceMap({
             );
         }}
       >
-        {purpose==="live"?"Pin home at +":"Pin space at +"}
+        {savedPin?"Move saved pin at +":purpose==="live"?"Pin home at +":"Pin space at +"}
       </button>
       </div>
       {failed && (
@@ -177,7 +209,7 @@ function PlaceMap({
         </p>
       )}
       <span className="pf-map-note">
-        Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.{catalog.length>0&&" Dots: catalog places; select for source."}
+        Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.{catalog.length>0&&" Dots: catalog places; select for source."}{savedLocations.length>0&&" A / B / C: your selected saved spaces."}
       </span>
     </div>
   );
@@ -192,6 +224,10 @@ export default function PlaceFitPage() {
     [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState("ari");
   const [purpose,setPurpose]=useState<Purpose>(readPurpose(new URLSearchParams(location.search).get("purpose")??saved.purpose));
+  const [premises,setPremises]=useState<Premises[]>(saved.premises);
+  const [premisesSelection,setPremisesSelection]=useState<string[]>(saved.premisesSelection);
+  const [comparisonMode,setComparisonMode]=useState<"areas"|"premises">(saved.comparisonMode);
+  const [activePremisesId,setActivePremisesId]=useState<string|undefined>(saved.activePremisesId);
   const [scenarios,setScenarios]=useState<Record<string,Scenario>>(saved.scenarios??{});
   const [comparables,setComparables]=useState<Record<string,Comparable[]>>(saved.comparables??{});
   const [shortlist, setShortlist] = useState<string[]>([]);
@@ -236,8 +272,11 @@ export default function PlaceFitPage() {
                 .slice(0, 3),
         );
         if (shared.length) {
-          setSelected(shared[0]);
+          setSelected(shared[0]);setActivePremisesId(undefined);setComparisonMode("areas");
           setView("compare");
+        } else {
+          const active=saved.premises.find(r=>r.id===saved.activePremisesId&&r.purpose===purpose&&guides.some(g=>g.id===r.guideId));
+          if(active)setSelected(active.guideId);else setActivePremisesId(undefined);
         }
       })
       .catch((e) => {if(!controller.signal.aborted)setLoadError(e instanceof SyntaxError?"Place guide format unavailable.":e.message);});
@@ -248,20 +287,26 @@ export default function PlaceFitPage() {
     try {
       localStorage.setItem(
         "bkk-place-fit-v1",
-        JSON.stringify({ prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog }),
+        serializeSaved({ prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,premises,premisesSelection,comparisonMode,activePremisesId }),
       );
       setStorageUnavailable(false);
     } catch { setStorageUnavailable(true); }
-  }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,places]);
+  }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,places,premises,premisesSelection,comparisonMode,activePremisesId]);
   useEffect(()=>{const bar=toolbar.current;if(!bar)return;const measure=()=>root.current?.style.setProperty("--pf-toolbar-height",`${bar.getBoundingClientRect().height}px`);measure();const observer=new ResizeObserver(measure);observer.observe(bar);return()=>observer.disconnect()},[places.length]);
   const place = places.find((p) => p.id === selected);
-  const quote = quotes[selected] ?? {};
+  const activePremises=premises.find(r=>r.id===activePremisesId&&r.guideId===selected&&r.purpose===purpose);
+  const quote = activePremises?.quote??quotes[selected]??{};
+  const comparedPremises=useMemo(()=>selectedPremises(premises,premisesSelection,purpose),[premises,premisesSelection,purpose]);
+  const compareCount=comparisonMode==="premises"?comparedPremises.length:shortlist.length;
+  const savedGeometry=JSON.stringify(comparedPremises.map(r=>[r.id,r.label,r.quote.lat,r.quote.lng]));
+  const savedLocations=useMemo(()=>comparedPremises.map(r=>({id:r.id,label:r.label,lat:r.quote.lat!,lng:r.quote.lng!})),[savedGeometry]);
   const fit = assess(prefs, quote);
   const mappedPlaces=useMemo(()=>place?catalogPoints(evidence?.civic?.places,{lat:quote.lat??place.lat,lng:quote.lng??place.lng}):[],[evidence,quote.lat,quote.lng,place?.id]);
   const visiblePlaces=useMemo(()=>showCatalog?mappedPlaces:[],[showCatalog,mappedPlaces]);
   const spaceKey=(id:string)=>{const q=quotes[id]??{};return `${purpose}:${id}:${q.lat??"station"}:${q.lng??"station"}`};
   const scenarioKey=spaceKey(selected);
-  const scenario=scenarios[scenarioKey]??{};
+  const scenario=activePremises?.scenario??scenarios[scenarioKey]??{};
+  const currentComparables=activePremises?.comparables??comparables[scenarioKey]??[];
   const journeyCurrent =
     quote.commuteFor === prefs.destination.trim() &&
     quote.commuteTravel === prefs.travel &&
@@ -290,6 +335,7 @@ export default function PlaceFitPage() {
     return () => controller.abort();
   }, [place?.id, quote.lat, quote.lng]);
   function toggle(id: string) {
+    setComparisonMode("areas");
     setShortlist((old) => {
       if (old.includes(id)) return old.filter((x) => x !== id);
       if (old.length === 3) {
@@ -300,27 +346,38 @@ export default function PlaceFitPage() {
       return [...old, id];
     });
   }
-  function patch(field: keyof Quote, value: unknown) {
-    setQuotes((old) => ({
-      ...old,
-      [selected]: {
-        ...old[selected],
-        [field]: value,
-        ...(field === "commute"
-          ? {
-              commuteFor: prefs.destination.trim(),
-              commuteTravel: prefs.travel,
-              commuteAt: prefs.departure,
-            }
-          : {}),
-      },
-    }));
+  function navigateArea(id:string){setActivePremisesId(undefined);setSelected(id);}
+  function navigatePurpose(value:Purpose){setActivePremisesId(undefined);setPurpose(value);}
+  function changeNamed(patch:Partial<Pick<Premises,"label"|"quote"|"scenario"|"comparables"|"quoteObservedAt"|"quoteSource">>,strict=false){
+    if(!activePremises)return false;
+    try {const next=parsePremises({...activePremises,...patch,savedAt:new Date().toISOString()});setPremises(editPremises(premises,activePremises.id,{...next,quoteSource:next.quoteSource,quoteObservedAt:next.quoteObservedAt},next.savedAt));return true;}
+    catch(error){if(strict)throw error;setMessage(error instanceof Error?error.message:"That entry could not be saved. Check its format.");return false;}
   }
+  function patch(field: keyof Quote, value: unknown) {
+    if(field==="commute"&&typeof value==="number"&&value>1440)value=undefined;
+    const changes={ [field]:value,...(field==="commute"?{commuteFor:prefs.destination.trim(),commuteTravel:prefs.travel,commuteAt:prefs.departure}:{}) };
+    if(activePremises){changeNamed({quote:{...quote,...changes}});return;}
+    setQuotes(old=>({...old,[selected]:{...old[selected],...changes}}));
+  }
+  function openNamed(id:string){const record=premises.find(r=>r.id===id);if(!record||!places.some(p=>p.id===record.guideId)){setMessage("The saved space's guide is unavailable. Its entries remain saved.");return;}setActivePremisesId(id);setSelected(record.guideId);setPurpose(record.purpose);setComparisonMode("premises");setView("explore");setMessage("");}
+  function saveNamed(details:PremisesDetails){
+    if(!place)return;
+    if(activePremises){changeNamed(details,true);setMessage("Space details saved. Costs and checks save to this space as you edit.");return;}
+    const record=parsePremises(snapshotPremises({...details,purpose,guideId:selected,quote,scenario,comparables:currentComparables}));
+    setPremises(savePremises(premises,record));setActivePremisesId(record.id);setComparisonMode("premises");
+    setPremisesSelection(old=>{const ids=selectedPremises(premises,old,purpose).map(r=>r.id);return ids.length<3?[...ids,record.id]:ids;});
+    setMessage("Named space saved separately. Its entries are private and unverified.");
+  }
+  function duplicateNamed(){if(!activePremises)return;try{const record=parsePremises(duplicatePremises(activePremises));const next=savePremises(premises,record);setPremises(next);setActivePremisesId(record.id);setPremisesSelection(old=>{const ids=selectedPremises(premises,old,purpose).map(r=>r.id);return ids.length<3?[...ids,record.id]:ids;});setMessage("New copy created. Cost assumptions copied; quote sources, comparables and premises checks were cleared.");}catch(error){setMessage(error instanceof Error?error.message:"Space could not be duplicated.");}}
+  function selectNamed(id:string){try{const current=comparedPremises.map(r=>r.id);setPremisesSelection(togglePremises(current,id));}catch(error){setMessage(error instanceof Error?error.message:"Selection unavailable.");}}
+  function removeNamed(id:string){setPremises(old=>old.filter(r=>r.id!==id));setPremisesSelection(old=>old.filter(x=>x!==id));if(activePremisesId===id)setActivePremisesId(undefined);setMessage("Saved space removed from this browser.");}
+  function exportNamed(records=comparedPremises){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([premisesReport(records,prefs)],{type:"text/plain;charset=utf-8"}));a.download="bangkok-private-spaces.txt";a.click();URL.revokeObjectURL(a.href);setMessage("Private premises report saved with your selected names, pins and entries.");}
   function pin(lat: number, lng: number) {
     if (lat < 13.45 || lat > 14.1 || lng < 100.3 || lng > 100.95) {
       setMessage("Choose a point inside the Bangkok metro pilot area.");
       return;
     }
+    if(activePremises){const next=parsePremises(relocatePremises(activePremises,lat,lng));setPremises(old=>old.map(r=>r.id===next.id?next:r));setMessage("Saved pin moved. Recheck sources, access, journey and permitted use at this point.");return;}
     setQuotes((old) => ({
       ...old,
       [selected]: {
@@ -372,6 +429,7 @@ export default function PlaceFitPage() {
       "Personal comparison saved. It includes your notes and entered costs.",
     );
   }
+  const saveWidget=place&&<PremisesSave key={activePremises?`save:${activePremises.id}:${quote.lat}:${quote.lng}`:`save:${purpose}:${selected}:${quote.lat??"station"}:${quote.lng??"station"}`} record={activePremises} hasPin={quote.lat!==undefined&&quote.lng!==undefined} count={premises.filter(r=>r.purpose===purpose).length} atCapacity={premises.length>=20} onSave={saveNamed} onDuplicate={duplicateNamed} onCompare={()=>{setComparisonMode("premises");setView("compare");}} onExit={()=>setActivePremisesId(undefined)}/>;
   if (loadError)
     return (
       <main id="place-fit">
@@ -384,14 +442,14 @@ export default function PlaceFitPage() {
   return (
     <main id="place-fit" ref={root}>
       <header className="pf-header" ref={toolbar}>
-        <label className="pf-purpose"><span className="pf-sr-only">Purpose</span><select aria-label="Purpose" value={purpose} onChange={e=>setPurpose(e.target.value as Purpose)}>{Object.entries(purposes).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
+        <label className="pf-purpose"><span className="pf-sr-only">Purpose</span><select aria-label="Purpose" value={purpose} onChange={e=>navigatePurpose(e.target.value as Purpose)}>{Object.entries(purposes).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
         <a className="pf-brand" aria-label="Bangkok, for you" href={`${BASE}places`}>Bangkok<span>, for you</span></a>
         <nav className="pf-areas" aria-label="Choose an area">
             <label className="pf-mobile-area">
               <span className="pf-sr-only">Area</span>
               <select aria-label="Area" disabled={!places.length}
                 value={selected}
-                onChange={(e) => setSelected(e.target.value)}
+                onChange={(e) => navigateArea(e.target.value)}
               >
                 {places.map((p, i) => (
                   <option key={p.id} value={p.id}>
@@ -410,11 +468,11 @@ export default function PlaceFitPage() {
         </button>
         <button
           className={view === "compare" ? "pf-active" : ""}
-          aria-label={`Compare (${shortlist.length}/3)`}
+          aria-label={`Compare (${compareCount}/3)`}
           disabled={!places.length}
           onClick={() => setView("compare")}
         >
-          <span className="pf-compare-long">Compare ({shortlist.length}/3)</span><span className="pf-compare-short">Compare ({shortlist.length})</span>
+          <span className="pf-compare-long">Compare ({compareCount}/3)</span><span className="pf-compare-short">Compare ({compareCount})</span>
         </button>
         </div>
         <details className="pf-more">
@@ -532,25 +590,28 @@ export default function PlaceFitPage() {
             <PlaceMap
               places={places}
               selected={selected}
-              onSelect={setSelected}
+              onSelect={navigateArea}
               home={quote}
               onPin={pin}
               purpose={purpose}
               catalog={visiblePlaces}
+              savedPin={!!activePremises}
+              savedLocations={savedLocations}
+              onOpenSaved={openNamed}
             />
             {place && (
               <article className="pf-place" aria-labelledby="pf-place-name">
                 <p className="pf-kicker">
-                  {place.line} · {place.station}
+                  {activePremises&&"Guide context · "}{place.line} · {place.station}
                 </p>
                 <h1 id="pf-place-name">
-                  {purpose!=="live"&&quote.lat!==undefined?"Pinned space":place.name}
-                  {(purpose==="live"||quote.lat===undefined)&&<span lang="th">{place.thai}</span>}
+                  {activePremises?.label??(purpose!=="live"&&quote.lat!==undefined?"Pinned space":place.name)}
+                  {!activePremises&&(purpose==="live"||quote.lat===undefined)&&<span lang="th">{place.thai}</span>}
                 </h1>
                 {purpose!=="live" ? <>
                   {quote.lat!==undefined&&<p className="pf-source">Your pin: {quote.lat}, {quote.lng}. {place.name} is the guide anchor, not a verified address.</p>}
                   <EconomicsSummary purpose={purpose} scenario={scenario}/>
-                  {quote.lat!==undefined&&<button onClick={()=>setQuotes(old=>({...old,[selected]:{...old[selected],lat:undefined,lng:undefined,access:"unknown",commute:undefined}}))}>Use station area instead</button>}
+                  {quote.lat!==undefined&&!activePremises&&<button onClick={()=>setQuotes(old=>({...old,[selected]:{...old[selected],lat:undefined,lng:undefined,access:"unknown",commute:undefined}}))}>Use station area instead</button>}
                   <div className="pf-place-actions"><button className="pf-primary" aria-pressed={shortlist.includes(selected)} onClick={()=>toggle(selected)}>{shortlist.includes(selected)?"Remove from shortlist":"Shortlist this area"}</button></div>
                   <p className="pf-source">{purpose==="industrial"?"Station areas are navigation anchors, not an industrial suitability assessment. Check zoning, utilities and freight access at the actual premises.":"No demand or return is inferred from the station-area description."}</p>
                 </> : <>
@@ -618,7 +679,7 @@ export default function PlaceFitPage() {
               </article>
             )}
           </div>
-          {place && purpose!=="live" && <EconomicsEditor key={scenarioKey} purpose={purpose} area={quote.lat!==undefined?"your pinned space":place.name} scenario={scenario} onChange={value=>setScenarios(old=>({...old,[scenarioKey]:value}))} comparables={comparables[scenarioKey]??[]} onComparables={value=>setComparables(old=>({...old,[scenarioKey]:value}))}/>}
+          {place && purpose!=="live" && <><EconomicsEditor key={`editor:${activePremises?.id??scenarioKey}`} purpose={purpose} area={quote.lat!==undefined?"your pinned space":place.name} scenario={scenario} onChange={value=>activePremises?changeNamed({scenario:value}):setScenarios(old=>({...old,[scenarioKey]:value}))} comparables={currentComparables} onComparables={value=>activePremises?changeNamed({comparables:value}):setComparables(old=>({...old,[scenarioKey]:value}))}/>{saveWidget}</>}
           {place && (
             <section id="home-check" className={`pf-evidence ${purpose!=="live"?"pf-site-evidence":""}`}>
               {purpose==="live"&&<div className="pf-home">
@@ -628,7 +689,7 @@ export default function PlaceFitPage() {
                 {quote.lat !== undefined ? (
                   <p>
                     Home pin selected.{" "}
-                    <button
+                    {!activePremises&&<button
                       onClick={() => {
                         setQuotes((old) => ({
                           ...old,
@@ -643,7 +704,7 @@ export default function PlaceFitPage() {
                       }}
                     >
                       Use station area instead
-                    </button>
+                    </button>}
                   </p>
                 ) : (
                   <p>
@@ -717,6 +778,7 @@ export default function PlaceFitPage() {
                     <p key={x}>{x}</p>
                   ))}
                 </div>
+                {saveWidget}
                 {prefs.destination && (
                   <p>
                     <a
@@ -848,6 +910,8 @@ export default function PlaceFitPage() {
         </>
       ) : (
         <section className="pf-comparison">
+          <div className="pf-comparison-modes" aria-label="Comparison type"><button aria-pressed={comparisonMode==="areas"} onClick={()=>setComparisonMode("areas")}>Areas ({shortlist.length})</button><button aria-pressed={comparisonMode==="premises"} onClick={()=>setComparisonMode("premises")}>Saved spaces ({premises.filter(r=>r.purpose===purpose).length})</button></div>
+          {comparisonMode==="premises"?<PremisesWorkspace records={premises} selected={comparedPremises} purpose={purpose} prefs={prefs} guides={places} onToggle={selectNamed} onOpen={openNamed} onRemove={removeNamed} onExport={()=>exportNamed()} onExportAll={()=>exportNamed(premises)} onMap={()=>setView("explore")}/>:<>
           <div className="pf-comparison-heading">
             <div>
               <h1>Your Bangkok shortlist</h1>
@@ -867,7 +931,7 @@ export default function PlaceFitPage() {
               Choose up to three areas from Explore, then add real home quotes
               to compare costs and access.
             </p>
-          ) : purpose!=="live" ? <EconomicComparison purpose={purpose} places={places.filter(p=>shortlist.includes(p.id))} scenarios={scenarios} spaceKey={spaceKey} onEdit={id=>{setSelected(id);setView("explore");setTimeout(()=>document.getElementById("space-check")?.scrollIntoView(),50)}}/> : (
+          ) : purpose!=="live" ? <EconomicComparison purpose={purpose} places={places.filter(p=>shortlist.includes(p.id))} scenarios={scenarios} spaceKey={spaceKey} onEdit={id=>{navigateArea(id);setView("explore");setTimeout(()=>document.getElementById("space-check")?.scrollIntoView(),50)}}/> : (
             <div data-count={shortlist.length} className="pf-comparison-data">
               <p id="pf-comparison-context">Home costs and access are your entries. Editorial context is not a property survey.</p>
             <div
@@ -961,7 +1025,7 @@ export default function PlaceFitPage() {
                             ) : (
                               <button
                                 onClick={() => {
-                                  setSelected(id);
+                                  navigateArea(id);
                                   setView("explore");
                                   setTimeout(
                                     () =>
@@ -987,6 +1051,7 @@ export default function PlaceFitPage() {
             </div>
             </div>
           )}
+          </>}
           <p className="pf-private">
             Shared links contain area names and purpose only. Your budget, quotes and notes
             stay in this browser. The saved report includes your entries.
@@ -1009,7 +1074,7 @@ export default function PlaceFitPage() {
               let cleared=true;
               try { localStorage.removeItem("bkk-place-fit-v1"); }
               catch { cleared=false; setStorageUnavailable(true); }
-              setQuotes({});
+              setQuotes({});setPremises([]);setPremisesSelection([]);setActivePremisesId(undefined);setComparisonMode("areas");
               setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
               setShortlist([]);
               setPrefs({
@@ -1021,7 +1086,7 @@ export default function PlaceFitPage() {
                 interests: [],
               });
               setMessage(
-                cleared?"Saved preferences and home notes cleared from this browser.":"This session was cleared, but saved browser data could not be removed. Check this site's storage settings before leaving a shared device.",
+                cleared?"Saved preferences, named spaces and notes cleared from this browser.":"This session was cleared, but saved browser data could not be removed. Check this site's storage settings before leaving a shared device.",
               );
             }}
           >

@@ -5,7 +5,7 @@ Previous goal turn: progress. Source3bf1342 deployed573cffcb, verification2d54b3
 ## Requirements and current evidence
 - Map-first purposeful UI: shipped47px toolbar, phone/tablet/desktop captures and independent review. Preserve these.
 - Traceable facts and uncertainty: sourced station anchors, Atlas catalog and complaints, publisher rent snapshot; user financial assumptions labeled. Feed and saved-data boundaries still insufficiently validated.
-- Trustworthy choices: scenarios, constraints and comparisons tested; actual multi-premises comparisons and measured local demand remain incomplete. No citywide recommendation claim.
+- Trustworthy choices: scenarios, constraints and comparisons tested; independent named-premises comparison is implemented and verified locally; measured local demand and historical rents remain incomplete. No citywide recommendation claim.
 - Recovery: malformed saved state can reach rendering unchecked; external evidence nested fields trusted. Storage failures silently discard persistence. Needs repair before public maturity claim.
 - Privacy/cost: no paid endpoint, credentials or shared personal values in pilot. Local-only data; export explicit.
 - Release: commit/push/direct Pages deploy/live proof required for each change. Legacy IOC and Atlas remain preserved.
@@ -26,3 +26,6 @@ Reproduce current failures before edits. Unit tests must prevent invalid cost/ev
 
 ## Broader build finding
 Shared build passed. Retired IOC API build fails with unchanged source: store.ts imports missing bangkokFloodStatusSeed/traffyFondueSeed; index.ts imports missing runOpsSync. `git diff -- apps/api packages/shared` is empty. These are not grounds to reintroduce fabricated seeds. Current /places deploy is static plus the separate existing Atlas evidence worker and does not execute this API. Record this as a legacy readiness failure; do not count the all-repository build as passed or revive/deploy it accidentally.
+
+## Named-premises continuation
+The next meaningful gap—two actual units in one area being overwritten—has been closed in the working tree.62unit tests, complete prior browser regressions and new3-width same-building workflow pass. Independent review found/fixed key collisions, metadata clearing and crosshair occlusion; final wrapping review precedes release. Live proof is recorded separately after deployment. Goal remains active for remaining evidence/product/operations requirements.

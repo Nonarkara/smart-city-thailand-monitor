@@ -38,7 +38,7 @@ export type Place = {
 export function amount(value: string): number | undefined {
   if (!value.trim()) return undefined;
   const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : undefined;
+  return Number.isFinite(n) && n >= 0 && n <= 1e12 ? n : undefined;
 }
 export function assess(p: Preferences, q: Quote = {}) {
   const validRent =

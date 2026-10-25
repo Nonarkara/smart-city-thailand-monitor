@@ -1,6 +1,7 @@
 import type { Place, Preferences, Quote } from "./placeFit";
 import type { Purpose, Scenario, Comparable } from "./economics";
 import { catalogPoints, type CatalogPoint } from "./catalog";
+import type {Premises} from "./premises";
 
 type RecordValue = Record<string, unknown>;
 const record = (v: unknown): v is RecordValue => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -23,9 +24,9 @@ const day = (v: unknown): v is string => {
 };
 const position = (lat: unknown, lng: unknown): boolean => typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng) && lat >= 13.45 && lat <= 14.1 && lng >= 100.3 && lng <= 100.95;
 const scenarioNumbers = ["rent", "size", "fixed", "ownerPay", "margin", "receipt", "days", "salesLow", "salesBase", "salesHigh", "fitout", "recoveryMonths", "workingCapital", "targetSurplus", "acquisition", "initialCosts", "vacancy", "annualOperating", "annualDebt", "annualIncomeTax", "targetYield"] as const;
-export type SavedState = { prefs: Preferences; quotes: Record<string, Quote>; purpose: Purpose; scenarios: Record<string, Scenario>; comparables: Record<string, Comparable[]>; shortlist: string[]; showCatalog: boolean };
+export type SavedState = { prefs: Preferences; quotes: Record<string, Quote>; purpose: Purpose; scenarios: Record<string, Scenario>; comparables: Record<string, Comparable[]>; shortlist: string[]; showCatalog: boolean; premises: Premises[]; premisesSelection:string[]; comparisonMode:"areas"|"premises"; activePremisesId?:string };
 export function readSaved(raw: string | null): { state: SavedState; recovered: boolean } {
-  const state: SavedState = { prefs: { ...defaultPreferences, interests: [] }, quotes: {}, purpose: "live", scenarios: {}, comparables: {}, shortlist: [], showCatalog: true };
+  const state: SavedState = { prefs: { ...defaultPreferences, interests: [] }, quotes: {}, purpose: "live", scenarios: {}, comparables: {}, shortlist: [], showCatalog: true, premises: [], premisesSelection:[], comparisonMode:"areas" };
   if (raw === null) return { state, recovered: false };
   let input: unknown;
   try { if (raw.length > 2_000_000) throw Error(); input = JSON.parse(raw); } catch { return { state, recovered: true }; }
@@ -77,7 +78,34 @@ export function readSaved(raw: string | null): { state: SavedState; recovered: b
       });
     }
   }
+  if ("premises" in input) {
+    if (!Array.isArray(input.premises)) reject();
+    else {
+      const seen = new Set<string>(); if (input.premises.length > 20) reject();
+      for (const row of input.premises.slice(0,20)) {
+        if (!record(row) || !text(row.id,100) || !/^space-[a-z0-9-]{8,80}$/.test(row.id) || seen.has(row.id) || !text(row.label,120) || !row.label.trim() || typeof row.purpose!=="string" || !["live","business","industrial","invest"].includes(row.purpose) || !text(row.guideId,80) || !/^[a-z0-9-]+$/.test(row.guideId) || !ownKey(row.guideId) || !sourceTime(row.savedAt) || !record(row.quote) || !position(row.quote.lat,row.quote.lng) || !record(row.scenario) || !Array.isArray(row.comparables)) { reject(); continue; }
+        if (row.quoteObservedAt!==undefined && (!day(row.quoteObservedAt) || Date.parse(row.quoteObservedAt+"T00:00:00+07:00")>Date.now()) || row.quoteSource!==undefined && !safeSource(row.quoteSource)) { reject(); continue; }
+        const nested=readSaved(JSON.stringify({quotes:{candidate:row.quote},scenarios:{candidate:row.scenario},comparables:{candidate:row.comparables}}));
+        if(nested.recovered){reject();continue;}
+        seen.add(row.id);
+        state.premises.push({id:row.id,label:row.label.trim(),purpose:row.purpose as Purpose,guideId:row.guideId,savedAt:row.savedAt as string,quote:nested.state.quotes.candidate,scenario:nested.state.scenarios.candidate,comparables:nested.state.comparables.candidate,...(row.quoteObservedAt?{quoteObservedAt:row.quoteObservedAt as string}:{}),...(row.quoteSource?{quoteSource:safeSource(row.quoteSource)!}:{})});
+      }
+    }
+  }
+  if("premisesSelection" in input){if(Array.isArray(input.premisesSelection)&&input.premisesSelection.every(x=>typeof x==="string")){state.premisesSelection=[...new Set(input.premisesSelection)].filter(id=>state.premises.some(r=>r.id===id)).slice(0,3);}else reject();}
+  if("comparisonMode" in input){if(input.comparisonMode==="areas"||input.comparisonMode==="premises")state.comparisonMode=input.comparisonMode;else reject();}
+  if("activePremisesId" in input){if(typeof input.activePremisesId==="string"&&state.premises.some(r=>r.id===input.activePremisesId))state.activePremisesId=input.activePremisesId;else reject();}
   return { state, recovered };
+}
+export function parsePremises(input:unknown):Premises {
+  const result=readSaved(JSON.stringify({premises:[input]}));
+  if(result.recovered||result.state.premises.length!==1)throw Error("Check the space name, pin, quote date/source and entered values before saving.");
+  return result.state.premises[0];
+}
+export function serializeSaved(state:SavedState):string {
+  const raw=JSON.stringify(state);
+  if(raw.length>2_000_000)throw Error("Saved workspace exceeds browser limits. Export your entries before leaving.");
+  return raw;
 }
 export function readGuide(input: unknown): Place[] {
   if (!record(input) || input.version !== 1 || !Array.isArray(input.places) || input.places.length < 1 || input.places.length > 100) throw Error("Place guide format unavailable.");

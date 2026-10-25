@@ -1,0 +1,30 @@
+{
+  "base": "http://127.0.0.1:4174/places",
+  "checkedAt": "2026-10-25T08:27:59.036Z",
+  "results": [
+    {
+      "width": 390,
+      "body": 390,
+      "toolbar": 182.5,
+      "independentSamePinUnits": true,
+      "privateReport": true,
+      "persistence": true
+    },
+    {
+      "width": 1024,
+      "body": 1024,
+      "toolbar": 47,
+      "independentSamePinUnits": true,
+      "privateReport": true,
+      "persistence": true
+    },
+    {
+      "width": 1440,
+      "body": 1440,
+      "toolbar": 47,
+      "independentSamePinUnits": true,
+      "privateReport": true,
+      "persistence": true
+    }
+  ]
+}

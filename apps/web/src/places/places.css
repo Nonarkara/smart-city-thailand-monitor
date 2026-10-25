@@ -835,3 +835,34 @@ body:has(#place-fit) {
 /* Source details take precedence over the pin action while open. */
 #place-fit .pf-map-canvas:has(.leaflet-popup) .pf-pin-home,
 #place-fit .pf-map-canvas:has(.leaflet-popup) .pf-map-target { visibility:hidden; }
+/* Personal premises share the existing editor rhythm; they add no map chrome. */
+#place-fit .pf-premises-save { max-width:76ch; padding-block:16px; }
+#place-fit .pf-premises-save p { max-width:65ch; }
+#place-fit .pf-premises-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 16px; }
+#place-fit .pf-premises-fields label:last-child { grid-column:1/-1; }
+#place-fit .pf-premises-actions, #place-fit .pf-comparison-modes { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+#place-fit .pf-comparison-modes button[aria-pressed="true"] { background:var(--pf-ink); color:#fff; }
+#place-fit .pf-premises-list { list-style:none; padding:0; max-width:90ch; }
+#place-fit .pf-premises-list li { display:flex; gap:8px; align-items:center; padding-block:8px; border-bottom:1px solid var(--pf-rule); }
+#place-fit .pf-premises-list label { display:flex; flex:1; min-width:0; align-items:center; gap:10px; margin:0; }
+#place-fit .pf-premises-list input[type="checkbox"] { width:24px; min-height:24px; margin:0; flex:none; }
+#place-fit .pf-premises-list label span span { display:block; color:var(--pf-muted); }
+#place-fit .pf-premises-list strong { overflow-wrap:anywhere; }
+#place-fit .pf-premises-provenance { padding-left:22px; max-width:76ch; }
+#place-fit .pf-premises-provenance p { max-width:65ch; }
+#place-fit .pf-premises-provenance li { margin-bottom:16px; }
+@media(max-width:600px){#place-fit .pf-premises-fields { grid-template-columns:1fr; }#place-fit .pf-premises-list li { flex-wrap:wrap; }#place-fit .pf-premises-list label { flex-basis:100%; }}
+#place-fit > .pf-premises-save { padding-inline:24px; }
+#place-fit .pf-saved-marker { border:2px solid var(--pf-ink); background:#fff; color:var(--pf-ink); font-weight:600; display:grid; place-items:center; box-sizing:border-box; }
+#place-fit .pf-saved-marker:focus { outline:3px solid var(--pf-accent); outline-offset:2px; }
+#place-fit .leaflet-popup-content button { display:block; width:100%; margin-top:6px; text-align:left; }
+@media(max-width:800px){#place-fit > .pf-premises-save { padding-inline:16px; }}
+/* User names can be long unbroken building/unit references. */
+#place-fit h1, #place-fit h2,
+#place-fit .pf-premises-provenance strong,
+#place-fit .leaflet-popup-content button { overflow-wrap:anywhere; }
+#place-fit .pf-premises-actions button,
+#place-fit .pf-premises-list button,
+#place-fit .pf-comparison-modes button,
+#place-fit .pf-comparison-heading button,
+#place-fit .leaflet-popup-content button { min-height:44px; }
