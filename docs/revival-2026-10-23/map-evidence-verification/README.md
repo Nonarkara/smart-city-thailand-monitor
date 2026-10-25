@@ -9,3 +9,9 @@ Visual audit against seven anti-slop rules: content-sized popup; map dominates; 
 Source controls remain optional. Layer cleanup removes previous points when evidence changes. Unsafe URLs, duplicate/invalid coordinates and records outside 800m are excluded; distances are recomputed from the chosen center.
 
 Regression verification also exercises keyboard Enter on a source point and a simulated503 after changing area: previous catalog targets must disappear. Simulated failure is not a substituted successful dataset.
+
+Independent rendered/source review passed25October: latest390/1024/1440 source popups fully opaque/readable, title/close/source unobscured, pin/+ yielded correctly, source/date/access caveat explicit; no release blocker. Reviewer: pilot_review.
+
+Production: source3bf13426a73187727b2914da39ba24e381b43aa0, deployment573cffcb, https://bangkok-ioc.pages.dev/places. Public entryindex-CSFX8TtY.js and catalog bundle matched build; market snapshot matched source exactly. Legacy IOC root and Atlas app.js matched pre-release bytes. Live catalog pointer/keyboard/toggle/failure-cleanup/geometry tests passed390/1024/1440. Toolbar47px, no page overflow. Latest catalog/sticky captures are from the public site.
+
+Live economic regression passed390/1024;1440 screenshot hit a30second capture timeout, then passed in an isolated1440 rerun with120second capture allowance. Functional phone run verified arithmetic, five synthetic sourced-comparable entries, persistence, report, purpose/pin isolation and invalidation. Test fixture numbers stay out of public defaults. Browser verifier now supports PILOT_WIDTHS for bounded retries; this does not change deployed application code.
