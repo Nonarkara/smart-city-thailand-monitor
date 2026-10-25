@@ -22,3 +22,5 @@ The normal toolbar remains a single content-sized row under64px (normally47px). 
 No rent fairness/history, actual demand, investment return or property-level risk is established by named storage. These remain user scenarios with explicit missing checks. The full professional-shipability goal stays active.
 
 Independent source/rendered review passed after all targeted fixes. Reviewer inspected final390/1024/1440 comparison/map states, source-clear semantics, coincident-marker readability and the120-character phone-name case; no remaining blocker. Source is frozen for deployment.
+
+Before publication, the additional two-tab audit required v2/lock-protected persistence. Current total is69 tests; storage-verification records migration, concurrency and recovery. All named and prior workflows pass with that storage layer. The named feature's initial11a0071 commit was deliberately held from production until this data-loss risk was closed.

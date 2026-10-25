@@ -6,6 +6,8 @@ User-entered quotes are not verified offers. Neighborhood context is desk resear
 Ari / อารีย์
 Small streets off Phahonyothin make a useful starting point for cafes and everyday food.
 Tradeoff: The station-side streets and deeper Ari sois offer very different last-mile journeys.
+Quoted rent entered: ฿15,000
+Monthly extras entered: ฿1,000
 Monthly costs entered: ฿16,000
 Station access: not checked
 Checked journey: not entered; for destination not recorded at time not recorded; travel not recorded

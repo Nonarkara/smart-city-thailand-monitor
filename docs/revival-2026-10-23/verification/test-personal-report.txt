@@ -6,6 +6,8 @@ User-entered quotes are not verified offers. Neighborhood context is desk resear
 Ari / อารีย์
 Small streets off Phahonyothin make a useful starting point for cafes and everyday food.
 Tradeoff: The station-side streets and deeper Ari sois offer very different last-mile journeys.
+Quoted rent entered: ฿15,000
+Monthly extras entered: ฿2,000
 Monthly costs entered: ฿17,000
 Station access: walk
 Checked journey: 20 minutes; for Silom at 09:00; travel rail

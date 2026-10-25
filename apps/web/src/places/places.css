@@ -866,3 +866,5 @@ body:has(#place-fit) {
 #place-fit .pf-comparison-modes button,
 #place-fit .pf-comparison-heading button,
 #place-fit .leaflet-popup-content button { min-height:44px; }
+#place-fit .pf-storage-message span { display:inline-block; max-width:65ch; vertical-align:middle; }
+#place-fit .pf-storage-message button { min-height:44px; margin:6px 0 6px 12px; }

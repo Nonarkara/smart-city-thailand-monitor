@@ -1,0 +1,32 @@
+{
+  "base": "http://127.0.0.1:4174/places",
+  "checkedAt": "2026-10-25T16:00:03.861Z",
+  "results": [
+    {
+      "width": 390,
+      "conflictProtected": true,
+      "sessionReport": true,
+      "oldWriterIsolated": true
+    },
+    {
+      "width": 1024,
+      "conflictProtected": true,
+      "sessionReport": true,
+      "oldWriterIsolated": true
+    },
+    {
+      "width": 1440,
+      "conflictProtected": true,
+      "sessionReport": true,
+      "oldWriterIsolated": true
+    },
+    {
+      "case": "unsupported safe locks: session usable, legacy untouched, no false save",
+      "pass": true
+    },
+    {
+      "case": "denied storage getter: no crash and session editable",
+      "pass": true
+    }
+  ]
+}

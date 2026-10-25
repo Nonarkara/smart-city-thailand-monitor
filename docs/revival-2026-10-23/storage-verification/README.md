@@ -1,0 +1,13 @@
+# Concurrent workspace protection — 25 October 2026
+
+A real two-tab pre-fix probe stored only extras22222 after tab1 entered rent11111; reload erased the rent. The same whole-profile v1 writer in a cached older tab could omit and overwrite new named-premises fields.
+
+The current workspace uses bkk-place-fit-v2, with validated read/copy from v1 when v2 is absent. A current malformed v2 recovers visibly and never resurrects stale v1. Writes serialize under the browser Web Locks API and compare the tab's expected stored revision inside that lock. The revision ref updates inside the critical section, so queued writes from one tab remain ordered without self-conflict. Stale tabs retain their session values, cannot overwrite the newer bank, and get report-before-reload recovery. No unsafe lock fallback claims persistence. Unavailable locks/storage keep calculators and report exports usable in memory. Clear removes both versions under the same lock and blocks stale cooperative writers from recreating deleted records.
+
+69 unit tests pass, including seven storage migration/concurrency/failure cases. Real Chrome390/1024/1440 conflict flows pass: rent11111 survives stale extras22222, the unsaved extras appear in a session report, reload loads current saved data, and an old v1 writer cannot alter v2. Unsupported-lock and denied-storage-getter cases are editable without a crash or false saving claim. Named-premises3-width and all previous household/economic/boundary/catalog browser suites pass on the final build. Independent source/rendered review passed the conflict notices at all3 widths.
+
+Household reports now retain individual entered rent/extras even when the total is unknown, so a partial session can be recovered. Named reports already retain complete entered record data.
+
+The secrets scanner initially reported the two public browser-storage namespace declarations as generic-api-key matches. Metadata identified storage.ts lines2/3, both non-credential names. Constants were renamed STORE_NAME for clarity; namespace values and behavior did not change, and no scanner rules were relaxed. Final pilot-source gitleaks scan has no leaks. Source remains frozen for deployment.
+
+Final built artifact remains index-juTnr0I1.js / PlaceFitPage-CAte_C3v.js after that identifier-only rename, byte-identical to the browser-verified build. Named/full regression evidence is adjacent in premises-verification and the earlier verification directories. This is a reliability gate, not evidence of actual market demand, rent fairness/history or a completed overall product.

@@ -9,6 +9,7 @@ on:
       - 'scripts/test-catalog.mjs'
       - 'scripts/test-boundaries.mjs'
       - 'scripts/test-premises.mjs'
+      - 'scripts/test-storage.mjs'
       - 'packages/shared/**'
       - 'package*.json'
       - '.github/workflows/verify-place-fit.yml'
@@ -22,6 +23,7 @@ on:
       - 'scripts/test-catalog.mjs'
       - 'scripts/test-boundaries.mjs'
       - 'scripts/test-premises.mjs'
+      - 'scripts/test-storage.mjs'
       - 'packages/shared/**'
       - 'package*.json'
       - '.github/workflows/verify-place-fit.yml'
@@ -37,7 +39,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test scripts/test-place-fit.mjs scripts/test-economics.mjs scripts/test-catalog.mjs scripts/test-boundaries.mjs scripts/test-premises.mjs
+      - run: node --test scripts/test-place-fit.mjs scripts/test-economics.mjs scripts/test-catalog.mjs scripts/test-boundaries.mjs scripts/test-premises.mjs scripts/test-storage.mjs
       - run: npm run build -w packages/shared
       - run: npm run build -w apps/web
       - run: cmp public/data/places/market.json apps/web/dist/data/places/market.json

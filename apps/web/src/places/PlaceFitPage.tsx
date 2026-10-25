@@ -14,9 +14,10 @@ import "./places.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
-import {readSaved,readGuide,readEvidence,fetchJson,parsePremises,serializeSaved,type Evidence} from "./boundaries";
+import {readSaved,readGuide,readEvidence,fetchJson,parsePremises,type Evidence} from "./boundaries";
 import {snapshotPremises,savePremises,editPremises,relocatePremises,duplicatePremises,selectedPremises,togglePremises,premisesReport,type Premises} from "./premises";
 import {PremisesSave,PremisesWorkspace,type PremisesDetails} from "./PremisesWorkspace";
+import {loadWorkspace,storeWorkspace,clearWorkspace,WorkspaceConflict} from "./storage";
 const BASE = import.meta.env.BASE_URL;
 const interests = [
   "Food",
@@ -39,8 +40,8 @@ const date = (s: string | null) =>
 const maps = (p: Place) =>
   `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;
 function loadSaved() {
-  try { return { ...readSaved(localStorage.getItem("bkk-place-fit-v1")), storageUnavailable: false }; }
-  catch { return { ...readSaved(null), storageUnavailable: true }; }
+  try { return { ...loadWorkspace(localStorage), storageUnavailable: false }; }
+  catch { return { ...readSaved(null), revision:null, storageUnavailable: true }; }
 }
 function PlaceMap({
   places,
@@ -217,6 +218,8 @@ function PlaceMap({
 export default function PlaceFitPage() {
   const [restored] = useState(loadSaved);
   const saved=restored.state;
+  const workspaceRevision=useRef({current:restored.revision});
+  const [storageConflict,setStorageConflict]=useState(false);
   const [storageUnavailable,setStorageUnavailable]=useState(restored.storageUnavailable);
   const root=useRef<HTMLElement>(null),toolbar=useRef<HTMLElement>(null);
   const [showCatalog,setShowCatalog]=useState(saved.showCatalog!==false);
@@ -284,13 +287,12 @@ export default function PlaceFitPage() {
   }, []);
   useEffect(() => {
     if(!places.length)return;
-    try {
-      localStorage.setItem(
-        "bkk-place-fit-v1",
-        serializeSaved({ prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,premises,premisesSelection,comparisonMode,activePremisesId }),
-      );
-      setStorageUnavailable(false);
-    } catch { setStorageUnavailable(true); }
+    let active=true;
+    const persist=async()=>storeWorkspace(localStorage,{prefs,quotes,shortlist,purpose,scenarios,comparables,showCatalog,premises,premisesSelection,comparisonMode,activePremisesId},workspaceRevision.current,navigator.locks);
+    persist()
+      .then(()=>{if(active){setStorageUnavailable(false);setStorageConflict(false)}})
+      .catch(error=>{if(active){setStorageUnavailable(true);setStorageConflict(error instanceof WorkspaceConflict)}});
+    return()=>{active=false};
   }, [prefs, quotes, shortlist, purpose, scenarios, comparables,showCatalog,places,premises,premisesSelection,comparisonMode,activePremisesId]);
   useEffect(()=>{const bar=toolbar.current;if(!bar)return;const measure=()=>root.current?.style.setProperty("--pf-toolbar-height",`${bar.getBoundingClientRect().height}px`);measure();const observer=new ResizeObserver(measure);observer.observe(bar);return()=>observer.disconnect()},[places.length]);
   const place = places.find((p) => p.id === selected);
@@ -414,7 +416,7 @@ export default function PlaceFitPage() {
       const q = quotes[id] ?? {},
         f = assess(prefs, q);
       if(purpose!=="live")return `${p.name} / ${p.thai}\nPin: ${q.lat??p.lat},${q.lng??p.lng}\n${economicsReport(purpose,scenarios[spaceKey(id)]??{})}\nComparable evidence: ${JSON.stringify(comparables[spaceKey(id)]??[])}\nMap: ${maps({...p,lat:q.lat??p.lat,lng:q.lng??p.lng})}\n`;
-      return `${p.name} / ${p.thai}\n${p.character}\nTradeoff: ${p.tradeoff}\nMonthly costs entered: ${f.total === null ? "unknown" : money(f.total)}${q.extras === undefined ? " (extras not entered)" : ""}\nStation access: ${q.access ?? "not checked"}\nChecked journey: ${q.commute === undefined ? "not entered" : q.commute + " minutes"}; for ${q.commuteFor || "destination not recorded"} at ${q.commuteAt || "time not recorded"}; travel ${q.commuteTravel || "not recorded"}\nJourney limit: ${prefs.maxCommute} minutes\nHome pin: ${q.lat !== undefined ? q.lat + ", " + q.lng : "not set (station-area context)"}\n${f.status}\n${[...f.reasons, ...f.missing].join("\n")}\nVisit: ${p.visit}\nYour note: ${q.note ?? ""}\nListings: ${p.rentUrl}\nMap: ${maps({ ...p, lat: q.lat ?? p.lat, lng: q.lng ?? p.lng })}\n`;
+      return `${p.name} / ${p.thai}\n${p.character}\nTradeoff: ${p.tradeoff}\nQuoted rent entered: ${q.rent===undefined?"unknown":money(q.rent)}\nMonthly extras entered: ${q.extras===undefined?"unknown":money(q.extras)}\nMonthly costs entered: ${f.total === null ? "unknown" : money(f.total)}${q.extras === undefined ? " (extras not entered)" : ""}\nStation access: ${q.access ?? "not checked"}\nChecked journey: ${q.commute === undefined ? "not entered" : q.commute + " minutes"}; for ${q.commuteFor || "destination not recorded"} at ${q.commuteAt || "time not recorded"}; travel ${q.commuteTravel || "not recorded"}\nJourney limit: ${prefs.maxCommute} minutes\nHome pin: ${q.lat !== undefined ? q.lat + ", " + q.lng : "not set (station-area context)"}\n${f.status}\n${[...f.reasons, ...f.missing].join("\n")}\nVisit: ${p.visit}\nYour note: ${q.note ?? ""}\nListings: ${p.rentUrl}\nMap: ${maps({ ...p, lat: q.lat ?? p.lat, lng: q.lng ?? p.lng })}\n`;
     });
     const reportContext=purpose==="live"?`Monthly ceiling: ${money(prefs.budget)}. Travel: ${prefs.travel}. Destination: ${prefs.destination||"not entered"}.`:`Purpose: ${purposes[purpose]}. All scenario values are personal assumptions; local demand and agreed market rents are not verified.`;
     const text = `BANGKOK, FOR YOU — personal comparison\nSaved ${date(new Date().toISOString())}\n${reportContext}\nUser-entered quotes are not verified offers. Neighborhood context is desk research checked 23 Oct 2026. No property has been surveyed.\n\n${rows.join("\n")}\n${purpose==="live"?"Visit each home at your travel time. Confirm lease length, utilities, pet rules, actual access and availability.":"Check permitted use, lease terms, usable area, operating hours, access, utilities, actual demand and availability at each space."}\n`;
@@ -578,7 +580,7 @@ export default function PlaceFitPage() {
         </details>
       </header>
       {!places.length&&<p role="status" className="pf-message">Loading place guide…</p>}
-      {storageUnavailable&&<p role="status" className="pf-message pf-storage-message">Saving unavailable. This session still works. Save a personal report to keep your entries before leaving.</p>}
+      {storageUnavailable&&<p role="status" className="pf-message pf-storage-message"><span>{storageConflict?"Another tab has newer saved entries. Your changes remain in this session. Save a report, then reload the saved workspace.":"Saving unavailable. This session still works. Save a personal report to keep your entries before leaving."}</span>{storageConflict&&<button onClick={()=>location.reload()}>Reload saved workspace</button>}</p>}
       {message && (
         <p role="status" className="pf-message">
           {message}
@@ -1070,9 +1072,9 @@ export default function PlaceFitPage() {
           </a>{" "}
           ·{" "}
           <button
-            onClick={() => {
+            onClick={async () => {
               let cleared=true;
-              try { localStorage.removeItem("bkk-place-fit-v1"); }
+              try { await clearWorkspace(localStorage,workspaceRevision.current,navigator.locks); }
               catch { cleared=false; setStorageUnavailable(true); }
               setQuotes({});setPremises([]);setPremisesSelection([]);setActivePremisesId(undefined);setComparisonMode("areas");
               setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
