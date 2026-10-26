@@ -71,3 +71,24 @@ The whole product is still a pilot. This release does not establish field-checke
 walking access, admissions, environmental history, long-term rent benchmarks,
 customer demand or commercial site viability. Public dataset metadata without
 an explicit reuse licence remains research, not ingested evidence.
+
+## Live release proof
+
+Runtime source `1c310d2`, Cloudflare Pages deployment `1edf1e93`.
+Public URL: https://bangkok-ioc.pages.dev/places
+Immutable URL: https://1edf1e93.bangkok-ioc.pages.dev/places
+
+Public-URL evidence and spatial runners pass all assertions at390/1024/1440,
+including30px labels, painted popup precedence, exact route origins, corrupt-cell
+suppression, all four purposes, Compare and settings. Live spatial metrics match
+local production metrics exactly. The live falsifier accepts the real geometry
+and rejects every400px injected regression.
+
+`live-bytes.json` verifies every current build JS/CSS bundle, the manifest and all
+161 manifest cells byte-for-byte against the public URL (167matched resources).
+The legacy IOC and Atlas entry HTML both remain byte-identical to their
+predeployment captures. No Atlas service or retired API was deployed.
+
+The original axiom-audit registry404 remains recorded in the earlier spatial audit;
+it is not counted as a passed check. Rendered and independent evidence above are
+the visual proof. This proof-only follow-up does not change deployed runtime bytes.
