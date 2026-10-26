@@ -1,4 +1,4 @@
-export const everydayCategories = {groceries:"Groceries",food:"Food & cafés",markets:"Markets",health:"Health",fitness:"Fitness",culture:"Museums & galleries"} as const;
+export const everydayCategories = {groceries:"Groceries",food:"Food & cafés",markets:"Markets",health:"Health",fitness:"Fitness",culture:"Culture & libraries",education:"Schools & childcare",green:"Parks",transit:"Rail entrances"} as const;
 export type EverydayCategory=keyof typeof everydayCategories;
 export type EverydayPoint={id:string;name:string;category:EverydayCategory;kind:string;lat:number;lng:number;editedAt:string};
 export type EverydayManifest={version:1;sourceAsOf:string;files:Record<string,{file:string;count:number;bytes:number;sha256:string}>};

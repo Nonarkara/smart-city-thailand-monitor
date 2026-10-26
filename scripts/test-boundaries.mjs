@@ -22,3 +22,13 @@ test('response cap stops oversized streams before JSON is parsed',async()=>{cons
 test('a damaged decision preference never silently approves an otherwise valid quote',()=>{for(const prefs of [null,{travel:{}},{destination:{}},{departure:'99:99'}]){const r=readSaved(JSON.stringify({prefs,quotes:{ari:{rent:15000,extras:0,access:'walk'}}}));assert.equal(r.recovered,true);assert.notEqual(assess(r.state.prefs,r.state.quotes.ari).status,'Meets your entered limits')}});
 
 test('a zero catalog count cannot coexist with a displayed source point',()=>{const r=readEvidence({...evidence,civic:{...evidence.civic,count:0}},center,now);assert.equal(r.civic.count,null);assert.equal(r.civic.places.length,0)});
+
+test('manifest integrity rejects valid-shaped altered JSON, short bodies and oversized streams',async()=>{
+ const original=globalThis.fetch,body=Buffer.from('{"name":"โรงเรียน"}'),hash=await crypto.subtle.digest('SHA-256',body),expected={bytes:body.length,sha256:Buffer.from(hash).toString('hex')};
+ try {
+  globalThis.fetch=async()=>new Response(body);assert.deepEqual(await fetchJson('https://example.org',new AbortController().signal,12000,expected),{name:'โรงเรียน'});
+  globalThis.fetch=async()=>new Response(Buffer.from('{"name":"โรงเรืยน"}'));await assert.rejects(fetchJson('https://example.org',new AbortController().signal,12000,expected),/checksum/);
+  globalThis.fetch=async()=>new Response('{}');await assert.rejects(fetchJson('https://example.org',new AbortController().signal,12000,expected),/size differs/);
+  let cancelled=false;globalThis.fetch=async()=>new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(expected.bytes+1))},cancel(){cancelled=true}}));await assert.rejects(fetchJson('https://example.org',new AbortController().signal,12000,expected),/supported size/);assert.equal(cancelled,true);
+ }finally{globalThis.fetch=original}
+});

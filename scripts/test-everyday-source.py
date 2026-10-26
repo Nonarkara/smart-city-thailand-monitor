@@ -14,6 +14,9 @@ class LifecycleTest(unittest.TestCase):
 
     def test_no_invented_opening_or_customer_demand(self):
         self.assertEqual(source.classify({'amenity':'cafe'}), ('food','cafe'))
-        self.assertIsNone(source.classify({'amenity':'school'}))
+        self.assertEqual(source.classify({'amenity':'school'}), ('education','school'))
+        self.assertEqual(source.classify({'railway':'subway_entrance'}), ('transit','subway_entrance'))
+        self.assertEqual(source.classify({'leisure':'park'}), ('green','park'))
+        self.assertIsNone(source.classify({'leisure':'park','access':'private'}))
 
 if __name__ == '__main__': unittest.main()

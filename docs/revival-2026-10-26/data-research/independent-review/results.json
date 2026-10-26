@@ -1,0 +1,342 @@
+[
+  {
+    "width": 390,
+    "pageOverflow": false,
+    "editorHeight": 1402.71875,
+    "railWidth": 390,
+    "labels": [
+      {
+        "label": "Monthly rent · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Usable area · m²",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Other monthly fixed costs · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Monthly owner pay · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Contribution margin · %",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Average sale / order · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Open days per month",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Initial fit-out · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Recover fit-out over · months",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Working capital · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Target monthly surplus · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Low monthly sales · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Base monthly sales · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "High monthly sales · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Permitted use and lease termsUnknownWorksFails",
+        "height": 33.5,
+        "width": 358
+      },
+      {
+        "label": "Required access and utilitiesUnknownWorksFails",
+        "height": 33.5,
+        "width": 358
+      },
+      {
+        "label": "Distinct listing / evidence URL",
+        "height": 59.75,
+        "width": 358
+      },
+      {
+        "label": "Observed date",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Comparable monthly rent · ฿",
+        "height": 32,
+        "width": 358
+      },
+      {
+        "label": "Comparable usable area · m²",
+        "height": 32,
+        "width": 358
+      }
+    ],
+    "cultureOverflow": false,
+    "zoom": {
+      "overflow": true,
+      "select": {
+        "x": 16,
+        "y": -120.609375,
+        "width": 442,
+        "height": 62,
+        "top": -120.609375,
+        "right": 458,
+        "bottom": -58.609375,
+        "left": 16
+      }
+    }
+  },
+  {
+    "width": 1024,
+    "pageOverflow": false,
+    "editorHeight": 1410.71875,
+    "railWidth": 400,
+    "labels": [
+      {
+        "label": "Monthly rent · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Usable area · m²",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Other monthly fixed costs · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Monthly owner pay · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Contribution margin · %",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Average sale / order · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Open days per month",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Initial fit-out · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Recover fit-out over · months",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Working capital · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Target monthly surplus · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Low monthly sales · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Base monthly sales · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "High monthly sales · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Permitted use and lease termsUnknownWorksFails",
+        "height": 33.5,
+        "width": 368
+      },
+      {
+        "label": "Required access and utilitiesUnknownWorksFails",
+        "height": 33.5,
+        "width": 368
+      },
+      {
+        "label": "Distinct listing / evidence URL",
+        "height": 59.75,
+        "width": 368
+      },
+      {
+        "label": "Observed date",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Comparable monthly rent · ฿",
+        "height": 32,
+        "width": 368
+      },
+      {
+        "label": "Comparable usable area · m²",
+        "height": 32,
+        "width": 368
+      }
+    ],
+    "cultureOverflow": false
+  },
+  {
+    "width": 1440,
+    "pageOverflow": false,
+    "editorHeight": 1329.71875,
+    "railWidth": 520,
+    "labels": [
+      {
+        "label": "Monthly rent · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Usable area · m²",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Other monthly fixed costs · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Monthly owner pay · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Contribution margin · %",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Average sale / order · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Open days per month",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Initial fit-out · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Recover fit-out over · months",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Working capital · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Target monthly surplus · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Low monthly sales · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Base monthly sales · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "High monthly sales · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Permitted use and lease termsUnknownWorksFails",
+        "height": 33.5,
+        "width": 488
+      },
+      {
+        "label": "Required access and utilitiesUnknownWorksFails",
+        "height": 33.5,
+        "width": 488
+      },
+      {
+        "label": "Distinct listing / evidence URL",
+        "height": 59.75,
+        "width": 488
+      },
+      {
+        "label": "Observed date",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Comparable monthly rent · ฿",
+        "height": 32,
+        "width": 488
+      },
+      {
+        "label": "Comparable usable area · m²",
+        "height": 32,
+        "width": 488
+      }
+    ],
+    "cultureOverflow": false
+  }
+]

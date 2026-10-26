@@ -1,0 +1,137 @@
+[
+  {
+    "width": 390,
+    "overflow": false,
+    "appearance": "none",
+    "controlWidth": 318,
+    "available": 262,
+    "labels": [
+      {
+        "label": "Groceries",
+        "measure": 129.9674530029297
+      },
+      {
+        "label": "Food & cafés",
+        "measure": 173.2049560546875
+      },
+      {
+        "label": "Markets",
+        "measure": 102.93745422363281
+      },
+      {
+        "label": "Health",
+        "measure": 85.39497375488281
+      },
+      {
+        "label": "Fitness",
+        "measure": 89.72996520996094
+      },
+      {
+        "label": "Culture & libraries",
+        "measure": 242.2423858642578
+      },
+      {
+        "label": "Schools & childcare",
+        "measure": 261.59991455078125
+      },
+      {
+        "label": "Parks",
+        "measure": 70.25996398925781
+      },
+      {
+        "label": "Rail entrances",
+        "measure": 184.00491333007812
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "overflow": false,
+    "appearance": "none",
+    "controlWidth": 318,
+    "available": 262,
+    "labels": [
+      {
+        "label": "Groceries",
+        "measure": 129.9674530029297
+      },
+      {
+        "label": "Food & cafés",
+        "measure": 173.2049560546875
+      },
+      {
+        "label": "Markets",
+        "measure": 102.93745422363281
+      },
+      {
+        "label": "Health",
+        "measure": 85.39497375488281
+      },
+      {
+        "label": "Fitness",
+        "measure": 89.72996520996094
+      },
+      {
+        "label": "Culture & libraries",
+        "measure": 242.2423858642578
+      },
+      {
+        "label": "Schools & childcare",
+        "measure": 261.59991455078125
+      },
+      {
+        "label": "Parks",
+        "measure": 70.25996398925781
+      },
+      {
+        "label": "Rail entrances",
+        "measure": 184.00491333007812
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "overflow": false,
+    "appearance": "none",
+    "controlWidth": 318,
+    "available": 262,
+    "labels": [
+      {
+        "label": "Groceries",
+        "measure": 129.9674530029297
+      },
+      {
+        "label": "Food & cafés",
+        "measure": 173.2049560546875
+      },
+      {
+        "label": "Markets",
+        "measure": 102.93745422363281
+      },
+      {
+        "label": "Health",
+        "measure": 85.39497375488281
+      },
+      {
+        "label": "Fitness",
+        "measure": 89.72996520996094
+      },
+      {
+        "label": "Culture & libraries",
+        "measure": 242.2423858642578
+      },
+      {
+        "label": "Schools & childcare",
+        "measure": 261.59991455078125
+      },
+      {
+        "label": "Parks",
+        "measure": 70.25996398925781
+      },
+      {
+        "label": "Rail entrances",
+        "measure": 184.00491333007812
+      }
+    ]
+  }
+]

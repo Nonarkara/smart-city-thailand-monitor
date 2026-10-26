@@ -114,3 +114,22 @@ dates; opening/access, walking routes, quality and customer demand remain unknow
 Four-decimal coordinates and ODbL attribution/downloadable modified database are
 explicit. Public data never enters the private workspace. See EVERYDAY-PLACES.md
 and everyday-verification for source contract, tests and independent visual proof.
+
+## Evidence and reading-path continuation, 26 October
+
+Product intent remains PLAN.md sections3–4: actual premises, daily needs, costs
+and journeys. Research decisions and fresh catalogue probes are in
+`docs/revival-2026-10-26/data-research`. Expanded OSM node categories cover rail
+entrances, education, parks and libraries; node-only omissions remain explicit.
+Walking route links require an explicit click and are estimates, not checked
+journeys. Browser loading now enforces each manifest cell's streamed byte limit,
+exact length and raw-byte SHA256 before parsing; partial/corrupt evidence fails
+closed. The same-origin manifest is the checksum authority, not an independent
+signature. No public data is persisted into private premises records.
+
+Desktop rails become400px at1024 and520px at1440, preserving over60% map width
+and readable financial labels. Purposeful open popups can temporarily grow the
+phone map to60dvh; closing restores its ordinary height. ResizeObserver updates
+open popup autopan after geometry changes. Long source names wrap without clipping
+or shrinking type. Header remains45px at normal text. The nearby select uses an
+explicit arrow reservation so every full category label fits at30px text.

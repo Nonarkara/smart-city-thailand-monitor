@@ -100,7 +100,10 @@ function PlaceMap({
     ).addTo(m);
     tiles.on("tileerror", () => setFailed(true));
     tiles.on("tileload", () => setFailed(false));
-    const observer = new ResizeObserver(() => m.invalidateSize());
+    const observer = new ResizeObserver(() => {
+      m.invalidateSize();
+      m.eachLayer(layer => { if (layer instanceof L.Popup && layer.isOpen()) layer.update(); });
+    });
     observer.observe(el.current);
     return () => {
       observer.disconnect();
@@ -166,7 +169,7 @@ function PlaceMap({
       const title=document.createElement("strong");title.textContent=p.name;content.append(title);
       const info=document.createElement("p");info.textContent=`${p.category} · ${p.snapshot_at?"≈":""}${p.distanceM} m straight-line. Catalog: ${p.source_dataset}. ${p.snapshot_at?`Snapshot ${date(p.snapshot_at)}; node last edited ${date(p.edited_at??null)} (not a visit date)`: `Ingested ${date(p.ingested_at)}`}. Observation date, opening and public access are unverified.`;content.append(info);
       if(p.source_url){const link=document.createElement("a");link.href=p.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Catalog source ↗";content.append(link);}
-      const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(m).bindPopup(content,{maxWidth:260});
+      const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(m).bindPopup(content,{maxWidth:300});
       const dot=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:5,color:"#575951",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false,className:"pf-catalog-dot"}).addTo(m);
       catalogLayers.current.set(p.id,{signature:wanted.get(p.id)!,layers:[hit,dot]});
       const element=hit.getElement();if(element){element.setAttribute("tabindex","0");element.setAttribute("role","button");element.setAttribute("aria-label",`Catalog place: ${p.name}`);element.addEventListener("keydown",e=>{const event=e as KeyboardEvent;if(event.key==="Enter"||event.key===" "){event.preventDefault();hit.openPopup();}});}
@@ -182,7 +185,7 @@ function PlaceMap({
       const marker=L.marker([group.lat,group.lng],{pane:"saved-premises",title:`Saved spaces ${letters}`,alt:`Saved spaces ${letters}`,icon:L.divIcon({className:"pf-saved-marker",html:`<span>${letters}</span>`,iconSize:[width,32],iconAnchor:[width/2,16]})}).addTo(layer);
       markerElements.push(marker);
       if(group.items.length===1)marker.on("click",()=>openSaved.current(group.items[0].id));
-      else {const content=document.createElement("div");const note=document.createElement("p");note.textContent="Separate saved units at the same user pin. No coordinate offsets have been invented.";content.append(note);for(const item of group.items){const button=document.createElement("button");button.type="button";button.textContent=`${item.letter}. ${item.label}`;button.addEventListener("click",()=>{m.closePopup();openSaved.current(item.id)});content.append(button)}marker.bindPopup(content,{maxWidth:260});}
+      else {const content=document.createElement("div");const note=document.createElement("p");note.textContent="Separate saved units at the same user pin. No coordinate offsets have been invented.";content.append(note);for(const item of group.items){const button=document.createElement("button");button.type="button";button.textContent=`${item.letter}. ${item.label}`;button.addEventListener("click",()=>{m.closePopup();openSaved.current(item.id)});content.append(button)}marker.bindPopup(content,{maxWidth:300});}
     }
     let frame=0,active=true;
     const measureTarget=()=>{if(!active)return;const target=el.current?.parentElement?.querySelector(".pf-map-target")?.getBoundingClientRect();if(!target)return;setTargetCovered(markerElements.some(marker=>{const box=marker.getElement()?.getBoundingClientRect();return !!box&&box.left<target.right&&box.right>target.left&&box.top<target.bottom&&box.bottom>target.top}));};

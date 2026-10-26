@@ -14,9 +14,10 @@ EXTRACT = [100.28, 13.43, 100.97, 14.12]  # >800 m search buffer at every edge
 GROUPS = {
  'amenity': {'restaurant':'food','cafe':'food','fast_food':'food','food_court':'food',
  'marketplace':'markets','pharmacy':'health','clinic':'health','hospital':'health',
- 'doctors':'health','dentist':'health'},
+ 'doctors':'health','dentist':'health','school':'education','kindergarten':'education','library':'culture'},
  'shop': dict.fromkeys(['supermarket','convenience','greengrocer','bakery','butcher','seafood'], 'groceries'),
- 'leisure': dict.fromkeys(['fitness_centre','sports_centre'], 'fitness'),
+ 'leisure': {**dict.fromkeys(['fitness_centre','sports_centre'], 'fitness'),'park':'green'},
+ 'railway': {'subway_entrance':'transit'},
  'tourism': dict.fromkeys(['museum','gallery'], 'culture')}
 
 def classify(tags):

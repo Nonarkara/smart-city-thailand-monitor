@@ -47,7 +47,8 @@
 #place-fit summary { padding:.4em 0; }
 #place-fit .pf-fit-result { margin-top:.5em; }
 #place-fit .pf-everyday-controls { gap:.4em .75em; }
-#place-fit .pf-everyday-controls label { flex-wrap:wrap; }
+#place-fit .pf-everyday-controls label { flex-wrap:wrap; min-width:0; max-width:100%; }
+#place-fit .pf-everyday-controls select { max-width:100%; }
 #place-fit .pf-pois { margin:.5em 0; }
 #place-fit .pf-pois li { display:flex; flex-wrap:wrap; gap:0 .5em; padding:.25em 0; }
 #place-fit .pf-pois span { display:inline; }
@@ -73,7 +74,7 @@
 #place-fit .pf-more-content fieldset label,#place-fit .pf-everyday-controls label:has(input),#place-fit .pf-check-inline { min-height:32px; }
 #place-fit .pf-more-content legend { margin-bottom:.25em; }
 #place-fit .pf-check-inline { margin-bottom:.5em; }
-#place-fit .pf-header select {
+#place-fit .pf-header select, #place-fit .pf-everyday-controls select {
  appearance:none;
  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%2320201d' stroke-width='1.5'/%3E%3C/svg%3E");
  background-repeat:no-repeat; background-position:right .4em center; background-size:.67em .4em;
@@ -107,3 +108,21 @@
  #place-fit .pf-workspace { display:block; }
  #place-fit .pf-map-wrap { position:relative; top:auto; height:300px; }
 }
+
+/* Give complete financial labels enough measure, keeping the working map dominant. */
+@media(min-width:1000px) {
+ #place-fit .pf-workspace { grid-template-columns:minmax(0,1fr) clamp(400px,39.0625vw,520px); }
+}
+#place-fit .pf-econ-fields label { grid-template-columns:minmax(0,1fr) calc(13ch + 1em); }
+#place-fit .leaflet-popup-content { overflow-wrap:anywhere; max-width:calc(100vw - 80px); }
+#place-fit .leaflet-popup-content strong { font-size:1em; line-height:1.35; }
+@container pf-fields (max-width:19em) {
+ #place-fit .pf-econ-fields label { grid-template-columns:minmax(0,1fr); }
+}
+
+/* Reading an open source popup earns temporary map height; closing restores it. */
+@media(max-width:800px) {
+ #place-fit .pf-map-wrap:has(.leaflet-popup) { grid-template-rows:clamp(360px,60dvh,560px) auto; }
+}
+/* Source reading takes precedence; zoom controls return when the popup closes. */
+#place-fit .pf-map-canvas:has(.leaflet-popup) .leaflet-control-zoom { visibility:hidden; }

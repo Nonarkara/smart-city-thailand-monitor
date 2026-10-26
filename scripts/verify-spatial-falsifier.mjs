@@ -13,7 +13,7 @@ const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH??'/Users/nonarkara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 
 // Same budgets the gate enforces, and the amount of growth each must catch.
-const EDITOR_BUDGET={390:1650,1024:1600,1440:1500};
+const EDITOR_BUDGET={390:1650,1024:1500,1440:1450};
 const SAVE_BUDGET={390:450,1024:480,1440:450};
 const REGRESSION=400;
 

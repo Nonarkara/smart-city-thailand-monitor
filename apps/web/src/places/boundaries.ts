@@ -129,7 +129,7 @@ export function readEvidence(input: unknown, center: { lat: number; lng: number 
   const validCivic = civic.status === "reference" && integer(civic.count) && Array.isArray(civic.places) && civic.places.length <= 200 && civic.count >= civic.places.length;
   return { fetchedAt: input.fetchedAt as string, complaints: validComplaints ? { status: c.status as "available" | "stale", fetchedAt: c.fetchedAt as string, value: { recent: v!.recent as number, openAllTime: v!.openAllTime as number, categories: v!.categories as { name: string; count: number }[], attribution: { text: (v!.attribution as RecordValue).text as string, url: safeSource((v!.attribution as RecordValue).url)! } } } : { status: "unavailable", fetchedAt: null, value: null }, civic: validCivic ? { status: "reference", count: civic.count as number, places: catalogPoints(civic.places, center, now), limits: text(civic.limits) ? civic.limits : "Catalog coverage and access unverified." } : { status: "unavailable", count: null, places: [], limits: "Catalog unavailable." } };
 }
-export async function fetchJson(url: string, signal: AbortSignal, timeoutMs = 12000): Promise<unknown> {
+export async function fetchJson(url: string, signal: AbortSignal, timeoutMs = 12000, expected?: {bytes:number;sha256:string}): Promise<unknown> {
   const controller = new AbortController();
   const abort = () => controller.abort(); signal.addEventListener("abort", abort, { once: true });
   if (signal.aborted) controller.abort();
@@ -139,8 +139,15 @@ export async function fetchJson(url: string, signal: AbortSignal, timeoutMs = 12
     const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) throw Error(response.status === 429 ? "The evidence service is busy. Try again shortly." : "Source unavailable. Your entered comparison still works.");
     if (!response.body) throw Error("Source response unavailable.");
-    const reader = response.body.getReader(), decoder = new TextDecoder(); let body = "", bytes = 0;
-    try { while (true) { const { value, done } = await reader.read(); if (done) break; bytes += value.byteLength; if (bytes > 2_000_000) { await reader.cancel(); throw Error("Source response exceeds the supported size."); } body += decoder.decode(value, { stream: true }); } body += decoder.decode(); } finally { reader.releaseLock(); }
+    const reader = response.body.getReader(), decoder = new TextDecoder(); let body = "", bytes = 0; const chunks:Uint8Array[] = [];
+    try { while (true) { const { value, done } = await reader.read(); if (done) break; bytes += value.byteLength; if (bytes > (expected?.bytes ?? 2_000_000)) { await reader.cancel(); throw Error("Source response exceeds the supported size."); } if (expected) chunks.push(value); body += decoder.decode(value, { stream: true }); } body += decoder.decode(); } finally { reader.releaseLock(); }
+    if (expected && bytes !== expected.bytes) throw Error("Source response size differs from its manifest.");
+    if (expected) {
+      const data = new Uint8Array(bytes); let offset = 0;
+      for (const chunk of chunks) { data.set(chunk, offset); offset += chunk.byteLength; }
+      const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", data)), x=>x.toString(16).padStart(2,"0")).join("");
+      if (digest !== expected.sha256) throw Error("Source response checksum differs from its manifest.");
+    }
     return JSON.parse(body);
   } catch (error) { if (timedOut) throw Error("Source took too long. Your entered comparison still works."); throw error; }
   finally { clearTimeout(timer); signal.removeEventListener("abort", abort); }

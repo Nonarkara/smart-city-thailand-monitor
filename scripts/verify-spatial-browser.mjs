@@ -6,7 +6,7 @@ try{for(const width of[390,1024,1440]){const context=await browser.newContext({v
 // 390/360/480px wide at 390/1024/1440, so the same fields stack differently and a single
 // budget cannot hold every width. Measured now: editor 1402.7/1490.7/1370.2px,
 // save form 406.5/444.5/377.8px. A flat <450 left only 5.5px of headroom at 1024.
-const EDITOR_BUDGET={390:1650,1024:1600,1440:1500};const SAVE_BUDGET={390:450,1024:480,1440:450};
+const EDITOR_BUDGET={390:1650,1024:1500,1440:1450};const SAVE_BUDGET={390:450,1024:480,1440:450};
 const eb=EDITOR_BUDGET[width],sb=SAVE_BUDGET[width];
 assert.ok(eb,`${width}: no editor reading-cost budget defined`);
 assert.ok(sb,`${width}: no save-form budget defined`);
