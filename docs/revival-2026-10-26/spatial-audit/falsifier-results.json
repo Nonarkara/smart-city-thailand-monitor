@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-26T08:30:00+07:00",
+  "url": "https://bangkok-ioc.pages.dev/places",
+  "regressionInjectedPx": 400,
+  "result": "pass",
+  "note": "Every budget accepts the real layout and rejects an injected 400px regression at every width.",
+  "widths": [
+    {
+      "width": 390,
+      "editorReal": 1403,
+      "editorBudget": 1650,
+      "editorInflated": 1803,
+      "editorBudgetCatches": true,
+      "saveReal": 407,
+      "saveBudget": 450,
+      "saveInflated": 807,
+      "saveBudgetCatches": true
+    },
+    {
+      "width": 1024,
+      "editorReal": 1491,
+      "editorBudget": 1600,
+      "editorInflated": 1891,
+      "editorBudgetCatches": true,
+      "saveReal": 445,
+      "saveBudget": 480,
+      "saveInflated": 845,
+      "saveBudgetCatches": true
+    },
+    {
+      "width": 1440,
+      "editorReal": 1370,
+      "editorBudget": 1500,
+      "editorInflated": 1770,
+      "editorBudgetCatches": true,
+      "saveReal": 378,
+      "saveBudget": 450,
+      "saveInflated": 778,
+      "saveBudgetCatches": true
+    }
+  ]
+}

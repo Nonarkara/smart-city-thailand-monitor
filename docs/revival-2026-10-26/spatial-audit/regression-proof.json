@@ -1,6 +1,17 @@
 {
   "baseline": "https://cd5c4f43.bangkok-ioc.pages.dev/places",
   "expectedRejection": "three-field save reading cost",
+  "rejectionMessage": "live 390: three-field save reading cost 595px exceeds 450px",
   "exitCode": 1,
-  "oversizedBaselineRejected": true
+  "oversizedBaselineRejected": true,
+  "recheckedOn": "2026-10-26",
+  "note": "Re-run against the corrected gate on 26 October 2026. The baseline is still rejected; the failure message now carries the measurement and the budget.",
+  "injectedDesktopRegression": {
+    "note": "Same injected 400px decision-column growth, run against both gate versions at 1024/1440.",
+    "oldGateExitCode": 0,
+    "oldGateResult": "passed a broken desktop - there was no editor budget above 390px",
+    "newGateExitCode": 1,
+    "newGateResult": "business 1024: editor reading cost 1891px exceeds 1600px",
+    "evidence": "docs/revival-2026-10-26/spatial-audit/gate-correction-2026-10-26.md"
+  }
 }

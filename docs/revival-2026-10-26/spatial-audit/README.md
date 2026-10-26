@@ -98,6 +98,29 @@ The old immutable release is deliberately run against the new section budget and
 rejected; see `regression-proof.json` and `baseline-rejected.txt`. Restoring the
 oversized layout therefore cannot silently pass the new gate.
 
+## Gate correction, 26 October 2026
+
+The reading-cost budget above was phone-only: the editor assertion sat inside
+`if(width===390)`, so no editor budget existed at 1024 or 1440. The desktop
+column grew to 1490.7px at 1024 (+44%) and 1370.2px at 1440 (+35%) without the
+gate noticing, and "business editor 30% shorter" was true only of the phone.
+Field counts fell (18 to 16, 13 to 11) and whole-page height for business,
+industrial and investment fell too, so the taller column is narrower-rail
+wrapping rather than added content — but the gate could not see it either way.
+
+Budgets are now per viewport, because the decision rail is 390/360/480px wide at
+390/1024/1440 and one flat number cannot hold three widths: editor
+1650/1600/1500px, save form 450/480/450px. A missing editor now fails instead of
+silently skipping, an undefined width fails loudly, and capture budgets were
+raised so a loaded shared machine cannot fail a release for a machine condition.
+
+`verify-spatial-falsifier.mjs` injects a 400px regression and proves every
+budget rejects it while accepting the real layout. The hole was demonstrated,
+not merely read: the old gate exited 0 on an inflated desktop, the corrected
+gate exits 1 with `business 1024: editor reading cost 1891px exceeds 1600px`.
+Full record in `gate-correction-2026-10-26.md` and `falsifier-results.json`.
+No application source changed and nothing was redeployed.
+
 Unavailable check: `axiom-audit` returned npm 404 from the configured registry;
 `axiom-unavailable.txt` records it. This is not counted as passed. The rendered
 audit and independent review above are the actual spatial evidence.
