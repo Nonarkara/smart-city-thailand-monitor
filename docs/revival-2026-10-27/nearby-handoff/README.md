@@ -114,3 +114,24 @@ change, not a relaxed budget, reduced that reading cost.
 
 This remains a pilot with dated, partial public reference data. It does not
 verify walking access, opening, admissions, rent fairness or customer demand.
+
+
+## Shipped release and public checks
+
+Runtime source `53f871b`, Pages deployment `917458d7`.
+Public: https://bangkok-ioc.pages.dev/places
+Immutable: https://917458d7.bangkok-ioc.pages.dev/places
+
+All167 currently referenced resources match the tested build: five JS/CSS assets,
+manifest and161 cells. The public handoff runner passes all10 cases, including
+seven viewport sizes, short-source operating controls, saved-home30px text and
+all restored-failure fixtures. The public category verifier matches pinned data
+and route coordinates; schema-valid tampering and truncation both suppress counts.
+The full existing spatial/falsifier gate passes the identical production build.
+Live snapshots and measurements are the live-* files in this directory.
+
+The legacy IOC entry remains byte-identical across this release's two samples.
+Atlas also happened to match between these samples; live-bytes.json explicitly
+labels its independent ownership and observations. This does not reinstate a
+standing claim that Atlas will remain unchanged. The source commit is unchanged
+by this proof-only follow-up; no second runtime deployment is required.
