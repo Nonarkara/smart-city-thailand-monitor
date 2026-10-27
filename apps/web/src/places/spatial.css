@@ -126,3 +126,12 @@
 }
 /* Source reading takes precedence; zoom controls return when the popup closes. */
 #place-fit .pf-map-canvas:has(.leaflet-popup) .leaflet-control-zoom { visibility:hidden; }
+
+/* On phones the directory and map are separate task views, with an explicit return. */
+#place-fit #pf-place-map, #place-fit #pf-everyday { scroll-margin-top:calc(var(--pf-toolbar-height,47px) + 8px); }
+#place-fit .pf-view-nearby-map, #place-fit .pf-nearby-map-return { display:none; }
+@media(max-width:800px) {
+ #place-fit .pf-view-nearby-map { display:inline-flex; align-items:center; min-height:32px; }
+ #place-fit .pf-nearby-map-return { display:block; margin-bottom:.25em; }
+ #place-fit .pf-nearby-map-return a { display:inline-flex; align-items:center; min-height:32px; }
+}

@@ -1,11 +1,11 @@
 import {createRequire} from 'node:module';import {mkdir,writeFile} from 'node:fs/promises';import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH??'/Users/nonarkara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const out=new URL('../docs/revival-2026-10-26/data-research/',import.meta.url).pathname;await mkdir(out,{recursive:true});const results=[],url=process.env.PILOT_URL??'http://127.0.0.1:4174/places';
+const out=new URL(process.env.AUDIT_DIR??'../docs/revival-2026-10-26/data-research/',import.meta.url).pathname;await mkdir(out,{recursive:true});const results=[],url=process.env.PILOT_URL??'http://127.0.0.1:4174/places';
 const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--disable-gpu']});
 try{
  for(const width of[390,1024,1440]){
   const context=await browser.newContext({viewport:{width,height:width===390?844:900},reducedMotion:'reduce'}),p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(url,{timeout:120000});await p.locator('#pf-place-name').waitFor();await p.evaluate(()=>document.fonts.ready);
-  const directory=p.getByRole('region',{name:'Everyday places'});await directory.getByText(/mapped groceries candidates/).waitFor();
+  const directory=p.getByRole('region',{name:'Everyday places'});await directory.getByText(/mapped candidates within 800 m/).waitFor();
   const route=directory.getByRole('link',{name:/Plan walking route to/}).first(),u=new URL(await route.getAttribute('href'));assert.equal(u.searchParams.get('origin'),'13.7796,100.5448');assert.equal(u.searchParams.get('travelmode'),'walking');assert.match(u.searchParams.get('destination'),/^13\./);
   for(const category of['education','green','transit','culture']){await directory.getByLabel('Everyday place category').selectOption(category);assert.match(await directory.innerText(),/Counts do not establish quality or customer demand/)}
   await directory.scrollIntoViewIfNeeded();await p.screenshot({path:`${out}/directory-${width}.png`,timeout:60000});

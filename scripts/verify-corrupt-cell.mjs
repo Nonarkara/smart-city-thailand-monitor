@@ -4,6 +4,11 @@
 //   PILOT_URL=https://bangkok-ioc.pages.dev/places node scripts/verify-corrupt-cell.mjs
 import {createRequire} from 'node:module';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const js=ts.transpileModule(readFileSync(new URL('../apps/web/src/places/everyday.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {readEverydayCell}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const manifest=JSON.parse(readFileSync(new URL('../public/data/places/everyday/manifest.json',import.meta.url)));
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH??'/Users/nonarkara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 
@@ -21,9 +26,11 @@ try{
       corrupted++;
       if(mode==='same-length'){
         // Same byte count, different content: the size check passes and the hash must catch it.
-        const copy=Buffer.from(body);
-        const i=copy.length-2;
-        if(i>=0) copy[i]=copy[i]===0x31?0x32:0x31;
+        const copy=Buffer.from(body.toString('utf8').replace(/("kind":"[a-z_]*)([a-z])"/,(_all,prefix,last)=>prefix+(last==='z'?'y':'z')+'"'));
+        assert.equal(copy.length,body.length,'tamper must keep the byte length');
+        assert.notDeepEqual(copy,body,'tamper must change actual bytes');
+        const parsed=JSON.parse(copy.toString('utf8'));
+        assert.doesNotThrow(()=>readEverydayCell(parsed,parsed.cell,manifest),'tampered JSON must remain schema-valid without checksum verification');
         return route.fulfill({response,body:copy});
       }
       // Short body: the size check must catch it before parsing.
@@ -32,10 +39,10 @@ try{
     await p.goto(process.env.PILOT_URL??'http://127.0.0.1:4174/places',{timeout:120000});
     await p.locator('#pf-place-name').waitFor();
     const status=p.locator('.pf-everyday p[role="status"]');
-    await status.waitFor({timeout:60000});
+    await status.filter({hasText:/Coverage is unknown/}).waitFor({timeout:60000});
     const text=(await status.textContent()??"").trim();
     const body=await p.locator('.pf-everyday').innerText();
-    const claimsCount=/mapped .* candidates within 800 m/.test(body);
+    const claimsCount=/\d+ mapped (?:[\w &]+ )?candidates? within 800 m/.test(body);
     assert.ok(corrupted>0,`${mode}: no cell was intercepted, so nothing was tested`);
     assert.ok(/unknown/i.test(text),`${mode}: coverage was not marked unknown, got: ${text}`);
     assert.ok(!claimsCount,`${mode}: a candidate count was still published despite corrupt data`);

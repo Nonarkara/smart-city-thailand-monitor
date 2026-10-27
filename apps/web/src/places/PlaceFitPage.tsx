@@ -14,7 +14,7 @@ import "./places.css";
 import "./spatial.css";
 import {catalogPoints,type CatalogPoint} from "./catalog";
 import {EverydayPlaces,useEveryday} from "./EverydayPlaces";
-import {type EverydayCategory} from "./everyday";
+import {everydayCategories,type EverydayCategory} from "./everyday";
 import {purposes,readPurpose,economicsReport,type Purpose,type Scenario,type Comparable} from "./economics";
 import {EconomicsSummary,EconomicsEditor,MarketContext,EconomicComparison} from "./EconomicsPanel";
 import {readSaved,readGuide,readEvidence,fetchJson,parsePremises,type Evidence} from "./boundaries";
@@ -55,6 +55,7 @@ function PlaceMap({
   purpose,
   catalog,
   focusNearby,
+  nearby,
   savedPin,
   savedLocations,
   onOpenSaved,
@@ -65,7 +66,8 @@ function PlaceMap({
   home: Quote;
   purpose: Purpose;
   catalog: CatalogPoint[];
-  focusNearby?:{lat:number;lng:number};
+  focusNearby?:{lat:number;lng:number;request?:number};
+  nearby?:{label:string;count:number|null;sourceAsOf:string};
   savedPin:boolean;
   savedLocations:{id:string;label:string;lat:number;lng:number}[];
   onOpenSaved:(id:string)=>void;
@@ -157,7 +159,7 @@ function PlaceMap({
       m.panTo([home.lat, home.lng], { animate: false });
     }
   }, [home.lat, home.lng, selected]);
-  useEffect(()=>{if(focusNearby)map.current?.setView([focusNearby.lat,focusNearby.lng],15,{animate:false})},[focusNearby?.lat,focusNearby?.lng]);
+  useEffect(()=>{if(focusNearby){map.current?.closePopup();map.current?.setView([focusNearby.lat,focusNearby.lng],15,{animate:false})}},[focusNearby?.lat,focusNearby?.lng,focusNearby?.request]);
   useEffect(()=>{
     const m=map.current;if(!m)return;
     const pane=m.getPane("catalog")??m.createPane("catalog");pane.style.zIndex="625";
@@ -172,7 +174,7 @@ function PlaceMap({
       const hit=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:12,stroke:false,fillOpacity:0,className:"pf-catalog-hit"}).addTo(m).bindPopup(content,{maxWidth:300});
       const dot=L.circleMarker([p.lat,p.lng],{pane:"catalog",radius:5,color:"#575951",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false,className:"pf-catalog-dot"}).addTo(m);
       catalogLayers.current.set(p.id,{signature:wanted.get(p.id)!,layers:[hit,dot]});
-      const element=hit.getElement();if(element){element.setAttribute("tabindex","0");element.setAttribute("role","button");element.setAttribute("aria-label",`Catalog place: ${p.name}`);element.addEventListener("keydown",e=>{const event=e as KeyboardEvent;if(event.key==="Enter"||event.key===" "){event.preventDefault();hit.openPopup();}});}
+      const element=hit.getElement();if(element){element.setAttribute("data-catalog-id",p.id);element.setAttribute("tabindex","0");element.setAttribute("role","button");element.setAttribute("aria-label",`Catalog place: ${p.name}`);element.addEventListener("keydown",e=>{const event=e as KeyboardEvent;if(event.key==="Enter"||event.key===" "){event.preventDefault();hit.openPopup();}});}
     });
   },[catalog]);
   useEffect(()=>{
@@ -197,7 +199,7 @@ function PlaceMap({
     return()=>{active=false;cancelAnimationFrame(frame);m.off("move zoomend resize",scheduleTarget);layer.remove()};
   },[savedLocations]);
   return (
-    <div className="pf-map-wrap">
+    <div id="pf-place-map" tabIndex={-1} className="pf-map-wrap">
       <div className="pf-map-canvas">
       <div ref={el} className="pf-map" aria-label="Six Bangkok station areas" />
       <span className="pf-map-target" aria-hidden="true" style={{visibility:targetCovered?"hidden":undefined}}>
@@ -223,6 +225,7 @@ function PlaceMap({
         </p>
       )}
       <span className="pf-map-note">
+      {nearby&&<span className="pf-nearby-map-return"><strong>{nearby.label}</strong> · {nearby.count===null?"Coverage unknown.":nearby.count===0?`No matches; availability unknown. OSM snapshot ${date(nearby.sourceAsOf)}.`:`OSM snapshot ${date(nearby.sourceAsOf)} · 800 m straight-line, partial coverage.`} <a href="#pf-everyday">Back to candidates ↓</a></span>}
         Pan to a {purpose==="live"?"home":"space"}, then pin +. Numbers mark station areas.{catalog.length>0&&" Dots: catalog places; select for source."}{savedLocations.length>0&&" A / B / C: your selected saved spaces."}
       </span>
     </div>
@@ -319,6 +322,7 @@ export default function PlaceFitPage() {
   const mappedPlaces=useMemo(()=>place?catalogPoints(evidence?.civic?.places,{lat:quote.lat??place.lat,lng:quote.lng??place.lng}):[],[evidence,quote.lat,quote.lng,place?.id]);
   const everyday=useEveryday({lat:quote.lat??place?.lat??13.7796,lng:quote.lng??place?.lng??100.5448});
   const [everydayCategory,setEverydayCategory]=useState<EverydayCategory>("groceries"),[mapEveryday,setMapEveryday]=useState(false);
+  const [mapViewRequest,setMapViewRequest]=useState(0);
   const visiblePlaces=useMemo(()=>[...(showCatalog?mappedPlaces:[]),...(mapEveryday&&everyday.status==="ready"?everyday.points.filter(p=>p.category===everydayCategory).slice(0,30).map(p=>({id:`osm:${p.id}`,name:p.name||`Unnamed ${p.kind.replaceAll("_"," ")}`,category:p.kind.replaceAll("_"," "),lat:p.lat,lng:p.lng,distanceM:p.distanceM,source_url:`https://www.openstreetmap.org/node/${p.id}`,source_dataset:"OpenStreetMap",ingested_at:"",snapshot_at:everyday.sourceAsOf,edited_at:p.editedAt})):[])],[showCatalog,mappedPlaces,mapEveryday,everyday,everydayCategory]);
   const spaceKey=(id:string)=>{const q=quotes[id]??{};return `${purpose}:${id}:${q.lat??"station"}:${q.lng??"station"}`};
   const scenarioKey=spaceKey(selected);
@@ -447,6 +451,43 @@ export default function PlaceFitPage() {
     );
   }
   const saveWidget=place&&<PremisesSave key={activePremises?`save:${activePremises.id}:${quote.lat}:${quote.lng}`:`save:${purpose}:${selected}:${quote.lat??"station"}:${quote.lng??"station"}`} record={activePremises} hasPin={quote.lat!==undefined&&quote.lng!==undefined} count={premises.filter(r=>r.purpose===purpose).length} atCapacity={premises.length>=20} onSave={saveNamed} onDuplicate={duplicateNamed} onCompare={()=>{setComparisonMode("premises");setView("compare");}} onExit={()=>setActivePremisesId(undefined)}/>;
+  const footer=(
+      <footer className="pf-footer">
+        <p>
+          Free pilot · no verified property recommendations.
+        </p>
+        <p>
+          Bangkok IOC · Atlas evidence.{" "}
+          <a href="https://github.com/Nonarkara/smart-city-thailand-monitor">
+            Source & method ↗
+          </a>{" "}
+          ·{" "}
+          <button
+            onClick={async () => {
+              let cleared=true;
+              try { await clearWorkspace(localStorage,workspaceRevision.current,navigator.locks); }
+              catch { cleared=false; setStorageUnavailable(true); }
+              setQuotes({});setPremises([]);setPremisesSelection([]);setActivePremisesId(undefined);setComparisonMode("areas");
+              setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
+              setShortlist([]);
+              setPrefs({
+                budget: 20000,
+                travel: "rail",
+                destination: "",
+                departure: "09:00",
+                maxCommute: 45,
+                interests: [],
+              });
+              setMessage(
+                cleared?"Saved preferences, named spaces and notes cleared from this browser.":"This session was cleared, but saved browser data could not be removed. Check this site's storage settings before leaving a shared device.",
+              );
+            }}
+          >
+            Clear saved notes
+          </button>
+        </p>
+      </footer>
+  );
   if (loadError)
     return (
       <main id="place-fit">
@@ -612,7 +653,8 @@ export default function PlaceFitPage() {
               onPin={pin}
               purpose={purpose}
               catalog={visiblePlaces}
-              focusNearby={place&&mapEveryday&&everyday.status==="ready"?{lat:quote.lat??place.lat,lng:quote.lng??place.lng}:undefined}
+              focusNearby={place&&mapEveryday&&everyday.status==="ready"?{lat:quote.lat??place.lat,lng:quote.lng??place.lng,request:mapViewRequest}:undefined}
+              nearby={mapEveryday?{label:everydayCategories[everydayCategory],sourceAsOf:everyday.sourceAsOf,count:everyday.status==="ready"?everyday.points.filter(p=>p.category===everydayCategory).length:null}:undefined}
               savedPin={!!activePremises}
               savedLocations={savedLocations}
               onOpenSaved={openNamed}
@@ -827,7 +869,7 @@ export default function PlaceFitPage() {
                     ? "The chosen point is sent to Atlas; your notes stay on this device."
                     : "Pin a space to check its own surroundings."}
                 </p>
-                <EverydayPlaces result={everyday} category={everydayCategory} onCategory={setEverydayCategory} mapped={mapEveryday} onMapped={setMapEveryday}/>
+                <EverydayPlaces result={everyday} category={everydayCategory} onCategory={setEverydayCategory} mapped={mapEveryday} onMapped={setMapEveryday} onViewMap={()=>setMapViewRequest(n=>n+1)}/>
                 {busy && (
                   <p role="status">
                     Reading the Atlas catalog and reported problems…
@@ -927,6 +969,7 @@ export default function PlaceFitPage() {
               </div>
             </section>
           )}
+          {footer}
           </div>
           </div>
         </>
@@ -1080,41 +1123,7 @@ export default function PlaceFitPage() {
           </p>
         </section>
       )}
-      <footer className="pf-footer">
-        <p>
-          Free pilot · no verified property recommendations.
-        </p>
-        <p>
-          Bangkok IOC · Atlas evidence.{" "}
-          <a href="https://github.com/Nonarkara/smart-city-thailand-monitor">
-            Source & method ↗
-          </a>{" "}
-          ·{" "}
-          <button
-            onClick={async () => {
-              let cleared=true;
-              try { await clearWorkspace(localStorage,workspaceRevision.current,navigator.locks); }
-              catch { cleared=false; setStorageUnavailable(true); }
-              setQuotes({});setPremises([]);setPremisesSelection([]);setActivePremisesId(undefined);setComparisonMode("areas");
-              setScenarios({});setComparables({});setPurpose("live");setShowCatalog(true);
-              setShortlist([]);
-              setPrefs({
-                budget: 20000,
-                travel: "rail",
-                destination: "",
-                departure: "09:00",
-                maxCommute: 45,
-                interests: [],
-              });
-              setMessage(
-                cleared?"Saved preferences, named spaces and notes cleared from this browser.":"This session was cleared, but saved browser data could not be removed. Check this site's storage settings before leaving a shared device.",
-              );
-            }}
-          >
-            Clear saved notes
-          </button>
-        </p>
-      </footer>
+      {view!=="explore"&&footer}
     </main>
   );
 }

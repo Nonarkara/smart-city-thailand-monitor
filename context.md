@@ -133,3 +133,31 @@ phone map to60dvh; closing restores its ordinary height. ResizeObserver updates
 open popup autopan after geometry changes. Long source names wrap without clipping
 or shrinking type. Header remains45px at normal text. The nearby select uses an
 explicit arrow reservation so every full category label fits at30px text.
+
+## Nearby list/map handoff, 27 October
+
+Design read: preserve the street atlas and compact comparison rows; on phones,
+nearby candidates and their map are two explicit task views with reciprocal links.
+The reference remains the street-atlas index/map relationship, not a new dashboard
+band. At widths<=800px, On map can place results over1,500px above its control.
+View map stays beside that control, focuses the existing map and explicitly
+recenters the active search without changing pin, category or private inputs.
+Back to candidates returns focus to the directory. Desktop keeps its sticky map
+and does not display redundant handoff controls. The active phone map note gives
+category, OSM snapshot date and partial straight-line coverage; it does not repeat
+the count already shown in the directory. Empty/unavailable evidence remains
+unknown. Keyboard/native anchors, map operating area and source popups remain.
+
+Geometry evidence/budgets and missing/separated-action falsifiers:
+`docs/revival-2026-10-27/nearby-handoff` and `scripts/verify-nearby-handoff.mjs`.
+Viewport coverage:390x844,799/800/801x900,1024x900,1280x720,1440x900.
+Atlas entry equality in historical release proof is a timestamped observation of
+an independent project. It is not an ongoing invariant of an IOC release.
+
+Short/loading Atlas responses exposed a desktop footer constraint: a global
+footer below the map workspace could force the sticky map's top and pin control
+under the header near document end. In Explore, the same footer and Clear saved
+notes action now finish the decision rail; Compare keeps its global footer. The
+map retains an independent viewport height, without filler or sibling stretch.
+The source-date/return caption precedes general map guidance in the phone note,
+so enlarged text and saved A/B/C markers cannot push the active return offscreen.

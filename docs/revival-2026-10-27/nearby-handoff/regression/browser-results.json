@@ -1,0 +1,63 @@
+{
+  "url": "http://127.0.0.1:4175/places",
+  "results": [
+    {
+      "width": 390,
+      "enlarged": {
+        "width": 318,
+        "available": 262,
+        "longest": 261.59991455078125
+      },
+      "routeOrigin": "13.7796,100.5448",
+      "status": "passed"
+    },
+    {
+      "width": 1024,
+      "enlarged": {
+        "width": 318,
+        "available": 262,
+        "longest": 261.59991455078125
+      },
+      "routeOrigin": "13.7796,100.5448",
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "enlarged": {
+        "width": 318,
+        "available": 262,
+        "longest": 261.59991455078125
+      },
+      "routeOrigin": "13.7796,100.5448",
+      "status": "passed"
+    },
+    {
+      "width": 390,
+      "case": "long-source-popup",
+      "popupHeight": 380.5,
+      "mapHeight": 506.390625,
+      "restoredHeight": 295.390625,
+      "status": "passed"
+    },
+    {
+      "width": 1024,
+      "case": "long-source-popup",
+      "popupHeight": 380.5,
+      "mapHeight": 798.5,
+      "restoredHeight": 798.5,
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "case": "long-source-popup",
+      "popupHeight": 380.5,
+      "mapHeight": 818.75,
+      "restoredHeight": 818.75,
+      "status": "passed"
+    },
+    {
+      "case": "corrupt-cell-cannot-publish-partial-directory",
+      "status": "passed"
+    }
+  ]
+}

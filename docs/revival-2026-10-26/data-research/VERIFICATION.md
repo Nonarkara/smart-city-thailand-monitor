@@ -86,8 +86,11 @@ and rejects every400px injected regression.
 
 `live-bytes.json` verifies every current build JS/CSS bundle, the manifest and all
 161 manifest cells byte-for-byte against the public URL (167matched resources).
-The legacy IOC and Atlas entry HTML both remain byte-identical to their
-predeployment captures. No Atlas service or retired API was deployed.
+At the 26 October release check, legacy IOC and Atlas entry HTML matched their
+predeployment captures. This is a timestamped observation: Atlas is an independently
+deployed project and its root changed in its own later release, as documented in
+independent-review-2026-10-27.md. Atlas equality is not an ongoing IOC invariant.
+No Atlas service or retired API was deployed by this change.
 
 The original axiom-audit registry404 remains recorded in the earlier spatial audit;
 it is not counted as a passed check. Rendered and independent evidence above are

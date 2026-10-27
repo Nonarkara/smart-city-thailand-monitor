@@ -15,14 +15,14 @@ export function useEveryday(center:{lat:number;lng:number}){
  return()=>controller.abort();},[key]);
  return result.key===key?result:{key,status:"Loading mapped everyday places…",points:[],sourceAsOf:""};
 }
-export function EverydayPlaces({result,category,onCategory,mapped,onMapped}:{result:ReturnType<typeof useEveryday>;category:EverydayCategory;onCategory:(c:EverydayCategory)=>void;mapped:boolean;onMapped:(v:boolean)=>void}){
+export function EverydayPlaces({result,category,onCategory,mapped,onMapped,onViewMap}:{result:ReturnType<typeof useEveryday>;category:EverydayCategory;onCategory:(c:EverydayCategory)=>void;mapped:boolean;onMapped:(v:boolean)=>void;onViewMap:()=>void}){
  const [expanded,setExpanded]=useState(false);useEffect(()=>setExpanded(false),[category,result.key]);
  const points=result.points.filter(p=>p.category===category);
- return <section className="pf-everyday" aria-label="Everyday places">
+ return <section id="pf-everyday" tabIndex={-1} className="pf-everyday" aria-label="Everyday places">
  <h3>Everyday places to check</h3>
  {result.status!=="ready"?<p role="status">{result.status}</p>:<>
- <div className="pf-everyday-controls"><label>Find nearby <select aria-label="Everyday place category" value={category} onChange={e=>onCategory(e.target.value as EverydayCategory)}>{Object.entries(everydayCategories).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label><input type="checkbox" checked={mapped} onChange={e=>onMapped(e.target.checked)}/>On map</label></div>
- <p>{points.length?`${points.length} mapped ${everydayCategories[category].toLowerCase()} candidates within 800 m.`:"No matching points in this snapshot. Nearby availability is unknown."}{mapped&&points.length>30?" Map shows the nearest 30.":""}</p>
+ <div className="pf-everyday-controls"><label>Find nearby <select aria-label="Everyday place category" value={category} onChange={e=>onCategory(e.target.value as EverydayCategory)}>{Object.entries(everydayCategories).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label><input type="checkbox" checked={mapped} aria-controls="pf-place-map" onChange={e=>onMapped(e.target.checked)}/>On map</label>{mapped&&<a className="pf-view-nearby-map" href="#pf-place-map" onClick={onViewMap}>View map ↑</a>}</div>
+ <p>{points.length?`${points.length} mapped candidate${points.length===1?"":"s"} within 800 m.`:"No matching points in this snapshot. Nearby availability is unknown."}{mapped&&points.length>30?" Map shows the nearest 30.":""}</p>
  <ul className="pf-pois">{points.slice(0,expanded?points.length:5).map(p=><li key={p.id}><a href={`https://www.openstreetmap.org/node/${p.id}`} target="_blank" rel="noopener noreferrer">{p.name||`Unnamed ${p.kind.replaceAll("_"," ")}`} ↗</a><span>{p.kind.replaceAll("_"," ")} · ≈{p.distanceM} m straight-line</span><a aria-label={`Plan walking route to ${p.name||p.kind}`} href={`https://www.google.com/maps/dir/?api=1&origin=${result.key.replace(":",",")}&destination=${p.lat},${p.lng}&travelmode=walking`} target="_blank" rel="noopener noreferrer">Route ↗</a></li>)}</ul>
  {points.length>5&&<button type="button" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>{expanded?"Show nearest 5":`Show all ${points.length} candidates`}</button>}
  <p className="pf-source"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a> · snapshot {new Date(result.sourceAsOf).toLocaleDateString("en-GB",{timeZone:"Asia/Bangkok"})}. <a href={`${import.meta.env.BASE_URL}data/places/everyday/manifest.json`}>Source & downloadable data</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>.</p>
