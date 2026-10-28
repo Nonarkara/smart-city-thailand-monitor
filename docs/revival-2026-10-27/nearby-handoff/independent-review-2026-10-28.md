@@ -6,8 +6,8 @@ the gate correction in `855a176` is carried forward.
 
 ## Verified
 
-**The release is what the source says it is.** A clean `npm run build` from
-`53f871b` reproduces all five published assets bit-for-bit against the live
+**The release is what the source says it is.** A clean shared/web build (`npm run build -w packages/shared` then
+`npm run build -w apps/web`) from `53f871b` reproduces all five published assets bit-for-bit against the live
 deployment: `PlaceFitPage-BXclxrf7.js` `fb2ce5b1…`,
 `PlaceFitPage-Bw7kfpcJ.css` `24b5fc34…`, `index-BaApTyHE.js` `9ededcdc…`,
 `App-Dnuna3PJ.js` `ceae349e…`, `styles-Do9BlrOS.css` `352185dc…`. The live HTML

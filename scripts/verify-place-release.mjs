@@ -1,10 +1,11 @@
+import {auditDirectory} from './audit-output.mjs';
 // Reproducible public release bytes; independent Atlas changes are observations, not IOC failures.
 import {readFile,readdir,writeFile,mkdir} from 'node:fs/promises';
 import {promisify} from 'node:util';
 import {execFile} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
-const exec=promisify(execFile),root=new URL('../',import.meta.url),out=new URL('../docs/revival-2026-10-27/nearby-handoff/',import.meta.url);
+const exec=promisify(execFile),root=new URL('../',import.meta.url),out=auditDirectory('../docs/revival-2026-10-27/nearby-handoff/',import.meta.url);
 await mkdir(out,{recursive:true});
 const origin=process.env.PILOT_ORIGIN??'https://bangkok-ioc.pages.dev';
 const get=async url=>(await exec('curl',['--fail','--location','--silent','--show-error','--retry','1','--max-time','45',url],{encoding:'buffer',maxBuffer:3_000_000})).stdout;

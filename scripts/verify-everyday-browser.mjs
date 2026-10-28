@@ -1,6 +1,8 @@
+import {auditDirectory} from './audit-output.mjs';
+import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';import {mkdir,writeFile} from 'node:fs/promises';import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH??'/Users/nonarkara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const out=new URL(process.env.AUDIT_DIR??'../docs/revival-2026-10-23/everyday-verification/',import.meta.url);await mkdir(out,{recursive:true});const results=[];
+const out=auditDirectory('../docs/revival-2026-10-23/everyday-verification/',import.meta.url);await mkdir(out,{recursive:true});const results=[];
 const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--disable-gpu','--renderer-process-limit=2']});
 try{for(const width of [390,1024,1440]){
  const context=await browser.newContext({viewport:{width,height:width===390?844:900},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -8,13 +10,13 @@ try{for(const width of [390,1024,1440]){
  const directory=page.getByRole('region',{name:'Everyday places'});await directory.getByText(/mapped candidates within 800 m/).waitFor();
  assert.ok(await directory.locator('a[href^="https://www.openstreetmap.org/node/"]').count()>0);
  const bar=await page.locator('.pf-header').boundingBox();assert.ok(bar.height<=64);
- await page.screenshot({path:new URL(`map-${width}.png`,out).pathname});
- await directory.scrollIntoViewIfNeeded();await page.screenshot({path:new URL(`directory-${width}.png`,out).pathname});
+ await page.screenshot({path:fileURLToPath(new URL(`map-${width}.png`,out))});
+ await directory.scrollIntoViewIfNeeded();await page.screenshot({path:fileURLToPath(new URL(`directory-${width}.png`,out))});
  const directoryMetrics=await directory.evaluate(e=>({rows:[...e.querySelectorAll('li')].map(x=>x.getBoundingClientRect().height),checkboxWidth:e.querySelector('input').getBoundingClientRect().width}));assert.ok(directoryMetrics.checkboxWidth<=20);assert.ok(directoryMetrics.rows.some(h=>h<40));
  const everydayDots=page.locator('.pf-catalog-hit[data-catalog-id^="osm:"]');const countBefore=await everydayDots.count();await directory.getByRole('checkbox',{name:'On map',exact:true}).check();assert.ok(await everydayDots.count()>countBefore);
  const link=directory.locator('a[href^="https://www.openstreetmap.org/node/"]').first(),name=(await link.innerText()).replace(' ↗','');
  await page.getByRole('button',{name:`Catalog place: ${name}`,exact:true}).first().focus();await page.keyboard.press('Enter');
- await page.locator('.leaflet-popup-content').waitFor();assert.match(await page.locator('.leaflet-popup-content').innerText(),/Snapshot.*node last edited.*not a visit date/);await page.locator('.leaflet-popup-content').scrollIntoViewIfNeeded();await page.waitForTimeout(300);await page.screenshot({path:new URL(`popup-${width}.png`,out).pathname});await page.locator('.leaflet-popup-close-button').click();
+ await page.locator('.leaflet-popup-content').waitFor();assert.match(await page.locator('.leaflet-popup-content').innerText(),/Snapshot.*node last edited.*not a visit date/);await page.locator('.leaflet-popup-content').scrollIntoViewIfNeeded();await page.waitForTimeout(300);await page.screenshot({path:fileURLToPath(new URL(`popup-${width}.png`,out))});await page.locator('.leaflet-popup-close-button').click();
  await directory.getByLabel('Everyday place category').selectOption('markets');assert.match(await directory.innerText(),/do not establish quality or customer demand/);await directory.getByRole('checkbox',{name:'On map',exact:true}).uncheck();await page.waitForFunction(()=>document.querySelectorAll('.pf-catalog-hit[data-catalog-id^="osm:"]').length===0);assert.equal(await everydayDots.count(),countBefore);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);results.push({width,toolbarHeight:bar.height,directoryMetrics,source:name,status:'passed'});await context.close();
  }

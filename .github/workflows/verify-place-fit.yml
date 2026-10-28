@@ -4,6 +4,9 @@ on:
     paths:
       - 'apps/web/**'
       - 'public/data/places/**'
+      - 'scripts/audit-output.mjs'
+      - 'scripts/test-audit-output.mjs'
+      - 'scripts/verify-*.mjs'
       - 'scripts/test-place-fit.mjs'
       - 'scripts/test-economics.mjs'
       - 'scripts/test-catalog.mjs'
@@ -21,6 +24,9 @@ on:
     paths:
       - 'apps/web/**'
       - 'public/data/places/**'
+      - 'scripts/audit-output.mjs'
+      - 'scripts/test-audit-output.mjs'
+      - 'scripts/verify-*.mjs'
       - 'scripts/test-place-fit.mjs'
       - 'scripts/test-economics.mjs'
       - 'scripts/test-catalog.mjs'
@@ -45,7 +51,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test scripts/test-place-fit.mjs scripts/test-economics.mjs scripts/test-catalog.mjs scripts/test-boundaries.mjs scripts/test-premises.mjs scripts/test-storage.mjs scripts/test-everyday.mjs
+      - run: node --test scripts/test-audit-output.mjs scripts/test-place-fit.mjs scripts/test-economics.mjs scripts/test-catalog.mjs scripts/test-boundaries.mjs scripts/test-premises.mjs scripts/test-storage.mjs scripts/test-everyday.mjs
       - run: python3 scripts/test-everyday-source.py
       - run: npm run build -w packages/shared
       - run: npm run build -w apps/web

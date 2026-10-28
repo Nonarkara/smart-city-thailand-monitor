@@ -1,6 +1,7 @@
+import {auditPath} from './audit-output.mjs';
 import {createRequire} from 'node:module';import {mkdir,writeFile} from 'node:fs/promises';import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH??'/Users/nonarkara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const out=new URL(process.env.AUDIT_DIR??'../docs/revival-2026-10-26/data-research/',import.meta.url).pathname;await mkdir(out,{recursive:true});const results=[],url=process.env.PILOT_URL??'http://127.0.0.1:4174/places';
+const out=auditPath('../docs/revival-2026-10-26/data-research/',import.meta.url);await mkdir(out,{recursive:true});const results=[],url=process.env.PILOT_URL??'http://127.0.0.1:4174/places';
 const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--disable-gpu']});
 try{
  for(const width of[390,1024,1440]){
