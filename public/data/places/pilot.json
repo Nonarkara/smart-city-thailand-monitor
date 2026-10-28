@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "editorialNote": "Desk-researched orientation, not a field survey or a property recommendation. Pins are approximate station-area anchors, not neighborhood boundaries. Discover links open a search or publisher page; no business quality rating is implied.",
+  "places": [
+    {
+      "id": "ari",
+      "name": "Ari",
+      "thai": "อารีย์",
+      "lat": 13.7796,
+      "lng": 100.5448,
+      "station": "Ari · N5",
+      "line": "BTS Sukhumvit",
+      "character": "Small streets off Phahonyothin make a useful starting point for cafes and everyday food.",
+      "tradeoff": "The station-side streets and deeper Ari sois offer very different last-mile journeys.",
+      "visit": "Walk from the actual building entrance to the correct station exit, then repeat after dark.",
+      "interests": [
+        "Food",
+        "Independent shops"
+      ],
+      "discover": [
+        {
+          "name": "Explore Ari on the map",
+          "url": "https://www.google.com/maps/search/?api=1&query=cafes+Ari+Bangkok"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-ari",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    },
+    {
+      "id": "saphan-khwai",
+      "name": "Saphan Khwai",
+      "thai": "สะพานควาย",
+      "lat": 13.7939,
+      "lng": 100.5497,
+      "station": "Saphan Khwai · N7",
+      "line": "BTS Sukhumvit",
+      "character": "A rail-connected base for exploring the markets and working streets around northern Phahonyothin.",
+      "tradeoff": "A pin near Chatuchak does not mean its market or parks are an easy walk from your home.",
+      "visit": "Check the crossing of Phahonyothin and the route to your everyday grocery shop.",
+      "interests": [
+        "Markets",
+        "Food"
+      ],
+      "discover": [
+        {
+          "name": "Or Tor Kor market",
+          "url": "https://www.google.com/maps/search/?api=1&query=Or+Tor+Kor+Market+Bangkok"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-saphan-khwai",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    },
+    {
+      "id": "on-nut",
+      "name": "On Nut",
+      "thai": "อ่อนนุช",
+      "lat": 13.7056,
+      "lng": 100.601,
+      "station": "On Nut · E9",
+      "line": "BTS Sukhumvit",
+      "character": "A practical place to compare station-side homes with apartments deeper into the sois.",
+      "tradeoff": "An On Nut address can be well beyond a comfortable walk to the train.",
+      "visit": "Walk the full route along your soi; ask about utilities, motorcycles and the last train home.",
+      "interests": [
+        "Food",
+        "Everyday errands"
+      ],
+      "discover": [
+        {
+          "name": "Explore On Nut markets",
+          "url": "https://www.google.com/maps/search/?api=1&query=markets+On+Nut+Bangkok"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-on-nut",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    },
+    {
+      "id": "wongwian-yai",
+      "name": "Wongwian Yai",
+      "thai": "วงเวียนใหญ่",
+      "lat": 13.721,
+      "lng": 100.4952,
+      "station": "Wongwian Yai · S8",
+      "line": "BTS Silom",
+      "character": "A west-bank starting point for local markets and the older streets of Thonburi.",
+      "tradeoff": "The BTS station and the roundabout are different places. Check which one a listing means.",
+      "visit": "Time your river-crossing commute and walk to groceries from the actual home.",
+      "interests": [
+        "Markets",
+        "Heritage"
+      ],
+      "discover": [
+        {
+          "name": "Explore Thonburi streets",
+          "url": "https://www.google.com/maps/search/?api=1&query=Wongwian+Yai+market+Bangkok"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-wongwian-yai",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    },
+    {
+      "id": "bang-na",
+      "name": "Bang Na",
+      "thai": "บางนา",
+      "lat": 13.6681,
+      "lng": 100.6045,
+      "station": "Bang Na · E13",
+      "line": "BTS Sukhumvit",
+      "character": "Compare access to BITEC and the Sukhumvit rail corridor with the much wider Bang Na area.",
+      "tradeoff": "A house advertised as Bang Na may be far east of the station. Station proximity must be checked per home.",
+      "visit": "Test the trip from the estate gate, not just the house; check gate hours, taxis and pedestrian crossings.",
+      "interests": [
+        "Space",
+        "Everyday errands"
+      ],
+      "discover": [
+        {
+          "name": "BITEC visitor information",
+          "url": "https://www.bitec.co.th/"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-bang-na",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    },
+    {
+      "id": "udom-suk",
+      "name": "Udom Suk",
+      "thai": "อุดมสุข",
+      "lat": 13.6798,
+      "lng": 100.609,
+      "station": "Udom Suk · E12",
+      "line": "BTS Sukhumvit",
+      "character": "The station and Sukhumvit 103 offer a useful comparison between a rail address and a longer soi journey.",
+      "tradeoff": "Homes further along Udom Suk may require a feeder ride even when the listing names the BTS.",
+      "visit": "Check feeder cost, availability after dark, and whether the route still works in rain.",
+      "interests": [
+        "Food",
+        "Space"
+      ],
+      "discover": [
+        {
+          "name": "Explore Udom Suk food streets",
+          "url": "https://www.google.com/maps/search/?api=1&query=food+Sukhumvit+103+Bangkok"
+        }
+      ],
+      "rentUrl": "https://www.renthub.in.th/en/apartment/bts-udom-suk",
+      "source": "https://www.bts.co.th/eng/routemap.html",
+      "checkedAt": "2026-10-23"
+    }
+  ]
+}

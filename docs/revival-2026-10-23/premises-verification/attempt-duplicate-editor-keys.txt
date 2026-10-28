@@ -1,0 +1,187 @@
+locator.fill: Error: strict mode violation: getByLabel('Planned activity / tenant type', { exact: true }) resolved to 2 elements:
+    1) <input value="" placeholder="e.g. neighborhood bakery"/> aka locator('section').filter({ hasText: 'Business in AriOne real space' }).getByPlaceholder('e.g. neighborhood bakery')
+    2) <input value="" placeholder="e.g. neighborhood bakery"/> aka locator('section').filter({ hasText: 'Business in your pinned' }).getByPlaceholder('e.g. neighborhood bakery')
+
+Call log:
+[2m  - waiting for getByLabel('Planned activity / tenant type', { exact: true })[22m
+
+    at /Users/nonarkara/Projects/bangkok-ioc/recovered-source/scripts/verify-premises-browser.mjs:8:604
+Purpose
+Live
+Business
+Industry
+Buy to let
+Area
+1. Ari
+2. Saphan Khwai
+3. On Nut
+4. Wongwian Yai
+5. Bang Na
+6. Udom Suk
+Compare (0)
+⋯
+
+Space pin placed. This location has a separate scenario; check the actual premises.
+
+1
+2
+3
+4
+5
+6
++
+−
+ Leaflet | © OpenStreetMap
++
+Pin space at +
+Pan to a space, then pin +. Numbers mark station areas.
+
+BTS Sukhumvit · Ari · N5
+
+Pinned space
+
+Your pin: 13.7716, 100.5448. Ari is the guide anchor, not a verified address.
+
+Scenario incomplete
+
+Not calculated monthly break-even sales.
+
+Enter rent, other fixed costs, owner pay and remaining costs.
+
+Check a real space ↓
+Use station area instead
+Shortlist this area
+
+No demand or return is inferred from the station-area description.
+
+Business in Ari
+
+One real space per area and purpose. Inputs stay in this browser. A different pin starts a separate scenario.
+
+Planned activity / tenant type
+Monthly rent · ฿
+Usable area · m²
+Other monthly fixed costs · ฿
+Monthly owner pay · ฿
+Contribution margin · %
+Average sale / order · ฿
+Open days per month
+Initial fit-out · ฿
+Recover fit-out over · months
+Working capital · ฿
+Target monthly surplus · ฿
+Low monthly sales · ฿
+Base monthly sales · ฿
+High monthly sales · ฿
+
+Enter 0 where a cost is genuinely zero. Other fixed costs exclude rent, owner pay and fit-out recovery. Margin is after variable costs, delivery/platform fees and transaction charges. Sales cases are your assumptions, not forecasts.
+
+Premises checks
+Permitted use and lease terms
+Unknown
+Works
+Fails
+Required access and utilities
+Unknown
+Works
+Fails
+Where and when did you check?
+
+Calculated from your inputs
+
+Scenario incomplete
+
+Not calculated monthly break-even sales.
+
+Enter rent, other fixed costs, owner pay and remaining costs.
+
+Includes Not calculated monthly fit-out recovery. Entered fit-out plus working capital: Not calculated; deposits and other setup costs may add to this.
+
+Your sales assumptions · monthly
+Case	Sales	Surplus	Rent ceiling*
+Low	Not calculated	Not calculated	Not calculated
+Base	Not calculated	Not calculated	Not calculated
+High	Not calculated	Not calculated	Not calculated
+
+*Rent ceiling leaves your target surplus after other entered costs. A negative ceiling means even free rent cannot deliver that target. Surplus includes fit-out recovery; this is a planning calculation, not accounting profit.
+
+Required transactions are not proven customers. Count the target customers at the relevant hours, test conversion and average spend, and check competitors.
+
+Compare sourced rents for similar spaces
+Bangkok residential asking-rent context
+Business in your pinned space
+
+One real space per area and purpose. Inputs stay in this browser. A different pin starts a separate scenario.
+
+Planned activity / tenant type
+Monthly rent · ฿
+Usable area · m²
+Other monthly fixed costs · ฿
+Monthly owner pay · ฿
+Contribution margin · %
+Average sale / order · ฿
+Open days per month
+Initial fit-out · ฿
+Recover fit-out over · months
+Working capital · ฿
+Target monthly surplus · ฿
+Low monthly sales · ฿
+Base monthly sales · ฿
+High monthly sales · ฿
+
+Enter 0 where a cost is genuinely zero. Other fixed costs exclude rent, owner pay and fit-out recovery. Margin is after variable costs, delivery/platform fees and transaction charges. Sales cases are your assumptions, not forecasts.
+
+Premises checks
+Permitted use and lease terms
+Unknown
+Works
+Fails
+Required access and utilities
+Unknown
+Works
+Fails
+Where and when did you check?
+
+Calculated from your inputs
+
+Scenario incomplete
+
+Not calculated monthly break-even sales.
+
+Enter rent, other fixed costs, owner pay and remaining costs.
+
+Includes Not calculated monthly fit-out recovery. Entered fit-out plus working capital: Not calculated; deposits and other setup costs may add to this.
+
+Your sales assumptions · monthly
+Case	Sales	Surplus	Rent ceiling*
+Low	Not calculated	Not calculated	Not calculated
+Base	Not calculated	Not calculated	Not calculated
+High	Not calculated	Not calculated	Not calculated
+
+*Rent ceiling leaves your target surplus after other entered costs. A negative ceiling means even free rent cannot deliver that target. Surplus includes fit-out recovery; this is a planning calculation, not accounting profit.
+
+Required transactions are not proven customers. Count the target customers at the relevant hours, test conversion and average spend, and check competitors.
+
+Compare sourced rents for similar spaces
+Bangkok residential asking-rent context
+Keep this home or space separately
+
+Give the actual premises a name and pin. You can keep two units in the same building separately; an unfinished quote remains unfinished.
+
+Space name
+Quote observed date · optional
+Quote source URL · optional
+
+Save time is not quote observation time. Offline quotes can be described in your notes; these remain your entries.
+
+Save named space
+Compare saved spaces (0)
+Evidence around your space pin
+
+800 m straight-line radius around your space pin. The chosen point is sent to Atlas; your notes stay on this device.
+
+Source unavailable. Your entered comparison still works.
+
+Free pilot · no checkout. Paid reports are planned; nothing here is a verified property recommendation.
+
+Built from Bangkok IOC’s legacy and Atlas evidence. Source & method ↗ · Clear saved notes

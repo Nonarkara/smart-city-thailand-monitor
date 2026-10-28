@@ -1,0 +1,31 @@
+[
+  {
+    "category": "education",
+    "rows": 1,
+    "count": "1 mapped candidate within 800 m.",
+    "routeOrigin": "13.6681,100.6045",
+    "routeDestination": "13.6713,100.604"
+  },
+  {
+    "category": "green",
+    "rows": 1,
+    "count": "1 mapped candidate within 800 m.",
+    "routeOrigin": "13.6681,100.6045",
+    "routeDestination": "13.6638,100.6099"
+  },
+  {
+    "category": "transit",
+    "rows": 5,
+    "count": "13 mapped candidates within 800 m.",
+    "routeOrigin": "13.6681,100.6045",
+    "routeDestination": "13.6682,100.6049"
+  },
+  {
+    "category": "culture",
+    "rows": 1,
+    "count": "1 mapped candidate within 800 m.",
+    "routeOrigin": "13.6681,100.6045",
+    "routeDestination": "13.6705,100.6037"
+  }
+]
+CATEGORY PASS: every new category renders manifest-backed candidates with a walking route link, and empty areas say so plainly.

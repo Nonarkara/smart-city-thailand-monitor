@@ -1,0 +1,40 @@
+BANGKOK, FOR YOU — private premises comparison
+Exported 2026-10-25T16:16:00.679Z
+Names, pins, quotes and checks are your entries, not verified offers. Station-area context is not a premises survey. No proven demand or property-level risk conclusion.
+
+A. Bakery unit A
+Purpose: business; station-guide context: ari
+User pin: 13.7716,100.5448
+Quote observed: 2026-10-25
+Quote source: https://example.org/unit-a
+Last saved: 2026-10-25T16:15:59.373Z (save time, not observation time)
+Business · Bakery test
+Below your surplus target
+Base-case surplus is below your entered monthly target.
+User-entered assumptions (not verified): {"rent":25000,"size":40,"fixed":30000,"ownerPay":15000,"margin":50,"receipt":200,"days":25,"salesLow":100000,"salesBase":160000,"salesHigh":200000,"fitout":120000,"recoveryMonths":24,"workingCapital":50000,"targetSurplus":10000,"activity":"Bakery test","checkedNote":"Synthetic unit A check","permitted":"yes","access":"yes"}
+Break-even monthly sales: 150000; transactions per open day: 30; cases: [{"key":"salesLow","sales":100000,"surplus":-25000,"affordableRent":-10000},{"key":"salesBase","sales":160000,"surplus":5000,"affordableRent":20000},{"key":"salesHigh","sales":200000,"surplus":25000,"affordableRent":40000}]
+No appreciation or proven customer-demand assumption.
+
+Comparable evidence: []
+Map: https://www.google.com/maps/search/?api=1&query=13.7716,100.5448
+
+B. Bakery unit B
+Purpose: business; station-guide context: ari
+User pin: 13.7716,100.5448
+Quote observed: not provided
+Quote source: not provided / offline evidence
+Last saved: 2026-10-25T16:15:59.833Z (save time, not observation time)
+Business · Bakery test
+Premises checks incomplete
+Confirm permitted use and lease terms
+Check required access and utilities
+Record where and when you checked the premises
+Local demand is not established by these calculations.
+User-entered assumptions (not verified): {"rent":10000,"size":40,"fixed":30000,"ownerPay":15000,"margin":50,"receipt":200,"days":25,"salesLow":100000,"salesBase":160000,"salesHigh":200000,"fitout":120000,"recoveryMonths":24,"workingCapital":50000,"targetSurplus":10000,"activity":"Bakery test","checkedNote":"","permitted":"unknown","access":"unknown"}
+Break-even monthly sales: 120000; transactions per open day: 24; cases: [{"key":"salesLow","sales":100000,"surplus":-10000,"affordableRent":-10000},{"key":"salesBase","sales":160000,"surplus":20000,"affordableRent":20000},{"key":"salesHigh","sales":200000,"surplus":40000,"affordableRent":40000}]
+No appreciation or proven customer-demand assumption.
+
+Comparable evidence: []
+Map: https://www.google.com/maps/search/?api=1&query=13.7716,100.5448
+
+Confirm actual lease terms, usable area, access, availability, environmental conditions and local demand before deciding.

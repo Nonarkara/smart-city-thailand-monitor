@@ -1,0 +1,51 @@
+{
+  "base": "http://127.0.0.1:4174/places",
+  "checkedAt": "2026-10-25T18:16:03.586Z",
+  "results": [
+    {
+      "case": "null saved state + malformed evidence + usable report",
+      "width": 390,
+      "body": 390,
+      "toolbar": 45,
+      "pass": true
+    },
+    {
+      "case": "null saved state + malformed evidence + usable report",
+      "width": 1024,
+      "body": 1024,
+      "toolbar": 45,
+      "pass": true
+    },
+    {
+      "case": "null saved state + malformed evidence + usable report",
+      "width": 1440,
+      "body": 1440,
+      "toolbar": 45,
+      "pass": true
+    },
+    {
+      "case": "damaged preferences/costs retain valid note; both purposes usable",
+      "pass": true
+    },
+    {
+      "case": "quota failure visible; in-memory inputs and report work",
+      "pass": true
+    },
+    {
+      "case": "hanging evidence ends after deadline; form stays usable",
+      "pass": true
+    },
+    {
+      "case": "invalid guide has explicit retry; no partial map",
+      "pass": true
+    },
+    {
+      "case": "malformed publisher data suppressed",
+      "pass": true
+    },
+    {
+      "case": "delayed guide keeps saved shortlist; comparison waits for loaded anchors",
+      "pass": true
+    }
+  ]
+}

@@ -1,5 +1,11 @@
 # Bangkok Governor's IOC — Smart City Thailand Monitor
 
+## Current delivery — 25 October 2026
+
+Read `context.md` for the active consumer product at `/places`. Its Civic/daylight design and Jost/Prompt type are approved separately from the historical wall display below. The Pages project uses direct uploads, with source on `codex/bangkok-place-fit-plan` (PR6); a Git push does not deploy it. Root IOC entries/assets remain proxied byte-for-byte to immutable deployment `fa6ccef0`.
+
+The legacy Render API is retired/suspended and its current source build has missing exports, recorded in `docs/revival-2026-10-23/SHIPABILITY.md`. Do not restore fabricated seeds to make that build green or deploy that API. `/places` uses static guides plus the separate Atlas location-evidence worker. Atlas's map is a different checkout and must not be deployed from this project. Historical deployment/font/branch instructions below describe the archived wall product, not the new pilot.
+
 ## What This Project Is
 
 A **72-inch wall display** dashboard for the Bangkok Governor's Integrated Operations Center. Shows real-time urban data: traffic, flooding, air quality, citizen complaints, news, satellite imagery, CCTV feeds, and market signals. Designed to make a Governor say "this is the best command center I've ever seen."

@@ -1,0 +1,15 @@
+[
+  {
+    "mode": "same-length",
+    "cellsCorrupted": 2,
+    "status": "Everyday-place snapshot unavailable or out of date. Coverage is unknown; your comparison still works.",
+    "publishedCount": false
+  },
+  {
+    "mode": "truncated",
+    "cellsCorrupted": 2,
+    "status": "Everyday-place snapshot unavailable or out of date. Coverage is unknown; your comparison still works.",
+    "publishedCount": false
+  }
+]
+CORRUPTION PASS: corrupt cells make coverage unknown and publish no count.

@@ -1,0 +1,1067 @@
+[
+  {
+    "width": 390,
+    "purpose": "live",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 65,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 117,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3194,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3040.140625,
+      "width": 390,
+      "top": 45
+    },
+    "editor": null,
+    "evidence": {
+      "height": 2228,
+      "width": 390,
+      "top": 856.140625
+    },
+    "save": {
+      "height": 405.5,
+      "width": 358,
+      "top": 1431.890625
+    },
+    "loadedTiles": 6,
+    "mapError": null,
+    "fields": []
+  },
+  {
+    "width": 390,
+    "purpose": "business",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 65,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 117,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3712,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3557.484375,
+      "width": 390,
+      "top": 45
+    },
+    "editor": {
+      "height": 1402.71875,
+      "width": 390,
+      "top": 661.515625
+    },
+    "evidence": {
+      "height": 1130.75,
+      "width": 390,
+      "top": 2470.734375
+    },
+    "save": {
+      "height": 406.5,
+      "width": 390,
+      "top": 2064.234375
+    },
+    "loadedTiles": 6,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "purpose": "industrial",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 65,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 117,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3712,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3557.484375,
+      "width": 390,
+      "top": 45
+    },
+    "editor": {
+      "height": 1382.46875,
+      "width": 390,
+      "top": 681.765625
+    },
+    "evidence": {
+      "height": 1130.75,
+      "width": 390,
+      "top": 2470.734375
+    },
+    "save": {
+      "height": 406.5,
+      "width": 390,
+      "top": 2064.234375
+    },
+    "loadedTiles": 6,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "purpose": "invest",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 65,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 117,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3434,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 390,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3279.984375,
+      "width": 390,
+      "top": 45
+    },
+    "editor": {
+      "height": 1125.21875,
+      "width": 390,
+      "top": 661.515625
+    },
+    "evidence": {
+      "height": 1130.75,
+      "width": 390,
+      "top": 2193.234375
+    },
+    "save": {
+      "height": 406.5,
+      "width": 390,
+      "top": 1786.734375
+    },
+    "loadedTiles": 6,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "live",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3002,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 2892,
+      "width": 1024,
+      "top": 45
+    },
+    "editor": null,
+    "evidence": {
+      "height": 2421.75,
+      "width": 360,
+      "top": 514.25
+    },
+    "save": {
+      "height": 443.5,
+      "width": 328,
+      "top": 1122.75
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": []
+  },
+  {
+    "width": 1024,
+    "purpose": "business",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3579,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3468.59375,
+      "width": 1024,
+      "top": 45
+    },
+    "editor": {
+      "height": 1490.71875,
+      "width": 360,
+      "top": 319.625
+    },
+    "evidence": {
+      "height": 1257.75,
+      "width": 360,
+      "top": 2254.84375
+    },
+    "save": {
+      "height": 444.5,
+      "width": 360,
+      "top": 1810.34375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "industrial",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3579,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3468.59375,
+      "width": 1024,
+      "top": 45
+    },
+    "editor": {
+      "height": 1470.46875,
+      "width": 360,
+      "top": 339.875
+    },
+    "evidence": {
+      "height": 1257.75,
+      "width": 360,
+      "top": 2254.84375
+    },
+    "save": {
+      "height": 444.5,
+      "width": 360,
+      "top": 1810.34375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "purpose": "invest",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3252,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1024,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3142.09375,
+      "width": 1024,
+      "top": 45
+    },
+    "editor": {
+      "height": 1164.21875,
+      "width": 360,
+      "top": 319.625
+    },
+    "evidence": {
+      "height": 1257.75,
+      "width": 360,
+      "top": 1928.34375
+    },
+    "save": {
+      "height": 444.5,
+      "width": 360,
+      "top": 1483.84375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "live",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 2597,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 2486.75,
+      "width": 1440,
+      "top": 45
+    },
+    "editor": null,
+    "evidence": {
+      "height": 2036.75,
+      "width": 480,
+      "top": 494
+    },
+    "save": {
+      "height": 376.75,
+      "width": 448,
+      "top": 1045
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": []
+  },
+  {
+    "width": 1440,
+    "purpose": "business",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3110,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3000.34375,
+      "width": 1440,
+      "top": 45
+    },
+    "editor": {
+      "height": 1370.21875,
+      "width": 480,
+      "top": 299.375
+    },
+    "evidence": {
+      "height": 997,
+      "width": 480,
+      "top": 2047.34375
+    },
+    "save": {
+      "height": 377.75,
+      "width": 480,
+      "top": 1669.59375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "industrial",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 3131,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 3020.59375,
+      "width": 1440,
+      "top": 45
+    },
+    "editor": {
+      "height": 1349.96875,
+      "width": 480,
+      "top": 339.875
+    },
+    "evidence": {
+      "height": 997,
+      "width": 480,
+      "top": 2067.59375
+    },
+    "save": {
+      "height": 377.75,
+      "width": 480,
+      "top": 1689.84375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "purpose": "invest",
+    "headerLabels": [
+      {
+        "longest": 61.631195068359375,
+        "available": 87,
+        "fits": true
+      },
+      {
+        "longest": 112.09115600585938,
+        "available": 161,
+        "fits": true
+      }
+    ],
+    "pageHeight": 2804,
+    "overflow": false,
+    "toolbar": {
+      "height": 45,
+      "width": 1440,
+      "top": 0
+    },
+    "workspace": {
+      "height": 2694.09375,
+      "width": 1440,
+      "top": 45
+    },
+    "editor": {
+      "height": 1063.96875,
+      "width": 480,
+      "top": 299.375
+    },
+    "evidence": {
+      "height": 997,
+      "width": 480,
+      "top": 1741.09375
+    },
+    "save": {
+      "height": 377.75,
+      "width": 480,
+      "top": 1363.34375
+    },
+    "loadedTiles": 20,
+    "mapError": null,
+    "fields": [
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      },
+      {
+        "width": 151.875,
+        "height": 32
+      }
+    ]
+  }
+]

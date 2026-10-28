@@ -1,0 +1,18 @@
+[
+  {
+    "name": "legacy-ioc",
+    "url": "https://bangkok-ioc.pages.dev/",
+    "scope": "this release preserves the legacy IOC proxy",
+    "observedAt": "2026-10-28T07:44:29.279Z",
+    "bytes": 1283,
+    "sha256": "4b0732c3489165b2f1431aa143b08f57e7204743a8663940f3ff99a92e9b2ff2"
+  },
+  {
+    "name": "atlas",
+    "url": "https://atlas.nonarkara.org/",
+    "scope": "independent project; may deploy separately",
+    "observedAt": "2026-10-28T07:44:29.288Z",
+    "bytes": 106297,
+    "sha256": "981432450a52c9f84f0a0de55bd796783e7ff63588928515904af47b3cfec61d"
+  }
+]

@@ -1,0 +1,404 @@
+{
+  "url": "https://1edf1e93.bangkok-ioc.pages.dev/places",
+  "results": [
+    {
+      "width": 390,
+      "height": 844,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 390,
+          "visible": true
+        },
+        "controls": {
+          "top": 208.140625,
+          "bottom": 240.140625,
+          "height": 32,
+          "width": 358,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": -1906,
+          "bottom": -1610.609375,
+          "height": 295.390625,
+          "width": 390,
+          "visible": true
+        },
+        "title": {
+          "top": -1556.109375,
+          "bottom": -1075.609375,
+          "height": 480.5,
+          "width": 390,
+          "visible": true
+        },
+        "directory": {
+          "top": 182.640625,
+          "bottom": 660.390625,
+          "height": 477.75,
+          "width": 358,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 267.890625,
+          "bottom": 297.140625,
+          "height": 29.25,
+          "width": 358,
+          "visible": true
+        },
+        "pageWidth": 390,
+        "pageHeight": 3281,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "scrollY": 1952,
+        "separation": null
+      }
+    },
+    {
+      "width": 799,
+      "height": 900,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 799,
+          "visible": true
+        },
+        "controls": {
+          "top": 277.5,
+          "bottom": 309.5,
+          "height": 32,
+          "width": 767,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": -1618,
+          "bottom": -1303,
+          "height": 315,
+          "width": 799,
+          "visible": true
+        },
+        "title": {
+          "top": -1267.25,
+          "bottom": -867.75,
+          "height": 399.5,
+          "width": 799,
+          "visible": true
+        },
+        "directory": {
+          "top": 252,
+          "bottom": 648.75,
+          "height": 396.75,
+          "width": 767,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 337.25,
+          "bottom": 366.5,
+          "height": 29.25,
+          "width": 767,
+          "visible": true
+        },
+        "pageWidth": 799,
+        "pageHeight": 2800,
+        "viewport": {
+          "width": 799,
+          "height": 900
+        },
+        "scrollY": 1664,
+        "separation": null
+      }
+    },
+    {
+      "width": 800,
+      "height": 900,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 800,
+          "visible": true
+        },
+        "controls": {
+          "top": 277.5,
+          "bottom": 309.5,
+          "height": 32,
+          "width": 768,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": -1618,
+          "bottom": -1303,
+          "height": 315,
+          "width": 800,
+          "visible": true
+        },
+        "title": {
+          "top": -1267.25,
+          "bottom": -867.75,
+          "height": 399.5,
+          "width": 800,
+          "visible": true
+        },
+        "directory": {
+          "top": 252,
+          "bottom": 648.75,
+          "height": 396.75,
+          "width": 768,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 337.25,
+          "bottom": 366.5,
+          "height": 29.25,
+          "width": 768,
+          "visible": true
+        },
+        "pageWidth": 800,
+        "pageHeight": 2800,
+        "viewport": {
+          "width": 800,
+          "height": 900
+        },
+        "scrollY": 1664,
+        "separation": null
+      }
+    },
+    {
+      "width": 801,
+      "height": 900,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 801,
+          "visible": true
+        },
+        "controls": {
+          "top": 207,
+          "bottom": 277,
+          "height": 70,
+          "width": 328,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": 45,
+          "bottom": 843.5,
+          "height": 798.5,
+          "width": 439,
+          "visible": true
+        },
+        "title": {
+          "top": -1636,
+          "bottom": -1147.5,
+          "height": 488.5,
+          "width": 360,
+          "visible": true
+        },
+        "directory": {
+          "top": 181.5,
+          "bottom": 717.5,
+          "height": 536,
+          "width": 328,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 304.75,
+          "bottom": 334,
+          "height": 29.25,
+          "width": 328,
+          "visible": true
+        },
+        "pageWidth": 801,
+        "pageHeight": 3093,
+        "viewport": {
+          "width": 801,
+          "height": 900
+        },
+        "scrollY": 1682,
+        "separation": null
+      }
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 1024,
+          "visible": true
+        },
+        "controls": {
+          "top": 246.5,
+          "bottom": 278.5,
+          "height": 32,
+          "width": 368,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": 45,
+          "bottom": 843.5,
+          "height": 798.5,
+          "width": 622,
+          "visible": true
+        },
+        "title": {
+          "top": -1501,
+          "bottom": -1012.5,
+          "height": 488.5,
+          "width": 400,
+          "visible": true
+        },
+        "directory": {
+          "top": 221,
+          "bottom": 678.5,
+          "height": 457.5,
+          "width": 368,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 306.25,
+          "bottom": 335.5,
+          "height": 29.25,
+          "width": 368,
+          "visible": true
+        },
+        "pageWidth": 1024,
+        "pageHeight": 2834,
+        "viewport": {
+          "width": 1024,
+          "height": 900
+        },
+        "scrollY": 1547,
+        "separation": null
+      }
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 1280,
+          "visible": true
+        },
+        "controls": {
+          "top": 177,
+          "bottom": 209,
+          "height": 32,
+          "width": 468,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": 45,
+          "bottom": 683.75,
+          "height": 638.75,
+          "width": 778,
+          "visible": true
+        },
+        "title": {
+          "top": -1481,
+          "bottom": -1033,
+          "height": 448,
+          "width": 500,
+          "visible": true
+        },
+        "directory": {
+          "top": 151.5,
+          "bottom": 568.5,
+          "height": 417,
+          "width": 468,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 236.75,
+          "bottom": 266,
+          "height": 29.25,
+          "width": 468,
+          "visible": true
+        },
+        "pageWidth": 1280,
+        "pageHeight": 2623,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "scrollY": 1527,
+        "separation": null
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "entry": {
+        "toolbar": {
+          "top": 0,
+          "bottom": 45,
+          "height": 45,
+          "width": 1440,
+          "visible": true
+        },
+        "controls": {
+          "top": 276.75,
+          "bottom": 308.75,
+          "height": 32,
+          "width": 488,
+          "visible": true
+        },
+        "action": null,
+        "map": {
+          "top": 45,
+          "bottom": 863.75,
+          "height": 818.75,
+          "width": 918,
+          "visible": true
+        },
+        "title": {
+          "top": -1361,
+          "bottom": -913,
+          "height": 448,
+          "width": 520,
+          "visible": true
+        },
+        "directory": {
+          "top": 251.25,
+          "bottom": 648,
+          "height": 396.75,
+          "width": 488,
+          "visible": true
+        },
+        "firstRow": {
+          "top": 336.5,
+          "bottom": 365.75,
+          "height": 29.25,
+          "width": 488,
+          "visible": true
+        },
+        "pageWidth": 1440,
+        "pageHeight": 2562,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "scrollY": 1407,
+        "separation": null
+      }
+    }
+  ]
+}

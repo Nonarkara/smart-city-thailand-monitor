@@ -1,0 +1,148 @@
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok((await page.getByRole('button',{name:'Save named space',exact:true}).boundingBox()).height>=44)
+
+    at file:///Users/nonarkara/Projects/bangkok-ioc/recovered-source/scripts/verify-premises-browser.mjs:9:299
+Purpose
+Live
+Business
+Industry
+Buy to let
+Area
+1. Ari
+2. Saphan Khwai
+3. On Nut
+4. Wongwian Yai
+5. Bang Na
+6. Udom Suk
+Compare 0
+⋯
+
+Space pin placed. This location has a separate scenario; check the actual premises.
+
+1
+2
+3
+4
+5
+6
++
+−
+ Leaflet | © OpenStreetMap
++
+Pin space at +
+Pan to a space, then pin +. Numbers mark station areas.
+
+BTS Sukhumvit · Ari · N5
+
+Pinned space
+
+Your pin: 13.7716, 100.5448. Ari is the guide anchor, not a verified address.
+
+Assumptions calculated
+
+฿140,000 monthly break-even sales.
+
+Check a real space ↓
+Use station area instead
+Shortlist this area
+
+No demand or return is inferred from the station-area description.
+
+Business in your pinned space
+
+Enter costs for one real space. Save it separately by name below.
+
+Planned activity / tenant type
+Monthly rent · ฿
+Usable area · m²
+Other monthly fixed costs · ฿
+Monthly owner pay · ฿
+Contribution margin · %
+Average sale / order · ฿
+Open days per month
+Initial fit-out · ฿
+Recover fit-out over · months
+Working capital · ฿
+Target monthly surplus · ฿
+Low monthly sales · ฿
+Base monthly sales · ฿
+High monthly sales · ฿
+
+Use 0 for genuinely zero costs. Fixed costs exclude rent, owner pay and fit-out recovery. Margin is after variable costs and delivery/platform/payment fees. Sales are your assumptions, not forecasts.
+
+Premises checks
+Permitted use and lease terms
+Unknown
+Works
+Fails
+Required access and utilities
+Unknown
+Works
+Fails
+Where and when did you check?
+
+Calculated from your inputs
+
+Assumptions calculated
+
+฿140,000 monthly break-even sales.
+
+28 transactions per open day at your entered average value.
+
+Local demand is not established by these calculations.
+
+Includes ฿5,000 monthly fit-out recovery. Entered fit-out plus working capital: ฿170,000; deposits and other setup costs may add to this.
+
+Your sales assumptions · monthly
+Case	Sales	Surplus	Rent ceiling*
+Low	฿100,000	฿-20,000	฿-10,000
+Base	฿160,000	฿10,000	฿20,000
+High	฿200,000	฿30,000	฿40,000
+
+*Rent ceiling leaves your target surplus after other entered costs. A negative ceiling means even free rent cannot deliver that target. Surplus includes fit-out recovery; this is a planning calculation, not accounting profit.
+
+Required transactions are not proven customers. Count the target customers at the relevant hours, test conversion and average spend, and check competitors.
+
+Compare sourced rents for similar spaces
+Bangkok residential asking-rent context
+Save this space
+
+Name and pin the actual premises. Units in one building stay separate; incomplete quotes remain incomplete.
+
+Space name
+Quote observed date · optional
+Quote source URL · optional
+
+Quote date and save time are separate. Add offline evidence to your notes.
+
+Save named space
+Compare saved spaces (0)
+Evidence around your space pin
+
+800 m straight-line radius around your space pin. The chosen point is sent to Atlas; your notes stay on this device.
+
+Everyday places to check
+Find nearby
+Groceries
+Food & cafés
+Markets
+Health
+Fitness
+Museums & galleries
+On map
+
+1 mapped groceries candidates within 800 m.
+
+7-Eleven ↗
+convenience · ≈694 m straight-line
+
+© OpenStreetMap contributors · snapshot 25/10/2026. Source & downloadable data · ODbL.
+
+Partial node-point coverage; buildings and mapped areas are excluded. Coordinates rounded to about 10 m. Opening, access and walking routes unverified. Counts do not measure quality, customer demand or unmet demand.
+
+Source unavailable. Your entered comparison still works.
+
+Free pilot · no checkout. Paid reports are planned; nothing here is a verified property recommendation.
+
+Built from Bangkok IOC’s legacy and Atlas evidence. Source & method ↗ · Clear saved notes

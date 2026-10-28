@@ -1,0 +1,110 @@
+[
+  {
+    "width": 390,
+    "map": {
+      "x": 0,
+      "y": 46,
+      "width": 390,
+      "height": 506.390625,
+      "top": 46,
+      "right": 390,
+      "bottom": 552.390625,
+      "left": 0
+    },
+    "popup": {
+      "x": 20,
+      "y": 50.75,
+      "width": 349,
+      "height": 360.25,
+      "top": 50.75,
+      "right": 369,
+      "bottom": 411,
+      "left": 20
+    },
+    "source": {
+      "x": 42,
+      "y": 373.25,
+      "width": 114.421875,
+      "height": 22,
+      "top": 373.25,
+      "right": 156.421875,
+      "bottom": 395.25,
+      "left": 42
+    },
+    "overflow": false,
+    "restoredHeight": 506.390625,
+    "beforeHeight": 295.390625
+  },
+  {
+    "width": 1024,
+    "map": {
+      "x": 0,
+      "y": 45,
+      "width": 622,
+      "height": 798.5,
+      "top": 45,
+      "right": 622,
+      "bottom": 843.5,
+      "left": 0
+    },
+    "popup": {
+      "x": 136,
+      "y": 49.75,
+      "width": 349,
+      "height": 360.25,
+      "top": 49.75,
+      "right": 485,
+      "bottom": 410,
+      "left": 136
+    },
+    "source": {
+      "x": 158,
+      "y": 372.25,
+      "width": 114.421875,
+      "height": 22,
+      "top": 372.25,
+      "right": 272.421875,
+      "bottom": 394.25,
+      "left": 158
+    },
+    "overflow": false,
+    "restoredHeight": 798.5,
+    "beforeHeight": 798.5
+  },
+  {
+    "width": 1440,
+    "map": {
+      "x": 0,
+      "y": 45,
+      "width": 918,
+      "height": 818.75,
+      "top": 45,
+      "right": 918,
+      "bottom": 863.75,
+      "left": 0
+    },
+    "popup": {
+      "x": 284,
+      "y": 49.75,
+      "width": 349,
+      "height": 360.25,
+      "top": 49.75,
+      "right": 633,
+      "bottom": 410,
+      "left": 284
+    },
+    "source": {
+      "x": 306,
+      "y": 372.25,
+      "width": 114.421875,
+      "height": 22,
+      "top": 372.25,
+      "right": 420.421875,
+      "bottom": 394.25,
+      "left": 306
+    },
+    "overflow": false,
+    "restoredHeight": 818.75,
+    "beforeHeight": 818.75
+  }
+]

@@ -1,0 +1,174 @@
+[
+  {
+    "map": {
+      "x": 0,
+      "y": 178.5,
+      "width": 390,
+      "height": 295.390625,
+      "top": 178.5,
+      "right": 390,
+      "bottom": 473.890625,
+      "left": 0
+    },
+    "back": {
+      "x": 12,
+      "y": 631.890625,
+      "width": 260.53125,
+      "height": 37.5,
+      "top": 631.890625,
+      "right": 272.53125,
+      "bottom": 669.390625,
+      "left": 12
+    },
+    "caption": {
+      "x": 12,
+      "y": 481.890625,
+      "width": 366,
+      "height": 187.5,
+      "top": 481.890625,
+      "right": 378,
+      "bottom": 669.390625,
+      "left": 12
+    },
+    "note": {
+      "x": 0,
+      "y": 473.890625,
+      "width": 390,
+      "height": 398.5,
+      "top": 473.890625,
+      "right": 390,
+      "bottom": 872.390625,
+      "left": 0
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 171,
+      "top": 0,
+      "right": 390,
+      "bottom": 171,
+      "left": 0
+    },
+    "text": "Groceries · OSM snapshot 25 Oct 2026 · 800 m straight-line, partial coverage. Back to candidates ↓Pan to a home, then pin +. Numbers mark station areas. Dots: catalog places; select for source. A / B / C: your selected saved spaces.",
+    "focus": "pf-place-map",
+    "overflow": false,
+    "state": "saved-home",
+    "returnFocus": "pf-everyday",
+    "preservedRent": "12345"
+  },
+  {
+    "map": {
+      "x": 0,
+      "y": 172,
+      "width": 390,
+      "height": 295.390625,
+      "top": 172,
+      "right": 390,
+      "bottom": 467.390625,
+      "left": 0
+    },
+    "back": {
+      "x": 12,
+      "y": 625.390625,
+      "width": 260.53125,
+      "height": 37.5,
+      "top": 625.390625,
+      "right": 272.53125,
+      "bottom": 662.890625,
+      "left": 12
+    },
+    "caption": {
+      "x": 12,
+      "y": 475.390625,
+      "width": 366,
+      "height": 187.5,
+      "top": 475.390625,
+      "right": 378,
+      "bottom": 662.890625,
+      "left": 12
+    },
+    "note": {
+      "x": 0,
+      "y": 467.390625,
+      "width": 390,
+      "height": 361,
+      "top": 467.390625,
+      "right": 390,
+      "bottom": 828.390625,
+      "left": 0
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 171,
+      "top": 0,
+      "right": 390,
+      "bottom": 171,
+      "left": 0
+    },
+    "text": "Schools & childcare · No matches; availability unknown. OSM snapshot 25 Oct 2026. Back to candidates ↓Pan to a home, then pin +. Numbers mark station areas. Dots: catalog places; select for source.",
+    "focus": "pf-place-map",
+    "overflow": false,
+    "state": "empty",
+    "returnFocus": "pf-everyday"
+  },
+  {
+    "map": {
+      "x": 0,
+      "y": 172,
+      "width": 390,
+      "height": 295.390625,
+      "top": 172,
+      "right": 390,
+      "bottom": 467.390625,
+      "left": 0
+    },
+    "back": {
+      "x": 12,
+      "y": 550.390625,
+      "width": 260.53125,
+      "height": 37.5,
+      "top": 550.390625,
+      "right": 272.53125,
+      "bottom": 587.890625,
+      "left": 12
+    },
+    "caption": {
+      "x": 12,
+      "y": 475.390625,
+      "width": 366,
+      "height": 112.5,
+      "top": 475.390625,
+      "right": 378,
+      "bottom": 587.890625,
+      "left": 12
+    },
+    "note": {
+      "x": 0,
+      "y": 467.390625,
+      "width": 390,
+      "height": 211,
+      "top": 467.390625,
+      "right": 390,
+      "bottom": 678.390625,
+      "left": 0
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 171,
+      "top": 0,
+      "right": 390,
+      "bottom": 171,
+      "left": 0
+    },
+    "text": "Groceries · Coverage unknown. Back to candidates ↓Pan to a home, then pin +. Numbers mark station areas.",
+    "focus": "pf-place-map",
+    "overflow": false,
+    "state": "unknown",
+    "returnFocus": "pf-everyday"
+  }
+]

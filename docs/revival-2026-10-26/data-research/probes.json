@@ -1,0 +1,120 @@
+[
+  {
+    "url": "https://data.bangkok.go.th/api/3/action/package_show?id=park",
+    "status": 200,
+    "success": true,
+    "count": null,
+    "datasets": [
+      {
+        "id": "88c4b42a-a6cb-48c7-af7f-b9e7b11582cc",
+        "title": "ที่ตั้งสวนสาธารณะที่อยู่ใน ความรับผิดชอบของสำนักงานสวนสาธารณะ สำนักสิ่งแวดล้อม",
+        "license": "License not specified",
+        "modified": "2024-06-17T05:54:04.549560",
+        "resources": [
+          {
+            "format": "ZIP",
+            "url": "https://data.bangkok.go.th/dataset/88c4b42a-a6cb-48c7-af7f-b9e7b11582cc/resource/f802c519-ed9c-492f-ba1c-520a0e2af61a/download/public_park.zip"
+          },
+          {
+            "format": "CSV",
+            "url": "https://data.bangkok.go.th/dataset/88c4b42a-a6cb-48c7-af7f-b9e7b11582cc/resource/c3877d89-81b3-4285-a508-2e5af1f889eb/download/public_park.csv"
+          }
+        ]
+      }
+    ],
+    "topKeys": [
+      "help",
+      "success",
+      "result"
+    ]
+  },
+  {
+    "url": "https://data.bangkok.go.th/api/3/action/package_search?q=GTFS&rows=3",
+    "status": 200,
+    "success": true,
+    "count": 0,
+    "datasets": [],
+    "topKeys": [
+      "help",
+      "success",
+      "result"
+    ]
+  },
+  {
+    "url": "https://otp.gdcatalog.go.th/api/3/action/package_search?q=GTFS&rows=3",
+    "status": 200,
+    "success": true,
+    "count": 0,
+    "datasets": [],
+    "topKeys": [
+      "help",
+      "success",
+      "result"
+    ]
+  },
+  {
+    "url": "https://data.bangkok.go.th/api/3/action/package_search?q=school&rows=3",
+    "status": 200,
+    "success": true,
+    "count": 21,
+    "datasets": [
+      {
+        "id": "51e4b1c8-a777-42f8-8805-d6858c2a380e",
+        "title": "preschool-ladkrabang",
+        "license": "License not specified",
+        "modified": "2025-03-18T17:13:55.802445",
+        "resources": [
+          {
+            "format": "CSV",
+            "url": "https://data.bangkok.go.th/dataset/51e4b1c8-a777-42f8-8805-d6858c2a380e/resource/977d04d5-8aa6-4fcf-a9c0-2ea5b0d57af1/download/dlb_60f8e8d0b4f4c.csv"
+          },
+          {
+            "format": "CSV",
+            "url": "https://data.bangkok.go.th/dataset/51e4b1c8-a777-42f8-8805-d6858c2a380e/resource/2f8ca7d4-9cec-4a05-b8af-aa3685aa5e06/download/2565-school8.csv"
+          }
+        ]
+      },
+      {
+        "id": "a494d110-1e3a-4a40-ab6f-29779742f994",
+        "title": "data_school",
+        "license": "License not specified",
+        "modified": "2023-08-20T17:16:47.428706",
+        "resources": [
+          {
+            "format": "CSV",
+            "url": "https://data.bangkok.go.th/dataset/a494d110-1e3a-4a40-ab6f-29779742f994/resource/7f358a77-5adf-4a76-aee0-ec7e5530f1d1/download/-20-.csv"
+          },
+          {
+            "format": "CSV",
+            "url": "https://data.bangkok.go.th/dataset/a494d110-1e3a-4a40-ab6f-29779742f994/resource/a0e04a8b-a96b-4c31-ad86-b2ee14e91554/download/-.csv"
+          }
+        ]
+      },
+      {
+        "id": "d406db7c-fb08-45f3-8a12-8bf9b5f5e12d",
+        "title": "โรงเรียนสังกัดกรุงเทพมหานครที่เปิดสอน",
+        "license": "License not specified",
+        "modified": "2026-09-21T07:28:15.559694",
+        "resources": [
+          {
+            "format": "",
+            "url": "https://data.bangkok.go.th/dataset/d406db7c-fb08-45f3-8a12-8bf9b5f5e12d/resource/4884e11a-40ec-458c-8563-fb119307c139/download/.csv"
+          }
+        ]
+      }
+    ],
+    "topKeys": [
+      "help",
+      "success",
+      "result"
+    ]
+  },
+  {
+    "url": "https://api.openaq.org/v3/locations?iso=TH&limit=1",
+    "error": "HTTP Error 401: Unauthorized"
+  },
+  {
+    "url": "https://api.worldpop.org/v2/population/",
+    "error": "HTTP Error 405: Method Not Allowed"
+  }
+]

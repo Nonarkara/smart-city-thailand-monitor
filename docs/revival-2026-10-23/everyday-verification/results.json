@@ -1,0 +1,66 @@
+{
+  "url": "https://bangkok-ioc.pages.dev/places",
+  "checkedAt": "2026-10-25T17:14:57.337Z",
+  "results": [
+    {
+      "width": 390,
+      "toolbarHeight": 47,
+      "directoryMetrics": {
+        "rows": [
+          30.75,
+          30.75,
+          30.75,
+          30.75,
+          52.5
+        ],
+        "checkboxWidth": 18
+      },
+      "source": "Ka-Nom",
+      "status": "passed"
+    },
+    {
+      "width": 1024,
+      "toolbarHeight": 47,
+      "directoryMetrics": {
+        "rows": [
+          30.75,
+          30.75,
+          30.75,
+          30.75,
+          30.75
+        ],
+        "checkboxWidth": 18
+      },
+      "source": "Ka-Nom",
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "toolbarHeight": 47,
+      "directoryMetrics": {
+        "rows": [
+          30.75,
+          30.75,
+          30.75,
+          30.75,
+          30.75
+        ],
+        "checkboxWidth": 18
+      },
+      "source": "Ka-Nom",
+      "status": "passed"
+    },
+    {
+      "case": "unavailable",
+      "status": "passed"
+    },
+    {
+      "case": "stale",
+      "status": "passed"
+    },
+    {
+      "case": "late-independent-source-preserves-popup-and-keyboard-focus",
+      "status": "passed"
+    }
+  ]
+}

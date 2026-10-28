@@ -1,0 +1,36 @@
+[
+  {
+    "width": 390,
+    "editorReal": 1403,
+    "editorBudget": 1650,
+    "editorInflated": 1803,
+    "editorBudgetCatches": true,
+    "saveReal": 407,
+    "saveBudget": 450,
+    "saveInflated": 807,
+    "saveBudgetCatches": true
+  },
+  {
+    "width": 1024,
+    "editorReal": 1411,
+    "editorBudget": 1500,
+    "editorInflated": 1811,
+    "editorBudgetCatches": true,
+    "saveReal": 378,
+    "saveBudget": 480,
+    "saveInflated": 778,
+    "saveBudgetCatches": true
+  },
+  {
+    "width": 1440,
+    "editorReal": 1330,
+    "editorBudget": 1450,
+    "editorInflated": 1730,
+    "editorBudgetCatches": true,
+    "saveReal": 358,
+    "saveBudget": 450,
+    "saveInflated": 758,
+    "saveBudgetCatches": true
+  }
+]
+FALSIFIER PASS: every budget accepts the real layout and rejects an injected regression at every width.

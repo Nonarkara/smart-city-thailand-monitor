@@ -1,0 +1,240 @@
+[
+  {
+    "width": 801,
+    "height": 900,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": 43.75,
+      "width": 439,
+      "height": 818.75,
+      "top": 43.75,
+      "right": 439,
+      "bottom": 862.5,
+      "left": 0
+    },
+    "pin": {
+      "x": 12,
+      "y": 55.75,
+      "width": 114.171875,
+      "height": 44,
+      "top": 55.75,
+      "right": 126.171875,
+      "bottom": 99.75,
+      "left": 12
+    },
+    "pinOwnsPaint": true,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1123,
+    "pageHeight": 2023,
+    "state": "loading",
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  },
+  {
+    "width": 801,
+    "height": 900,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": 44,
+      "width": 439,
+      "height": 818.75,
+      "top": 44,
+      "right": 439,
+      "bottom": 862.75,
+      "left": 0
+    },
+    "pin": {
+      "x": 12,
+      "y": 56,
+      "width": 114.171875,
+      "height": 44,
+      "top": 56,
+      "right": 126.171875,
+      "bottom": 100,
+      "left": 12
+    },
+    "pinOwnsPaint": true,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1143,
+    "pageHeight": 2043,
+    "state": "failed",
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": 44,
+      "width": 778,
+      "height": 638.75,
+      "top": 44,
+      "right": 778,
+      "bottom": 682.75,
+      "left": 0
+    },
+    "pin": {
+      "x": 12,
+      "y": 56,
+      "width": 114.171875,
+      "height": 44,
+      "top": 56,
+      "right": 126.171875,
+      "bottom": 100,
+      "left": 12
+    },
+    "pinOwnsPaint": true,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1138,
+    "pageHeight": 1858,
+    "state": "loading",
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": 44,
+      "width": 778,
+      "height": 638.75,
+      "top": 44,
+      "right": 778,
+      "bottom": 682.75,
+      "left": 0
+    },
+    "pin": {
+      "x": 12,
+      "y": 56,
+      "width": 114.171875,
+      "height": 44,
+      "top": 56,
+      "right": 126.171875,
+      "bottom": 100,
+      "left": 12
+    },
+    "pinOwnsPaint": true,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1138,
+    "pageHeight": 1858,
+    "state": "failed",
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": -1802,
+      "width": 390,
+      "height": 295.390625,
+      "top": -1802,
+      "right": 390,
+      "bottom": -1506.609375,
+      "left": 0
+    },
+    "pin": {
+      "x": 8,
+      "y": -1790,
+      "width": 114.984375,
+      "height": 44,
+      "top": -1790,
+      "right": 122.984375,
+      "bottom": -1746,
+      "left": 8
+    },
+    "pinOwnsPaint": false,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1848,
+    "pageHeight": 2692,
+    "state": "loading",
+    "phoneHandoff": {
+      "focus": "pf-place-map",
+      "mapTop": 46,
+      "backBottom": 400.140625
+    },
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "headerBottom": 45,
+    "map": {
+      "x": 0,
+      "y": -1793,
+      "width": 390,
+      "height": 295.390625,
+      "top": -1793,
+      "right": 390,
+      "bottom": -1497.609375,
+      "left": 0
+    },
+    "pin": {
+      "x": 8,
+      "y": -1781,
+      "width": 114.171875,
+      "height": 44,
+      "top": -1781,
+      "right": 122.171875,
+      "bottom": -1737,
+      "left": 8
+    },
+    "pinOwnsPaint": false,
+    "footerCount": 1,
+    "clearCount": 1,
+    "footerInsideRail": true,
+    "scrollY": 1839,
+    "pageHeight": 2683,
+    "state": "failed",
+    "phoneHandoff": {
+      "focus": "pf-place-map",
+      "mapTop": 46,
+      "backBottom": 400.140625
+    },
+    "compare": {
+      "footers": 1,
+      "clear": 1,
+      "global": true
+    },
+    "clearMessage": "Saved preferences, named spaces and notes cleared from this browser."
+  }
+]
