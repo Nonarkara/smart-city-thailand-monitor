@@ -40,9 +40,10 @@ export function premisesGroups(records:Premises[]){
   return [...groups.values()];
 }
 export function premisesReport(records:Premises[],prefs:Preferences){
-  return `BANGKOK, FOR YOU — private premises comparison\nExported ${new Date().toISOString()}\nNames, pins, quotes and checks are your entries, not verified offers. Station-area context is not a premises survey. No proven demand or property-level risk conclusion.\n\n${records.map((r,i)=>{
+  const need=`${prefs.bedroomsNeeded?`${prefs.bedroomsNeeded} bedroom${prefs.bedroomsNeeded===1?"":"s"}`:""}${prefs.bedroomsNeeded&&prefs.petsNeeded?" and ":""}${prefs.petsNeeded?"pets must be allowed":""}`.trim()||"no household requirement stated";
+  return `BANGKOK, FOR YOU — private premises comparison\nExported ${new Date().toISOString()}\nNames, pins, quotes and checks are your entries, not verified offers. Station-area context is not a premises survey. No proven demand or property-level risk conclusion.\nHousehold requirement: ${need}\n\n${records.map((r,i)=>{
     const provenance=`Quote observed: ${r.quoteObservedAt||"not provided"}\nQuote source: ${r.quoteSource||"not provided / offline evidence"}\nLast saved: ${r.savedAt} (save time, not observation time)`;
-    const details=r.purpose==="live"?(()=>{const f=assess(prefs,r.quote);return `Monthly ceiling: ${prefs.budget}; destination: ${prefs.destination||"not entered"}; travel: ${prefs.travel}; departure: ${prefs.departure||"not entered"}\n${f.status}\nMonthly costs entered: ${f.total??"unknown"}\n${[...f.reasons,...f.missing].join("\n")}\nYour quote/checks: ${JSON.stringify(r.quote)}`})():economicsReport(r.purpose,r.scenario);
+    const details=r.purpose==="live"?(()=>{const f=assess(prefs,r.quote);return `Monthly ceiling: ${prefs.budget}; destination: ${prefs.destination||"not entered"}; travel: ${prefs.travel}; departure: ${prefs.departure||"not entered"}\n${f.status}\nMonthly costs entered: ${f.total??"unknown"}\nBedrooms in this home: ${r.quote.bedrooms===undefined?"not recorded":r.quote.bedrooms}\nPets allowed: ${r.quote.petsAllowed==="yes"?"yes":r.quote.petsAllowed==="no"?"no":"not confirmed"}\n${[...f.reasons,...f.missing].join("\n")}\nCheck on your visit: ${f.missing.length?f.missing.join(" "):"no outstanding check from your entries; still confirm lease terms, utilities, actual access and availability"}\nYour quote/checks: ${JSON.stringify(r.quote)}`})():economicsReport(r.purpose,r.scenario);
     return `${String.fromCharCode(65+i)}. ${r.label}\nPurpose: ${r.purpose}; station-guide context: ${r.guideId}\nUser pin: ${r.quote.lat},${r.quote.lng}\n${provenance}\n${details}\nComparable evidence: ${JSON.stringify(r.comparables)}\nMap: https://www.google.com/maps/search/?api=1&query=${r.quote.lat},${r.quote.lng}\n`;
   }).join("\n")}\nConfirm actual lease terms, usable area, access, availability, environmental conditions and local demand before deciding.\n`;
 }
@@ -53,7 +54,10 @@ export function editPremises(records:Premises[],id:string,patch:Partial<Pick<Pre
   return records.map(r=>r.id===id?next:r);
 }
 export function relocatePremises(record:Premises,lat:number,lng:number,now=new Date().toISOString()):Premises{
-  return snapshotPremises({...record,quote:{...record.quote,lat,lng,access:"unknown",commute:undefined,commuteFor:undefined,commuteTravel:undefined,commuteAt:undefined},scenario:{...record.scenario,permitted:"unknown",access:"unknown",checkedNote:""},quoteObservedAt:undefined,quoteSource:undefined,comparables:[]},record.id,now);
+  // Moving the pin means a different building. Journey, access, permitted use,
+  // bedrooms and the pet policy are facts about one building, so none of them
+  // may carry over to the new address.
+  return snapshotPremises({...record,quote:{...record.quote,lat,lng,access:"unknown",commute:undefined,commuteFor:undefined,commuteTravel:undefined,commuteAt:undefined,bedrooms:undefined,petsAllowed:undefined},scenario:{...record.scenario,permitted:"unknown",access:"unknown",checkedNote:""},quoteObservedAt:undefined,quoteSource:undefined,comparables:[]},record.id,now);
 }
 export function duplicatePremises(record:Premises,id=newId(),now=new Date().toISOString()):Premises{
   const copy=relocatePremises(record,record.quote.lat!,record.quote.lng!,now);

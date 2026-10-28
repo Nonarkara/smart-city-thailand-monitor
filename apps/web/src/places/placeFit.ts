@@ -9,6 +9,10 @@ export type Quote = {
   commuteTravel?: string;
   lat?: number;
   lng?: number;
+  /** Bedrooms in this specific home. 0 is a studio. A fact about one building only. */
+  bedrooms?: number;
+  /** The building's pet policy. A fact about one building only. */
+  petsAllowed?: "yes" | "no" | "unknown";
 };
 export type Preferences = {
   budget: number;
@@ -17,6 +21,10 @@ export type Preferences = {
   departure?: string;
   maxCommute: number;
   interests: string[];
+  /** Minimum bedrooms the household needs. Undefined means no such requirement. */
+  bedroomsNeeded?: number;
+  /** The household has pets, so the building must allow them. */
+  petsNeeded?: boolean;
 };
 export type Place = {
   id: string;
@@ -84,6 +92,43 @@ export function assess(p: Preferences, q: Quote = {}) {
     q.commute! > p.maxCommute
   )
     reasons.push(`Journey exceeds your ${p.maxCommute}-minute limit.`);
+  // Household hard constraints. A requirement the household states must never be
+  // passed by a premise that has not been checked: an unrecorded premise is
+  // "needs checking", never "meets your limits".
+  const needed = p.bedroomsNeeded;
+  const statedBedrooms = needed !== undefined;
+  const validNeeded =
+    typeof needed === "number" &&
+    Number.isFinite(needed) &&
+    Number.isInteger(needed) &&
+    needed >= 1 &&
+    needed <= 20;
+  if (statedBedrooms && !validNeeded) {
+    missing.push("Enter a valid number of bedrooms you need.");
+  } else if (validNeeded) {
+    const has = q.bedrooms;
+    const validHas =
+      typeof has === "number" &&
+      Number.isFinite(has) &&
+      Number.isInteger(has) &&
+      has >= 0 &&
+      has <= 20;
+    if (!validHas) {
+      missing.push(
+        `Record the bedrooms in this home; your household needs ${needed}.`,
+      );
+    } else if (has < needed) {
+      reasons.push(
+        `This home has ${has} bedroom${has === 1 ? "" : "s"}; your household needs ${needed}.`,
+      );
+    }
+  }
+  if (p.petsNeeded === true) {
+    const policy = q.petsAllowed;
+    if (policy === "no") reasons.push("This building does not allow pets.");
+    else if (policy !== "yes")
+      missing.push("Confirm whether pets are allowed in this building.");
+  }
   return {
     total,
     reasons,
@@ -94,6 +139,43 @@ export function assess(p: Preferences, q: Quote = {}) {
         ? "Needs checking"
         : "Meets your entered limits",
   };
+}
+
+/**
+ * The checks a site visit still has to settle for this premise. These are the
+ * stated requirements the premise has not been checked against, so a visit is
+ * aimed at what is actually unknown rather than at a generic checklist.
+ */
+export function visitChecklist(p: Preferences, q: Quote = {}): string[] {
+  return [...new Set(assess(p, q).missing)];
+}
+
+/** Comparison cell text: what the premise has, against what the household needs. */
+export function bedroomText(q: Quote, needed?: number): string {
+  if (q.bedrooms === undefined)
+    return needed ? `Not recorded — you need ${needed}` : "Not recorded";
+  const have = `${q.bedrooms} bedroom${q.bedrooms === 1 ? "" : "s"}`;
+  return needed && q.bedrooms < needed ? `${have} — you need ${needed}` : have;
+}
+export function petsText(q: Quote, needed?: boolean): string {
+  const state =
+    q.petsAllowed === "yes"
+      ? "Allowed"
+      : q.petsAllowed === "no"
+        ? "Not allowed"
+        : "Not confirmed";
+  return needed && q.petsAllowed !== "yes"
+    ? `${state} — you have pets`
+    : state;
+}
+export function householdText(p: Preferences): string {
+  const parts: string[] = [];
+  if (p.bedroomsNeeded)
+    parts.push(`${p.bedroomsNeeded} bedroom${p.bedroomsNeeded === 1 ? "" : "s"}`);
+  if (p.petsNeeded) parts.push("pets must be allowed");
+  return parts.length
+    ? parts.join(" and ")
+    : "no bedroom or pet requirement stated";
 }
 export function interestMatches(place: Place, interests: string[]) {
   return interests.filter((i) => place.interests.includes(i));

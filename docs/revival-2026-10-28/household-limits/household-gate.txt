@@ -1,0 +1,38 @@
+[
+  {
+    "step": "unchecked home",
+    "text": "Needs checking\n\n฿17,000 / month entered · ฿20,000 ceiling\n\nRecord the bedrooms in this home; your household needs 3.\n\nConfirm whether pets are allowed in this building."
+  },
+  {
+    "step": "home too small",
+    "text": "Does not meet your limits\n\n฿17,000 / month entered · ฿20,000 ceiling\n\nThis home has 1 bedroom; your household needs 3.\n\nConfirm whether pets are allowed in this building."
+  },
+  {
+    "step": "building refuses pets",
+    "text": "Does not meet your limits\n\n฿17,000 / month entered · ฿20,000 ceiling\n\nThis building does not allow pets."
+  },
+  {
+    "step": "requirement met",
+    "text": "Meets your entered limits\n\n฿17,000 / month entered · ฿20,000 ceiling"
+  },
+  {
+    "step": "comparison rows",
+    "rows": [
+      "Decision",
+      "AriRemove",
+      "On NutRemove",
+      "Daily life",
+      "Watch out",
+      "Monthly costs",
+      "Bedrooms",
+      "Pets",
+      "Station access",
+      "Your journey",
+      "Your limits",
+      "Visit check",
+      "Your notes",
+      "Next step"
+    ]
+  }
+]
+HOUSEHOLD LIMIT PASS: a stated requirement is never passed by an unchecked home, a contradicted home fails, and the comparison carries both dimensions.

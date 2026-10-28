@@ -12,7 +12,7 @@ const js = ts.transpileModule(source, {
     module: ts.ModuleKind.ESNext,
   },
 }).outputText;
-const { assess, amount, readShared } = await import(
+const { assess, amount, readShared, visitChecklist, bedroomText, petsText, householdText } = await import(
   "data:text/javascript;base64," + Buffer.from(js).toString("base64")
 );
 const prefs = {
@@ -209,3 +209,99 @@ test('attributed market snapshot has its own static asset route and preserves pu
 });
 
 test('an unbounded user amount is not persisted as a plausible financial value',()=>{assert.equal(amount('1000000000001'),undefined);assert.equal(amount('1000000000000'),1000000000000)});
+
+// --- Household hard constraints: a stated requirement can never be passed by an
+// unchecked premise, and a contradicted premise is a failure, not an unknown. ---
+
+const settled = {
+  rent: 15000,
+  extras: 2000,
+  access: "walk",
+  commute: 20,
+  commuteFor: "Silom 09:00",
+  commuteTravel: "rail",
+};
+const household = { ...prefs, bedroomsNeeded: 3, petsNeeded: true };
+
+test('a stated bedroom requirement is not passed by a premise nobody checked',()=>{
+  const r = assess(household, settled);
+  assert.equal(r.status,'Needs checking');
+  assert.ok(r.missing.some(m=>/Record the bedrooms in this home; your household needs 3\./.test(m)),r.missing.join(' | '));
+  assert.equal(r.reasons.length,0);
+});
+test('a premise with fewer bedrooms than the household needs fails the limit',()=>{
+  const r = assess(household, { ...settled, bedrooms: 1 });
+  assert.equal(r.status,'Does not meet your limits');
+  assert.ok(r.reasons.some(x=>/This home has 1 bedroom; your household needs 3\./.test(x)),r.reasons.join(' | '));
+});
+test('a premise that meets the stated bedroom requirement clears that check',()=>{
+  const r = assess(household, { ...settled, bedrooms: 3, petsAllowed: 'yes' });
+  assert.equal(r.status,'Meets your entered limits');
+  assert.equal(r.reasons.length,0);
+  assert.equal(r.missing.length,0);
+});
+test('a larger home than the household needs still passes',()=>{
+  assert.equal(assess(household,{ ...settled, bedrooms: 4, petsAllowed: 'yes' }).status,'Meets your entered limits');
+});
+test('a stated pet requirement is not passed by an unconfirmed building policy',()=>{
+  const r = assess(household, { ...settled, bedrooms: 3 });
+  assert.equal(r.status,'Needs checking');
+  assert.ok(r.missing.some(m=>/Confirm whether pets are allowed in this building\./.test(m)),r.missing.join(' | '));
+});
+test('an explicit unknown pet policy is still an unknown, never a pass',()=>{
+  const r = assess(household, { ...settled, bedrooms: 3, petsAllowed: 'unknown' });
+  assert.equal(r.status,'Needs checking');
+  assert.ok(r.missing.some(m=>/pets are allowed/.test(m)),r.missing.join(' | '));
+});
+test('a building that refuses pets fails the household limit',()=>{
+  const r = assess(household, { ...settled, bedrooms: 3, petsAllowed: 'no' });
+  assert.equal(r.status,'Does not meet your limits');
+  assert.ok(r.reasons.some(x=>/This building does not allow pets\./.test(x)),r.reasons.join(' | '));
+});
+test('no stated household requirement adds no new reason or missing item',()=>{
+  const before = assess(prefs, settled);
+  const after = assess(prefs, { ...settled, bedrooms: 1, petsAllowed: 'no' });
+  assert.equal(before.status,'Meets your entered limits');
+  assert.equal(after.status,'Meets your entered limits');
+  assert.equal(after.reasons.length,0);
+  assert.equal(after.missing.length,0);
+});
+test('an invalid stated bedroom requirement is reported, not ignored',()=>{
+  for (const bad of [0,-1,21,1.5,NaN,'3']) {
+    const r = assess({ ...prefs, bedroomsNeeded: bad }, settled);
+    assert.equal(r.status,'Needs checking',`bedroomsNeeded=${bad}`);
+    assert.ok(r.missing.some(m=>/valid number of bedrooms/.test(m)),`bedroomsNeeded=${bad}: ${r.missing.join(' | ')}`);
+  }
+});
+test('a hostile or out-of-range premise bedroom count is never a pass',()=>{
+  for (const bad of [-1,21,1.5,NaN,'2',null]) {
+    const r = assess(household, { ...settled, bedrooms: bad, petsAllowed: 'yes' });
+    assert.equal(r.status,'Needs checking',`bedrooms=${bad}`);
+    assert.equal(r.reasons.length,0,`bedrooms=${bad}`);
+  }
+});
+test('a studio is a real bedroom count, and it is smaller than one bedroom',()=>{
+  const r = assess({ ...prefs, bedroomsNeeded: 1 }, { ...settled, bedrooms: 0 });
+  assert.equal(r.status,'Does not meet your limits');
+  assert.ok(r.reasons.some(x=>/This home has 0 bedrooms; your household needs 1\./.test(x)),r.reasons.join(' | '));
+});
+test('the visit checklist is exactly what is still unresolved, without repeats',()=>{
+  const list = visitChecklist(household, settled);
+  assert.ok(list.includes('Record the bedrooms in this home; your household needs 3.'));
+  assert.ok(list.includes('Confirm whether pets are allowed in this building.'));
+  assert.equal(new Set(list).size, list.length);
+  assert.deepEqual(visitChecklist(prefs, settled), []);
+});
+test('comparison wording states the premise and the household requirement together',()=>{
+  assert.equal(bedroomText({ bedrooms: 1 }, 3), '1 bedroom — you need 3');
+  assert.equal(bedroomText({ bedrooms: 3 }, 3), '3 bedrooms');
+  assert.equal(bedroomText({}, 3), 'Not recorded — you need 3');
+  assert.equal(bedroomText({}), 'Not recorded');
+  assert.equal(petsText({ petsAllowed: 'no' }, true), 'Not allowed — you have pets');
+  assert.equal(petsText({ petsAllowed: 'unknown' }, true), 'Not confirmed — you have pets');
+  assert.equal(petsText({ petsAllowed: 'yes' }, true), 'Allowed');
+  assert.equal(petsText({ petsAllowed: 'yes' }), 'Allowed');
+  assert.equal(householdText({ bedroomsNeeded: 2, petsNeeded: true }), '2 bedrooms and pets must be allowed');
+  assert.equal(householdText({ bedroomsNeeded: 1 }), '1 bedroom');
+  assert.equal(householdText(prefs), 'no bedroom or pet requirement stated');
+});
