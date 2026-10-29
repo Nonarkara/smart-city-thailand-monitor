@@ -100,6 +100,33 @@ explicit label, as every other select in the app already did.
 The rendered gate is the one that matters. A model test proves the logic; the
 gate proves the product tells the user.
 
+## Deployed
+
+| | |
+| --- | --- |
+| source | `2d51e40` |
+| deployment | `67ae261d` (Production, branch main) |
+| live | `https://bangkok-ioc.pages.dev/places` · `https://bangkok.nonarkara.org/places` |
+| legacy IOC entry | `4b0732c3489165b2f1431aa143b08f57e7204743a8663940f3ff99a92e9b2ff2` — unchanged |
+
+Verified after the deploy:
+
+- The worker-applied `/places` document served by live, by the immutable
+  `67ae261d` host and by the custom domain is one document:
+  `76373e879725790cd2f9e08595d6756db4a77714eb1a00be2c9dec1078dcf2d3`, equal to
+  the local `wrangler pages dev` surface serving the same build. The three
+  surfaces agree byte-for-byte.
+- All five published assets are byte-identical to the built `dist`.
+- All **167 published resources** — the five assets, the everyday manifest and
+  its 161 cells — were fetched from the live host and hashed: 167/167
+  byte-identical, 0 mismatched (`live-bytes.json`).
+- The legacy IOC entry still resolves to its immutable deployment and is
+  byte-identical to its recorded hash. Nothing in this release touched it.
+- The build is deterministic: rebuilding from the committed tree reproduces the
+  same five asset hashes.
+- `verify-household-limits.mjs` passes against the **live** URL, not only
+  against the local build.
+
 ## What this does not claim
 
 Still true and unchanged: this is a pilot over dated, partial public reference
