@@ -1,0 +1,16 @@
+unit                           exit=0   8s
+python-source                  exit=0   1s
+spatial                        exit=0   98s
+spatial-falsify                exit=0   85s
+corrupt-cell                   exit=0   64s
+new-categories                 exit=0   58s
+nearby-handoff                 exit=0   144s
+household                      exit=0   29s
+economics                      exit=0   35s
+premises                       exit=0   76s
+boundaries                     exit=0   54s
+everyday                       exit=0   27s
+storage                        exit=0   25s
+catalog                        exit=0   28s
+place-fit                      exit=0   24s
+evidence-cont                  exit=0   148s

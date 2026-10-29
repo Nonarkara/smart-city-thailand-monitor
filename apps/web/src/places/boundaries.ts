@@ -6,6 +6,7 @@ import type {Premises} from "./premises";
 type RecordValue = Record<string, unknown>;
 const record = (v: unknown): v is RecordValue => v !== null && typeof v === "object" && !Array.isArray(v);
 const number = (v: unknown, max = 1e12): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max;
+const wholeNumber = (v: unknown, min: number, max: number): v is number => typeof v === "number" && Number.isFinite(v) && Number.isInteger(v) && v >= min && v <= max;
 const text = (v: unknown, max = 2000): v is string => typeof v === "string" && v.length <= max;
 const ownKey = (key: string) => key.length <= 200 && !["__proto__", "prototype", "constructor"].includes(key);
 export const defaultPreferences: Preferences = { budget: 20000, travel: "rail", destination: "", departure: "09:00", maxCommute: 45, interests: [] };
@@ -42,6 +43,8 @@ export function readSaved(raw: string | null): { state: SavedState; recovered: b
       if ("destination" in p) { if (text(p.destination, 500)) state.prefs.destination = p.destination; else { state.prefs.budget = 0; reject(); } }
       if ("departure" in p) { if (text(p.departure, 5) && /^([01]\d|2[0-3]):[0-5]\d$/.test(p.departure)) state.prefs.departure = p.departure; else { state.prefs.departure = ""; state.prefs.budget = 0; reject(); } }
       if ("interests" in p) { if (Array.isArray(p.interests) && p.interests.every(x => typeof x === "string" && interestNames.includes(x))) state.prefs.interests = [...new Set(p.interests)]; else reject(); }
+      if ("bedroomsNeeded" in p) { if (wholeNumber(p.bedroomsNeeded, 1, 20)) state.prefs.bedroomsNeeded = p.bedroomsNeeded; else reject(); }
+      if ("petsNeeded" in p) { if (typeof p.petsNeeded === "boolean") state.prefs.petsNeeded = p.petsNeeded; else reject(); }
     }
   }
   if ("purpose" in input) { if (typeof input.purpose === "string" && ["live", "business", "industrial", "invest"].includes(input.purpose)) state.purpose = input.purpose as Purpose; else reject(); }
@@ -56,6 +59,8 @@ export function readSaved(raw: string | null): { state: SavedState; recovered: b
     const out: Quote = {};
     for (const key of ["rent", "extras", "commute"] as const) if (key in q) { if (number(q[key], key === "commute" ? 1440 : 1e12)) out[key] = q[key]; else reject(); }
     if ("access" in q) { if (typeof q.access === "string" && ["walk", "car", "unknown"].includes(q.access)) out.access = q.access as Quote["access"]; else reject(); }
+    if ("bedrooms" in q) { if (wholeNumber(q.bedrooms, 0, 20)) out.bedrooms = q.bedrooms; else reject(); }
+    if ("petsAllowed" in q) { if (typeof q.petsAllowed === "string" && ["yes", "no", "unknown"].includes(q.petsAllowed)) out.petsAllowed = q.petsAllowed as Quote["petsAllowed"]; else reject(); }
     for (const key of ["note", "commuteFor", "commuteAt", "commuteTravel"] as const) if (key in q) { if (text(q[key], key === "note" ? 10000 : 500)) out[key] = q[key]; else reject(); }
     if ("lat" in q || "lng" in q) { if (position(q.lat, q.lng)) { out.lat = q.lat as number; out.lng = q.lng as number; } else { out.access = "unknown"; delete out.commute; reject(); } }
     state.quotes[id] = out;

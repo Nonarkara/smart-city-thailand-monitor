@@ -4,8 +4,12 @@ import "leaflet/dist/leaflet.css";
 import {
   amount,
   assess,
+  bedroomText,
+  householdText,
   interestMatches,
+  petsText,
   readShared,
+  visitChecklist,
   type Place,
   type Preferences,
   type Quote,
@@ -408,6 +412,10 @@ export default function PlaceFitPage() {
         access: "unknown",
         commute: undefined,
         commuteFor: undefined,
+        // A new pin is a new building. Bedrooms and the pet policy are facts
+        // about one building and must not carry over to the new address.
+        bedrooms: undefined,
+        petsAllowed: undefined,
       },
     }));
     setMessage(
@@ -435,9 +443,9 @@ export default function PlaceFitPage() {
       const q = quotes[id] ?? {},
         f = assess(prefs, q);
       if(purpose!=="live")return `${p.name} / ${p.thai}\nPin: ${q.lat??p.lat},${q.lng??p.lng}\n${economicsReport(purpose,scenarios[spaceKey(id)]??{})}\nComparable evidence: ${JSON.stringify(comparables[spaceKey(id)]??[])}\nMap: ${maps({...p,lat:q.lat??p.lat,lng:q.lng??p.lng})}\n`;
-      return `${p.name} / ${p.thai}\n${p.character}\nTradeoff: ${p.tradeoff}\nQuoted rent entered: ${q.rent===undefined?"unknown":money(q.rent)}\nMonthly extras entered: ${q.extras===undefined?"unknown":money(q.extras)}\nMonthly costs entered: ${f.total === null ? "unknown" : money(f.total)}${q.extras === undefined ? " (extras not entered)" : ""}\nStation access: ${q.access ?? "not checked"}\nChecked journey: ${q.commute === undefined ? "not entered" : q.commute + " minutes"}; for ${q.commuteFor || "destination not recorded"} at ${q.commuteAt || "time not recorded"}; travel ${q.commuteTravel || "not recorded"}\nJourney limit: ${prefs.maxCommute} minutes\nHome pin: ${q.lat !== undefined ? q.lat + ", " + q.lng : "not set (station-area context)"}\n${f.status}\n${[...f.reasons, ...f.missing].join("\n")}\nVisit: ${p.visit}\nYour note: ${q.note ?? ""}\nListings: ${p.rentUrl}\nMap: ${maps({ ...p, lat: q.lat ?? p.lat, lng: q.lng ?? p.lng })}\n`;
+      return `${p.name} / ${p.thai}\n${p.character}\nTradeoff: ${p.tradeoff}\nQuoted rent entered: ${q.rent===undefined?"unknown":money(q.rent)}\nMonthly extras entered: ${q.extras===undefined?"unknown":money(q.extras)}\nMonthly costs entered: ${f.total === null ? "unknown" : money(f.total)}${q.extras === undefined ? " (extras not entered)" : ""}\nBedrooms in this home: ${q.bedrooms===undefined?"not recorded":q.bedrooms}\nPets allowed in this building: ${q.petsAllowed==="yes"?"yes":q.petsAllowed==="no"?"no":"not confirmed"}\nStation access: ${q.access ?? "not checked"}\nChecked journey: ${q.commute === undefined ? "not entered" : q.commute + " minutes"}; for ${q.commuteFor || "destination not recorded"} at ${q.commuteAt || "time not recorded"}; travel ${q.commuteTravel || "not recorded"}\nJourney limit: ${prefs.maxCommute} minutes\nHome pin: ${q.lat !== undefined ? q.lat + ", " + q.lng : "not set (station-area context)"}\n${f.status}\n${[...f.reasons, ...f.missing].join("\n")}\nCheck on your visit: ${visitChecklist(prefs,q).length?visitChecklist(prefs,q).join(" "):"no outstanding check from your entries; still confirm lease terms, utilities, actual access and availability"}\nVisit: ${p.visit}\nYour note: ${q.note ?? ""}\nListings: ${p.rentUrl}\nMap: ${maps({ ...p, lat: q.lat ?? p.lat, lng: q.lng ?? p.lng })}\n`;
     });
-    const reportContext=purpose==="live"?`Monthly ceiling: ${money(prefs.budget)}. Travel: ${prefs.travel}. Destination: ${prefs.destination||"not entered"}.`:`Purpose: ${purposes[purpose]}. All scenario values are personal assumptions; local demand and agreed market rents are not verified.`;
+    const reportContext=purpose==="live"?`Monthly ceiling: ${money(prefs.budget)}. Travel: ${prefs.travel}. Destination: ${prefs.destination||"not entered"}. Household needs: ${householdText(prefs)}.`:`Purpose: ${purposes[purpose]}. All scenario values are personal assumptions; local demand and agreed market rents are not verified.`;
     const text = `BANGKOK, FOR YOU — personal comparison\nSaved ${date(new Date().toISOString())}\n${reportContext}\nUser-entered quotes are not verified offers. Neighborhood context is desk research checked 23 Oct 2026. No property has been surveyed.\n\n${rows.join("\n")}\n${purpose==="live"?"Visit each home at your travel time. Confirm lease length, utilities, pet rules, actual access and availability.":"Check permitted use, lease terms, usable area, operating hours, access, utilities, actual demand and availability at each space."}\n`;
     const a = document.createElement("a");
     a.href = URL.createObjectURL(
@@ -552,6 +560,39 @@ export default function PlaceFitPage() {
               }
             />
           </span>
+        </label>
+        <label>
+          Bedrooms you need (minimum)
+          <input
+            aria-label="Bedrooms you need"
+            type="number"
+            min="1"
+            max="20"
+            step="1"
+            placeholder="Not stated"
+            value={prefs.bedroomsNeeded ?? ""}
+            onChange={(e) =>
+              setPrefs({
+                ...prefs,
+                bedroomsNeeded:
+                  e.target.value === "" ? undefined : amount(e.target.value),
+              })
+            }
+          />
+        </label>
+        <label className="pf-check-inline">
+          <input
+            type="checkbox"
+            aria-label="Household has pets"
+            checked={prefs.petsNeeded === true}
+            onChange={(e) =>
+              setPrefs({
+                ...prefs,
+                petsNeeded: e.target.checked ? true : undefined,
+              })
+            }
+          />
+          Household has pets
         </label>
         <label>
           Getting around
@@ -797,6 +838,7 @@ export default function PlaceFitPage() {
                   <label>
                     Home-to-station access
                     <select
+                      aria-label="Home-to-station access"
                       value={quote.access ?? "unknown"}
                       onChange={(e) => patch("access", e.target.value)}
                     >
@@ -814,6 +856,41 @@ export default function PlaceFitPage() {
                       value={journeyCurrent ? (quote.commute ?? "") : ""}
                       onChange={(e) => patch("commute", amount(e.target.value))}
                     />
+                  </label>
+                  <label>
+                    Bedrooms in this home
+                    <input
+                      aria-label="Bedrooms in this home"
+                      type="number"
+                      min="0"
+                      max="20"
+                      step="1"
+                      placeholder="Not recorded"
+                      value={quote.bedrooms ?? ""}
+                      onChange={(e) =>
+                        patch(
+                          "bedrooms",
+                          e.target.value === "" ? undefined : amount(e.target.value),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Pets allowed in this building
+                    <select
+                      aria-label="Pets allowed in this building"
+                      value={quote.petsAllowed ?? "unknown"}
+                      onChange={(e) =>
+                        patch(
+                          "petsAllowed",
+                          e.target.value as Quote["petsAllowed"],
+                        )
+                      }
+                    >
+                      <option value="unknown">Not confirmed</option>
+                      <option value="yes">Allowed</option>
+                      <option value="no">Not allowed</option>
+                    </select>
                   </label>
                 </div>
                 <label>
@@ -1031,6 +1108,8 @@ export default function PlaceFitPage() {
                     "Daily life",
                     "Watch out",
                     "Monthly costs",
+                    "Bedrooms",
+                    "Pets",
                     "Station access",
                     "Your journey",
                     "Your limits",
@@ -1059,6 +1138,10 @@ export default function PlaceFitPage() {
                                   <small>Extras not entered.</small>
                                 )}
                               </>
+                            ) : label === "Bedrooms" ? (
+                              bedroomText(q, prefs.bedroomsNeeded)
+                            ) : label === "Pets" ? (
+                              petsText(q, prefs.petsNeeded)
                             ) : label === "Station access" ? (
                               q.access === "walk" ? (
                                 "Walking route checked by you"
